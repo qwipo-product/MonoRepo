@@ -7,8 +7,6 @@ import { useI18n } from '@mockups/i18n';
 import CopyText from '../components/CopyText';
 import CancelOrderDialog from '../components/CancelOrderDialog';
 
-type TabKind = 'wholesalers' | 'distributors';
-
 const TRACKING_STEPS: { id: string; label: string }[] = [
   { id: 'placed', label: 'Placed' },
   { id: 'confirmed', label: 'Confirmed' },
@@ -24,27 +22,20 @@ function statusToIdx(status: string): number {
   return 3; // processing
 }
 
-// Sellers backed by the wholesaler network (any "wholesale" / "mart" name);
-// the rest fall under the Distributors tab.
-function isWholesalerOrder(o: any) {
-  return /wholesale|mart/i.test(o.seller);
-}
-
 export default function MyOrdersScreen({ onBack, onOpenDetails, cartCount, onNavigate }: any) {
   const { t } = useI18n();
-  const [tab, setTab] = useState<TabKind>('distributors');
   const [tracking, setTracking] = useState<any>(null);
   const [cancelTarget, setCancelTarget] = useState<any>(null);
   const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
 
-  const visible = useMemo(() => {
-    const list = orderHistoryList.map((o: any) =>
-      cancelledIds.has(o.id) ? { ...o, status: 'cancelled', statusLabel: 'Cancelled' } : o
-    );
-    return list.filter((o: any) =>
-      tab === 'wholesalers' ? isWholesalerOrder(o) : !isWholesalerOrder(o)
-    );
-  }, [tab, cancelledIds]);
+  // All distributor + wholesaler orders in one list — no tabs.
+  const visible = useMemo(
+    () =>
+      orderHistoryList.map((o: any) =>
+        cancelledIds.has(o.id) ? { ...o, status: 'cancelled', statusLabel: 'Cancelled' } : o
+      ),
+    [cancelledIds]
+  );
 
   return (
     <>
@@ -60,22 +51,6 @@ export default function MyOrdersScreen({ onBack, onOpenDetails, cartCount, onNav
               <h1>{t('orders.my_orders')}</h1>
             </div>
           </div>
-
-          {/* Pill tabs */}
-          <div className="toggle-tabs">
-            <button
-              className={`toggle-tab ${tab === 'wholesalers' ? 'active' : ''}`}
-              onClick={() => setTab('wholesalers')}
-            >
-              {t('home.wholesalers')}
-            </button>
-            <button
-              className={`toggle-tab ${tab === 'distributors' ? 'active' : ''}`}
-              onClick={() => setTab('distributors')}
-            >
-              {t('home.distributors')}
-            </button>
-          </div>
         </div>
 
         <div className="orders-list">
@@ -84,7 +59,7 @@ export default function MyOrdersScreen({ onBack, onOpenDetails, cartCount, onNav
               <div className="reorder-empty-emoji">📭</div>
               <div className="reorder-empty-title">No orders yet</div>
               <div className="reorder-empty-sub">
-                Orders from {tab} will appear here.
+                Your orders will appear here.
               </div>
             </div>
           )}

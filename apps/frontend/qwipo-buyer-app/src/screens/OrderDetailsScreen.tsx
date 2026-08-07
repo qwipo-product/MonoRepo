@@ -156,23 +156,6 @@ export default function OrderDetailsScreen({ order, onBack, onTrack, onCancel }:
         </div>
       </div>
 
-      {/* Sticky footer with action CTAs */}
-      <div className="od-footer">
-        {order.status === 'placed' ? (
-          <button className="od-btn danger" onClick={() => onCancel?.(order)}>
-            Cancel Order
-          </button>
-        ) : (
-          <button className="od-btn ghost">
-            <Icon.Image /> Invoice
-          </button>
-        )}
-        {order.status !== 'cancelled' && (
-          <button className="od-btn primary" onClick={() => onTrack?.(order)}>
-            Track Order
-          </button>
-        )}
-      </div>
     </>
   );
 }

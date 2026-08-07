@@ -1,12 +1,6 @@
 export default function OrderConfirmationScreen({ onBackToHome }: any) {
   return (
     <div className="screen-body order-confirmation-screen">
-      <div className="top-bar">
-        <div className="top-title">
-          <h1>Order Confirmation</h1>
-        </div>
-      </div>
-
       <div className="oc-body">
         <div className="oc-title">Order Confirmation</div>
         <div className="oc-check">
