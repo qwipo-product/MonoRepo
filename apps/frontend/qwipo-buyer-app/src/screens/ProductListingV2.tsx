@@ -115,6 +115,14 @@ export default function ProductListingV2({
             <button className="icon-btn" onClick={onOpenSearch} aria-label="Search">
               <Icon.Search />
             </button>
+            <button
+              className="icon-btn filter-trigger"
+              onClick={onOpenFilters}
+              aria-label="Open filters"
+            >
+              <Icon.Sliders />
+              {activeCount > 0 && <span className="filter-trigger-badge">{activeCount}</span>}
+            </button>
           </div>
 
           {Array.isArray(category?.breadcrumb) && category.breadcrumb.length > 0 && (
