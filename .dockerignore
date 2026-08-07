@@ -1,0 +1,67 @@
+# Workspace-root .dockerignore.
+#
+# Every Dockerfile in this repo is built with the WORKSPACE ROOT as its build
+# context, so the builder stage can see bun.lock, every member package.json,
+# and the packages/* sources that apps link via `workspace:*`. This file keeps
+# that context small — and keeps `.env*` out of image layers.
+
+# Dependencies — reinstalled inside the builder.
+**/node_modules
+
+# Build outputs / caches — regenerated inside the builder.
+**/dist
+**/build
+**/out
+**/.turbo
+**/.vite
+**/.cache
+**/*.tsbuildinfo
+
+# Foreign lockfiles (bun.lock at the root IS shipped — that's what
+# `bun install --frozen-lockfile` reads).
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+
+# Environments — never bake into an image.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Nix / direnv — host-only.
+.direnv
+flake.nix
+flake.lock
+.envrc
+
+# Logs
+**/*.log
+**/logs
+
+# Editor / OS noise
+**/.vscode
+**/.idea
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docs (kept on the host)
+**/*.md
+!README.md
+
+# Claude / AI tooling — local-only
+.claude
+**/CLAUDE.md
+
+# Docker artefacts (referenced with -f, no need inside the context)
+**/Dockerfile
+**/Dockerfile.*
+**/.dockerignore
+
+# Azure pipeline definitions — consumed by Azure DevOps, not the builder
+**/azure-release*.yaml
+**/docker-build*.yml

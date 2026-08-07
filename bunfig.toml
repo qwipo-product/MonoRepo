@@ -1,0 +1,18 @@
+# Bun install policy for mockups-lab.
+#
+# The goal is that "it worked on my machine last week" keeps being true.
+# Direct dependency versions live in the root package.json `catalog` (exact,
+# no `^`/`~`); `bun.lock` records every transitive dependency with an integrity
+# hash; CI runs `bun install --frozen-lockfile`, which refuses any drift.
+
+[install]
+# `bun add <pkg>` writes `"pkg": "1.2.3"` instead of `"pkg": "^1.2.3"`.
+# Combined with the catalog, upgrades are always a deliberate, reviewable diff.
+exact = true
+
+[run]
+# Run bin scripts (vite, eslint, tsc, turbo) under Bun rather than honouring
+# their `#!/usr/bin/env node` shebang. Means the Nix devshell doesn't strictly
+# need a system Node, and everyone gets the same runtime.
+shell = "bun"
+bun = true

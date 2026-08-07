@@ -1,1 +1,38 @@
+# dependencies
 node_modules/
+
+# build output
+dist/
+build/
+out/
+
+# tool caches
+.turbo/
+.cache/
+*.tsbuildinfo
+.eslintcache
+.vite/
+
+# Nix per-repo devshell cache (nix-direnv)
+.direnv/
+
+# env — never commit; copy .env.example instead
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+logs/
+bun-debug.log*
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/worktrees/

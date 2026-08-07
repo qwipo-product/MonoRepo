@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+
+  // Bump any of these and every cached task is invalidated.
+  "globalDependencies": ["bun.lock", "bunfig.toml", "flake.lock"],
+
+  "tasks": {
+    // `^build` = build every workspace dependency first. Shared packages here
+    // ship raw TypeScript (no build step), so in practice this is a no-op —
+    // it's declared so a package that *does* gain a build step later works
+    // without anyone having to remember to wire the ordering up.
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    // `tsc --noEmit` produces nothing on disk — the cached artefact is the
+    // pass/fail itself, so `outputs` is empty on purpose.
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    // Long-running: never cached, never "finishes".
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

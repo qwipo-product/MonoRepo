@@ -1,0 +1,99 @@
+# CLAUDE.md
+
+Guidance for Claude Code working in this repo.
+
+## What this repo is
+
+A lab for **frontend mockups** — mobile apps, web apps, websites — built to be
+shown to people, not shipped. It is used mostly by the product team, who direct
+you rather than write the code themselves.
+
+Two things follow from that:
+
+1. **Bias to working pixels.** A screen that looks right and clicks through is
+   the deliverable. Don't build abstractions for a second use case that may
+   never exist.
+2. **Explain in product terms.** When you summarise what you did, name screens
+   and behaviour ("the cart now shows the MOV warning when the subtotal is
+   under ₹5,000"), not modules and hooks. Assume the reader will not open the
+   diff.
+
+## Toolchain
+
+Bun + Turborepo + Vite + React 19 + Tailwind v4. Nix flake pins the toolchain;
+direnv activates it. Never suggest `npm` or `yarn` — `bun` only.
+
+```bash
+bun dev --filter=@mockups/<app>   # run one app
+bun run check                     # lint + typecheck + build, run before finishing
+bun run new <name>                # scaffold a new mockup
+```
+
+## Layout
+
+```
+apps/frontend/<mockup>/     one app per mockup
+apps/backend/<service>/     Bun services (currently just mock-api)
+packages/<shared>/          shared code — see below
+```
+
+## Reach for these before writing your own
+
+| Need | Import from | Notes |
+| --- | --- | --- |
+| Button, Card, Badge, Input, Tabs | `@mockups/ui` | Also `cn()`, `ThemeProvider`, `useTheme()` |
+| Translated strings | `@mockups/i18n` | `useI18n()` → `t('cart.title')`. en / hi / te / ta |
+| Product, Order, Seller, Cart types | `@mockups/types` | Framework-agnostic |
+| Products, sellers, orders, banners | `@mockups/mock-data` | Don't invent new fixtures — extend these |
+| TS / ESLint presets | `@mockups/tsconfig`, `@mockups/eslint-config` | Apps just `extends` them |
+
+Deep imports work where the package declares them:
+`import { IMG } from '@mockups/mock-data/imageBank'`.
+
+### When to promote code into a package
+
+Only when a **second app** actually needs it. Until then it lives in the app.
+A screen used by one mockup is not shared code.
+
+If you do promote something, it goes in as raw TypeScript — these packages have
+no build step, and adding one would break hot reload for everyone.
+
+## Rules that will bite you if you skip them
+
+- **Tailwind + shared packages.** Tailwind never scans `node_modules`. An app
+  using classes from a shared package needs an `@source` line in its
+  `src/index.css` pointing at that package's `src`. Without it the component
+  renders unstyled and nothing errors — you'll waste an hour.
+- **Design tokens belong to the app.** `packages/ui` components reference
+  `bg-primary` / `text-foreground`; each app's `@theme` block defines them.
+  Never hard-code a hex value in a component. Never move tokens into `ui`.
+- **Dependency versions go in the root `catalog`.** Packages write
+  `"react": "catalog:"`. Adding a dep means: add it to the catalog with an
+  exact version, then reference `catalog:` from the package that needs it.
+- **New app dev ports must be unique** so `bun dev` can run several at once.
+  `bun run new` handles this; if you hand-roll an app, check the others first.
+- **Both lockfiles are committed.** Never delete or regenerate `bun.lock` or
+  `flake.lock` to work around an install problem — fix the actual cause.
+
+## Deliberately loose
+
+`strict` is off in TypeScript and the lint rules are minimal. This is a
+decision, not an oversight. Do not "fix" it by tightening `tsconfig` or adding
+rules. If a type error is genuinely blocking, the mock data is usually what's
+wrong — not the config.
+
+Same for `any` and `console.log`: both fine here.
+
+## Before you say you're done
+
+Run `bun run check`. If you changed a screen, also confirm the dev server
+compiles it — a Tailwind `@source` miss or a bad import passes typecheck and
+still renders a broken page.
+
+State plainly what you verified and what you didn't.
+
+## Deployment
+
+Azure DevOps, via templates in the shared `Qwipo B2B/k8s` repo — same pattern
+as `seller-platform`. Pipeline YAML is not wired up in this repo yet; ask
+before inventing it.
