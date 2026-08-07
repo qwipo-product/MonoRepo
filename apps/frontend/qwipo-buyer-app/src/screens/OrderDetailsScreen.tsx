@@ -138,7 +138,7 @@ export default function OrderDetailsScreen({ order, onBack, onTrack, onCancel }:
         </div>
 
         {/* Delivery address */}
-        <div className="od-section" style={{ paddingBottom: 110 }}>
+        <div className="od-section scroll-spacer-cta">
           <div className="od-section-title">Delivery Address</div>
           <div className="od-address">
             <div className="od-address-icon">

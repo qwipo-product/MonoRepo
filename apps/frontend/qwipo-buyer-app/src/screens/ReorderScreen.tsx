@@ -74,7 +74,7 @@ export default function ReorderScreen({
         {tab === 'distributor' ? (
           <ReorderComingSoon />
         ) : (
-          <div className="product-list" style={{ paddingTop: 12 }}>
+          <div className="product-list u-pt-12">
             {visibleHistory.map((h) => {
               const product = products.find((p) => p.id === h.productId);
               if (!product) return null;
@@ -106,7 +106,7 @@ export default function ReorderScreen({
                       {product.images?.[0] ? (
                         <img src={product.images[0]} alt={product.name} />
                       ) : (
-                        <span style={{ fontSize: 30 }}>{product.image}</span>
+                        <span className="emoji-fallback">{product.image}</span>
                       )}
                     </button>
                   </div>

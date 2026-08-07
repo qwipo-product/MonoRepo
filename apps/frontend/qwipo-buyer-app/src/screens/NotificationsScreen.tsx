@@ -38,7 +38,7 @@ export default function NotificationsScreen({ onBack }: any) {
         </div>
 
         {/* Filter chips */}
-        <div className="filter-bar" style={{ top: 0 }}>
+        <div className="filter-bar top-0">
           <button
             className={`filter-chip ${tab === 'all' ? 'active' : ''}`}
             onClick={() => setTab('all')}

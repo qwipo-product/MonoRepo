@@ -226,7 +226,7 @@ export default function CategoriesBrandsScreen({
         </div>
 
         {/* Categories grid — 2-col image card + name. */}
-        <div className="section" style={{ paddingBottom: 30 }}>
+        <div className="section scroll-spacer">
           <div className="section-head">
             <div className="section-title">Categories</div>
           </div>

@@ -84,7 +84,7 @@ function ProductCard({ p, onSelect }: { p: any; onSelect?: (p: any) => void }) {
             <span className="gs2-brand-tag">{p.brand}</span>
             <span className={`gs2-type-tag ${source === 'Distributor' ? 'dist' : ''}`}>{source}</span>
           </div>
-          <div className="product-name" style={{ marginTop: 6 }}>
+          <div className="product-name u-mt-6">
             {p.name}
           </div>
           <div className="product-subline">
@@ -92,7 +92,7 @@ function ProductCard({ p, onSelect }: { p: any; onSelect?: (p: any) => void }) {
           </div>
         </div>
         <button className="product-img" onClick={() => onSelect?.(p)} aria-label={`View ${p.name}`}>
-          {p.images?.[0] ? <img src={p.images[0]} alt={p.name} /> : <span style={{ fontSize: 30 }}>{p.image}</span>}
+          {p.images?.[0] ? <img src={p.images[0]} alt={p.name} /> : <span className="emoji-fallback">{p.image}</span>}
         </button>
       </div>
 
@@ -214,10 +214,10 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
               ))}
             </div>
 
-            <div className="gs2-section-title" style={{ marginTop: 24 }}>
+            <div className="gs2-section-title u-mt-24">
               Trending searches
             </div>
-            <div className="gs2-chip-wrap" style={{ marginTop: 12 }}>
+            <div className="gs2-chip-wrap u-mt-12">
               {TRENDING.map((r) => (
                 <button key={r} className="gs2-chip trending" onClick={() => commitSearch(r)}>
                   <Icon.TrendingUp size={14} /> {r}
@@ -225,10 +225,10 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
               ))}
             </div>
 
-            <div className="gs2-section-title" style={{ marginTop: 24 }}>
+            <div className="gs2-section-title u-mt-24">
               Start with a category
             </div>
-            <div className="gs2-chip-wrap" style={{ marginTop: 12 }}>
+            <div className="gs2-chip-wrap u-mt-12">
               {BROWSE_CATEGORIES.map((c) => (
                 <button key={c} className="gs2-chip" onClick={() => commitSearch(c)}>
                   {c} ›
@@ -238,7 +238,7 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
 
             {BUY_AGAIN.length > 0 && (
               <>
-                <div className="gs2-result-head" style={{ marginTop: 24 }}>
+                <div className="gs2-result-head u-mt-24">
                   <Icon.Reorder size={16} />
                   <span>Buy again</span>
                 </div>
@@ -252,7 +252,7 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
 
             {POPULAR.length > 0 && (
               <>
-                <div className="gs2-section-title" style={{ marginTop: 24, marginBottom: 12 }}>
+                <div className="gs2-section-title u-mt24-mb12">
                   Popular right now
                 </div>
                 <div className="product-list">
@@ -321,7 +321,7 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
                   {brandMatches.map((b: any) => (
                     <button key={b.id} className="dl-brand-tile" onClick={() => commitSearch(b.name)}>
                       <div className="dl-brand-circle" style={{ background: b.logo ? '#ffffff' : b.color }}>
-                        {b.logo ? <img src={b.logo} alt={b.name} /> : <span style={{ color: '#ffffff' }}>{b.logoText}</span>}
+                        {b.logo ? <img src={b.logo} alt={b.name} /> : <span className="text-white">{b.logoText}</span>}
                       </div>
                       <div className="dl-brand-name">
                         <Highlight text={b.name} q={q} />
@@ -335,7 +335,7 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
             {/* Story 20408 — Previously Ordered, then More Results / Products */}
             {previouslyOrdered.length > 0 && (
               <>
-                <div className="gs2-result-head blue" style={{ marginTop: 12 }}>
+                <div className="gs2-result-head blue u-mt-12">
                   <Icon.Reorder size={16} />
                   <span>Previously Ordered</span>
                 </div>
@@ -349,7 +349,7 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
 
             {moreResults.length > 0 && (
               <>
-                <div className="gs2-result-head" style={{ marginTop: 12 }}>
+                <div className="gs2-result-head u-mt-12">
                   <Icon.Search size={16} />
                   <span>{previouslyOrdered.length > 0 ? 'More Results' : 'Products'}</span>
                 </div>

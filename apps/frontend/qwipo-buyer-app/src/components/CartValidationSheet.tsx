@@ -77,7 +77,7 @@ export default function CartValidationSheet({ cart, onClose, onProceed, onAddIte
           dragHandlers={dragHandlers}
         />
 
-        <div className="sheet-body" style={{ padding: '14px 16px 90px' }}>
+        <div className="sheet-body sheet-pad-nav">
           {/* MOV section — expanded by default */}
           <div className={`cv-section ${open.mov ? 'open' : ''}`}>
             <button className="cv-section-head" onClick={() => toggle('mov')}>

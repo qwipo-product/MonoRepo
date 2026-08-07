@@ -134,7 +134,7 @@ export default function AddAddressSheet({ onClose, onSave }: any) {
           </>
         ) : (
           <>
-            <div className="sheet-body" style={{ padding: '14px 16px 90px' }}>
+            <div className="sheet-body sheet-pad-nav">
               <FormField label="House / Shop number" required>
                 <input
                   className="form-input"
@@ -227,7 +227,7 @@ function FormField({
     <div className="form-field">
       <label className="form-label">
         {label}
-        {required && <span style={{ color: '#dc2626' }}> *</span>}
+        {required && <span className="req-star"> *</span>}
       </label>
       {children}
     </div>

@@ -170,7 +170,7 @@ export default function CompleteKycScreen({ initialBusinessType, initialLocation
 
       {typeOpen && (
         <div className="sheet-backdrop" onClick={() => setTypeOpen(false)}>
-          <div className="sheet bt-sheet" style={{ maxHeight: '78%' }} onClick={(e) => e.stopPropagation()}>
+          <div className="sheet bt-sheet sheet-tall" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
             <div className="sheet-header">
               <div className="sheet-header-text">

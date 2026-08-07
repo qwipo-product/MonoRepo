@@ -55,7 +55,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         </div>
 
         {page === 'notif-prefs' && (
-          <div className="profile-section" style={{ paddingBottom: 30 }}>
+          <div className="profile-section scroll-spacer">
             <div className="profile-section-title">Choose what to be notified about</div>
             <div className="profile-card">
               <Toggle label="Order updates" detail="Dispatch, delivery, delays" value={notifPrefs.orderUpdates} onToggle={() => toggle('orderUpdates')} />
@@ -69,7 +69,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         )}
 
         {page === 'language' && (
-          <div className="profile-section" style={{ paddingBottom: 30 }}>
+          <div className="profile-section scroll-spacer">
             <div className="profile-section-title">Choose your language</div>
             <div className="profile-card">
               {languages.map((l, i) => (
@@ -95,7 +95,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         )}
 
         {page === 'terms' && (
-          <div className="profile-section" style={{ paddingBottom: 30 }}>
+          <div className="profile-section scroll-spacer">
             <div className="terms-body">
               <h3>Terms of Service</h3>
               <p>By using Qwipo's B2B Commerce Platform, you agree to procure goods through verified distributors, wholesalers, and manufacturers. Orders, pricing, and delivery commitments are between you and the respective seller.</p>
@@ -112,7 +112,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         )}
 
         {page === 'invoices' && (
-          <div className="profile-section" style={{ paddingBottom: 30 }}>
+          <div className="profile-section scroll-spacer">
             <div className="profile-section-title">Download GST Reports</div>
             <div className="profile-card">
               {['June 2026', 'May 2026', 'April 2026', 'March 2026', 'February 2026', 'January 2026'].map((m, i, arr) => (
@@ -122,7 +122,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
                     <div className="profile-menu-label">{m}</div>
                     <div className="profile-menu-detail">B2B invoice GSTR-1 ready</div>
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#2563eb' }}>Download</span>
+                  <span className="link-blue">Download</span>
                 </button>
               ))}
             </div>
@@ -132,7 +132,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         {page === 'refer' && (
           <>
             <div className="refer-hero">
-              <div style={{ fontSize: 48, marginBottom: 8 }}>🎁</div>
+              <div className="emoji-badge">🎁</div>
               <div className="refer-headline">Earn ₹500 per friend</div>
               <div className="refer-sub">Refer a kirana store. When they place their first order over ₹2,000, you both get ₹500 in Qwipo Credit.</div>
             </div>
@@ -142,10 +142,10 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
                   <div className="refer-code-label">YOUR CODE</div>
                   <div className="refer-code-value">VIKAS500</div>
                 </div>
-                <button className="credit-pay-btn" style={{ padding: '10px 16px' }}>Share</button>
+                <button className="credit-pay-btn btn-share-pad">Share</button>
               </div>
             </div>
-            <div className="profile-section" style={{ paddingBottom: 30 }}>
+            <div className="profile-section scroll-spacer">
               <div className="profile-section-title">Your earnings</div>
               <div className="profile-card">
                 <div className="profile-row">
@@ -158,7 +158,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
                 </div>
                 <div className="profile-row last">
                   <span className="profile-row-label">Credit earned</span>
-                  <span className="profile-row-value" style={{ color: '#059669' }}>₹2,500</span>
+                  <span className="profile-row-value amount-green">₹2,500</span>
                 </div>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function SettingsScreen({ onBack, page = 'settings' }: any) {
         )}
 
         {page === 'settings' && (
-          <div className="profile-section" style={{ paddingBottom: 30 }}>
+          <div className="profile-section scroll-spacer">
             <div className="profile-section-title">General</div>
             <div className="profile-card">
               <Toggle

@@ -163,11 +163,10 @@ function OnboardingIllustration() {
         }}
       />
       <svg
-        className="ob-illustration-fallback"
+        className="ob-illustration-fallback is-hidden"
         viewBox="0 0 240 200"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
-        style={{ display: 'none' }}
       >
         {/* ground shadow */}
         <ellipse cx="160" cy="178" rx="64" ry="6" fill="#EDE9FE" />

@@ -123,7 +123,7 @@ export default function SellerStorefront({ cartCount, distributor, onBack, onNav
         </div>
 
         {/* Brands — Phase-one PNG logos */}
-        <div className="section" style={{ paddingBottom: '90px' }}>
+        <div className="section scroll-spacer-nav">
           <div className="section-head">
             <div className="section-title">Top brands</div>
           </div>

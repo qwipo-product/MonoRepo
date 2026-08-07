@@ -112,7 +112,7 @@ export default function WholesalerProductListScreen({
                     {product.images?.[0] ? (
                       <img src={product.images[0]} alt={product.name} />
                     ) : (
-                      <span style={{ fontSize: 30 }}>{product.image}</span>
+                      <span className="emoji-fallback">{product.image}</span>
                     )}
                   </button>
                 </div>
@@ -214,7 +214,7 @@ export default function WholesalerProductListScreen({
           })}
         </div>
 
-        <div style={{ paddingBottom: 30 }} />
+        <div className="scroll-spacer" />
       </div>
 
       {cartTotal > 0 && (

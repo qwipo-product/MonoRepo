@@ -31,8 +31,8 @@ export default function ProductImageSheet({ product, onClose, onAddClick }: any)
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div
-        className="sheet"
-        style={{ ...sheetStyle, maxHeight: '92%' }}
+        className="sheet sheet-tall-92"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
         <SheetHeader
@@ -43,116 +43,48 @@ export default function ProductImageSheet({ product, onClose, onAddClick }: any)
           dragHandlers={dragHandlers}
         />
 
-        <div className="sheet-body" style={{ padding: 0 }}>
+        <div className="sheet-body pad-0">
           {/* Main image carousel */}
-          <div
-            style={{
-              width: '100%',
-              aspectRatio: '1',
-              background: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
+          <div className="pis-main">
             {hasImages ? (
               <img
                 src={images[activeIdx]}
                 alt={product.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transition: 'opacity 0.2s',
-                }}
+                className="pis-main-img"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.parentElement.dataset.fallback = '1';
                 }}
               />
             ) : (
-              <div style={{ fontSize: 120 }}>{product.image}</div>
+              <div className="emoji-fallback-xl">{product.image}</div>
             )}
 
             {/* Image counter */}
             {hasImages && images.length > 1 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 12,
-                  right: 12,
-                  background: 'rgba(17,24,39,0.7)',
-                  color: '#fff',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                }}
-              >
+              <div className="pis-counter">
                 {activeIdx + 1} / {images.length}
               </div>
             )}
 
             {/* Brand chip on image */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                background: 'rgba(255,255,255,0.95)',
-                padding: '4px 10px',
-                borderRadius: 6,
-                fontSize: 10,
-                fontWeight: 500,
-                color: '#374151',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              {product.brand}
-            </div>
+            <div className="pis-brand-chip">{product.brand}</div>
           </div>
 
           {/* Thumbnail rail */}
           {hasImages && images.length > 1 && (
-            <div
-              ref={railRef}
-              style={{
-                display: 'flex',
-                gap: 8,
-                padding: '12px 20px',
-                overflowX: 'auto',
-                scrollbarWidth: 'none',
-                background: '#fff',
-                borderBottom: '1px solid #f3f4f6',
-              }}
-            >
+            <div ref={railRef} className="pis-rail">
               {images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveIdx(idx)}
-                  style={{
-                    flexShrink: 0,
-                    width: 60,
-                    height: 60,
-                    borderRadius: 10,
-                    border: activeIdx === idx ? '2px solid #2563eb' : '1.5px solid #e5e7eb',
-                    background: product.bgColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 4,
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
+                  className={`pis-thumb ${activeIdx === idx ? 'active' : ''}`}
+                  style={{ background: product.bgColor }}
                 >
                   <img
                     src={img}
                     alt={`thumb-${idx}`}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }}
+                    className="pis-thumb-img"
                     onError={(e) => (e.currentTarget.style.opacity = '0.3')}
                   />
                 </button>
@@ -161,61 +93,28 @@ export default function ProductImageSheet({ product, onClose, onAddClick }: any)
           )}
 
           {/* Product details */}
-          <div style={{ padding: '16px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+          <div className="pis-details">
+            <div className="pis-meta-row">
               <span className="product-meta-pill">{product.manufacturer}</span>
-              <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>
+              <span className="pis-hsn">
                 HSN {product.hsn} · GST {product.gst}%
               </span>
             </div>
 
             {/* Price banner */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%)',
-                border: '1px solid #a7f3d0',
-                borderRadius: 12,
-                padding: '10px 14px',
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: '#065f46', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Starting from
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
-                  <span style={{ fontSize: 18, fontWeight: 500, color: '#111827' }}>₹{startPrice}</span>
-                  <span style={{ fontSize: 12, color: '#9ca3af', textDecoration: 'line-through', fontWeight: 500 }}>
-                    ₹{startMrp}
-                  </span>
+            <div className="pis-price-banner">
+              <div className="pis-price-col">
+                <div className="pis-price-label">Starting from</div>
+                <div className="pis-price-row">
+                  <span className="pis-price">₹{startPrice}</span>
+                  <span className="pis-mrp">₹{startMrp}</span>
                 </div>
               </div>
-              <div
-                style={{
-                  background: '#10b981',
-                  color: '#fff',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                }}
-              >
-                Save ₹{savings}
-              </div>
+              <div className="pis-save">Save ₹{savings}</div>
             </div>
 
             {/* Specs grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
+            <div className="pis-specs">
               <SpecCell label="Manufacturer" value={product.manufacturer} />
               <SpecCell label="Country" value={product.countryOfOrigin} />
               <SpecCell label="HSN Code" value={product.hsn} />
@@ -225,33 +124,18 @@ export default function ProductImageSheet({ product, onClose, onAddClick }: any)
             </div>
 
             {/* Available pack sizes */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#111827', marginBottom: 8 }}>
-                Available Pack Sizes
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="pis-packs">
+              <div className="pis-packs-title">Available Pack Sizes</div>
+              <div className="pis-packs-list">
                 {product.variants.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      background: '#f9fafb',
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  >
+                  <div key={v.id} className="pis-pack-row">
                     <div>
-                      <span style={{ fontWeight: 500, color: '#111827' }}>{v.size}</span>
-                      <span style={{ color: '#6b7280', marginLeft: 6 }}>· {v.casePack}</span>
+                      <span className="pis-pack-size">{v.size}</span>
+                      <span className="pis-pack-case">· {v.casePack}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontWeight: 500, color: '#111827' }}>₹{v.sellingPrice}</span>
-                      <span style={{ fontSize: 10, color: '#059669', fontWeight: 500 }}>
-                        {v.margin}% margin
-                      </span>
+                    <div className="pis-pack-right">
+                      <span className="pis-pack-price">₹{v.sellingPrice}</span>
+                      <span className="pis-pack-margin">{v.margin}% margin</span>
                     </div>
                   </div>
                 ))}
@@ -277,20 +161,9 @@ export default function ProductImageSheet({ product, onClose, onAddClick }: any)
 
 function SpecCell({ label, value }: any) {
   return (
-    <div
-      style={{
-        background: '#f9fafb',
-        padding: '8px 10px',
-        borderRadius: 8,
-        border: '1px solid #f3f4f6',
-      }}
-    >
-      <div style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 12, fontWeight: 500, color: '#111827', marginTop: 2, textTransform: 'capitalize' }}>
-        {value}
-      </div>
+    <div className="pis-speccell">
+      <div className="pis-speccell-label">{label}</div>
+      <div className="pis-speccell-value">{value}</div>
     </div>
   );
 }

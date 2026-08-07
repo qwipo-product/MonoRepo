@@ -162,7 +162,7 @@ function TrackingSheet({ order, onClose }: any) {
           dragHandlers={dragHandlers}
         />
 
-        <div className="sheet-body" style={{ padding: '20px' }}>
+        <div className="sheet-body pad-20">
           <div className="tracking-timeline">
             {TRACKING_STEPS.map((step, i) => {
               const done = i < activeIdx;

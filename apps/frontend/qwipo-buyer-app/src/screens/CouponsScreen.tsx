@@ -197,7 +197,7 @@ export default function CouponsScreen({ onBack, onApply, cartTotal = 4250 }: any
           })}
         </div>
 
-        <div style={{ paddingBottom: 110 }} />
+        <div className="scroll-spacer-cta" />
       </div>
 
       {/* Sticky apply footer */}

@@ -62,7 +62,7 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
             </div>
             <div className="sheet-product-info">
               <div className="sheet-product-name">{product.name}</div>
-              <div className="variant-pills" style={{ marginTop: '8px' }}>
+              <div className="variant-pills u-mt-8">
                 {product.variants.map((v) => (
                   <button
                     key={v.id}
@@ -79,7 +79,7 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
           {/* Seller selector — same chips as the product-listing card.
               Hidden on the View Items sheet (hidePrice). */}
           {!hidePrice && sellerOptions?.length > 0 && (
-            <div className="seller-options" style={{ marginBottom: '12px' }}>
+            <div className="seller-options u-mb-12">
               {sellerOptions.map((s) => {
                 const isActive = s.id === sellerId;
                 return (

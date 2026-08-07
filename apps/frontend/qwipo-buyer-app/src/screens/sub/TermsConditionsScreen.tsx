@@ -58,7 +58,7 @@ export default function TermsConditionsScreen({ onBack }: any) {
             <div className="terms-nav-row">
               <span className="terms-nav-link">Contact Us</span>
             </div>
-            <div className="terms-nav-row" style={{ marginTop: 8 }}>
+            <div className="terms-nav-row u-mt-8">
               <span className="terms-nav-link">Privacy Policy</span>
               <span className="terms-nav-link">Terms of Use</span>
             </div>

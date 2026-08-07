@@ -55,7 +55,7 @@ export default function AllBrandsScreen({ onBack, onSelectBrand, brandsList, onO
                     }}
                   />
                 ) : (
-                  <span style={{ color: '#ffffff' }}>{b.logoText}</span>
+                  <span className="text-white">{b.logoText}</span>
                 )}
               </div>
               <div className="dl-brand-name">{b.name}</div>

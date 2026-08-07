@@ -175,7 +175,7 @@ export default function ProductListing({
               {category.breadcrumb.map((b: any, i: number) => {
                 const isLast = i === category.breadcrumb.length - 1;
                 return (
-                  <span key={`${b.label}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span key={`${b.label}-${i}`} className="inline-icon">
                     {isLast ? (
                       <span className="crumb last">{b.label}</span>
                     ) : (
@@ -277,7 +277,7 @@ export default function ProductListing({
                         }}
                       />
                     ) : (
-                      <span style={{ fontSize: 30 }}>{product.image}</span>
+                      <span className="emoji-fallback">{product.image}</span>
                     )}
                   </button>
                 </div>

@@ -81,7 +81,7 @@ export default function DiscountsSheet({ product, variant, onClose }: any) {
           dragHandlers={dragHandlers}
         />
 
-        <div className="sheet-body" style={{ padding: '16px 20px 24px' }}>
+        <div className="sheet-body sheet-pad-b">
           {/* Quantity Price Slab table */}
           <div className="discount-section-title">Quantity Price Slab</div>
           <div className="slab-table">
@@ -103,7 +103,7 @@ export default function DiscountsSheet({ product, variant, onClose }: any) {
           </div>
 
           {/* Other offers — accordions */}
-          <div className="discount-section-title" style={{ marginTop: 18 }}>
+          <div className="discount-section-title u-mt-18">
             Other Offers
           </div>
           <div className="offers-list">

@@ -111,7 +111,7 @@ export default function HomeScreen({
               onClick={() => distributorsAvailable && setTab('distributors')}
               disabled={!distributorsAvailable}
             >
-              <div className="home-tab-img" style={{ background: '#FEF3C7' }}>
+              <div className="home-tab-img bg-amber-soft">
                 <img
                   src="/home-category-cards/distributors.png"
                   alt="Distributors"
@@ -131,7 +131,7 @@ export default function HomeScreen({
               onClick={() => wholesalersAvailable && setTab('wholesalers')}
               disabled={!wholesalersAvailable}
             >
-              <div className="home-tab-img" style={{ background: '#FED7AA' }}>
+              <div className="home-tab-img bg-orange-soft">
                 <img
                   src="/home-category-cards/wholesalers.png"
                   alt="Wholesalers"
@@ -272,8 +272,7 @@ function DistributorsView({
                 onClick={() => onSelectDistributor(d)}
               >
                 <div
-                  className="distributor-card-img"
-                  style={{ background: '#ffffff' }}
+                  className="distributor-card-img bg-white"
                 >
                   {featured?.logo ? (
                     <img
@@ -382,8 +381,8 @@ function WholesalersView({ onSelectBrand, onSelectCategory, onOpenWholesalerCate
         renderBanner={(b) => (
           <div key={b.id} className="hero-banner snack-banner" style={{ background: b.bg }}>
             <div className="hero-banner-text">
-              <div className="hero-banner-tag" style={{ color: '#DC2626' }}>{b.tag}</div>
-              <div className="hero-banner-title" style={{ color: '#7C2D12' }}>{b.title}</div>
+              <div className="hero-banner-tag text-banner-tag">{b.tag}</div>
+              <div className="hero-banner-title text-banner-title">{b.title}</div>
               <div className="snack-discount">{b.discount}</div>
               <button
                 className="hero-banner-cta orange-cta"

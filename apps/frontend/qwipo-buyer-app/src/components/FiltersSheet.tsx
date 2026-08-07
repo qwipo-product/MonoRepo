@@ -90,7 +90,7 @@ export default function FiltersSheet({ initialFilters, onClose, onApply }: any) 
           dragHandlers={dragHandlers}
         />
 
-        <div className="sheet-body" style={{ padding: '16px 20px 96px' }}>
+        <div className="sheet-body sheet-pad-filters">
           {/* Sort */}
           <div className="filter-block">
             <div className="filter-block-title">Sort by</div>
