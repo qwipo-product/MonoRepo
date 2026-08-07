@@ -1726,120 +1726,338 @@ body {
 /* ============================================================
    ADDRESSES SUB-PAGE
    ============================================================ */
-.addr-list {
-  padding: 12px 16px 30px;
+/* ---- Delivery route: saved addresses as connected stops on a map line ---- */
+.addr-route {
+  padding: 14px 16px 34px;
   display: flex;
   flex-direction: column;
+}
+
+/* Add new address — sits at the top as the route's origin node */
+.addr-add {
+  display: flex;
+  align-items: center;
   gap: 12px;
-}
-
-.addr-card {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  margin-bottom: 6px;
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  position: relative;
+  border: 1.5px dashed #b6c8e8;
+  border-radius: 14px;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
 }
 
-.addr-card.is-default {
-  border-color: #2563eb;
+.addr-add:hover {
+  border-color: var(--primary);
   background: var(--surface-hover);
+}
+
+.addr-add:active {
+  transform: scale(0.99);
+}
+
+.addr-add-node {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addr-add-node svg {
+  width: 20px;
+  height: 20px;
+}
+
+.addr-add-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.addr-add-text strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.addr-add-text small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.addr-add-chev {
+  color: var(--text-placeholder);
+  display: flex;
+}
+
+.addr-add-chev svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* A stop = rail (line + marker) on the left, card on the right */
+.addr-stop {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  animation: addr-stop-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.addr-stop:active .addr-card {
+  transform: scale(0.985);
+}
+
+.addr-stop:focus-visible {
+  outline: none;
+}
+
+.addr-stop:focus-visible .addr-card {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.addr-rail {
+  position: relative;
+  width: 30px;
+  flex-shrink: 0;
+}
+
+/* The connecting route line — drawn behind the markers, bridging the gap */
+.addr-rail::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -8px;
+  bottom: -8px;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border-strong) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+/* Trim the line so it starts at the first marker and ends at the last */
+.addr-stop:first-of-type .addr-rail::before {
+  top: 30px;
+}
+
+.addr-stop:last-of-type .addr-rail::before {
+  bottom: calc(100% - 30px);
+}
+
+/* Solid line for the active leg leading into the default stop */
+.addr-stop.is-default .addr-rail::before {
+  background: var(--primary);
+}
+
+/* The map-pin marker */
+.addr-pin {
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.addr-pin-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-placeholder);
+  transition: background 0.2s ease;
+}
+
+.addr-stop:hover .addr-pin {
+  border-color: var(--primary);
+}
+
+.addr-stop:hover .addr-pin-dot {
+  background: var(--primary);
+}
+
+.addr-stop.is-default .addr-pin {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.15);
+  animation: addr-pin-pop 0.3s ease;
+}
+
+.addr-stop.is-default .addr-pin svg {
+  width: 14px;
+  height: 14px;
+  color: var(--primary-fg);
+  stroke-width: 3;
+}
+
+/* The address card */
+.addr-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: border-color 0.18s ease, background 0.18s ease,
+    box-shadow 0.18s ease, transform 0.12s ease;
+}
+
+.addr-stop:hover .addr-card {
+  border-color: #93b4f7;
+}
+
+.addr-stop.is-default .addr-card {
+  border-color: var(--primary);
+  background: linear-gradient(180deg, var(--info-bg) 0%, var(--surface-1) 62%);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
 }
 
 .addr-card-head {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  gap: 11px;
 }
 
-.addr-card-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+.addr-emoji {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
   background: var(--surface-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 21px;
+  transition: background 0.18s ease;
 }
 
-.addr-card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.addr-stop.is-default .addr-emoji {
+  background: #dbe7ff;
+}
+
+.addr-lines {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 1px;
 }
 
-.addr-card-type {
-  font-size: 12px;
-  font-weight: 500;
+.addr-line-primary {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  line-height: 1.35;
 }
 
-.addr-default-pill {
-  padding: 2px 6px;
-  background: #2563eb;
-  color: #ffffff;
-  border-radius: 4px;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.addr-card-more {
-  font-size: 18px;
-  color: var(--text-muted);
-  padding: 0 4px;
-}
-
-.addr-card-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--foreground);
-  margin-bottom: 4px;
-}
-
-.addr-card-lines {
-  font-size: 12px;
+.addr-line-sub {
+  font-size: 12.5px;
   color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 8px;
+  line-height: 1.45;
 }
 
-.addr-card-contact {
-  font-size: 11px;
+.addr-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Pincode — a location tag, the thing people scan for */
+.addr-pincode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px 4px 7px;
+  background: var(--surface-3);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.addr-stop.is-default .addr-pincode {
+  background: #dbe7ff;
+  color: var(--info-fg);
+}
+
+.addr-pincode svg {
+  width: 13px;
+  height: 13px;
   color: var(--text-muted);
-  display: flex;
+}
+
+.addr-stop.is-default .addr-pincode svg {
+  color: var(--primary);
+}
+
+.addr-deliver-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
-.addr-card-contact svg {
-  color: var(--text-placeholder);
+.addr-deliver-badge svg {
+  width: 13px;
+  height: 13px;
 }
 
-.addr-card-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.addr-add-btn {
-  background: var(--surface-1);
-  border: 1.5px dashed #d1d5db;
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 13px;
+.addr-set-hint {
+  font-size: 11.5px;
   font-weight: 500;
-  color: #2563eb;
+  color: var(--text-muted);
+}
+
+@keyframes addr-stop-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes addr-pin-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* ============================================================
@@ -7829,6 +8047,12 @@ body {
   gap: 6px;
 }
 
+/* product-list already lives inside gs2-panel's 16px padding — drop its own
+   side padding so cards don't get double-inset (too much space L/R). */
+.gs2-panel .product-list {
+  padding: 4px 0 8px;
+}
+
 .gs2-brand-tag {
   font-size: 11px;
   font-weight: 600;
@@ -7891,6 +8115,86 @@ body {
   font-size: 13px;
   font-weight: 600;
   color: var(--foreground);
+}
+
+/* Bolded matched substring inside a suggestion / brand label (Story 20403). */
+.gs2-hl {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Type indicator (Brand / Category) at the END of a suggestion row (bug 20772). */
+.gs2-suggest-end {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+/* Story 20403 AC-6 — "nothing to suggest, press search" hint row. */
+.gs2-hint-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.gs2-hint-row svg {
+  color: var(--text-muted);
+}
+
+/* Story 20405 — spell-correction banner. */
+.gs2-spell {
+  background: var(--info-bg);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.gs2-spell strong {
+  color: var(--foreground);
+}
+
+.gs2-spell-orig {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.gs2-spell-orig span {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Story 20408 — result-section header (icon + label). Blue variant marks the
+   Previously Ordered group. */
+.gs2-result-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 12px;
+}
+
+.gs2-result-head svg {
+  color: var(--text-muted);
+}
+
+.gs2-result-head.blue,
+.gs2-result-head.blue svg {
+  color: #2563eb;
+}
+
+/* Distributor source badge — blue, vs the default purple wholesaler tag. */
+.gs2-type-tag.dist {
+  background: #2563eb;
 }
 
 /* ============================================================
@@ -9944,27 +10248,6 @@ body {
    ============================================================ */
 .sheet.sheet-tall {
   max-height: 92%;
-}
-
-.addr-add-btn.primary {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--primary);
-  color: var(--primary-fg);
-  border-radius: 10px;
-  padding: 14px 12px;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  border: none;
-}
-
-.addr-add-btn.primary svg {
-  width: 16px;
-  height: 16px;
 }
 
 .map-canvas {

@@ -37,41 +37,71 @@ export default function AddressesScreen({ onBack }: any) {
           </div>
         </div>
 
-        <div className="addr-list">
-          {/* Add new address — primary CTA at the top */}
-          <button className="addr-add-btn primary" onClick={() => setAddOpen(true)}>
-            <Icon.Plus />
-            Add new address
+        <div className="addr-route">
+          {/* Add new address — the origin point of the route */}
+          <button className="addr-add" onClick={() => setAddOpen(true)}>
+            <span className="addr-add-node">
+              <Icon.Plus />
+            </span>
+            <span className="addr-add-text">
+              <strong>Add new address</strong>
+              <small>Save a new delivery location</small>
+            </span>
+            <span className="addr-add-chev">
+              <Icon.ChevronRight />
+            </span>
           </button>
 
-          {addresses.map((a) => (
-            <div key={a.id} className={`addr-card ${a.isDefault ? 'is-default' : ''}`}>
-              <div className="addr-card-head">
-                <div className="addr-card-icon">{a.icon}</div>
-                <div className="addr-card-title-row">
-                  <span className="addr-card-type">{a.type}</span>
-                  {a.isDefault && <span className="addr-default-pill">Default</span>}
+          {addresses.map((a, i) => (
+            <div
+              key={a.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={a.isDefault}
+              aria-label={`Deliver to ${a.line1}, ${a.city} ${a.pincode}`}
+              className={`addr-stop ${a.isDefault ? 'is-default' : ''}`}
+              style={{ animationDelay: `${120 + i * 70}ms` }}
+              onClick={() => setDefault(a.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setDefault(a.id);
+                }
+              }}
+            >
+              {/* Route rail — the connecting line + this stop's marker */}
+              <div className="addr-rail" aria-hidden="true">
+                <span className="addr-pin">
+                  {a.isDefault ? <Icon.Check /> : <span className="addr-pin-dot" />}
+                </span>
+              </div>
+
+              <div className="addr-card">
+                <div className="addr-card-head">
+                  <span className="addr-emoji">{a.icon}</span>
+                  <div className="addr-lines">
+                    <span className="addr-line-primary">{a.line1}</span>
+                    <span className="addr-line-sub">
+                      {a.line2}, {a.city}, {a.state}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="addr-card-foot">
+                  <span className="addr-pincode">
+                    <Icon.MapPin />
+                    {a.pincode}
+                  </span>
+                  {a.isDefault ? (
+                    <span className="addr-deliver-badge">
+                      <Icon.Truck />
+                      Delivering here
+                    </span>
+                  ) : (
+                    <span className="addr-set-hint">Tap to deliver here</span>
+                  )}
                 </div>
               </div>
-              <div className="addr-card-name">{a.name}</div>
-              <div className="addr-card-lines">
-                {a.line1}, {a.line2}
-                <br />
-                {a.city}, {a.state} – {a.pincode}
-              </div>
-              <div className="addr-card-contact">
-                <Icon.Phone /> {a.contact}
-              </div>
-              {!a.isDefault && (
-                <div className="addr-card-actions">
-                  <button
-                    className="order-action-btn primary"
-                    onClick={() => setDefault(a.id)}
-                  >
-                    Set default
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
