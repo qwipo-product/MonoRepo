@@ -1,6 +1,6 @@
 # Build pipeline — mock-api (Bun + Hono, single process).
 #
-# Register in Azure DevOps as:  docker-cd-mockups-api
+# Registered in Azure DevOps as:  \Mockups Lab\Mock API - Build
 #
 # Single variant, so no `.api` / `.scheduler` / `.subscriber` suffix on this
 # filename — seller-platform splits those out only because those services run

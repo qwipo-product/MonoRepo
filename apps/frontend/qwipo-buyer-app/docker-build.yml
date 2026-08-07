@@ -1,8 +1,9 @@
 # Build pipeline — qwipo-buyer-app (static SPA behind nginx).
 #
-# Register in Azure DevOps as:  docker-cd-mockups-qwipo-buyer-app
-# The release pipeline binds to that exact name via `resources.pipelines.source`,
-# so renaming the pipeline breaks the release. Rename both or neither.
+# Registered in Azure DevOps as:  \Mockups Lab\Buyer App - Build
+# "Buyer App - Deploy" binds to that exact display name via
+# `resources.pipelines.source`, so renaming this pipeline breaks the release.
+# Rename both or neither.
 #
 # Left on manual trigger, matching seller-platform. Uncomment the block below
 # once someone actually wants a push to dev/main to rebuild automatically —

@@ -1,9 +1,12 @@
 # Release pipeline — mock-api.
 #
-# Register in Azure DevOps as:  release-cd-mockups-api
+# Registered in Azure DevOps as:  \Mockups Lab\Mock API - Deploy
 #
-# Rewrites the digest at <TARGET_PATH_PREFIX>/<env>/mockups-api.yaml in the
-# GitOps repo, then syncs the ArgoCD app `<env>-mockups-api-argo-app`.
+# Rewrites the digest at bms-chart/<env>/mockups-api.yaml in the GitOps repo
+# (k8s), then syncs the ArgoCD app `<env>-mockups-api-argo-app`.
+#
+# `source:` below is the build pipeline's display name. Rename that pipeline
+# and this string has to change with it.
 
 trigger: none
 
@@ -26,7 +29,7 @@ resources:
           ref: 'refs/heads/main'
     pipelines:
         - pipeline: buildPipeline
-          source: 'docker-cd-mockups-api'
+          source: 'Mock API - Build'
           trigger: none
 
 extends:

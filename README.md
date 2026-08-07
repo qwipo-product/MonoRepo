@@ -152,20 +152,24 @@ Most mockups never need this — `bun dev` and the Network URL cover the usual
 "show it to someone" case. Deploy when a mockup needs to live somewhere for a
 while (a client demo, a round of user testing, a link in a doc).
 
-The wiring matches `seller-platform` exactly: thin pipeline YAMLs in the app
-folder that `extends:` shared templates in the **`Qwipo B2B/k8s`** repo.
+The wiring matches `seller-platform`: thin pipeline YAMLs in the app folder
+that `extends:` shared templates in the **`Qwipo B2B/k8s`** repo. The pipelines
+live in Azure DevOps under the **`Mockups Lab`** folder, named for humans rather
+than following the `docker-cd-*` / `argocd-*` convention the service repos use.
 
-| App | Service name | Build pipeline | Release pipeline |
+| App | Service name | Build | Deploy |
 | --- | --- | --- | --- |
-| `qwipo-buyer-app` | `mockups-qwipo-buyer-app` | `docker-cd-mockups-qwipo-buyer-app` | `release-cd-mockups-qwipo-buyer-app` |
-| `mock-api` | `mockups-api` | `docker-cd-mockups-api` | `release-cd-mockups-api` |
+| `qwipo-buyer-app` | `mockups-qwipo-buyer-app` | `Mockups Lab / Buyer App - Build` | `Mockups Lab / Buyer App - Deploy` |
+| `mock-api` | `mockups-api` | `Mockups Lab / Mock API - Build` | `Mockups Lab / Mock API - Deploy` |
 
-Every service name is prefixed `mockups-` so these images and ArgoCD apps can't
-be confused with real services in the shared registry.
+Service names are prefixed `mockups-` so these images and ArgoCD apps can't be
+confused with real services in the shared registry. The **build pipeline's
+display name is load-bearing** — each release YAML binds to it via
+`resources.pipelines.source`. Rename one, change the other in the same commit.
 
-Build → push to DOCR → the release pipeline rewrites the image digest in the
-GitOps repo and syncs ArgoCD. Both pipelines are `trigger: none`; you run them
-by hand from Azure DevOps and pick the environment.
+Build → push to DOCR → deploy rewrites the image digest at
+`bms-chart/<env>/<service>.yaml` in the k8s repo → ArgoCD syncs. Both are
+`trigger: none`; you run them by hand and pick the environment.
 
 ### To put a new mockup on this path
 
@@ -176,12 +180,23 @@ by hand from Azure DevOps and pick the environment.
    `mockups-qwipo-buyer-app` → `mockups-<your-app>`. That's every occurrence;
    nothing else varies.
 3. Copy `public/configs/config.*.json` too, and set `mockApiBaseUrl` per env.
-4. **Ask DevOps for two things** — the pipelines fail without them:
-   - an ArgoCD manifest at `<TARGET_PATH_PREFIX>/<env>/mockups-<your-app>.yaml`
-     in the GitOps repo (the release template exits 1 if it's missing);
-   - an ArgoCD app named `<env>-mockups-<your-app>-argo-app`.
-5. Register both YAMLs as pipelines in Azure DevOps under the names in the
-   table above. The release pipeline finds its build by that exact string.
+4. Add a deployment manifest at `bms-chart/<env>/mockups-<your-app>.yaml` in the
+   **k8s** repo. Copy `bms-chart/dev/seller-portal.yaml` — it's the closest
+   reference (nginx SPA on port 80). The `dev` ApplicationSet is a git-file
+   generator over `bms-chart/dev/*.yaml`, so the file's *existence* is what
+   creates the ArgoCD app `dev-mockups-<your-app>-argo-app`. Nobody has to
+   register it. Keep the `version: "..."` line — the release pipeline `sed`s it.
+5. Register both YAMLs in Azure DevOps under the `Mockups Lab` folder:
+
+   ```bash
+   az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \
+     --name "<App> - Build" --folder-path "Mockups Lab" \
+     --repository mockups-lab --repository-type tfsgit --branch main \
+     --yml-path apps/frontend/<your-app>/docker-build.yml --skip-first-run true
+   ```
+
+   Then the same for `- Deploy` with `azure-release.yaml`, and make sure that
+   YAML's `source:` matches the build pipeline's name exactly.
 
 ### Runtime config
 
