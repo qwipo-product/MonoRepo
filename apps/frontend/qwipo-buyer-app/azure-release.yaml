@@ -1,0 +1,40 @@
+# Release pipeline — qwipo-buyer-app.
+#
+# Register in Azure DevOps as:  release-cd-mockups-qwipo-buyer-app
+#
+# Takes the image built by `docker-cd-mockups-qwipo-buyer-app`, rewrites the
+# digest in the GitOps repo at <TARGET_PATH_PREFIX>/<env>/mockups-qwipo-buyer-app.yaml,
+# then syncs the ArgoCD app `<env>-mockups-qwipo-buyer-app-argo-app`.
+#
+# Both of those must already exist — the template exits 1 on a missing manifest.
+# See the "Deploying a mockup" section of the README for the one-time setup.
+
+trigger: none
+
+parameters:
+    - name: environment
+      displayName: Select Environment To Deploy
+      type: string
+      default: dev
+      values:
+          - dev
+          - testing
+          - staging
+          - production
+
+resources:
+    repositories:
+        - repository: k8s
+          type: git
+          name: 'Qwipo B2B/k8s'
+          ref: 'refs/heads/main'
+    pipelines:
+        - pipeline: buildPipeline
+          source: 'docker-cd-mockups-qwipo-buyer-app'
+          trigger: none
+
+extends:
+    template: azure-cicd/templates/base-release-template.yaml@k8s
+    parameters:
+        environment: ${{ parameters.environment }}
+        service_name_override: 'mockups-qwipo-buyer-app'

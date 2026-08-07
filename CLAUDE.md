@@ -95,5 +95,26 @@ State plainly what you verified and what you didn't.
 ## Deployment
 
 Azure DevOps, via templates in the shared `Qwipo B2B/k8s` repo — same pattern
-as `seller-platform`. Pipeline YAML is not wired up in this repo yet; ask
-before inventing it.
+as `seller-platform`. Each deployable app carries five files: `Dockerfile`,
+`nginx.conf` + `entrypoint.sh` (frontends only), `docker-build.yml`,
+`azure-release.yaml`.
+
+Things to get right if you touch them:
+
+- **Build context is the workspace root**, never the app folder. Dockerfiles
+  `COPY . .` and rely on the root `.dockerignore`. Paths inside are
+  repo-relative (`apps/frontend/<app>/dist/`).
+- **Service names are prefixed `mockups-`** so mockup images can't be confused
+  with real services in the shared registry.
+- **The release pipeline binds to its build by name**, via
+  `resources.pipelines.source: 'docker-cd-<service>'`. Renaming one without the
+  other silently breaks the release.
+- **The release template exits 1** if the GitOps manifest
+  `<TARGET_PATH_PREFIX>/<env>/<service>.yaml` doesn't exist. That's a DevOps
+  prerequisite, not something you can fix from this repo — say so rather than
+  editing pipelines to work around it.
+- **Path filters are commented out on purpose** (`trigger: none`). Don't enable
+  automatic builds without asking — these are demo environments, not services.
+
+Full checklist for putting a new mockup on this path is in the README under
+"Deploying a mockup".

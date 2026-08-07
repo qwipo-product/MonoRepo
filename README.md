@@ -146,6 +146,61 @@ demo you're about to give twice.
 
 ---
 
+## Deploying a mockup
+
+Most mockups never need this — `bun dev` and the Network URL cover the usual
+"show it to someone" case. Deploy when a mockup needs to live somewhere for a
+while (a client demo, a round of user testing, a link in a doc).
+
+The wiring matches `seller-platform` exactly: thin pipeline YAMLs in the app
+folder that `extends:` shared templates in the **`Qwipo B2B/k8s`** repo.
+
+| App | Service name | Build pipeline | Release pipeline |
+| --- | --- | --- | --- |
+| `qwipo-buyer-app` | `mockups-qwipo-buyer-app` | `docker-cd-mockups-qwipo-buyer-app` | `release-cd-mockups-qwipo-buyer-app` |
+| `mock-api` | `mockups-api` | `docker-cd-mockups-api` | `release-cd-mockups-api` |
+
+Every service name is prefixed `mockups-` so these images and ArgoCD apps can't
+be confused with real services in the shared registry.
+
+Build → push to DOCR → the release pipeline rewrites the image digest in the
+GitOps repo and syncs ArgoCD. Both pipelines are `trigger: none`; you run them
+by hand from Azure DevOps and pick the environment.
+
+### To put a new mockup on this path
+
+1. Copy these five files from `apps/frontend/qwipo-buyer-app/` into your app:
+   `Dockerfile`, `nginx.conf`, `entrypoint.sh`, `docker-build.yml`,
+   `azure-release.yaml`.
+2. In them, change `qwipo-buyer-app` → your app folder and
+   `mockups-qwipo-buyer-app` → `mockups-<your-app>`. That's every occurrence;
+   nothing else varies.
+3. Copy `public/configs/config.*.json` too, and set `mockApiBaseUrl` per env.
+4. **Ask DevOps for two things** — the pipelines fail without them:
+   - an ArgoCD manifest at `<TARGET_PATH_PREFIX>/<env>/mockups-<your-app>.yaml`
+     in the GitOps repo (the release template exits 1 if it's missing);
+   - an ArgoCD app named `<env>-mockups-<your-app>-argo-app`.
+5. Register both YAMLs as pipelines in Azure DevOps under the names in the
+   table above. The release pipeline finds its build by that exact string.
+
+### Runtime config
+
+Images are environment-agnostic — the same one promotes from dev to production.
+`entrypoint.sh` copies `configs/config.<NODE_ENV>.json` over
+`configs/config.json` at container start (`dev`/`prod`/`main` are normalised to
+`development`/`production`), and nginx serves that file uncached. Read it at
+runtime:
+
+```ts
+const cfg = await fetch('/configs/config.json').then((r) => r.json());
+```
+
+An unknown `NODE_ENV` makes the container exit rather than serve a stale
+config — you'll see it immediately instead of debugging a mockup pointed at the
+wrong API.
+
+---
+
 ## Working with Claude here
 
 Most code in this repo gets written by Claude. `CLAUDE.md` tells it the things

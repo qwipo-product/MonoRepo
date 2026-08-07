@@ -1,0 +1,36 @@
+# Release pipeline — mock-api.
+#
+# Register in Azure DevOps as:  release-cd-mockups-api
+#
+# Rewrites the digest at <TARGET_PATH_PREFIX>/<env>/mockups-api.yaml in the
+# GitOps repo, then syncs the ArgoCD app `<env>-mockups-api-argo-app`.
+
+trigger: none
+
+parameters:
+    - name: environment
+      displayName: Select Environment To Deploy
+      type: string
+      default: dev
+      values:
+          - dev
+          - testing
+          - staging
+          - production
+
+resources:
+    repositories:
+        - repository: k8s
+          type: git
+          name: 'Qwipo B2B/k8s'
+          ref: 'refs/heads/main'
+    pipelines:
+        - pipeline: buildPipeline
+          source: 'docker-cd-mockups-api'
+          trigger: none
+
+extends:
+    template: azure-cicd/templates/base-release-template.yaml@k8s
+    parameters:
+        environment: ${{ parameters.environment }}
+        service_name_override: 'mockups-api'
