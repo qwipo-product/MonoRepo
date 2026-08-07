@@ -2037,10 +2037,23 @@ body {
   height: 13px;
 }
 
-.addr-set-hint {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--text-muted);
+.addr-set-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--primary);
+  background: var(--surface-1);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.16s ease, transform 0.12s ease;
+}
+
+.addr-set-btn:hover {
+  background: var(--info-bg);
+}
+
+.addr-set-btn:active {
+  transform: scale(0.97);
 }
 
 @keyframes addr-stop-in {
@@ -3299,6 +3312,24 @@ body {
 
 .seller-stats.two-cell {
   grid-template-columns: 1fr 1fr;
+}
+
+/* Single delivery window — lay the one cell out horizontally: day on the
+   left, MOV on the right, instead of a lonely stacked column. */
+.seller-stats.one-cell {
+  grid-template-columns: 1fr;
+}
+
+.seller-stats.one-cell .stat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.seller-stats.one-cell .stat-label {
+  margin-bottom: 0;
+  font-size: 12px;
 }
 
 .stat-cell {
@@ -4581,6 +4612,8 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 28px;
+  cursor: pointer;
+  border: none;
 }
 
 .vi-item-info {
@@ -4596,12 +4629,26 @@ body {
   font-weight: 600;
   color: var(--foreground);
   padding-right: 20px;
+  cursor: pointer;
 }
 
 .vi-item-price-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.vi-item-qty-badge {
+  align-self: flex-start;
+  min-width: 60px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
 }
 
 .vi-item-mrp {
@@ -5570,8 +5617,8 @@ body {
 
 .sheet-continue {
   padding: 12px 24px;
-  background: #111827;
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--primary-fg);
   border-radius: 12px;
   font-size: 13px;
   font-weight: 500;
@@ -7326,6 +7373,17 @@ body {
   text-overflow: ellipsis;
 }
 
+.dl-card-count {
+  flex-shrink: 0;
+  margin-right: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--info-bg);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
 .dl-card-arrow {
   width: 28px;
   height: 28px;
@@ -7347,6 +7405,87 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
+}
+
+/* Sellers tab — delivery windows as a read-only schedule strip (not pills,
+   so it never reads as tappable). Soft info tint keeps it on-theme; each row
+   is day … MOV chip, joined by a dotted leader like a receipt line. */
+/* Sellers tab — delivery windows as a read-only schedule strip (not pills,
+   so it never reads as tappable). Soft info tint keeps it on-theme; each row
+   is day … MOV chip, joined by a dotted leader like a receipt line. */
+.dl-sched {
+  margin-bottom: 14px;
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.dl-sched-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.dl-sched-label svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dl-sched-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.dl-sched-day {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.dl-sched-dots {
+  flex: 1;
+  height: 0;
+  border-bottom: 1.5px dotted var(--info-border);
+  transform: translateY(2px);
+}
+
+.dl-sched-mov {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--surface-1);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* Sellers tab — every brand a seller carries in one horizontal scroll row. */
+.dl-brand-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dl-brand-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.dl-brand-scroll .dl-brand-tile {
+  flex: 0 0 auto;
+  width: 66px;
 }
 
 .dl-brand-tile {

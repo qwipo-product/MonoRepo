@@ -10,10 +10,11 @@ const CartIcon = () => (
   </svg>
 );
 
-export default function AddToCartSheet({ product, initialVariant, onClose, onConfirm }: any) {
+export default function AddToCartSheet({ product, initialVariant, sellerOptions, onClose, onConfirm, hidePrice }: any) {
   const { dragHandlers, sheetStyle } = useSheetSwipe(onClose);
   const [variantId, setVariantId] = useState(initialVariant?.id || product.variants[0].id);
   const [packQuantities, setPackQuantities] = useState({ pc: 0, set: 0, case: 0 });
+  const [sellerId, setSellerId] = useState(sellerOptions?.[0]?.id);
 
   const variant = product.variants.find((v) => v.id === variantId);
 
@@ -75,6 +76,29 @@ export default function AddToCartSheet({ product, initialVariant, onClose, onCon
             </div>
           </div>
 
+          {/* Seller selector — same chips as the product-listing card.
+              Hidden on the View Items sheet (hidePrice). */}
+          {!hidePrice && sellerOptions?.length > 0 && (
+            <div className="seller-options" style={{ marginBottom: '12px' }}>
+              {sellerOptions.map((s) => {
+                const isActive = s.id === sellerId;
+                return (
+                  <button
+                    key={s.id}
+                    className={`seller-option ${isActive ? 'active' : ''}`}
+                    onClick={() => setSellerId(s.id)}
+                  >
+                    <div className="seller-option-price">₹{s.price.toLocaleString('en-IN')}</div>
+                    <div className="seller-option-name">{s.name}</div>
+                    <div className="seller-option-fee">
+                      <Icon.PackageOpen /> Fee: ₹{isActive ? 2 : 1}/kg
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Pack options */}
           <div className="sheet-pack-options">
             <div className={`pack-option ${packQuantities.pc > 0 ? 'selected' : ''}`}>
@@ -82,7 +106,7 @@ export default function AddToCartSheet({ product, initialVariant, onClose, onCon
               <div className="pack-info">
                 <div className="pack-label">1 X 1</div>
                 <div className="pack-detail">
-                  1 Pc · <strong>₹{variant.sellingPrice}</strong>
+                  1 Pc{!hidePrice && <> · <strong>₹{variant.sellingPrice}</strong></>}
                 </div>
               </div>
               {packQuantities.pc > 0 ? (
@@ -108,7 +132,7 @@ export default function AddToCartSheet({ product, initialVariant, onClose, onCon
                 <div className="pack-info">
                   <div className="pack-label">1 X {variant.casePcs}</div>
                   <div className="pack-detail">
-                    1 Case · <strong>₹{variant.casePrice.toLocaleString('en-IN')}</strong>
+                    1 Case{!hidePrice && <> · <strong>₹{variant.casePrice.toLocaleString('en-IN')}</strong></>}
                   </div>
                 </div>
                 {packQuantities.case > 0 ? (
@@ -129,14 +153,6 @@ export default function AddToCartSheet({ product, initialVariant, onClose, onCon
               </div>
             )}
 
-            {variant.scheme && (
-              <div className="scheme-banner" style={{ marginTop: '4px' }}>
-                <span className="scheme-icon">
-                  <Icon.Gift />
-                </span>
-                {variant.scheme} — auto-applied at cart
-              </div>
-            )}
           </div>
         </div>
 

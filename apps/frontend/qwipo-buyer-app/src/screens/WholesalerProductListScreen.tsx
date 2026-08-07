@@ -80,6 +80,11 @@ export default function WholesalerProductListScreen({
             const bestPrice = Math.min(...prices.map((p) => p.price));
             const isBest = activePrice.price === bestPrice;
             const cartQty = getCartQty(product.id, variant.id);
+            const sellerOpts = prices.slice(0, 2).map((pr) => ({
+              id: pr.seller.id,
+              name: pr.seller.name,
+              price: pr.price,
+            }));
 
             // Drop packaging descriptor — show only the quantity in the title
             // and the variant pills until product packaging UI returns.
@@ -148,7 +153,7 @@ export default function WholesalerProductListScreen({
                         <div className="seller-option-price">₹{pr.price.toLocaleString('en-IN')}</div>
                         <div className="seller-option-name">{pr.seller.name}</div>
                         <div className="seller-option-fee">
-                          <Icon.Image /> Fee: ₹{isActive ? 2 : 1}/kg
+                          <Icon.PackageOpen /> Fee: ₹{isActive ? 2 : 1}/kg
                         </div>
                       </button>
                     );
@@ -182,14 +187,14 @@ export default function WholesalerProductListScreen({
                     <div className="qty-control compact">
                       <button
                         className="qty-btn"
-                        onClick={() => onOpenSheet?.(product, variant)}
+                        onClick={() => onOpenSheet?.(product, variant, sellerOpts)}
                       >
                         <Icon.Minus />
                       </button>
                       <div className="qty-value">{cartQty}</div>
                       <button
                         className="qty-btn"
-                        onClick={() => onOpenSheet?.(product, variant)}
+                        onClick={() => onOpenSheet?.(product, variant, sellerOpts)}
                       >
                         <Icon.Plus />
                       </button>
@@ -197,7 +202,7 @@ export default function WholesalerProductListScreen({
                   ) : (
                     <button
                       className="add-btn compact"
-                      onClick={() => onOpenSheet?.(product, variant)}
+                      onClick={() => onOpenSheet?.(product, variant, sellerOpts)}
                       disabled={variant.stock === 'out'}
                     >
                       <Icon.Plus /> Add

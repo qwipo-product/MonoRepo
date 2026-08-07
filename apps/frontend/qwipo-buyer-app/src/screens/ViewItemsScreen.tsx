@@ -1,6 +1,6 @@
 import { Icon, StatusBar } from '../components/Icons';
 
-export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty }: any) {
+export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty, onItemTap }: any) {
   if (!seller) return null;
 
   const total = seller.items.reduce((n: number, i: any) => n + i.price * i.quantity, 0);
@@ -44,30 +44,25 @@ export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty
               >
                 <Icon.Close size={14} />
               </button>
-              <div className="vi-item-img" style={{ background: item.bgColor || '#f3f4f6' }}>
+              <button
+                className="vi-item-img"
+                style={{ background: item.bgColor || '#f3f4f6' }}
+                onClick={() => onItemTap?.(item)}
+                aria-label={`Edit ${item.name}`}
+              >
                 <span>{item.image}</span>
-              </div>
+              </button>
               <div className="vi-item-info">
-                <div className="vi-item-name">{item.name}</div>
+                <div className="vi-item-name" onClick={() => onItemTap?.(item)}>
+                  {item.name}
+                </div>
                 <div className="vi-item-price-row">
                   <span className="vi-item-mrp">MRP ₹{item.mrp.toFixed(2)}</span>
                   <span className="vi-item-price">₹{item.price.toFixed(2)}</span>
                 </div>
-                <div className="qty-control compact">
-                  <button
-                    className="qty-btn"
-                    onClick={() => onUpdateQty?.(seller.id, idx, item.quantity - 1)}
-                  >
-                    <Icon.Minus />
-                  </button>
-                  <div className="qty-value">{item.quantity}</div>
-                  <button
-                    className="qty-btn"
-                    onClick={() => onUpdateQty?.(seller.id, idx, item.quantity + 1)}
-                  >
-                    <Icon.Plus />
-                  </button>
-                </div>
+                <button className="vi-item-qty-badge" onClick={() => onItemTap?.(item)}>
+                  {item.quantity}
+                </button>
               </div>
             </div>
           ))}

@@ -11,8 +11,16 @@ export default function SellerStorefront({ cartCount, distributor, onBack, onNav
         mov: distributor.mov,
         location: distributor.location,
         totalSKUs: distributor.skuCount,
+        deliveryWindows: distributor.deliveryWindows,
       }
     : seller;
+
+  // A seller can deliver on more than one window (e.g. Beat day + Tomorrow),
+  // each with its own MOV. Show every window; fall back to the single
+  // MOV / Delivery-by pair when no windows are supplied.
+  const windows = (activeSeller as any).deliveryWindows?.length
+    ? (activeSeller as any).deliveryWindows
+    : null;
 
   // Initials for the logo box (first letters of name words, max 4)
   const initials = activeSeller.name
@@ -55,19 +63,30 @@ export default function SellerStorefront({ cartCount, distributor, onBack, onNav
               </div>
             </div>
           </div>
-          <div className="seller-stats two-cell">
-            <div className="stat-cell">
-              <div className="stat-label">Minimum Order Value</div>
-              <div className="stat-value">₹{activeSeller.mov.toLocaleString('en-IN')}</div>
+          {windows ? (
+            <div className={`seller-stats ${windows.length === 1 ? 'one-cell' : 'two-cell'}`}>
+              {windows.map((w: any, i: number) => (
+                <div className="stat-cell" key={i}>
+                  <div className="stat-label">{w.day}</div>
+                  <div className="stat-value">MOV ₹{w.mov.toLocaleString('en-IN')}</div>
+                </div>
+              ))}
             </div>
-            <div className="stat-cell">
-              <div className="stat-label">Delivery by</div>
-              <div className="stat-value">
-                {/* deliveryTime is "Tomorrow by 11 AM" / "Wednesday by 4 PM" etc — strip the time portion */}
-                {(activeSeller.deliveryTime || 'Tomorrow').replace(/\s+by\s+.*$/i, '')}
+          ) : (
+            <div className="seller-stats two-cell">
+              <div className="stat-cell">
+                <div className="stat-label">Minimum Order Value</div>
+                <div className="stat-value">₹{activeSeller.mov.toLocaleString('en-IN')}</div>
+              </div>
+              <div className="stat-cell">
+                <div className="stat-label">Delivery by</div>
+                <div className="stat-value">
+                  {/* deliveryTime is "Tomorrow by 11 AM" / "Wednesday by 4 PM" etc — strip the time portion */}
+                  {(activeSeller.deliveryTime || 'Tomorrow').replace(/\s+by\s+.*$/i, '')}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Categories — 2:1 image cards with name-sized widths */}

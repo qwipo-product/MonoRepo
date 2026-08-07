@@ -3,12 +3,16 @@ import { Icon, StatusBar } from '../../components/Icons';
 import { savedAddresses as initialAddresses } from '@mockups/mock-data';
 import AddAddressSheet from '../../components/AddAddressSheet';
 
-export default function AddressesScreen({ onBack }: any) {
+export default function AddressesScreen({ onBack, onSaved }: any) {
   const [addresses, setAddresses] = useState(initialAddresses);
   const [addOpen, setAddOpen] = useState(false);
+  const [toast, setToast] = useState('');
 
   const setDefault = (id: string) => {
     setAddresses(addresses.map((a) => ({ ...a, isDefault: a.id === id })));
+    setToast('Address updated successfully');
+    // Let the success popup show, then land on Home.
+    setTimeout(() => onSaved?.(), 1100);
   };
 
   const handleSave = (next: any) => {
@@ -55,27 +59,9 @@ export default function AddressesScreen({ onBack }: any) {
           {addresses.map((a, i) => (
             <div
               key={a.id}
-              role="button"
-              tabIndex={0}
-              aria-pressed={a.isDefault}
-              aria-label={`Deliver to ${a.line1}, ${a.city} ${a.pincode}`}
               className={`addr-stop ${a.isDefault ? 'is-default' : ''}`}
               style={{ animationDelay: `${120 + i * 70}ms` }}
-              onClick={() => setDefault(a.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setDefault(a.id);
-                }
-              }}
             >
-              {/* Route rail — the connecting line + this stop's marker */}
-              <div className="addr-rail" aria-hidden="true">
-                <span className="addr-pin">
-                  {a.isDefault ? <Icon.Check /> : <span className="addr-pin-dot" />}
-                </span>
-              </div>
-
               <div className="addr-card">
                 <div className="addr-card-head">
                   <span className="addr-emoji">{a.icon}</span>
@@ -98,7 +84,9 @@ export default function AddressesScreen({ onBack }: any) {
                       Delivering here
                     </span>
                   ) : (
-                    <span className="addr-set-hint">Tap to deliver here</span>
+                    <button className="addr-set-btn" onClick={() => setDefault(a.id)}>
+                      Set as default
+                    </button>
                   )}
                 </div>
               </div>
@@ -109,6 +97,12 @@ export default function AddressesScreen({ onBack }: any) {
 
       {addOpen && (
         <AddAddressSheet onClose={() => setAddOpen(false)} onSave={handleSave} />
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          <Icon.Check /> {toast}
+        </div>
       )}
     </>
   );

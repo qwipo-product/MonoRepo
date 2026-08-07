@@ -6,11 +6,6 @@ import {
   distributorCategories,
 } from '@mockups/mock-data';
 
-// Up to this many brands are shown in the collapsed state on each seller card;
-// beyond this the "View More" link appears. Distributors with ≤ COLLAPSED_LIMIT
-// brands show everything and no toggle.
-const COLLAPSED_LIMIT = 8;
-
 type TabKey = 'categories' | 'brands' | 'sellers';
 
 export default function DistributorsListScreen({
@@ -19,15 +14,11 @@ export default function DistributorsListScreen({
   onSelectDistributor,
   onSelectCategory,
   initialTab,
+  filterDistributorIds,
 }: any) {
   const [tab, setTab] = useState<TabKey>((initialTab as TabKey) || 'categories');
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
-
-  // Only ONE distributor card can be expanded at a time — opening another
-  // automatically collapses the previous one.
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const toggle = (id: string) => setExpandedId((curr) => (curr === id ? null : id));
 
   // Find the full Distributor record (mov, location, skuCount) by name match so
   // tapping the header row opens the right storefront with rich seller data.
@@ -56,12 +47,17 @@ export default function DistributorsListScreen({
   const filteredBrands = q
     ? allBrands.filter((b: any) => (b.short || b.name || '').toLowerCase().includes(q))
     : allBrands;
+  // Optionally narrow the seller list to a specific set (Add More from cart,
+  // or tapping a brand on Home lands here filtered to who stocks it).
+  const sellerPool = filterDistributorIds
+    ? distributorsList.filter((d: any) => filterDistributorIds.includes(d.id))
+    : distributorsList;
   const filteredSellers = q
-    ? distributorsList.filter((d: any) =>
+    ? sellerPool.filter((d: any) =>
         d.name.toLowerCase().includes(q) ||
         d.brands.some((b: any) => (b.short || b.name || '').toLowerCase().includes(q))
       )
-    : distributorsList;
+    : sellerPool;
 
   const placeholderByTab: Record<TabKey, string> = {
     categories: 'Search categories',
@@ -132,17 +128,39 @@ export default function DistributorsListScreen({
                 <div key={d.id} className="dl-card">
                   <button
                     className="dl-card-head"
-                    onClick={() => onSelectDistributor?.(fullDistributor)}
+                    onClick={() => onSelectDistributor?.({ ...fullDistributor, deliveryWindows: d.deliveryWindows })}
                     aria-label={`Open ${d.name} storefront`}
                   >
                     <span className="dl-card-title">{d.name}</span>
+                    <span className="dl-card-count">{d.brands.length} brands</span>
                     <span className="dl-card-arrow">
                       <Icon.ChevronRight />
                     </span>
                   </button>
 
-                  <div className="dl-brand-grid">
-                    {(expandedId === d.id ? d.brands : d.brands.slice(0, COLLAPSED_LIMIT)).map((b: any) => (
+                  {/* Beat Day + MOV, plus a Tomorrow window with its own MOV
+                      when the seller delivers next-day. Read-only schedule —
+                      styled as an info strip, not tappable pills. */}
+                  {d.deliveryWindows?.length > 0 && (
+                    <div className="dl-sched">
+                      <div className="dl-sched-label">
+                        <Icon.Truck /> Delivery schedule
+                      </div>
+                      {d.deliveryWindows.map((w: any, i: number) => (
+                        <div className="dl-sched-row" key={i}>
+                          <span className="dl-sched-day">{w.day}</span>
+                          <span className="dl-sched-dots" aria-hidden="true" />
+                          <span className="dl-sched-mov">
+                            MOV ₹{w.mov.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* All brands in one horizontal scroll row — no collapse. */}
+                  <div className="dl-brand-scroll">
+                    {d.brands.map((b: any) => (
                       <button
                         key={b.id}
                         className="dl-brand-tile"
@@ -169,16 +187,6 @@ export default function DistributorsListScreen({
                       </button>
                     ))}
                   </div>
-
-                  {d.brands.length > COLLAPSED_LIMIT && (
-                    <button
-                      className="dl-view-toggle"
-                      onClick={() => toggle(d.id)}
-                      aria-expanded={expandedId === d.id}
-                    >
-                      {expandedId === d.id ? '− View Less' : '+ View More'}
-                    </button>
-                  )}
                 </div>
               );
             })}

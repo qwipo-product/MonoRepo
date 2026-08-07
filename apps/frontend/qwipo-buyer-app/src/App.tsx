@@ -19,7 +19,6 @@ import OrderSummaryScreen from './screens/OrderSummaryScreen';
 import MyOrdersScreen from './screens/MyOrdersScreen';
 import OrderDetailsScreen from './screens/OrderDetailsScreen';
 import DistributorsListScreen from './screens/DistributorsListScreen';
-import AuthorisedDistributorsScreen from './screens/AuthorisedDistributorsScreen';
 import WholesalersCategoriesScreen from './screens/WholesalersCategoriesScreen';
 import AllBrandsScreen from './screens/AllBrandsScreen';
 import GlobalSearchScreen from './screens/GlobalSearchScreen';
@@ -40,7 +39,7 @@ import ProductImageSheet from './components/ProductImageSheet';
 import DiscountsSheet from './components/DiscountsSheet';
 import FiltersSheet from './components/FiltersSheet';
 import { filtersDefault } from './screens/ProductListing';
-import { initialCart, categories, distributors, distributorsList, brands, DIST_CAT_TO_PRODUCT_CAT } from '@mockups/mock-data';
+import { initialCart, categories, distributors, distributorsList, brands, products, DIST_CAT_TO_PRODUCT_CAT } from '@mockups/mock-data';
 
 export default function App() {
   // Always boot into the Splash screen so the full Splash → Login → OTP →
@@ -80,6 +79,9 @@ export default function App() {
   const [selectedDistributor, setSelectedDistributor] = useState<any>(null);
   const [sheetProduct, setSheetProduct] = useState<any>(null);
   const [sheetVariant, setSheetVariant] = useState<any>(null);
+  // View Items opens the same sheet with seller/price/fee hidden.
+  const [sheetHidePrice, setSheetHidePrice] = useState(false);
+  const [sheetSellerOptions, setSheetSellerOptions] = useState<any>(null);
   const [imageSheetProduct, setImageSheetProduct] = useState<any>(null);
   const [discountsSheet, setDiscountsSheet] = useState<any>(null); // {product, variant}
   const [filtersOpen, setFiltersOpen] = useState<boolean>(false);
@@ -137,19 +139,35 @@ export default function App() {
     setSelectedCategory(categories.find((c) => c.id === product.category) || categories[0]);
     setScreen('listing');
     setTimeout(() => {
+      setSheetHidePrice(false);
+      setSheetSellerOptions(null);
       setSheetProduct(product);
       setSheetVariant(product.variants[0]);
     }, 100);
   };
 
-  const handleOpenSheet = (product, variant) => {
+  const handleOpenSheet = (product, variant, sellerOptions = null) => {
+    setSheetHidePrice(false);
+    setSheetSellerOptions(sellerOptions);
     setSheetProduct(product);
     setSheetVariant(variant);
+  };
+
+  // Tap an item on View Items → same sheet as listing, prices hidden.
+  const handleViewItemTap = (item) => {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) return;
+    setSheetHidePrice(true);
+    setSheetSellerOptions(null);
+    setSheetProduct(product);
+    setSheetVariant(product.variants[0]);
   };
 
   const handleCloseSheet = () => {
     setSheetProduct(null);
     setSheetVariant(null);
+    setSheetHidePrice(false);
+    setSheetSellerOptions(null);
   };
 
   const handleConfirmAdd = (product, variant, qty) => {
@@ -252,7 +270,8 @@ export default function App() {
       return dn === target || dn.includes(target) || target.includes(dn);
     });
     setDistributorFilterIds(match ? [match.id] : null);
-    setScreen('authorised-distributors');
+    setInitialDistributorsTab('sellers');
+    setScreen('distributors-list');
   };
 
   const handleViewItems = (seller: any) => {
@@ -283,28 +302,8 @@ export default function App() {
     setScreen('listing');
   };
 
-  // Authorised Distributors → tapping a brand tile under a seller opens the
-  // product listing filtered to that brand, with the seller's own delivery
-  // windows shown once at the top and a breadcrumb back through the seller.
-  const handleOpenDistributorBrandListing = (brand: any, distributorEntry: any) => {
-    const brandLabel = brand.short || brand.name;
-    setSelectedCategory({
-      id: brand.id,
-      name: brandLabel,
-      isBrand: true,
-      fromStorefront: true,
-      deliveryWindows: distributorEntry?.deliveryWindows,
-      breadcrumb: [
-        { label: 'Distributors', goTo: 'authorised-distributors' },
-        { label: distributorEntry?.name, goTo: 'authorised-distributors' },
-        { label: brandLabel },
-      ],
-    });
-    setScreen('listing');
-  };
-
-  // Authorised Distributors → tapping the seller's own header opens the
-  // product listing across every brand that seller carries.
+  // Home banner → opens the product listing across every brand a seller
+  // carries, with the seller's delivery windows shown once at the top.
   const handleOpenDistributorAllProducts = (_fullDistributor: any, distributorEntry: any) => {
     setSelectedCategory({
       id: distributorEntry.id,
@@ -313,7 +312,7 @@ export default function App() {
       fromStorefront: true,
       deliveryWindows: distributorEntry.deliveryWindows,
       breadcrumb: [
-        { label: 'Distributors', goTo: 'authorised-distributors' },
+        { label: 'Distributors', goTo: 'distributors-list' },
         { label: distributorEntry.name },
       ],
     });
@@ -337,7 +336,8 @@ export default function App() {
       )
       .map((d: any) => d.id);
     setDistributorFilterIds(matches.length ? matches : null);
-    setScreen('authorised-distributors');
+    setInitialDistributorsTab('sellers');
+    setScreen('distributors-list');
   };
 
   // Resolve the seller shown on View Items — mirrors MultiSellerCartV2's
@@ -396,7 +396,8 @@ export default function App() {
                 }
                 onSeeAllDistributors={() => {
                   setDistributorFilterIds(null);
-                  setScreen('authorised-distributors');
+                  setInitialDistributorsTab('sellers');
+                  setScreen('distributors-list');
                 }}
                 onOpenBannerListing={() => handleOpenDistributorAllProducts(null, distributorsList[0])}
                 onSeeAllBrands={() => setScreen('all-brands')}
@@ -503,6 +504,7 @@ export default function App() {
                 onBack={() => goBack('cart')}
                 onAddMore={() => viewItemsSeller && handleAddMoreFromCart(viewItemsSeller)}
                 onUpdateQty={handleUpdateItemQty}
+                onItemTap={handleViewItemTap}
               />
             )}
             {screen === 'my-orders' && (
@@ -526,24 +528,15 @@ export default function App() {
             )}
 
             {/* See-all listing screens */}
-            {screen === 'authorised-distributors' && (
-              <AuthorisedDistributorsScreen
-                filterDistributorIds={distributorFilterIds}
-                onBack={() => {
-                  setDistributorFilterIds(null);
-                  goBack('home');
-                }}
-                onSelectDistributor={handleOpenDistributorAllProducts}
-                onSelectBrand={handleOpenDistributorBrandListing}
-                onOpenSearch={() => setScreen('global-search')}
-              />
-            )}
             {screen === 'distributors-list' && (
               <DistributorsListScreen
                 initialTab={initialDistributorsTab}
+                filterDistributorIds={distributorFilterIds}
                 onBack={() => {
-                  // Reset the tab seed so the next entry defaults back to Categories.
+                  // Reset the tab seed + seller filter so the next entry
+                  // defaults back to Categories with the full seller list.
                   setInitialDistributorsTab('categories');
+                  setDistributorFilterIds(null);
                   goBack('home');
                 }}
                 onSelectCategory={(c: any) => {
@@ -713,7 +706,7 @@ export default function App() {
                 onSignOut={() => resetTo('splash')}
               />
             )}
-            {screen === 'sub:addresses' && <AddressesScreen onBack={() => goBack('profile')} />}
+            {screen === 'sub:addresses' && <AddressesScreen onBack={() => goBack('profile')} onSaved={() => resetTo('home')} />}
             {screen === 'sub:payment' && <PaymentScreen onBack={() => goBack('profile')} />}
             {screen === 'sub:credit' && <CreditScreen onBack={() => goBack('profile')} />}
             {screen === 'sub:help' && <HelpScreen onBack={() => goBack('profile')} />}
@@ -804,6 +797,8 @@ export default function App() {
               <AddToCartSheet
                 product={sheetProduct}
                 initialVariant={sheetVariant}
+                sellerOptions={sheetSellerOptions}
+                hidePrice={sheetHidePrice}
                 onClose={handleCloseSheet}
                 onConfirm={handleConfirmAdd}
               />
@@ -869,8 +864,7 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
       { id: 'home', label: 'Home · Distributors & Wholesalers' },
       { id: 'home-distributors-only', label: 'Home · Distributors only' },
       { id: 'home-wholesalers-only', label: 'Home · Wholesalers only' },
-      { id: 'authorised-distributors', label: 'Authorised Distributors (seller list)' },
-      { id: 'distributors-list', label: 'All Authorised Distributors (tabbed, legacy)' },
+      { id: 'distributors-list', label: 'All Authorised Distributors (tabbed)' },
       { id: 'wholesaler-categories', label: 'Wholesaler · Groceries / FMCG' },
       { id: 'all-brands', label: 'All Brands (Wholesalers)' },
       { id: 'global-search', label: 'Global Search' },
