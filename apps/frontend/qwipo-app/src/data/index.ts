@@ -5,4 +5,4 @@
 import mock from './mock.json';
 
 export default mock;
-export const { customer, homepage, products, sellers, reorderHistory, coupons, orders } = mock as typeof mock;
+export const { customer, homepage, products, seller, sellers, reorderHistory, coupons, orders } = mock as typeof mock;

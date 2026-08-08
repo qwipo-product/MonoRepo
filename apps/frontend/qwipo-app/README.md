@@ -116,13 +116,14 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 | Global search | `GlobalSearchScreen.tsx` | ✅ |
 | All brands | `AllBrandsScreen.tsx` | ✅ |
 | Wholesalers categories | `WholesalersCategoriesScreen.tsx` | ✅ |
-| Wholesaler product list | `WholesalerProductListScreen.tsx` | ⬜ |
+| Wholesaler product list | `WholesalerProductListScreen.tsx` | ✅ |
 | Distributors list | `DistributorsListScreen.tsx` | ✅ |
-| Seller storefront | `SellerStorefront.tsx` | ⬜ |
-| Product listing | `ProductListing.tsx` / `ProductListingV2.tsx` | ⬜ |
-| View items | `ViewItemsScreen.tsx` | ⬜ |
-| Coupons | `CouponsScreen.tsx` | ⬜ |
-| Reorder | `ReorderScreen.tsx` | ⬜ |
+| Selling units (distributor / wholesaler) | `AddToCartSheet.tsx` — the Add flow | ✅ |
+| Seller storefront | `SellerStorefront.tsx` | ✅ |
+| Product listing | `ProductListingV2.tsx` | ✅ |
+| View items | `ViewItemsScreen.tsx` | ⬜ (Phase 4 — cart view) |
+| Coupons | `CouponsScreen.tsx` | ⬜ (Phase 4) |
+| Reorder | `ReorderScreen.tsx` | ✅ |
 
 **Cart & checkout** (shared)
 | Screen | Source | Status |

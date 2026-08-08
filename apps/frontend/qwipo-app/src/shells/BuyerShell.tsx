@@ -9,18 +9,21 @@ export default function BuyerShell({
   active = 'home',
   cartCount = 0,
   onNavigate = () => {},
+  overlay,
   children,
 }: {
   active?: string;
   cartCount?: number;
   onNavigate?: (id: string) => void;
+  overlay?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+    <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
       <StatusBar />
       <div className="flex flex-1 flex-col overflow-y-auto">{children}</div>
       <BottomNav active={active} cartCount={cartCount} onNavigate={onNavigate} />
+      {overlay}
     </div>
   );
 }

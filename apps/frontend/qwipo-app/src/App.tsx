@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BuyerShell from './shells/BuyerShell';
 import PaytmShell from './shells/PaytmShell';
 import ShellSwitcher, { type Shell } from './review/ShellSwitcher';
@@ -15,38 +15,93 @@ import GlobalSearchScreen from './screens/GlobalSearchScreen';
 import AllBrandsScreen from './screens/AllBrandsScreen';
 import DistributorsListScreen from './screens/DistributorsListScreen';
 import WholesalersCategoriesScreen from './screens/WholesalersCategoriesScreen';
+import SellerStorefront from './screens/SellerStorefront';
+import ProductListingV2 from './screens/ProductListingV2';
+import WholesalerProductListScreen from './screens/WholesalerProductListScreen';
+import ReorderScreen from './screens/ReorderScreen';
+import AddToCartSheet from './components/AddToCartSheet';
+import { products } from './data';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
+type CartLine = { product: any; variant: any; qty: number; price: number };
+type SheetState = { product: any; variant: any; sellerOptions: any; hidePrice?: boolean } | null;
 
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'home-distributors-only', 'home-wholesalers-only',
   'global-search', 'distributors-list', 'wholesaler-categories', 'all-brands',
+  'storefront', 'listing', 'reorder',
+  'wholesaler-products', 'distributor-units', 'wholesaler-units',
 ]);
 const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
-  home: 'both',
-  'home-distributors-only': 'distributors',
-  'home-wholesalers-only': 'wholesalers',
+  home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
 };
 
-/* One codebase, two chrome shells. Auth + pushed detail screens render in the
-   bare phone frame (own status bar, no tab bar); the home roots render inside
-   the selected shell. State-based nav mirrors qwipo-buyer-app. FlowIndex jumps
-   to any screen for review. */
+/* One codebase, two chrome shells. Home roots / storefront / reorder render in
+   the selected shell (status bar + tab bar); auth + pushed detail screens render
+   in the bare frame. State-based nav mirrors qwipo-buyer-app. */
 export default function App() {
-  const [screen, setScreen] = useState<ScreenId>(
-    () => new URLSearchParams(window.location.search).get('screen') || 'splash'
-  );
-  const [shell, setShell] = useState<Shell>(
-    new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
-  );
+  const [screen, setScreen] = useState<ScreenId>(() => new URLSearchParams(window.location.search).get('screen') || 'splash');
+  const [shell, setShell] = useState<Shell>(new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer');
   const [phone, setPhone] = useState('');
   const [onboarding, setOnboarding] = useState<OnboardingData>({ location: '', businessName: '', businessType: '' });
   const [kycPending, setKycPending] = useState(false);
   const [wholesalerVariant, setWholesalerVariant] = useState<'groceries' | 'fmcg' | 'all'>('all');
   const [distListTab, setDistListTab] = useState<'categories' | 'brands' | 'sellers'>('categories');
-  const go = setScreen;
-  const isHome = screen in HOME_AVAILABILITY;
+  const [listingCategory, setListingCategory] = useState<any>(null);
+  const [listingBack, setListingBack] = useState<ScreenId>('home');
+  const [storefrontDistributor, setStorefrontDistributor] = useState<any>(null);
+  const [wholesalerProductCategory, setWholesalerProductCategory] = useState<any>(null);
+  const [cart, setCart] = useState<Record<string, CartLine>>({});
+  const [sheet, setSheet] = useState<SheetState>(null);
+  const go = (id: ScreenId) => { setSheet(null); setScreen(id); };
+
+  // ── cart ──────────────────────────────────────────────────────────────────
+  const key = (pid: string, vid: string) => `${pid}_${vid}`;
+  const addToCart = (product: any, variant: any, price?: number) =>
+    setCart((prev) => {
+      const k = key(product.id, variant.id);
+      const qty = (prev[k]?.qty || 0) + 1;
+      return { ...prev, [k]: { product, variant, qty, price: price ?? prev[k]?.price ?? variant.sellingPrice } };
+    });
+  const updateQty = (product: any, variant: any, qty: number, price?: number) =>
+    setCart((prev) => {
+      const k = key(product.id, variant.id);
+      if (qty <= 0) { const n = { ...prev }; delete n[k]; return n; }
+      return { ...prev, [k]: { product, variant, qty, price: price ?? prev[k]?.price ?? variant.sellingPrice } };
+    });
+  const cartItems = Object.fromEntries(Object.entries(cart).map(([k, v]) => [k, v.qty]));
+  const cartTotal = Object.values(cart).reduce((n, i) => n + i.price * i.qty, 0);
+  const cartCount = Object.values(cart).reduce((n, i) => n + i.qty, 0);
+
+  // ── add-to-cart sheet (selling units) ───────────────────────────────────────
+  const openSheet = (product: any, variant: any, sellerOptions: any = null) => setSheet({ product, variant, sellerOptions });
+  const confirmSheet = (product: any, variant: any, totalPcs: number) => { updateQty(product, variant, totalPcs); setSheet(null); };
+
+  // ── navigation helpers ──────────────────────────────────────────────────────
+  const openListing = (category: any, from: ScreenId = 'home') => { setListingCategory(category); setListingBack(from); go('listing'); };
+  const openStorefront = (distributor: any) => { setStorefrontDistributor(distributor); go('storefront'); };
+  const openWholesalerProducts = (category: any) => { setWholesalerProductCategory(category); go('wholesaler-products'); };
+
+  // FlowIndex picker: the two "selling units" entries open the Add-to-Cart sheet
+  // over a listing backdrop (distributor = no seller options, wholesaler = with).
+  const handlePick = (id: ScreenId) => {
+    if (id === 'distributor-units') { setScreen('listing'); setSheet({ product: products[0], variant: products[0].variants[0], sellerOptions: null }); return; }
+    if (id === 'wholesaler-units') {
+      const p = products[0];
+      setScreen('wholesaler-products');
+      setSheet({ product: p, variant: p.variants[0], sellerOptions: [{ id: 'wh1', name: 'Omkar Enterprises', price: p.variants[0].sellingPrice }, { id: 'wh2', name: 'Sri Sai Krishna Traders', price: p.variants[0].sellingPrice + 7 }] });
+      return;
+    }
+    go(id);
+  };
+
+  // Deep-link parity: ?screen=…-units opens the sheet over its backdrop on load.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get('screen');
+    if (s === 'distributor-units' || s === 'wholesaler-units') handlePick(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const homeProps = {
     kycPending,
@@ -55,51 +110,47 @@ export default function App() {
     onOpenProfile: () => go('profile'),
     onOpenAddresses: () => go('sub:addresses'),
     onOpenSearch: () => go('global-search'),
-    onSelectDistributor: () => go('storefront'),
-    onSelectBrand: () => go('all-brands'),
-    onSelectDistributorBrand: () => go('all-brands'),
-    onSelectCategory: () => go('listing'),
+    onSelectDistributor: openStorefront,
+    onSelectBrand: (b: any) => openListing({ id: b.id, name: b.name, isBrand: true }),
+    onSelectDistributorBrand: (b: any) => openListing({ id: b.id, name: b.name, isBrand: true }),
+    onSelectCategory: (c: any) => openListing(c),
     onSeeAllDistributors: () => { setDistListTab('sellers'); go('distributors-list'); },
     onSeeAllBrands: () => go('all-brands'),
     onSeeAllCategories: () => { setWholesalerVariant('all'); go('wholesaler-categories'); },
     onOpenWholesalerCategory: (id: string) => { setWholesalerVariant(id === 'groceries' ? 'groceries' : 'fmcg'); go('wholesaler-categories'); },
-    onOpenBannerListing: () => go('listing'),
+    onOpenBannerListing: () => openListing(null),
   };
 
   const bareScreen = (() => {
     switch (screen) {
-      case 'splash':
-        return <SplashScreen onContinue={() => go('login')} />;
-      case 'login':
-        return <LoginScreen onSubmit={(p) => { setPhone(p); go('otp'); }} />;
-      case 'otp':
-        return <OTPScreen phone={phone} onBack={() => go('login')} onVerify={() => go('onboarding')} />;
-      case 'onboarding':
-        return <OnboardingScreen onBack={() => go('otp')} onProceed={(data) => { setOnboarding(data); setKycPending(true); go('home'); }} />;
-      case 'kyc-complete':
-        return <CompleteKycScreen initialBusinessType={onboarding.businessType} initialLocation={onboarding.location} onCancel={() => go('home')} onRegister={() => go('kyc-success')} />;
-      case 'kyc-success':
-        return <KycSuccessScreen onCallSupport={() => alert('Calling customer support…')} onPlaceOrder={() => { setKycPending(false); go('home'); }} />;
-      case 'global-search':
-        return <GlobalSearchScreen onBack={() => go('home')} onSelectProduct={() => go('listing')} />;
-      case 'all-brands':
-        return <AllBrandsScreen onBack={() => go('home')} onSelectBrand={() => go('storefront')} onOpenSearch={() => go('global-search')} />;
-      case 'distributors-list':
-        return <DistributorsListScreen initialTab={distListTab} onBack={() => go('home')} onSelectDistributor={() => go('storefront')} onSelectBrand={() => go('storefront')} onSelectCategory={() => go('listing')} />;
-      case 'wholesaler-categories':
-        return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={() => go('listing')} onOpenSearch={() => go('global-search')} />;
-      default:
-        return null;
+      case 'splash': return <SplashScreen onContinue={() => go('login')} />;
+      case 'login': return <LoginScreen onSubmit={(p) => { setPhone(p); go('otp'); }} />;
+      case 'otp': return <OTPScreen phone={phone} onBack={() => go('login')} onVerify={() => go('onboarding')} />;
+      case 'onboarding': return <OnboardingScreen onBack={() => go('otp')} onProceed={(data) => { setOnboarding(data); setKycPending(true); go('home'); }} />;
+      case 'kyc-complete': return <CompleteKycScreen initialBusinessType={onboarding.businessType} initialLocation={onboarding.location} onCancel={() => go('home')} onRegister={() => go('kyc-success')} />;
+      case 'kyc-success': return <KycSuccessScreen onCallSupport={() => alert('Calling customer support…')} onPlaceOrder={() => { setKycPending(false); go('home'); }} />;
+      case 'global-search': return <GlobalSearchScreen onBack={() => go('home')} onSelectProduct={(p: any) => openListing({ id: p.category, name: p.name }, 'global-search')} />;
+      case 'all-brands': return <AllBrandsScreen onBack={() => go('home')} onSelectBrand={(b: any) => openListing({ id: b.id, name: b.name, isBrand: true }, 'all-brands')} onOpenSearch={() => go('global-search')} />;
+      case 'distributors-list': return <DistributorsListScreen initialTab={distListTab} onBack={() => go('home')} onSelectDistributor={openStorefront} onSelectBrand={(b: any) => openListing({ id: b.id, name: b.short || b.name, isBrand: true }, 'distributors-list')} onSelectCategory={(c: any) => openListing(c, 'distributors-list')} />;
+      case 'wholesaler-categories': return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={openWholesalerProducts} onOpenSearch={() => go('global-search')} />;
+      case 'listing': return <ProductListingV2 category={listingCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go(listingBack)} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} onOpenFilters={() => {}} />;
+      case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
+      default: return null;
     }
   })();
+
+  const cartSheet = sheet && (
+    <AddToCartSheet product={sheet.product} initialVariant={sheet.variant} sellerOptions={sheet.sellerOptions} hidePrice={sheet.hidePrice} onClose={() => setSheet(null)} onConfirm={confirmSheet} />
+  );
 
   if (bareScreen) {
     return (
       <div className="flex min-h-dvh bg-shell">
-        <FlowIndex active={screen} built={BUILT} onPick={go} />
+        <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
         <main className="flex flex-1 items-center justify-center p-6">
-          <div className="h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+          <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
             {bareScreen}
+            {cartSheet}
           </div>
         </main>
       </div>
@@ -107,19 +158,21 @@ export default function App() {
   }
 
   const CurrentShell = shell === 'paytm' ? PaytmShell : BuyerShell;
-  const content = isHome ? (
-    <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />
-  ) : (
-    <Placeholder />
-  );
+  const shellContent = (() => {
+    if (screen in HOME_AVAILABILITY) return <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />;
+    if (screen === 'storefront') return <SellerStorefront distributor={storefrontDistributor} onBack={() => go('home')} onSelectCategory={(c: any) => openListing({ ...c, fromStorefront: true }, 'storefront')} onOpenSearch={() => go('global-search')} />;
+    if (screen === 'reorder') return <ReorderScreen cartItems={cartItems} cartTotal={cartTotal} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
+    return <Placeholder />;
+  })();
+  const activeTab = screen === 'reorder' ? 'reorder' : 'home';
 
   return (
     <div className="flex min-h-dvh bg-shell">
-      <FlowIndex active={screen} built={BUILT} onPick={go} />
+      <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
         <ShellSwitcher value={shell} onChange={setShell} />
-        <CurrentShell active="home" cartCount={0} onNavigate={go}>
-          {content}
+        <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={cartSheet}>
+          {shellContent}
         </CurrentShell>
       </main>
     </div>
