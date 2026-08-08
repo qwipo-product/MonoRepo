@@ -53,8 +53,10 @@ export default function HomeScreen({
 
   return (
     <div className="flex flex-col pb-6">
-      {/* Sticky header — brand, address, search, tabs on one surface */}
-      <div className="sticky top-0 z-10 bg-card">
+      {/* Sticky header — brand, address, search, tabs on one surface.
+          shadow-sm turns the pinned block into a crafted app bar so the
+          feed reads as sliding beneath it (single elevation cue per DS). */}
+      <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
           <img
             src={isDark ? '/brand/qwipo-logo-dark.svg' : '/brand/qwipo-logo.svg'}
@@ -63,11 +65,11 @@ export default function HomeScreen({
           />
           <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-5" />
           <div className="ml-auto flex items-center gap-1">
-            <button onClick={onOpenNotifications} aria-label="Notifications" className="relative grid h-10 w-10 place-items-center">
+            <button onClick={onOpenNotifications} aria-label="Notifications" className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground transition-colors hover:bg-muted/70 active:scale-95">
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-muted" />
             </button>
-            <button onClick={onOpenProfile} aria-label="Profile" className="grid h-10 w-10 place-items-center">
+            <button onClick={onOpenProfile} aria-label="Profile" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground transition-colors hover:bg-muted/70 active:scale-95">
               <User className="h-5 w-5" />
             </button>
           </div>
@@ -76,21 +78,21 @@ export default function HomeScreen({
         <button
           onClick={onOpenAddresses}
           aria-label="Change delivery address"
-          className="flex w-full items-center gap-1.5 px-4 py-2 text-sm"
+          className="mx-4 mb-1 flex w-fit max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm transition-colors hover:bg-muted/70 active:scale-95"
         >
-          <MapPin className="h-4 w-4 text-primary" />
-          <span className="text-muted-foreground">{t('common.deliver_to')}</span>
+          <MapPin className="h-4 w-4 shrink-0 text-primary" />
+          <span className="shrink-0 text-muted-foreground">{t('common.deliver_to')}</span>
           <span className="truncate font-medium">Lit Box, Rai Durg, Hitech City</span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
 
         <div className="px-4 pb-2">
           <button
             onClick={onOpenSearch}
             aria-label="Search for Products"
-            className="flex h-11 w-full items-center gap-2 rounded-lg border border-border bg-input-background px-3 text-sm text-muted-foreground"
+            className="flex h-11 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5 text-primary" />
             Search for Products
           </button>
         </div>
@@ -220,7 +222,7 @@ function DistributorsView({
             const featured = brands.find((b) => b.name.toLowerCase() === d.featuredBrand.toLowerCase());
             return (
               <button key={d.id} onClick={() => onSelectDistributor(d)} className="flex w-28 shrink-0 flex-col gap-1.5 text-left">
-                <Logo src={featured?.logo} text={d.featuredBrand} color={d.featuredColor} className="h-28 w-28 rounded-lg border border-border" />
+                <Logo src={featured?.logo} text={d.featuredBrand} color={d.featuredColor} className="h-28 w-28 rounded-lg shadow-sm" />
                 <div className="truncate text-sm font-medium">{d.featuredBrandTitle}</div>
                 <div className="truncate text-xs text-muted-foreground">{d.shortName}</div>
               </button>
@@ -243,7 +245,7 @@ function DistributorsView({
         <div className="grid grid-cols-4 gap-3 px-4">
           {brands.slice(0, 16).map((b: any) => (
             <button key={b.id} onClick={() => onSelectDistributorBrand(b)} className="flex flex-col items-center gap-1.5">
-              <Logo src={b.logo} text={b.logoText} color={b.color} className="h-14 w-14 rounded-full border border-border" />
+              <Logo src={b.logo} text={b.logoText} color={b.color} className="h-14 w-14 rounded-full shadow-sm" />
               <div className="w-full truncate text-center text-xs">{b.name}</div>
             </button>
           ))}
@@ -325,7 +327,7 @@ function WholesalersView({ onSelectBrand, onSelectCategory, onOpenWholesalerCate
         <div className={railClass}>
           {brands.slice(0, 12).map((b: any) => (
             <button key={b.id} onClick={() => onSelectBrand(b)} className="flex w-16 shrink-0 flex-col items-center gap-1.5">
-              <Logo src={b.logo} text={b.logoText} color={b.color} className="h-14 w-14 rounded-full border border-border" />
+              <Logo src={b.logo} text={b.logoText} color={b.color} className="h-14 w-14 rounded-full shadow-sm" />
               <div className="w-full truncate text-center text-xs">{b.name}</div>
             </button>
           ))}

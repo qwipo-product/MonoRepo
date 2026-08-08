@@ -235,16 +235,18 @@ export default function App() {
   // so the buyer/paytm toggle only makes sense once you're in the app.
   const showSwitcher = !AUTH.has(screen);
 
-  // Bare screens (auth + pushed detail) render chromeless in the phone frame;
-  // home/storefront/reorder render inside the selected shell (its chrome).
-  const frame = bareScreen ? (
+  // Buyer: bare screens (auth + pushed detail) render chromeless — they carry
+  // their own headers and BuyerShell would double the tab bar; home/storefront/
+  // reorder render inside BuyerShell. Paytm mini-app owns uniform container
+  // chrome (no header/tab bar), so EVERY screen renders inside PaytmShell.
+  const frame = bareScreen && shell !== 'paytm' ? (
     <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
       {bareScreen}
       {overlays}
     </div>
   ) : (
     <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={overlays}>
-      {shellContent}
+      {bareScreen ?? shellContent}
     </CurrentShell>
   );
 
