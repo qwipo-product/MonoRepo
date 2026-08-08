@@ -132,11 +132,11 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 | Order summary | `OrderSummaryScreen.tsx` | ✅ |
 | Order confirmation | `OrderConfirmationScreen.tsx` | ✅ |
 
-**Orders** (shared)
+**Orders** (shared) — ✅ Phase 5 complete
 | Screen | Source | Status |
 |---|---|---|
-| My orders | `MyOrdersScreen.tsx` | ⬜ |
-| Order details | `OrderDetailsScreen.tsx` | ⬜ |
+| My orders (+ tracking sheet, cancel dialog) | `MyOrdersScreen.tsx` | ✅ |
+| Order details | `OrderDetailsScreen.tsx` | ✅ |
 
 **Profile & settings** (buyer-only)
 | Screen | Source | Status |

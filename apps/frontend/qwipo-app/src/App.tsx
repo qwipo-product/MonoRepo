@@ -24,8 +24,10 @@ import ViewItemsScreen from './screens/ViewItemsScreen';
 import OrderSummaryScreen from './screens/OrderSummaryScreen';
 import CouponsScreen from './screens/CouponsScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
+import MyOrdersScreen from './screens/MyOrdersScreen';
+import OrderDetailsScreen from './screens/OrderDetailsScreen';
 import AddToCartSheet from './components/AddToCartSheet';
-import { products, seller } from './data';
+import { products, seller, orders } from './data';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 type CartLine = { product: any; variant: any; qty: number; price: number };
@@ -38,6 +40,7 @@ const BUILT = new Set<ScreenId>([
   'storefront', 'listing', 'reorder',
   'wholesaler-products', 'distributor-units', 'wholesaler-units',
   'cart', 'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
+  'my-orders', 'order-details',
 ]);
 const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
   home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
@@ -63,6 +66,7 @@ export default function App() {
   const [viewItemsSellerId, setViewItemsSellerId] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponSellerId, setCouponSellerId] = useState<string | null>(null);
+  const [activeOrder, setActiveOrder] = useState<any>((orders as any[])[0] ?? null);
   const go = (id: ScreenId) => { setSheet(null); setScreen(id); };
 
   // ── cart ──────────────────────────────────────────────────────────────────
@@ -172,6 +176,8 @@ export default function App() {
       case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
       case 'coupons': return <CouponsScreen cartTotal={cartTotal || 4250} appliedId={appliedCoupon?.id ?? null} onBack={() => go('order-summary')} onApply={(c: any) => { setAppliedCoupon(c); go('order-summary'); }} />;
       case 'order-confirmation': return <OrderConfirmationScreen onBackToHome={() => { setCart({}); setAppliedCoupon(null); go('home'); }} />;
+      case 'my-orders': return <MyOrdersScreen onBack={() => go('home')} onOpenDetails={(o: any) => { setActiveOrder(o); go('order-details'); }} />;
+      case 'order-details': return <OrderDetailsScreen order={activeOrder} onBack={() => go('my-orders')} />;
       default: return null;
     }
   })();
