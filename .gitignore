@@ -36,3 +36,8 @@ Thumbs.db
 # Claude Code local state
 .claude/settings.local.json
 .claude/worktrees/
+
+# claude-flow tool state (daemon, metrics, neural, logs)
+.claude-flow/
+.swarm/
+.hive-mind/

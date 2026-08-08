@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Tailwind never scans node_modules, and workspace packages are symlinked
+   there — so point it at the shared sources or @mockups/ui renders unstyled. */
+@source "../../../../packages/ui/src";
+
+/* ============================================================
+   Qwipo Design System — single source of truth.
+   Tokens live in ./styles/theme.css (copied verbatim from
+   ONDC-Seller-Store, see docs/DESIGN-SYSTEM.md). Both shells (buyer +
+   paytm) read the same tokens. Never hard-code a hex here.
+   ============================================================ */
+@import "./styles/theme.css";
+
+/* Phone-frame backdrop behind the mockup shells (review chrome only,
+   not part of the DS palette). */
+@theme {
+  --color-shell: #f7f7f9;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

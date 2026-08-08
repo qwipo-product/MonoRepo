@@ -28,6 +28,31 @@
         "typescript": "catalog:",
       },
     },
+    "apps/frontend/qwipo-app": {
+      "name": "@mockups/qwipo-app",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/i18n": "workspace:*",
+        "@mockups/mock-data": "workspace:*",
+        "@mockups/types": "workspace:*",
+        "@mockups/ui": "workspace:*",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@tailwindcss/vite": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "eslint": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
     "apps/frontend/qwipo-buyer-app": {
       "name": "@mockups/qwipo-buyer-app",
       "version": "0.0.0",
@@ -240,6 +265,8 @@
     "@mockups/mock-api": ["@mockups/mock-api@workspace:apps/backend/mock-api"],
 
     "@mockups/mock-data": ["@mockups/mock-data@workspace:packages/mock-data"],
+
+    "@mockups/qwipo-app": ["@mockups/qwipo-app@workspace:apps/frontend/qwipo-app"],
 
     "@mockups/qwipo-buyer-app": ["@mockups/qwipo-buyer-app@workspace:apps/frontend/qwipo-buyer-app"],
 
