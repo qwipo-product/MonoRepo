@@ -1,6 +1,5 @@
 import { UserCircle, ChevronRight, Briefcase, CreditCard, Users, Bell, LogOut } from 'lucide-react';
 import { customer, notifications } from '../data';
-import StatusBar from '../components/StatusBar';
 
 /* Account hub — person row, menu (orders / payments / credit / notifications),
    footer links (contact, terms, logout). Parity port. */
@@ -16,7 +15,6 @@ export default function ProfileScreen({ onOpenSubPage, onOpenNotifications, onSi
   return (
     <div className="flex h-full flex-col bg-gray-50 text-foreground">
       <div className="flex-shrink-0 border-b border-border bg-card shadow-sm">
-        <StatusBar />
         <div className="flex h-14 items-center px-4">
           <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6" />
         </div>

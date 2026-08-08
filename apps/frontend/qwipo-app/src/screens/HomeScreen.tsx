@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, Check } from 'lucide-react';
 import { useI18n } from '@mockups/i18n';
-import { useTheme } from '@mockups/ui';
 import { homepage } from '../data';
 import BannerCarousel from '../components/BannerCarousel';
 import SectionHeader from '../components/SectionHeader';
@@ -42,7 +41,6 @@ export default function HomeScreen({
   onOpenBannerListing,
 }: any) {
   const { t } = useI18n();
-  const { isDark } = useTheme();
   const distributorsAvailable = sellerAvailability !== 'wholesalers';
   const wholesalersAvailable = sellerAvailability !== 'distributors';
   const [tab, setTab] = useState(distributorsAvailable ? 'distributors' : 'wholesalers');
@@ -58,12 +56,9 @@ export default function HomeScreen({
           feed reads as sliding beneath it (single elevation cue per DS). */}
       <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
-          <img
-            src={isDark ? '/brand/qwipo-logo-dark.svg' : '/brand/qwipo-logo.svg'}
-            alt="Qwipo"
-            className="h-6"
-          />
-          <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-5" />
+          <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6 shrink-0 dark:hidden" />
+          <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
+          <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-5 shrink-0" />
           <div className="ml-auto flex items-center gap-1">
             <button onClick={onOpenNotifications} aria-label="Notifications" className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-foreground transition-colors hover:bg-muted/70 active:scale-95">
               <Bell className="h-5 w-5" />
@@ -78,11 +73,11 @@ export default function HomeScreen({
         <button
           onClick={onOpenAddresses}
           aria-label="Change delivery address"
-          className="mx-4 mb-1 flex w-fit max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm transition-colors hover:bg-muted/70 active:scale-95"
+          className="mx-4 mt-1 mb-2 flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm transition-colors hover:bg-muted/70 active:scale-95"
         >
           <MapPin className="h-4 w-4 shrink-0 text-primary" />
           <span className="shrink-0 text-muted-foreground">{t('common.deliver_to')}</span>
-          <span className="truncate font-medium">Lit Box, Rai Durg, Hitech City</span>
+          <span className="min-w-0 flex-1 truncate font-medium">Lit Box, Rai Durg, Hitech City</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
 

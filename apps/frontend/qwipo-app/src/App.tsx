@@ -197,7 +197,6 @@ export default function App() {
       case 'order-confirmation': return <OrderConfirmationScreen onBackToHome={() => { setCart({}); setAppliedCoupon(null); go('home'); }} />;
       case 'my-orders': return <MyOrdersScreen onBack={() => go('profile')} onOpenDetails={(o: any) => { setActiveOrder(o); go('order-details'); }} />;
       case 'order-details': return <OrderDetailsScreen order={activeOrder} onBack={() => go('my-orders')} />;
-      case 'profile': return <ProfileScreen onOpenSubPage={(id: ScreenId) => go(id)} onOpenNotifications={() => go('notifications')} onSignOut={() => { setCart({}); go('splash'); }} />;
       case 'notifications': return <NotificationsScreen onBack={() => go('profile')} />;
       case 'settings': return <SettingsScreen onBack={() => go('profile')} onOpenLanguage={() => go('sub:language')} />;
       case 'sub:business-details': return <BusinessDetailsScreen onBack={() => go('profile')} />;
@@ -227,9 +226,10 @@ export default function App() {
     if (screen in HOME_AVAILABILITY) return <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />;
     if (screen === 'storefront') return <SellerStorefront distributor={storefrontDistributor} onBack={() => go('home')} onSelectCategory={(c: any) => openListing({ ...c, fromStorefront: true }, 'storefront')} onOpenSearch={() => go('global-search')} />;
     if (screen === 'reorder') return <ReorderScreen cartItems={cartItems} cartTotal={cartTotal} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} />;
+    if (screen === 'profile') return <ProfileScreen onOpenSubPage={(id: ScreenId) => go(id)} onOpenNotifications={() => go('notifications')} onSignOut={() => { setCart({}); go('splash'); }} />;
     return <Placeholder />;
   })();
-  const activeTab = screen === 'reorder' ? 'reorder' : 'home';
+  const activeTab = screen === 'reorder' ? 'reorder' : screen === 'profile' ? '' : 'home';
 
   // Auth is pre-login — the Paytm surface has no auth (SSO via the container),
   // so the buyer/paytm toggle only makes sense once you're in the app.
