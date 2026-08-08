@@ -30,13 +30,17 @@ export default function OrderSummaryScreen({
   const computeRow = (s: any) => {
     let subtotal = 0;
     let savings = 0;
+    let mrpSavings = 0;
     s.items.forEach((i: any) => {
       const it = i.price * i.quantity;
       subtotal += it;
       if (i.extraDiscount) savings += it * i.extraDiscount;
       if (i.flatOff) savings += i.flatOff;
+      if (i.mrp && i.mrp > i.price) mrpSavings += (i.mrp - i.price) * i.quantity;
     });
-    return { ...s, subtotal, savings, final: subtotal - savings };
+    // What the buyer saved overall = MRP→SP gap + any scheme discounts.
+    const totalSavings = mrpSavings + savings;
+    return { ...s, subtotal, savings, totalSavings, final: subtotal - savings };
   };
 
   // Distributors stay as their own vendor cards; every wholesaler order is
@@ -64,6 +68,7 @@ export default function OrderSummaryScreen({
     0
   );
   const grandTotal = sellerData.reduce((a, s) => a + s.final, 0);
+  const grandSavings = sellerData.reduce((a, s) => a + s.totalSavings, 0);
   const deliveryFee = 30;
   const discount = couponDiscount(appliedCoupon, grandTotal, deliveryFee);
   const toPay = grandTotal + deliveryFee - discount;
@@ -92,8 +97,15 @@ export default function OrderSummaryScreen({
               <div key={s.id} className="os-card">
                 <div className="os-card-head">
                   <div className="os-seller">{s.name}</div>
-                  <div className="os-total">
-                    Total: <strong>₹{Math.round(s.final).toLocaleString('en-IN')}</strong>
+                  <div className="os-head-right">
+                    <div className="os-total">
+                      Total: <strong>₹{Math.round(s.final).toLocaleString('en-IN')}</strong>
+                    </div>
+                    {s.totalSavings > 0 && (
+                      <div className="os-savings">
+                        You save ₹{Math.round(s.totalSavings).toLocaleString('en-IN')}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="os-brands">
@@ -162,6 +174,12 @@ export default function OrderSummaryScreen({
               <span>Grand Total</span>
               <span>₹{Math.round(grandTotal).toLocaleString('en-IN')}</span>
             </div>
+            {grandSavings > 0 && (
+              <div className="os-bill-row os-bill-save">
+                <span>You Save</span>
+                <span>₹{Math.round(grandSavings).toLocaleString('en-IN')}</span>
+              </div>
+            )}
             <div className="os-bill-row">
               <span>Delivery Fee</span>
               <span>₹{deliveryFee}</span>
