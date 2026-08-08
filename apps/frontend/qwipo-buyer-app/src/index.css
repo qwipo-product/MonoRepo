@@ -420,6 +420,11 @@ body {
 }
 
 
+/* Global design system — reusable component classes (@layer components).
+   The single source of truth screens should compose from; feature partials
+   below still override during migration and shrink as screens adopt it. */
+@import "./styles/ds.css";
+
 /* Feature partials — split from the former monolith; @import inlines each
    in this order, so the cascade is byte-identical to the old single file. */
 @import "./styles/01-home-screen.css";
