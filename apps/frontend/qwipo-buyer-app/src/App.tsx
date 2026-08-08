@@ -24,12 +24,13 @@ import GlobalSearchScreen from './screens/GlobalSearchScreen';
 import WholesalerProductListScreen from './screens/WholesalerProductListScreen';
 import ViewItemsScreen from './screens/ViewItemsScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
+import CouponsScreen from './screens/CouponsScreen';
+import CouponAppliedDialog from './components/CouponAppliedDialog';
 import CartValidationSheet from './components/CartValidationSheet';
 import AddressesScreen from './screens/sub/AddressesScreen';
 import PaymentScreen from './screens/sub/PaymentScreen';
 import CreditScreen from './screens/sub/CreditScreen';
 import HelpScreen from './screens/sub/HelpScreen';
-import SettingsScreen from './screens/sub/SettingsScreen';
 import BusinessDetailsScreen from './screens/sub/BusinessDetailsScreen';
 import TermsConditionsScreen from './screens/sub/TermsConditionsScreen';
 import AddToCartSheet from './components/AddToCartSheet';
@@ -105,6 +106,9 @@ export default function App() {
   const [cartValidationOpen, setCartValidationOpen] = useState<boolean>(false);
   const [cart, setCart] = useState(initialCart);
   const [listingCart, setListingCart] = useState({});
+  // Coupon applied to the current order + success popup toggle.
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponSuccess, setCouponSuccess] = useState<any>(null);
   // Id of the seller currently shown on the View Items screen — resolved
   // fresh from `cart` on every render so qty/delete changes stay live.
   const [viewItemsSellerId, setViewItemsSellerId] = useState<string | null>(null);
@@ -151,11 +155,12 @@ export default function App() {
     setSheetVariant(variant);
   };
 
-  // Tap an item on View Items → same sheet as listing, prices hidden.
+  // Tap an item on View Items → same sheet as the listing, with the same
+  // pricing (MRP / SP / Margin) shown so both flows stay consistent.
   const handleViewItemTap = (item) => {
     const product = products.find((p) => p.id === item.productId);
     if (!product) return;
-    setSheetHidePrice(true);
+    setSheetHidePrice(false);
     setSheetSellerOptions(null);
     setSheetProduct(product);
     setSheetVariant(product.variants[0]);
@@ -491,6 +496,21 @@ export default function App() {
                 onBack={() => goBack('cart')}
                 onPlaceOrder={() => setScreen('order-confirmation')}
                 onViewItems={handleViewItems}
+                appliedCoupon={appliedCoupon}
+                onOpenCoupons={() => setScreen('coupons')}
+                onRemoveCoupon={() => setAppliedCoupon(null)}
+              />
+            )}
+            {screen === 'coupons' && (
+              <CouponsScreen
+                cartTotal={cartTotal}
+                appliedId={appliedCoupon?.id}
+                onBack={() => goBack('order-summary')}
+                onApply={(coupon: any) => {
+                  setAppliedCoupon(coupon);
+                  setCouponSuccess(coupon);
+                  setScreen('order-summary');
+                }}
               />
             )}
             {screen === 'order-confirmation' && (
@@ -658,13 +678,6 @@ export default function App() {
             {screen === 'sub:terms' && (
               <TermsConditionsScreen onBack={() => goBack('profile')} />
             )}
-            {(screen === 'sub:invoices' ||
-              screen === 'sub:refer') && (
-              <SettingsScreen
-                onBack={() => goBack('profile')}
-                page={screen.replace('sub:', '')}
-              />
-            )}
             {screen === 'storefront' && (
               <SellerStorefront
                 cartCount={cartCount}
@@ -750,6 +763,13 @@ export default function App() {
               />
             )}
 
+            {couponSuccess && (
+              <CouponAppliedDialog
+                coupon={couponSuccess}
+                onClose={() => setCouponSuccess(null)}
+              />
+            )}
+
             {toast && (
               <div className="toast">
                 <Icon.Check />
@@ -803,6 +823,7 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
     items: [
       { id: 'cart', label: 'Cart Summary' },
       { id: 'order-summary', label: 'Order Summary' },
+      { id: 'coupons', label: 'Coupons / Offers' },
       { id: 'order-confirmation', label: 'Order Confirmation' },
     ],
   },
@@ -822,8 +843,6 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
       { id: 'sub:help', label: 'Account · Contact Us' },
       { id: 'sub:business-details', label: 'Account · Business Details' },
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
-      { id: 'sub:invoices', label: 'Account · Invoices' },
-      { id: 'sub:refer', label: 'Account · Refer & Earn' },
     ],
   },
 ];

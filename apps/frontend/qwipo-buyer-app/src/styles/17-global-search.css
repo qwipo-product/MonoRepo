@@ -1082,7 +1082,7 @@
 .cp-code-check {
   height: 44px;
   padding: 0 18px;
-  background: var(--brand-purple);
+  background: var(--primary);
   color: #ffffff;
   border-radius: 12px;
   font-size: 13px;
@@ -1120,8 +1120,8 @@
 }
 
 .cp-card.on {
-  border-color: var(--brand-purple);
-  background: #faf5ff;
+  border-color: var(--primary);
+  background: #eff6ff;
 }
 
 .cp-card.disabled {
@@ -1191,12 +1191,12 @@
 .cp-card-code {
   font-size: 11px;
   font-weight: 700;
-  color: var(--brand-purple);
-  background: #f3e8ff;
+  color: var(--primary);
+  background: #eff6ff;
   padding: 3px 8px;
   border-radius: 4px;
   letter-spacing: 0.05em;
-  border: 1px dashed #c084fc;
+  border: 1px dashed #93c5fd;
 }
 
 .cp-card-expires {
@@ -1227,23 +1227,21 @@
 }
 
 .cp-radio.on {
-  border-color: var(--brand-purple);
+  border-color: var(--primary);
 }
 
 .cp-radio-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--brand-purple);
+  background: var(--primary);
 }
 
 .cp-footer {
-  position: fixed;
+  position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
+  left: 0;
+  right: 0;
   background: var(--surface-1);
   border-top: 1px solid var(--border);
   padding: 12px 16px 18px;
@@ -1260,7 +1258,7 @@
 .cp-footer-code {
   font-size: 11px;
   font-weight: 700;
-  color: var(--brand-purple);
+  color: var(--primary);
   letter-spacing: 0.05em;
 }
 
@@ -1279,7 +1277,7 @@
 .cp-apply {
   height: 44px;
   padding: 0 28px;
-  background: var(--brand-purple);
+  background: var(--primary);
   color: #ffffff;
   border-radius: 12px;
   font-size: 13px;

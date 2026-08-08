@@ -26,7 +26,6 @@ export default function HelpScreen({ onBack }: any) {
           <ContactIllustration />
 
           <div className="contact-brand-row">
-            <img className="contact-brand-logo" src="/brand/qwipo-primary.svg" alt="" />
             <img className="contact-brand-word" src="/brand/qwipo-logo.svg" alt="Qwipo" />
           </div>
 

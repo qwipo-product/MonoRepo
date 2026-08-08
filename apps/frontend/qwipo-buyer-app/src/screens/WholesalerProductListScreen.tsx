@@ -174,6 +174,11 @@ export default function WholesalerProductListScreen({
                   </div>
                 </div>
 
+                <div className="reorder-delivery-line">
+                  <Icon.Truck size={14} /> Delivery by{' '}
+                  {activePrice.seller.delivery.replace(/\s+by\s+.*$/i, '')}
+                </div>
+
                 {/* Actions — Discounts + Add, exactly like distributor */}
                 <div className="product-actions">
                   <button

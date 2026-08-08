@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { Icon } from './Icons';
 import { SheetHeader, useSheetSwipe } from './SheetBase';
 
+// Drop the packaging descriptor so sizes read "1 Ltr" / "500 ml", not
+// "1 Ltr Pouch" / "500 ml Pouch".
+const stripPack = (s: string) =>
+  s.replace(/\s+(Pouch|Jar|Tin|Box|Packet|Bottle|Sachet|Carton|Bag|Tube|Pack)s?$/i, '');
+
 const CartIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="9" cy="21" r="1" />
@@ -18,15 +23,21 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
 
   const variant = product.variants.find((v) => v.id === variantId);
 
-  const totalPcs =
-    packQuantities.pc +
-    packQuantities.set * Math.floor(variant.casePcs / 2 || 1) +
-    packQuantities.case * variant.casePcs;
+  // Order tiers: a single piece, a half-case "set", and a full case. The set
+  // tier only appears when it's a distinct size between 1 and the full case
+  // (the middle row that used to be computed but never rendered).
+  const setPcs = Math.floor(variant.casePcs / 2) || 1;
+  const tiers = [
+    { key: 'pc', n: 1 },
+    ...(setPcs > 1 && setPcs < variant.casePcs ? [{ key: 'set', n: setPcs }] : []),
+    ...(variant.casePcs > 1 ? [{ key: 'case', n: variant.casePcs }] : []),
+  ];
 
-  const totalValue =
-    packQuantities.pc * variant.sellingPrice +
-    packQuantities.set * variant.sellingPrice * Math.floor(variant.casePcs / 2 || 1) +
-    packQuantities.case * variant.casePrice;
+  const totalPcs = tiers.reduce((sum, t) => sum + packQuantities[t.key] * t.n, 0);
+  const totalValue = tiers.reduce(
+    (sum, t) => sum + packQuantities[t.key] * t.n * variant.sellingPrice,
+    0
+  );
 
   const updateQty = (key, delta) => {
     setPackQuantities((p) => ({
@@ -58,7 +69,11 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
           {/* Product info */}
           <div className="sheet-product">
             <div className="sheet-product-img" style={{ background: product.bgColor }}>
-              {product.image}
+              {product.images?.[0] ? (
+                <img src={product.images[0]} alt="" />
+              ) : (
+                product.image
+              )}
             </div>
             <div className="sheet-product-info">
               <div className="sheet-product-name">{product.name}</div>
@@ -69,12 +84,28 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
                     className={`variant-pill ${v.id === variantId ? 'active' : ''}`}
                     onClick={() => setVariantId(v.id)}
                   >
-                    {v.size}
+                    {stripPack(v.size)}
                   </button>
                 ))}
               </div>
             </div>
           </div>
+
+          {/* MRP / SP / Margin — shown in both the Products and the
+              View Items → Add to Cart flows so pricing stays consistent. */}
+          {!hidePrice && (
+            <div className="sheet-pricing">
+              <div className="sheet-pricing-cell">
+                <span className="sheet-pricing-label">MRP</span>
+                <span className="sheet-pricing-mrp">₹{variant.mrp}</span>
+              </div>
+              <div className="sheet-pricing-cell">
+                <span className="sheet-pricing-label">SP</span>
+                <span className="sheet-pricing-sp">₹{variant.sellingPrice}</span>
+              </div>
+              <span className="margin-badge">{variant.margin}% Margin</span>
+            </div>
+          )}
 
           {/* Seller selector — same chips as the product-listing card.
               Hidden on the View Items sheet (hidePrice). */}
@@ -99,60 +130,56 @@ export default function AddToCartSheet({ product, initialVariant, sellerOptions,
             </div>
           )}
 
-          {/* Pack options */}
+          {/* Pack options — one row per tier (piece / set / case). Each shows
+              the per-piece price and the pack total, plus its own qty stepper. */}
           <div className="sheet-pack-options">
-            <div className={`pack-option ${packQuantities.pc > 0 ? 'selected' : ''}`}>
-              <div className="pack-icon">📦</div>
-              <div className="pack-info">
-                <div className="pack-label">1 X 1</div>
-                <div className="pack-detail">
-                  1 Pc{!hidePrice && <> · <strong>₹{variant.sellingPrice}</strong></>}
-                </div>
-              </div>
-              {packQuantities.pc > 0 ? (
-                <div className="pack-mini-qty">
-                  <button onClick={() => updateQty('pc', -1)}>
-                    <Icon.Minus />
-                  </button>
-                  <span>{packQuantities.pc}</span>
-                  <button onClick={() => updateQty('pc', 1)}>
-                    <Icon.Plus />
-                  </button>
-                </div>
-              ) : (
-                <button className="pack-add-btn" onClick={() => updateQty('pc', 1)}>
-                  <Icon.Plus /> Add
-                </button>
-              )}
-            </div>
-
-            {variant.casePcs > 1 && (
-              <div className={`pack-option ${packQuantities.case > 0 ? 'selected' : ''}`}>
-                <div className="pack-icon">📦</div>
-                <div className="pack-info">
-                  <div className="pack-label">1 X {variant.casePcs}</div>
-                  <div className="pack-detail">
-                    1 Case{!hidePrice && <> · <strong>₹{variant.casePrice.toLocaleString('en-IN')}</strong></>}
+            {tiers.map((t) => {
+              const qty = packQuantities[t.key];
+              const unit = variant.sellingPrice;
+              return (
+                <div key={t.key} className={`pack-option ${qty > 0 ? 'selected' : ''}`}>
+                  <div className="pack-icon">📦</div>
+                  <div className="pack-info">
+                    <div className="pack-label">1 X {t.n}</div>
+                    <div className="pack-detail">
+                      {t.n} Pc{t.n > 1 ? 's' : ''}
+                    </div>
+                  </div>
+                  {!hidePrice && (
+                    <div className="pack-prices">
+                      <div className="pack-unit">
+                        ₹{unit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="pack-total">
+                        ₹{(unit * t.n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  )}
+                  <div className="pack-action">
+                    {qty > 0 ? (
+                      <div className="pack-mini-qty">
+                        <button onClick={() => updateQty(t.key, -1)}>
+                          <Icon.Minus />
+                        </button>
+                        <span>{qty}</span>
+                        <button onClick={() => updateQty(t.key, 1)}>
+                          <Icon.Plus />
+                        </button>
+                      </div>
+                    ) : (
+                      <button className="pack-add-btn" onClick={() => updateQty(t.key, 1)}>
+                        <Icon.Plus /> Add
+                      </button>
+                    )}
+                    {qty > 0 && (
+                      <div className="pack-qty-caption">
+                        {qty * t.n} Pc{qty * t.n > 1 ? 's' : ''}
+                      </div>
+                    )}
                   </div>
                 </div>
-                {packQuantities.case > 0 ? (
-                  <div className="pack-mini-qty">
-                    <button onClick={() => updateQty('case', -1)}>
-                      <Icon.Minus />
-                    </button>
-                    <span>{packQuantities.case}</span>
-                    <button onClick={() => updateQty('case', 1)}>
-                      <Icon.Plus />
-                    </button>
-                  </div>
-                ) : (
-                  <button className="pack-add-btn" onClick={() => updateQty('case', 1)}>
-                    <Icon.Plus /> Add
-                  </button>
-                )}
-              </div>
-            )}
-
+              );
+            })}
           </div>
         </div>
 

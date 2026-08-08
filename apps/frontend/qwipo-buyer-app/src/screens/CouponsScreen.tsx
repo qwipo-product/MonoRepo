@@ -106,9 +106,9 @@ function CouponIcon({ type }: { type: Coupon['type'] }) {
   );
 }
 
-export default function CouponsScreen({ onBack, onApply, cartTotal = 4250 }: any) {
+export default function CouponsScreen({ onBack, onApply, cartTotal = 4250, appliedId = null }: any) {
   const [code, setCode] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(appliedId);
 
   const filtered = code.trim()
     ? COUPONS.filter((c) => c.code.toLowerCase().includes(code.trim().toLowerCase()))

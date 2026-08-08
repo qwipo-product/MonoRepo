@@ -81,8 +81,9 @@
 /* Slim blue address chip per the reference — tight padding, 12 px text,
    small pin + chevron. Full-width strip so the address gets all the room. */
 .location-bar-inner {
-  display: flex;
-  width: 100%;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
   align-items: center;
   gap: 4px;
   padding: 4px 10px;

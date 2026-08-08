@@ -1,7 +1,31 @@
 import { Icon, StatusBar } from '../components/Icons';
 import { userProfile } from '@mockups/mock-data';
 
-export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewItems }: any) {
+// Immediate off applied to the bill for a coupon. Cashback lands in the wallet
+// later, so it isn't subtracted from To pay here.
+function couponDiscount(coupon: any, grandTotal: number, deliveryFee: number) {
+  if (!coupon) return 0;
+  if (coupon.type === 'flat') return coupon.value;
+  if (coupon.type === 'percent') return Math.round((grandTotal * coupon.value) / 100);
+  if (coupon.type === 'free') return deliveryFee;
+  return 0;
+}
+
+function couponSavingsText(coupon: any, discount: number) {
+  if (coupon.type === 'free') return 'Free delivery';
+  if (coupon.type === 'cashback') return `${coupon.value}% cashback to wallet`;
+  return `₹${discount.toLocaleString('en-IN')}`;
+}
+
+export default function OrderSummaryScreen({
+  cart,
+  onBack,
+  onPlaceOrder,
+  onViewItems,
+  appliedCoupon,
+  onOpenCoupons,
+  onRemoveCoupon,
+}: any) {
   const sellerData = cart.sellers.map((s) => {
     let subtotal = 0;
     let savings = 0;
@@ -20,7 +44,8 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
   );
   const grandTotal = sellerData.reduce((a, s) => a + s.final, 0);
   const deliveryFee = 30;
-  const toPay = grandTotal + deliveryFee;
+  const discount = couponDiscount(appliedCoupon, grandTotal, deliveryFee);
+  const toPay = grandTotal + deliveryFee - discount;
 
   return (
     <>
@@ -69,6 +94,39 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
             );
           })}
 
+          {/* Coupons — Qwipo Vendor offers */}
+          {appliedCoupon ? (
+            <div className="os-coupon os-coupon-applied">
+              <span className="os-coupon-icon applied">
+                <Icon.Check />
+              </span>
+              <span className="os-coupon-text">
+                <span className="os-coupon-title">‘{appliedCoupon.code}’ applied</span>
+                <span className="os-coupon-sub">
+                  You save {couponSavingsText(appliedCoupon, discount)}
+                </span>
+              </span>
+              <button
+                className="os-coupon-remove"
+                onClick={onRemoveCoupon}
+                aria-label="Remove coupon"
+              >
+                <Icon.Close size={16} />
+              </button>
+            </div>
+          ) : (
+            <button className="os-coupon os-coupon-cta" onClick={onOpenCoupons}>
+              <span className="os-coupon-icon">
+                <Icon.Tag />
+              </span>
+              <span className="os-coupon-text">
+                <span className="os-coupon-title">Qwipo Vendor Coupons</span>
+                <span className="os-coupon-sub">Offers available — tap to view &amp; apply</span>
+              </span>
+              <Icon.ChevronRight />
+            </button>
+          )}
+
           {/* Bill details */}
           <div className="os-bill">
             <div className="os-bill-head">Bill details</div>
@@ -84,6 +142,12 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
               <span>Delivery Fee</span>
               <span>₹{deliveryFee}</span>
             </div>
+            {appliedCoupon && discount > 0 && (
+              <div className="os-bill-row discount">
+                <span>Coupon ({appliedCoupon.code})</span>
+                <span>−₹{discount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
             <div className="os-bill-row bold">
               <span>To pay:</span>
               <span>₹{Math.round(toPay).toLocaleString('en-IN')}</span>

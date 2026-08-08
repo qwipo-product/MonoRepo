@@ -2822,6 +2822,56 @@
   justify-content: center;
   font-size: 30px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sheet-product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* MRP / SP / Margin summary row inside the Add-to-Cart sheet */
+.sheet-pricing {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.sheet-pricing-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sheet-pricing-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sheet-pricing-mrp {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.sheet-pricing-sp {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.sheet-pricing .margin-badge {
+  margin-left: auto;
 }
 
 .sheet-product-info {
@@ -2867,6 +2917,43 @@
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
+}
+
+/* Add / qty stepper + the pcs caption stacked beneath it */
+.pack-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pack-qty-caption {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Per-piece price stacked above the pack total */
+.pack-prices {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.pack-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pack-total {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
 }
 
 .pack-info {

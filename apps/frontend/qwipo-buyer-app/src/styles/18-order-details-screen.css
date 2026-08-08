@@ -398,6 +398,67 @@
   color: #2563eb;
 }
 
+/* Coupon applied — success popup */
+.coupon-dlg-card {
+  width: 100%;
+  max-width: 300px;
+  background: var(--surface-1);
+  border-radius: 16px;
+  padding: 26px 22px 20px;
+  box-shadow: 0 18px 40px -8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.coupon-dlg-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.coupon-dlg-check svg {
+  width: 30px;
+  height: 30px;
+}
+
+.coupon-dlg-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.coupon-dlg-code {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: 0.03em;
+}
+
+.coupon-dlg-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.coupon-dlg-btn {
+  margin-top: 12px;
+  width: 100%;
+  height: 44px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 /* My Orders — order card v3 (seller + status pill, ID pill, grand
    total / expected delivery box, Cancel + Track Order actions) */
 .mo-card {
