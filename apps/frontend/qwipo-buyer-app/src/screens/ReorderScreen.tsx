@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Icon, StatusBar } from '../components/Icons';
-import BottomNav from '../components/BottomNav';
 import { reorderHistory, products } from '@mockups/mock-data';
 
 // Two wholesaler price options per SKU, same deterministic-offset pattern as
@@ -201,9 +200,7 @@ export default function ReorderScreen({
         <div className="cart-strip">
           <div className="cart-strip-info">
             <div className="cart-strip-label">Total Cart Value:</div>
-            <div className="cart-strip-value">
-              ₹{cartTotal.toLocaleString('en-IN')} <Icon.Truck size={13} /> + ₹12 Fees
-            </div>
+            <div className="cart-strip-value">₹{cartTotal.toLocaleString('en-IN')}</div>
           </div>
           <button className="cart-strip-btn" onClick={onGoToCart}>
             <Icon.Cart />
@@ -211,8 +208,6 @@ export default function ReorderScreen({
           </button>
         </div>
       )}
-
-      <BottomNav active="listing" cartCount={cartCount} onNavigate={onNavigate} />
     </>
   );
 }

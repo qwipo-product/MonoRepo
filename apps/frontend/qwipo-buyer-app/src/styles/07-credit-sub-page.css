@@ -1,0 +1,130 @@
+/* ============================================================
+   CREDIT SUB-PAGE
+   ============================================================ */
+.credit-hero {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  padding: 22px 16px;
+  color: #ffffff;
+}
+
+.credit-hero-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.credit-hero-value {
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin-top: 2px;
+}
+
+.credit-hero-grid {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.credit-hero-meta {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+}
+
+.credit-hero-strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.credit-due-card {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.credit-due-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.credit-due-date {
+  font-size: 15px;
+  font-weight: 500;
+  color: #78350f;
+  margin-top: 2px;
+}
+
+.credit-pay-btn {
+  padding: 10px 14px;
+  background: #92400e;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.credit-txn {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.credit-txn.last {
+  border-bottom: none;
+}
+
+.credit-txn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.credit-txn-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.credit-txn-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.credit-txn-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.credit-txn-amount {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.credit-txn-amount.pos {
+  color: #059669;
+}
+

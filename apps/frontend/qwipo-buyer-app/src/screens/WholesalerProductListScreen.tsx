@@ -209,6 +209,12 @@ export default function WholesalerProductListScreen({
                     </button>
                   )}
                 </div>
+
+                {cartQty > 0 && (
+                  <div className="product-line-total">
+                    ₹{(activePrice.price * cartQty).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                )}
               </div>
             );
           })}

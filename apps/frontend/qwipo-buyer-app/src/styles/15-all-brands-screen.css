@@ -1,0 +1,98 @@
+/* ============================================================
+   ALL BRANDS SCREEN
+   ============================================================ */
+.ab-body {
+  padding: 18px 16px 30px;
+}
+
+.ab-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ab-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ab-tile:active {
+  transform: scale(0.95);
+}
+
+.ab-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.ab-circle img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.ab-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neutral);
+  text-align: center;
+}
+
+/* ============================================================
+   WHOLESALER CATEGORIES (Groceries / FMCG drill-in)
+   ============================================================ */
+.wc-grid {
+  padding: 14px 16px 30px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wc-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.wc-tile:active {
+  transform: scale(0.97);
+}
+
+.wc-img {
+  width: 100%;
+  aspect-ratio: 1.1 / 1;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.wc-emoji {
+  font-size: 54px;
+}
+
+.wc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+

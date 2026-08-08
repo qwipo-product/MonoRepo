@@ -10,7 +10,6 @@ export default function ProfileScreen({ cartCount, onNavigate, onOpenSubPage, on
       <StatusBar />
       <div className="screen-body profile-screen-v2">
         <div className="profile-topbar">
-          <img className="profile-topbar-logo" src="/brand/qwipo-primary.svg" alt="" />
           <img className="profile-topbar-word" src="/brand/qwipo-logo.svg" alt="Qwipo" />
         </div>
 

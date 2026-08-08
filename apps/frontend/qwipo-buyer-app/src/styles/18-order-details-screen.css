@@ -1,0 +1,865 @@
+/* ============================================================
+   ORDER DETAILS SCREEN
+   ============================================================ */
+.od-seller {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.od-seller-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.od-seller-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.od-seller-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.od-status {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.od-status.status-placed {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.od-status.status-cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.od-status.status-delivered {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.od-section {
+  padding: 16px 16px 0;
+}
+
+.od-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-fg);
+  margin-bottom: 10px;
+}
+
+.od-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-card .orders-row.total {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.od-card .orders-row.total .orders-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.od-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.od-item-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.od-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.od-item-img span {
+  font-size: 26px;
+}
+
+.od-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.od-item-brand {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.od-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.od-item-meta {
+  font-size: 11px;
+  color: var(--muted-fg);
+  margin-top: 3px;
+}
+
+.od-item-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.od-item-current {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.od-item-mrp {
+  font-size: 11px;
+  color: var(--muted-fg);
+  text-decoration: line-through;
+  margin-top: 1px;
+}
+
+.od-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.od-address-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.od-address-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.od-address-line {
+  font-size: 12px;
+  color: var(--muted-fg);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.od-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px 24px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.od-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.od-btn.ghost {
+  background: var(--surface-1);
+  color: #2563eb;
+  border: 1.5px solid #2563eb;
+}
+
+.od-btn.danger {
+  background: var(--surface-1);
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+}
+
+.od-btn.primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.od-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Inline copyable text (Order IDs) */
+.copy-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: none;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 150ms ease;
+}
+
+.copy-text:hover,
+.copy-text:active {
+  background: var(--surface-3);
+}
+
+.copy-text-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--muted-fg);
+}
+
+.copy-text-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.copy-text-value {
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   ORDER CARD v2 — reference-matched label/value layout with an
+   "Order Details" header row and a single Track Order CTA.
+   ============================================================ */
+.orders-card-v2 {
+  background: var(--surface-1);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  padding: 14px 16px;
+  margin: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders-card-v2-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.orders-kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+.orders-kv-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.orders-kv-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: right;
+}
+
+.orders-kv-id {
+  display: flex;
+}
+
+.orders-status-red {
+  color: #dc2626;
+}
+
+.orders-track-btn {
+  margin-top: 14px;
+  height: 42px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Cancel-order confirmation — compact text-link style dialog */
+.cancel-dlg-card {
+  width: 100%;
+  max-width: 300px;
+  background: var(--surface-1);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 18px 40px -8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cancel-dlg-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #dc2626;
+  line-height: 1.4;
+}
+
+.cancel-dlg-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+
+.cancel-dlg-btn {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.cancel-dlg-btn.primary {
+  color: #2563eb;
+}
+
+/* My Orders — order card v3 (seller + status pill, ID pill, grand
+   total / expected delivery box, Cancel + Track Order actions) */
+.mo-card {
+  background: var(--surface-1);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mo-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+
+.mo-seller-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.mo-status-pill {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mo-status-pill.status-placed { background: #fef2f2; color: #dc2626; }
+.mo-status-pill.status-in_transit { background: #ecfdf5; color: #059669; }
+.mo-status-pill.status-processing { background: #eff6ff; color: #2563eb; }
+.mo-status-pill.status-delivered { background: #f3f4f6; color: #6b7280; }
+.mo-status-pill.status-cancelled { background: #f3f4f6; color: #9ca3af; }
+
+.mo-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mo-id-row {
+  display: flex;
+}
+
+.mo-id-pill {
+  background: var(--info-bg) !important;
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+}
+
+.mo-info-box {
+  display: flex;
+  background: var(--surface-3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 2px 0;
+}
+
+.mo-info-col {
+  flex: 1;
+}
+
+.mo-info-col.right {
+  text-align: right;
+}
+
+.mo-info-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.mo-info-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.mo-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mo-cancel-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #dc2626;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 700;
+  background: transparent;
+}
+
+.mo-track-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mo-invoice-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+}
+
+.mo-cancel-note {
+  font-size: 11px;
+  color: var(--text-placeholder);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   COMPACT ORDER CARD — replaces the 8-row label/value layout.
+   Single tap target opens Order Details; inner action buttons
+   stopPropagation so they don't re-trigger the card click.
+   ============================================================ */
+.orders-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  text-align: left;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.orders-card:active {
+  transform: scale(0.995);
+}
+
+.orders-card-row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.orders-card-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.orders-card-seller {
+  flex: 1;
+  min-width: 0;
+}
+
+.orders-card-seller-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orders-card-meta {
+  font-size: 11px;
+  color: var(--muted-fg);
+  margin-top: 2px;
+}
+
+.orders-status-pill {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.orders-status-pill.status-placed { background: #fff7ed; color: #c2410c; }
+.orders-status-pill.status-in_transit { background: #fef3c7; color: #92400e; }
+.orders-status-pill.status-processing { background: #ede9fe; color: #6d28d9; }
+.orders-status-pill.status-delivered { background: #ecfdf5; color: #047857; }
+.orders-status-pill.status-cancelled { background: #fef2f2; color: #b91c1c; }
+
+.orders-card-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 10px;
+}
+
+.orders-card-eta {
+  text-align: right;
+}
+
+.orders-card-total-label,
+.orders-card-eta-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-fg);
+  margin-bottom: 2px;
+}
+
+.orders-card-total-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.orders-card-eta-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.orders-card-id {
+  display: flex;
+}
+
+.orders-card-id .copy-text {
+  background: var(--surface-3);
+}
+
+.orders-card-id .copy-text-value {
+  font-size: 11px;
+  color: var(--muted-fg);
+}
+
+.orders-actions.compact {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.orders-actions.compact .orders-action {
+  flex: 1;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 0 12px;
+}
+
+/* ============================================================
+   ADD-ADDRESS SHEET — map picker + form
+   ============================================================ */
+.sheet.sheet-tall {
+  max-height: 92%;
+}
+
+.map-canvas {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: #E5F0FF;
+  overflow: hidden;
+}
+
+.map-canvas-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  animation: map-pin-bob 1.6s ease-in-out infinite;
+}
+
+@keyframes map-pin-bob {
+  0%, 100% { transform: translate(-50%, -100%); }
+  50% { transform: translate(-50%, calc(-100% - 4px)); }
+}
+
+.map-pin-shadow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.map-locate-btn {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563EB;
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+.map-current {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #F9FAFB;
+  border-bottom: 1px solid var(--border);
+}
+
+.map-current-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.map-current-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.map-current-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-fg);
+}
+
+.map-current-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 2px;
+}
+
+/* Form fields */
+.form-field {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted-fg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.form-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Address type tabs */
+.addr-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.addr-type-chip {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.addr-type-chip.on {
+  border-color: var(--brand-purple);
+  background: #faf5ff;
+  color: var(--brand-purple);
+}
+
+/* Static sheet footer for forms */
+.sheet-footer-static {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px 24px;
+  display: flex;
+  gap: 10px;
+}
+
+.sheet-footer-static .dlg-btn {
+  flex: 1;
+  height: 44px;
+  font-size: 13px;
+}
+

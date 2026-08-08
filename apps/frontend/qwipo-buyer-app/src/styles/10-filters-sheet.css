@@ -1,0 +1,2974 @@
+/* ============================================================
+   FILTERS SHEET
+   ============================================================ */
+.filter-block {
+  margin-bottom: 18px;
+}
+
+.filter-block-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-block-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: #2563eb;
+  margin-left: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.filter-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.filter-radio {
+  width: 100%;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-radio.on {
+  background: #eff6ff;
+}
+
+.filter-radio-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.filter-radio.on .filter-radio-dot {
+  border-color: #2563eb;
+}
+
+.filter-radio.on .filter-radio-dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.filter-radio-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-radio-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.filter-radio-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Chip grid for stock / margin / brands */
+.filter-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-pill-chip {
+  padding: 8px 14px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.filter-pill-chip:active {
+  transform: scale(0.96);
+}
+
+.filter-pill-chip.on {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.filter-pill-chip .stock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* Toggle row for schemes-only */
+.filter-toggle-row {
+  width: 100%;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-toggle-row.on {
+  background: #eff6ff;
+  border-color: #c7d2fe;
+}
+
+.filter-toggle-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sticky footer with Reset + Apply */
+.filter-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-soft);
+  padding: 12px 16px 16px;
+  display: flex;
+  gap: 10px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.filter-reset-btn {
+  flex: 0 0 35%;
+  height: 44px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border-strong);
+  color: var(--foreground);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.filter-apply-btn {
+  flex: 1;
+  height: 44px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Distributor cards */
+.distributor-card {
+  flex-shrink: 0;
+  width: 92px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.distributor-card:active {
+  transform: scale(0.97);
+}
+
+.distributor-card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.distributor-card-logo {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.distributor-card-brand {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.distributor-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.25;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.distributor-card-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Brand grid */
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 64px);
+  grid-auto-rows: max-content;
+  column-gap: 12px;
+  row-gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 16px;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.brand-grid::-webkit-scrollbar { display: none; }
+
+.brand-grid-tile {
+  scroll-snap-align: start;
+}
+
+.brand-grid-tile {
+  text-align: center;
+  cursor: pointer;
+}
+
+.brand-grid-tile:active {
+  transform: scale(0.95);
+}
+
+.brand-grid-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.brand-grid-circle img {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+}
+
+.brand-grid-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+/* Wholesaler categories */
+.wholesale-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.wholesale-category-card {
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.wholesale-category-card:active {
+  transform: scale(0.97);
+}
+
+.wholesale-category-img {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.wholesale-category-emoji {
+  font-size: 40px;
+  text-align: center;
+  padding: 16px 0 4px;
+}
+
+.wholesale-category-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+  padding-bottom: 12px;
+}
+
+.wholesale-category-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  padding: 8px 12px 10px;
+  text-align: center;
+}
+
+/* Exclusive offer cards — square per the reference. */
+.exclusive-card {
+  flex-shrink: 0;
+  width: 156px;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.exclusive-card:active {
+  transform: scale(0.97);
+}
+
+.exclusive-card-discount {
+  display: inline-block;
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.95);
+  color: #dc2626;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+.exclusive-card-art {
+  font-size: 44px;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.exclusive-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.exclusive-card-sub {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.exclusive-card-cta {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   TOP BAR — sticky header on every screen
+   ============================================================ */
+.top-bar {
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.icon-btn:active {
+  background: #e5e7eb;
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--foreground);
+}
+
+.top-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-title h1 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-title p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.breadcrumb::-webkit-scrollbar {
+  display: none;
+}
+
+.crumb {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Current page in the trail — blue and not clickable. */
+.crumb.last {
+  color: #2563eb;
+  cursor: default;
+}
+
+.crumb-sep {
+  color: #d1d5db;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SCREEN 1 — Seller Storefront
+   ============================================================ */
+.storefront-hero {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  padding: 18px 16px 24px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.storefront-hero::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.seller-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+.seller-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e3a8a;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.seller-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.seller-name {
+  font-size: 17px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.01em;
+}
+
+.verified-badge {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.verified-badge svg {
+  width: 11px;
+  height: 11px;
+}
+
+.seller-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seller-meta-dot {
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+/* Seller hero meta tag — replaces the previous rating pill */
+.seller-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #a7f3d0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.seller-stats {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 14px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.seller-stats.two-cell {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Single delivery window — lay the one cell out horizontally: day on the
+   left, MOV on the right, instead of a lonely stacked column. */
+.seller-stats.one-cell {
+  grid-template-columns: 1fr;
+}
+
+.seller-stats.one-cell .stat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.seller-stats.one-cell .stat-label {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+.stat-cell {
+  text-align: center;
+}
+
+.stat-cell + .stat-cell {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 4px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.stat-value-sub {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 1px;
+}
+
+/* Search */
+.search-bar-wrap {
+  padding: 16px 16px 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.search-bar svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-placeholder);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.search-bar input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.search-bar-divider {
+  width: 1px;
+  height: 18px;
+  background: #e5e7eb;
+}
+
+.scan-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Section block */
+.section {
+  padding: 24px 16px 0;
+}
+
+/* When a section sits directly under the sticky cluster (Distributors brand
+   drill-in), tighten its top padding to match the search→content rhythm. */
+.dl-sticky-top + .section {
+  padding-top: 8px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.section-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+  background: none;
+  padding: 0;
+}
+
+/* Categories grid */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.category-tile {
+  background: var(--surface-1);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.category-tile:active {
+  transform: scale(0.97);
+}
+
+.category-icon-wrap {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.category-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.category-count {
+  font-size: 10px;
+  color: var(--text-placeholder);
+}
+
+/* Brands rail */
+.rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.brand-tile {
+  flex-shrink: 0;
+  width: 80px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 auto 6px;
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.brand-circle img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.brand-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.25;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 28px;
+}
+
+/* Promo card */
+.promo-card {
+  margin: 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.promo-text {
+  flex: 1;
+}
+
+.promo-tag {
+  font-size: 10px;
+  font-weight: 500;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.promo-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #78350f;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.promo-sub {
+  font-size: 11px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.promo-emoji {
+  font-size: 36px;
+}
+
+/* Featured products on storefront */
+.product-rail-card {
+  flex-shrink: 0;
+  width: 152px;
+  background: var(--surface-1);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 10px;
+  cursor: pointer;
+}
+
+.product-rail-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  margin-bottom: 8px;
+}
+
+.product-rail-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.product-rail-price {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.product-rail-mrp {
+  font-size: 11px;
+  color: var(--text-placeholder);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+/* ============================================================
+   SCREEN 2 — Product Listing
+   ============================================================ */
+.filter-bar {
+  position: sticky;
+  top: 60px;
+  background: var(--surface-1);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  z-index: 9;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-chip.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.filter-chip svg {
+  width: 12px;
+  height: 12px;
+}
+
+.product-list {
+  padding: 10px 16px 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-card {
+  background: var(--surface-1);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+}
+
+/* Head row — title + subline on the LEFT, large product image on the RIGHT.
+   Mirrors the buyer-app reference design. */
+.product-card-top {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.product-img {
+  order: 2;                 /* push image to the right of the flex row */
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  padding: 0;               /* image fills the container edge-to-edge */
+  border: 1px solid var(--border-soft);
+  background: var(--surface-1) !important;
+  cursor: pointer;
+  position: relative;
+}
+
+.product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-img-count {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(17, 24, 39, 0.7);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.product-info {
+  order: 1;                 /* keep text on the LEFT of the head row */
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-brand-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0;
+  /* Clamp at two lines and ellipsise — keeps the card height predictable. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Seller-name label under the SKU name on the distributor product card —
+   muted chip so it reads as informative metadata, not a primary action. */
+.product-seller {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px 8px;
+  background: var(--surface-3);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* Sub line under the name: "16 pc/Case ₹ 2,832" */
+.product-subline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.product-subline .product-case-price {
+  color: var(--text-muted);
+}
+
+/* B2B-relevant meta pill — replaces consumer rating */
+.product-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.product-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface-3);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* Compact stock chip used inside the brand row */
+.stock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.stock-chip .stock-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.stock-chip.stock-available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.stock-chip.stock-available .stock-dot {
+  background: #10b981;
+}
+
+.stock-chip.stock-limited {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.stock-chip.stock-limited .stock-dot {
+  background: #f59e0b;
+}
+
+.stock-chip.stock-out {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.stock-chip.stock-out .stock-dot {
+  background: #ef4444;
+}
+
+/* Green Discounts CTA — replaces the stock pill on the action row */
+.discounts-btn {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--surface-1);
+  border: 1.5px solid #10b981;
+  color: #065f46;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+
+.discounts-btn:active {
+  background: #f0fdf4;
+}
+
+.discounts-btn svg {
+  width: 14px;
+  height: 14px;
+  color: #059669;
+}
+
+.variant-pills {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.variant-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.variant-pill {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.variant-pill.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Pricing row — "13% Margin" + delivery note stacked on the LEFT,
+   MRP stacked above the current price on the RIGHT (right-aligned). */
+.product-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.price-main {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.price-current {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.price-unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 1px;
+}
+
+.price-mrp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.price-mrp {
+  font-size: 12px;
+  color: #dc2626;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.price-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.case-pricing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--surface-3);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.case-pricing-price {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Left column of the price row: margin chip on top, delivery note below. */
+.margin-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.product-delivery-fee-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #16a34a;
+}
+
+.product-delivery-fee-inline svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Outlined green margin chip — transparent fill, green border + text. */
+.margin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #059669;
+}
+
+.scheme-banner {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px dashed #fbbf24;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.scheme-icon {
+  width: 22px;
+  height: 22px;
+  background: #fbbf24;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.scheme-icon svg {
+  width: 12px;
+  height: 12px;
+  color: #ffffff;
+}
+
+.product-actions {
+  display: flex;
+  justify-content: space-between;   /* discount left, add right, gap in between */
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+  align-items: center;
+}
+
+/* Two-column delivery radio selector under each distributor product card.
+   Friday (beat day) leads and is the default. Switching mirrors to every
+   other product from the same seller and to the cart.
+
+   The delivery fee currently always reads "Free Delivery" beneath both
+   chips — once dynamic per-seller fees ship, the bottom note will pick up
+   the chosen option's fee. */
+.product-delivery {
+  display: grid;
+  /* Always reserve two columns so a single-option card (Beat == Tomorrow
+     for this buyer's route) keeps the same half-width pill as the
+     two-option layout — no stretching to the full row. */
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.product-delivery-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+/* Read-only variant — same shape, no interactivity. Used by the
+   ProductListingV2 preview where delivery info is informational only. */
+.product-delivery-option.readonly {
+  cursor: default;
+  background: var(--surface-hover, #f7f7f9);
+}
+
+.product-delivery-option.active {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  background: var(--surface, #fff);
+  color: inherit;
+}
+
+.product-delivery-radio {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #c4c4cc;
+  background: #fff;
+  position: relative;
+  transition: border-color 120ms ease;
+}
+
+.product-delivery-option.active .product-delivery-radio {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+.product-delivery-option.active .product-delivery-radio::after {
+  content: '';
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.product-delivery-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.product-delivery-day {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  line-height: 1.15;
+}
+
+.product-delivery-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.15;
+}
+
+.product-delivery-meta strong {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+
+/* Per-seller delivery selector in the cart — compact pill chips: Tomorrow,
+   Friday, Self pickup. One can be active at a time. The chosen chip updates
+   the "Delivery:" line under the seller name and the delivery-fee subtotal
+   row; the MOV stays the same across all options. */
+.cart-delivery-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.cart-delivery-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cart-delivery-chip.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+/* Legacy 2-card toggle styles kept for reference (no longer used in JSX). */
+.cart-delivery-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+
+.cart-delivery-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cart-delivery-option.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.cart-delivery-line {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.cart-delivery-day {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.cart-delivery-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cart-delivery-meta strong {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.cart-delivery-fee {
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Cart grouping — "Distributors" header above distributor seller cards,
+   "Wholesalers" header above wholesaler seller cards. */
+.cart-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cart-group + .cart-group {
+  margin-top: 20px;
+}
+
+.cart-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 4px 4px;
+}
+
+.cart-group-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.cart-group-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Per-seller action row — "Add items" + "View items" CTAs replace the
+   always-on items list. View toggles the items panel inline. */
+.cart-seller-actions {
+  display: flex;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.cart-action-btn {
+  flex: 1;
+  height: 36px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cart-action-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.cart-action-add {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.cart-action-view {
+  background: var(--surface-1);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.cart-action-btn:active {
+  transform: scale(0.98);
+}
+
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.stock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.stock-available {
+  color: #059669;
+}
+
+.stock-available .stock-dot {
+  background: #10b981;
+}
+
+.stock-limited {
+  color: #d97706;
+}
+
+.stock-limited .stock-dot {
+  background: #f59e0b;
+}
+
+.stock-out {
+  color: #dc2626;
+}
+
+.stock-out .stock-dot {
+  background: #ef4444;
+}
+
+.add-btn {
+  flex: 1;
+  height: 40px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.add-btn:active {
+  background: #1d4ed8;
+}
+
+.add-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Compact variants used in the listing — sized to content so the row reads
+   as two pills (left Discounts, right Add) instead of full-width split. */
+.add-btn.compact {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.add-btn.compact svg {
+  width: 12px;
+  height: 12px;
+}
+
+.add-btn:disabled {
+  background: #e5e7eb;
+  color: var(--text-placeholder);
+  cursor: not-allowed;
+}
+
+/* Filled green Discounts CTA — sized to content. */
+.discounts-btn-filled {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+
+.discounts-btn-filled:active {
+  background: #059669;
+}
+
+.discounts-btn-filled svg {
+  width: 12px;
+  height: 12px;
+  color: #ffffff;
+}
+
+/* Compact qty controller used in the listing card */
+.qty-control.compact {
+  flex: 0 0 auto;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.qty-control.compact .qty-btn {
+  width: 32px;
+  font-size: 14px;
+}
+
+.qty-control.compact .qty-value {
+  font-size: 13px;
+}
+
+/* Order Confirmation */
+.order-confirmation-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.oc-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  gap: 20px;
+}
+
+.oc-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.oc-check {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #059669;
+  border: 6px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oc-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.oc-footer {
+  padding: 0 20px 28px;
+}
+
+.oc-home-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* View Items */
+.vi-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.vi-head-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.vi-head-seller {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  margin: 2px 0;
+}
+
+.vi-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.vi-head-total {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.vi-head-total span {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.vi-list {
+  padding: 12px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vi-item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+
+.vi-item-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--danger-bg);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vi-item-img {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  cursor: pointer;
+  border: none;
+}
+
+.vi-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vi-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  padding-right: 20px;
+  cursor: pointer;
+}
+
+.vi-item-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vi-item-qty-badge {
+  align-self: flex-start;
+  min-width: 60px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.vi-item-mrp {
+  font-size: 11px;
+  color: var(--text-placeholder);
+  text-decoration: line-through;
+}
+
+.vi-item-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Filter trigger icon button with active count badge */
+.filter-trigger {
+  position: relative;
+}
+
+.filter-trigger-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface-1);
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 40px;
+  border: 1.5px solid #2563eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 40px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-1);
+  color: #2563eb;
+  font-size: 18px;
+  font-weight: 500;
+  transition: background 0.1s;
+}
+
+.qty-btn:active {
+  background: #eff6ff;
+}
+
+.qty-value {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.qty-value-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ============================================================
+   STICKY CART SUMMARY at bottom of listing
+   ============================================================ */
+.cart-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-soft);
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.cart-strip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-strip-meta,
+.cart-strip-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-strip-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.cart-strip-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.cart-strip-value svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: -1px;
+  margin: 0 2px;
+  color: var(--text-muted);
+}
+
+.cart-strip-meta {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 500;
+}
+
+.cart-strip-btn {
+  background: #2563eb;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-strip-btn:active {
+  background: #1d4ed8;
+}
+
+.cart-strip-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cart-strip-btn .badge {
+  background: var(--surface-1);
+  color: var(--foreground);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* ============================================================
+   SCREEN 3 — Multi-Seller Cart
+   ============================================================ */
+.cart-screen {
+  padding: 12px 16px 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.savings-banner {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.savings-icon {
+  width: 36px;
+  height: 36px;
+  background: #10b981;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.savings-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.savings-text {
+  flex: 1;
+}
+
+.savings-text strong {
+  font-size: 13px;
+  color: #065f46;
+  font-weight: 500;
+}
+
+.savings-text p {
+  font-size: 11px;
+  color: #047857;
+  margin-top: 1px;
+}
+
+/* Seller block in cart */
+.seller-block {
+  background: var(--surface-1);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.seller-block-head {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.seller-block-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.seller-block-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.seller-block-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 2px;
+}
+
+.seller-block-delivery {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.seller-block-delivery svg {
+  width: 12px;
+  height: 12px;
+}
+
+.seller-block-chevron {
+  color: var(--text-placeholder);
+}
+
+/* MOV progress */
+.mov-block {
+  padding: 12px 14px;
+  background: var(--surface-hover);
+}
+
+.mov-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.mov-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.mov-status {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mov-status.met {
+  color: #059669;
+}
+
+.mov-status.pending {
+  color: #d97706;
+}
+
+.mov-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.mov-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.mov-fill.met {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.mov-fill.pending {
+  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.mov-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.mov-detail strong {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Cart item */
+.cart-items {
+  padding: 6px 14px 14px;
+}
+
+.cart-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.cart-item:last-child {
+  border-bottom: none;
+}
+
+.cart-item-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.cart-item-variant {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cart-item-pricing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cart-item-price {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.cart-item-mrp {
+  font-size: 11px;
+  color: var(--text-placeholder);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.cart-item-scheme {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 6px;
+  padding: 2px 6px;
+  background: #fef3c7;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.cart-item-qty {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  height: 28px;
+  overflow: hidden;
+  align-self: flex-end;
+  flex-shrink: 0;
+}
+
+.cart-item-qty button {
+  width: 28px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.cart-item-qty button:active {
+  background: var(--surface-3);
+}
+
+.cart-item-qty span {
+  width: 30px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.free-tag {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  background: #d1fae5;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #065f46;
+}
+
+/* MOV suggestions */
+.mov-suggest {
+  background: #fffbeb;
+  margin: 0 14px 14px;
+  border-radius: 12px;
+  border: 1px dashed #fbbf24;
+  padding: 12px;
+}
+
+.mov-suggest-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mov-suggest-head svg {
+  width: 16px;
+  height: 16px;
+  color: #d97706;
+}
+
+.mov-suggest-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.suggest-rail {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -12px;
+  padding: 0 12px 4px;
+}
+
+.suggest-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.suggest-card {
+  flex-shrink: 0;
+  width: 110px;
+  background: var(--surface-1);
+  border-radius: 10px;
+  padding: 8px;
+  border: 1px solid #fde68a;
+}
+
+.suggest-img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.suggest-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 28px;
+}
+
+.suggest-price {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.suggest-add {
+  width: 100%;
+  margin-top: 6px;
+  height: 26px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Seller subtotal */
+.seller-subtotal {
+  padding: 12px 14px;
+  background: var(--surface-hover);
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subtotal-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.subtotal-row.bold {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  padding-top: 6px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.subtotal-row .saving {
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Cart footer */
+.cart-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-soft);
+  padding: 14px 16px 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.cart-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.cart-footer-total-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cart-footer-total {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
+}
+
+.cart-footer-savings {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 500;
+  text-align: right;
+}
+
+.checkout-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.checkout-btn:disabled {
+  background: #d1d5db;
+  color: var(--text-placeholder);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.checkout-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================================
+   BOTTOM SHEET — Add to Cart modal
+   ============================================================ */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sheet {
+  width: 100%;
+  background: var(--surface-1);
+  border-radius: 24px 24px 0 0;
+  padding-bottom: 16px;
+  max-height: 85%;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+}
+
+/* Old .sheet-handle replaced by the swipe-enabled handle defined above */
+
+.sheet-head {
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* New unified sheet header — handle + icon + title + close */
+.sheet-header {
+  padding: 4px 20px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.sheet-header:active {
+  cursor: grabbing;
+}
+
+.sheet-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.sheet-header-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sheet-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.sheet-close-btn:active {
+  background: #e5e7eb;
+}
+
+.sheet-close-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sheet-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sheet-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Make the handle pull-area easier to grab */
+.sheet-handle {
+  cursor: grab;
+  touch-action: none;
+  padding: 6px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  background: transparent;
+}
+
+.sheet-handle::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+.sheet-handle:active {
+  cursor: grabbing;
+}
+
+.sheet-body {
+  padding: 16px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sheet-product {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 16px;
+}
+
+.sheet-product-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  flex-shrink: 0;
+}
+
+.sheet-product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.sheet-pack-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pack-option {
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pack-option.selected {
+  border-color: #2563eb;
+  background: var(--surface-hover);
+}
+
+.pack-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.pack-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pack-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 2px;
+}
+
+.pack-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.pack-detail strong {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.pack-mini-qty {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #2563eb;
+  border-radius: 8px;
+  height: 32px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pack-mini-qty button {
+  width: 32px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-1);
+  color: #2563eb;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.pack-mini-qty span {
+  min-width: 32px;
+  text-align: center;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 6px;
+}
+
+.pack-add-btn {
+  padding: 0 14px;
+  height: 32px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sheet-footer {
+  border-top: 1px solid var(--border-soft);
+  padding: 14px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheet-footer-info {
+  flex: 1;
+}
+
+.sheet-footer-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sheet-footer-value {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.sheet-continue {
+  padding: 12px 24px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sheet-continue:disabled {
+  background: #d1d5db;
+  color: var(--text-placeholder);
+}
+

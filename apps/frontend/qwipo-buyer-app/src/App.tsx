@@ -3,7 +3,6 @@ import { Analytics } from '@vercel/analytics/react';
 import { Icon, PhoneNotch } from './components/Icons';
 import HomeScreen from './screens/HomeScreen';
 import SellerStorefront from './screens/SellerStorefront';
-import ProductListing from './screens/ProductListing';
 import ProductListingV2 from './screens/ProductListingV2';
 import MultiSellerCartV2 from './screens/MultiSellerCartV2';
 import ReorderScreen from './screens/ReorderScreen';
@@ -22,7 +21,6 @@ import DistributorsListScreen from './screens/DistributorsListScreen';
 import WholesalersCategoriesScreen from './screens/WholesalersCategoriesScreen';
 import AllBrandsScreen from './screens/AllBrandsScreen';
 import GlobalSearchScreen from './screens/GlobalSearchScreen';
-import CategoriesBrandsScreen from './screens/CategoriesBrandsScreen';
 import WholesalerProductListScreen from './screens/WholesalerProductListScreen';
 import ViewItemsScreen from './screens/ViewItemsScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
@@ -561,36 +559,30 @@ export default function App() {
                   setScreen('storefront');
                 }}
                 onSelectBrand={(brand: any, distributor: any) => {
-                  if (distributor) {
-                    // Sellers-tab tap: keep distributor context + drill into
-                    // the Companies/Brands/Categories page.
-                    setSelectedDistributor(distributor);
-                    setSelectedCategory({
-                      id: brand.id,
-                      name: brand.short || brand.name,
-                      isBrand: true,
-                      color: brand.bg,
-                      icon: brand.initials,
-                    });
-                    setScreen('categories-brands');
-                  } else {
-                    // Brands-tab tap: pool products across every seller and
-                    // go straight to the product listing with a 3-level trail.
-                    setSelectedDistributor(null);
-                    setSelectedCategory({
-                      id: brand.id,
-                      name: brand.short || brand.name,
-                      isBrand: true,
-                      color: brand.bg,
-                      icon: brand.initials,
-                      breadcrumb: [
-                        { label: 'Distributors', goTo: 'home' },
-                        { label: 'Brands', goTo: 'distributors-list' },
-                        { label: brand.short || brand.name },
-                      ],
-                    });
-                    setScreen('listing');
-                  }
+                  // Both tabs go straight to the product listing — no
+                  // Categories/Brands drill-in step. Sellers-tab tap keeps the
+                  // distributor context (single-seller view); Brands-tab tap
+                  // pools products across every seller.
+                  const brandLabel = brand.short || brand.name;
+                  setSelectedDistributor(distributor || null);
+                  setSelectedCategory({
+                    id: brand.id,
+                    name: brandLabel,
+                    isBrand: true,
+                    color: brand.bg,
+                    icon: brand.initials,
+                    fromStorefront: !!distributor,
+                    deliveryWindows: distributor?.deliveryWindows,
+                    breadcrumb: [
+                      { label: 'Distributors', goTo: 'home' },
+                      {
+                        label: distributor ? distributor.name : 'Brands',
+                        goTo: 'distributors-list',
+                      },
+                      { label: brandLabel },
+                    ],
+                  });
+                  setScreen('listing');
                 }}
               />
             )}
@@ -612,56 +604,6 @@ export default function App() {
                   setSelectedCategory({ id: p.category, name: 'Search' });
                   setScreen('listing');
                 }}
-              />
-            )}
-            {screen === 'categories-brands' && (
-              <CategoriesBrandsScreen
-                distributor={selectedDistributor}
-                category={selectedCategory}
-                onBack={() => goBack('distributors-list')}
-                onSelectBrand={(brand: any) => {
-                  const sellerLabel =
-                    (selectedDistributor?.shortName || selectedDistributor?.name || 'Seller')
-                      .replace(/[….]+$/g, '');
-                  // categories-brands always runs inside a selected
-                  // distributor's context (entered from Distributors →
-                  // Sellers → distributor), so the listing it drives is a
-                  // single-seller view — tag fromStorefront so the product
-                  // card hides the now-redundant seller label.
-                  setSelectedCategory({
-                    id: brand.id,
-                    name: brand.name,
-                    isBrand: true,
-                    fromStorefront: true,
-                    breadcrumb: [
-                      { label: 'Distributors', goTo: 'home' },
-                      { label: sellerLabel, goTo: 'categories-brands' },
-                      { label: brand.name },
-                    ],
-                  });
-                  setScreen('listing');
-                }}
-                onSelectCategory={(c: any) => {
-                  const sellerLabel =
-                    (selectedDistributor?.shortName || selectedDistributor?.name || 'Seller')
-                      .replace(/[….]+$/g, '');
-                  // Translate distributor-catalog ids ('atta-flours-sooji',
-                  // 'oil-ghee', ...) to the buyer product category ids
-                  // ('flour', 'cooking-oil', ...) so the listing finds SKUs.
-                  const productCatId = DIST_CAT_TO_PRODUCT_CAT[c.id] || c.id;
-                  setSelectedCategory({
-                    ...c,
-                    id: productCatId,
-                    fromStorefront: true,
-                    breadcrumb: [
-                      { label: 'Distributors', goTo: 'home' },
-                      { label: sellerLabel, goTo: 'categories-brands' },
-                      { label: c.name },
-                    ],
-                  });
-                  setScreen('listing');
-                }}
-                onSelectProduct={handleSelectProduct}
               />
             )}
             {screen === 'wholesaler-products' && (
@@ -743,29 +685,6 @@ export default function App() {
               />
             )}
             {screen === 'listing' && (
-              <ProductListing
-                category={selectedCategory}
-                cartItems={listingCart}
-                cartTotal={cartTotal}
-                filters={listingFilters}
-                deliveryBySeller={deliveryBySeller}
-                onUpdateDelivery={updateDeliveryForSeller}
-                onBack={() => goBack('home')}
-                onOpenSheet={handleOpenSheet}
-                onOpenImageSheet={(product) => setImageSheetProduct(product)}
-                onOpenDiscounts={(product, variant) => setDiscountsSheet({ product, variant })}
-                onOpenFilters={() => setFiltersOpen(true)}
-                onGoToCart={() => setScreen('cart')}
-                onUpdateQty={handleUpdateListingQty}
-                onOpenSearch={() => setScreen('global-search')}
-                onNavigateBreadcrumb={(target?: string) => {
-                  // First-segment "Distributors" → home; middle segments are
-                  // explicit screen targets stored in the breadcrumb item.
-                  if (target) setScreen(target);
-                }}
-              />
-            )}
-            {screen === 'listing-v2' && (
               <ProductListingV2
                 category={selectedCategory}
                 cartItems={listingCart}
@@ -874,10 +793,8 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
     title: 'Shop',
     items: [
       { id: 'storefront', label: 'Authorised Distributor Storefront' },
-      { id: 'categories-brands', label: 'Categories & Brands drill-in' },
-      { id: 'listing', label: 'Product Listing' },
-      { id: 'listing-v2', label: 'Product Listing V2 (design preview)' },
-      { id: 'wholesaler-products', label: 'Wholesaler Products (multi-seller)' },
+      { id: 'listing', label: 'Product List (Distributor)' },
+      { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
       { id: 'reorder', label: 'Reorder' },
     ],
   },

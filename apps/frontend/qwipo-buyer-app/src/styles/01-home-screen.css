@@ -1,0 +1,488 @@
+/* ============================================================
+   HOME SCREEN
+   ============================================================ */
+
+/* Sticky top block — wraps brand header + address chip + tabs into one
+   continuous white surface that stays pinned while the content scrolls.
+   The bottom border closes the block off so the scrolling content visually
+   slides under it. */
+.home-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 10px;
+}
+
+.home-header {
+  background: var(--surface-1);
+  padding: 10px 16px 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+/* Brand SVG — keeps natural aspect ratio */
+.home-brand-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* ONDC DigiDukaan logo — absolutely centered on screen so its position is
+   independent of the side elements (Qwipo logo / bell icon). */
+.ondc-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.ondc-by {
+  font-size: 9px;
+  font-weight: var(--weight-medium);
+  color: var(--muted-fg);
+  letter-spacing: 0.04em;
+}
+
+.ondc-logo-img {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+
+.home-header-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Location bar — compact chip below header. Quiet visual weight so it doesn't
+   compete with the brand + offers + categories below it. */
+.location-bar {
+  background: var(--surface-1);
+  padding: 2px 16px 4px;
+  display: flex;
+  justify-content: stretch;
+}
+
+/* Slim blue address chip per the reference — tight padding, 12 px text,
+   small pin + chevron. Full-width strip so the address gets all the room. */
+.location-bar-inner {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #1D4ED8;
+}
+
+.location-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563EB;
+  flex-shrink: 0;
+}
+
+.location-pin svg {
+  width: 13px;
+  height: 13px;
+}
+
+.location-prefix {
+  color: #60A5FA;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.location-value {
+  color: #1E3A8A;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.location-bar svg {
+  color: #2563EB;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Home search bar — sits between the address chip and the tabs */
+.home-search-wrap {
+  background: var(--surface-1);
+  padding: 8px 16px 4px;
+}
+
+.home-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface-2, #f3f4f6);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-align: left;
+}
+
+.home-search-bar svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-placeholder);
+  flex-shrink: 0;
+}
+
+.home-search-placeholder {
+  font-size: 13px;
+  color: var(--text-placeholder);
+}
+
+/* Powered-by footer image below the brands section */
+.home-footer-block {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 4px 16px 110px;
+  border-radius: 12px;
+}
+
+/* Home tabs */
+.home-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 8px 16px 0;
+}
+
+.home-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+  text-align: left;
+  line-height: 1.2;
+  transition: all 0.15s;
+  min-width: 0;
+}
+
+.home-tab.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.home-tab-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Locked tab — the other seller type isn't available for this retailer. */
+.home-tab.disabled {
+  cursor: default;
+  color: var(--text-muted);
+}
+
+.home-tab.disabled .home-tab-img {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.home-tab-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* "Complete your KYC" banner — shown on Home for freshly onboarded users
+   until their KYC documents have been submitted. */
+.kyc-home-banner {
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  background: var(--info-bg);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.kyc-home-banner-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kyc-home-banner-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.kyc-home-banner-list svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--success);
+}
+
+.kyc-home-banner-cta {
+  min-width: 190px;
+  height: 44px;
+  padding: 0 28px;
+  border-radius: 22px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+}
+
+/* Image is larger than before (38 → 48) but the surrounding tab stays slim:
+   padding tightened to 8px so the tab footprint matches the original. */
+.home-tab-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--surface-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.home-tab-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-tab span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Banner rail — aligned with home-tabs padding (16px both sides) */
+.banner-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 14px 16px 4px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 16px;
+}
+
+.banner-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* Banner width = (phone screen) - (2 × 16px padding) - (peek of next banner)
+   Phone usable ≈ 366px → banner = 320px gives a 30px peek of next banner.
+   The first banner's left edge sits exactly at 16px, same x as the leftmost tab card. */
+.hero-banner {
+  flex-shrink: 0;
+  width: 320px;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Image-only banner variant — full-bleed PNG locked at 2:1 */
+.hero-banner.hero-banner-image {
+  padding: 0;
+  aspect-ratio: 2 / 1;
+  background: transparent;
+}
+
+.hero-banner.hero-banner-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-banner-tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #be185d;
+  margin-bottom: 4px;
+}
+
+.hero-banner-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #5b21b6;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.hero-banner-sub {
+  font-size: 11px;
+  color: #6b21a8;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.hero-banner-bullets {
+  list-style: none;
+  margin-top: 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hero-banner-bullets li {
+  font-size: 9px;
+  color: #5b21b6;
+  font-weight: 500;
+  padding-left: 14px;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hero-banner-bullets li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.hero-banner-cta {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #1e293b;
+  color: #fef3c7;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.hero-banner-cta.orange-cta {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.hero-banner-art {
+  font-size: 56px;
+  flex-shrink: 0;
+}
+
+/* Snack-banner matches the distributor hero-banner footprint (320 × 160, 2:1)
+   so the Wholesalers carousel reads the same size as Distributors'. */
+.hero-banner.snack-banner {
+  aspect-ratio: 2 / 1;
+}
+
+.snack-banner .hero-banner-tag {
+  color: #DC2626;
+}
+
+.snack-discount {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #DC2626;
+  color: #FEF3C7;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.banner-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.banner-dots .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: all 0.15s;
+}
+
+.banner-dots .dot.active {
+  width: 16px;
+  border-radius: 4px;
+  background: #6366f1;
+}
+
+/* Bell icon notification dot */
+.icon-btn {
+  position: relative;
+}
+
+.bell-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1.5px solid var(--surface-1);
+}
+
+/* Topbar text action (Mark all read) */
+.topbar-text-action {
+  background: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+  padding: 8px 4px;
+}
+

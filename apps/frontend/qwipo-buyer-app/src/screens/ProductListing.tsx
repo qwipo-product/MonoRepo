@@ -247,17 +247,15 @@ export default function ProductListing({
               <div key={product.id} className="product-card">
                 <div className="product-card-top">
                   <div className="product-info">
-                    <div className="product-name">
-                      {product.name} - {sizeTitle} Packet X {variant.casePcs} Nos
-                    </div>
-                    {/* Hide the seller name when the listing was entered
-                        from a specific seller's storefront — it's redundant
-                        in that single-seller context. Brand/category pools
-                        (CategoriesBrandsScreen) keep it visible since the
-                        list mixes products from many sellers. */}
+                    {/* Seller name sits above the product name. Hidden when
+                        the listing was entered from a specific seller's
+                        storefront — redundant in that single-seller context. */}
                     {!category?.fromStorefront && (
                       <div className="product-seller">{sellerName}</div>
                     )}
+                    <div className="product-name">
+                      {product.name} - {sizeTitle} Packet X {variant.casePcs} Nos
+                    </div>
                     <div className="product-subline">
                       <span>Case: {variant.casePcs} pcs</span>
                     </div>

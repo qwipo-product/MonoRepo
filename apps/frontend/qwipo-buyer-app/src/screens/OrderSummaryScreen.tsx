@@ -106,12 +106,12 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="os-footer">
-          <button className="os-place-btn" onClick={onPlaceOrder}>
-            Place Order
-          </button>
-        </div>
+      <div className="os-footer">
+        <button className="os-place-btn" onClick={onPlaceOrder}>
+          Place Order
+        </button>
       </div>
     </>
   );

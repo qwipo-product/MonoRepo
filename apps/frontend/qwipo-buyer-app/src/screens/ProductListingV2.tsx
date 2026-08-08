@@ -173,12 +173,12 @@ export default function ProductListingV2({
               <div key={product.id} className="product-card">
                 <div className="product-card-top">
                   <div className="product-info">
-                    <div className="product-name">
-                      {product.name} - {sizeTitle} Packet X {variant.casePcs} Nos
-                    </div>
                     {!category?.fromStorefront && (
                       <div className="product-seller">{sellerName}</div>
                     )}
+                    <div className="product-name">
+                      {product.name} - {sizeTitle} Packet X {variant.casePcs} Nos
+                    </div>
                     <div className="product-subline">
                       <span>Case: {variant.casePcs} pcs</span>
                     </div>
@@ -277,6 +277,12 @@ export default function ProductListingV2({
                     </button>
                   )}
                 </div>
+
+                {cartQty > 0 && (
+                  <div className="product-line-total">
+                    ₹{(variant.sellingPrice * cartQty).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                )}
 
                 {/* Read-only delivery info — no radios, no selection, no
                     click. Surfaces the dates and MOVs as plain labels so
