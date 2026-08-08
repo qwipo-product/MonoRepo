@@ -19,8 +19,6 @@ const {
   distributorCategories,
 } = homepage;
 
-type SellerAvailability = 'both' | 'distributors' | 'wholesalers';
-
 /* Home hub. Three review variants via `sellerAvailability`:
    both (home) · distributors only · wholesalers only. Bespoke sticky header +
    two tabbed feeds. Header/feeds own their layout; BuyerShell provides the

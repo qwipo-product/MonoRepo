@@ -19,8 +19,13 @@ import SellerStorefront from './screens/SellerStorefront';
 import ProductListingV2 from './screens/ProductListingV2';
 import WholesalerProductListScreen from './screens/WholesalerProductListScreen';
 import ReorderScreen from './screens/ReorderScreen';
+import MultiSellerCartV2 from './screens/MultiSellerCartV2';
+import ViewItemsScreen from './screens/ViewItemsScreen';
+import OrderSummaryScreen from './screens/OrderSummaryScreen';
+import CouponsScreen from './screens/CouponsScreen';
+import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
 import AddToCartSheet from './components/AddToCartSheet';
-import { products } from './data';
+import { products, seller } from './data';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 type CartLine = { product: any; variant: any; qty: number; price: number };
@@ -32,6 +37,7 @@ const BUILT = new Set<ScreenId>([
   'global-search', 'distributors-list', 'wholesaler-categories', 'all-brands',
   'storefront', 'listing', 'reorder',
   'wholesaler-products', 'distributor-units', 'wholesaler-units',
+  'cart', 'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
 ]);
 const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
   home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
@@ -54,6 +60,9 @@ export default function App() {
   const [wholesalerProductCategory, setWholesalerProductCategory] = useState<any>(null);
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [sheet, setSheet] = useState<SheetState>(null);
+  const [viewItemsSellerId, setViewItemsSellerId] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponSellerId, setCouponSellerId] = useState<string | null>(null);
   const go = (id: ScreenId) => { setSheet(null); setScreen(id); };
 
   // ── cart ──────────────────────────────────────────────────────────────────
@@ -74,6 +83,22 @@ export default function App() {
   const cartTotal = Object.values(cart).reduce((n, i) => n + i.price * i.qty, 0);
   const cartCount = Object.values(cart).reduce((n, i) => n + i.qty, 0);
 
+  // Group the flat cart into the seller-keyed model the cart/checkout screens
+  // expect. All lines pool under one distributor (matches the source).
+  const cartModel = (() => {
+    const lines = Object.entries(cart);
+    if (!lines.length) return { sellers: [] as any[] };
+    const items = lines.map(([k, l]) => ({
+      key: k, productId: l.product.id, name: l.product.name, variant: l.variant.size,
+      image: l.product.image, bgColor: l.product.bgColor, brand: l.product.brand,
+      mrp: l.variant.mrp, price: l.price, quantity: l.qty, unit: 'Pcs', scheme: l.variant.scheme,
+    }));
+    return { sellers: [{ id: 'sskt', name: (seller as any).name || 'Sri Sai Krishna Traders', type: 'distributor', mov: (seller as any).mov ?? 5000, deliveryWindows: (seller as any).deliveryWindows, items }] };
+  })();
+  const viewItemsSeller = cartModel.sellers.find((s) => s.id === viewItemsSellerId) || cartModel.sellers[0] || null;
+  const updateItem = (item: any, qty: number) => setCart((prev) => { const n = { ...prev }; if (qty <= 0) delete n[item.key]; else if (n[item.key]) n[item.key] = { ...n[item.key], qty }; return n; });
+  const openSheetForItem = (item: any) => { const p = (products as any[]).find((x) => x.id === item.productId); if (p) setSheet({ product: p, variant: p.variants.find((v: any) => v.size === item.variant) || p.variants[0], sellerOptions: null }); };
+
   // ── add-to-cart sheet (selling units) ───────────────────────────────────────
   const openSheet = (product: any, variant: any, sellerOptions: any = null) => setSheet({ product, variant, sellerOptions });
   const confirmSheet = (product: any, variant: any, totalPcs: number) => { updateQty(product, variant, totalPcs); setSheet(null); };
@@ -91,6 +116,13 @@ export default function App() {
       const p = products[0];
       setScreen('wholesaler-products');
       setSheet({ product: p, variant: p.variants[0], sellerOptions: [{ id: 'wh1', name: 'Omkar Enterprises', price: p.variants[0].sellingPrice }, { id: 'wh2', name: 'Sri Sai Krishna Traders', price: p.variants[0].sellingPrice + 7 }] });
+      return;
+    }
+    if (id === 'view-items') { setViewItemsSellerId(cartModel.sellers[0]?.id ?? null); go('view-items'); return; }
+    if (id === 'cart-units') {
+      const s = cartModel.sellers[0];
+      setViewItemsSellerId(s?.id ?? null); setScreen('view-items');
+      if (s?.items[0]) openSheetForItem(s.items[0]);
       return;
     }
     go(id);
@@ -135,6 +167,11 @@ export default function App() {
       case 'wholesaler-categories': return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={openWholesalerProducts} onOpenSearch={() => go('global-search')} />;
       case 'listing': return <ProductListingV2 category={listingCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go(listingBack)} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} onOpenFilters={() => {}} />;
       case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
+      case 'cart': return <MultiSellerCartV2 cart={cartModel} onBack={() => go('home')} onCheckout={() => go('order-summary')} onAddMore={() => go('home')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} />;
+      case 'view-items': return <ViewItemsScreen seller={viewItemsSeller} onBack={() => go('cart')} onAddMore={() => go('home')} onUpdateItem={updateItem} onItemTap={openSheetForItem} />;
+      case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
+      case 'coupons': return <CouponsScreen cartTotal={cartTotal || 4250} appliedId={appliedCoupon?.id ?? null} onBack={() => go('order-summary')} onApply={(c: any) => { setAppliedCoupon(c); go('order-summary'); }} />;
+      case 'order-confirmation': return <OrderConfirmationScreen onBackToHome={() => { setCart({}); setAppliedCoupon(null); go('home'); }} />;
       default: return null;
     }
   })();

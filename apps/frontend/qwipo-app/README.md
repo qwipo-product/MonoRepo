@@ -121,16 +121,16 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 | Selling units (distributor / wholesaler) | `AddToCartSheet.tsx` — the Add flow | ✅ |
 | Seller storefront | `SellerStorefront.tsx` | ✅ |
 | Product listing | `ProductListingV2.tsx` | ✅ |
-| View items | `ViewItemsScreen.tsx` | ⬜ (Phase 4 — cart view) |
-| Coupons | `CouponsScreen.tsx` | ⬜ (Phase 4) |
+| View items | `ViewItemsScreen.tsx` | ✅ |
+| Coupons | `CouponsScreen.tsx` | ✅ |
 | Reorder | `ReorderScreen.tsx` | ✅ |
 
-**Cart & checkout** (shared)
+**Cart & checkout** (shared) — ✅ Phase 4 complete
 | Screen | Source | Status |
 |---|---|---|
-| Multi-seller cart | `MultiSellerCartV2.tsx` | ⬜ |
-| Order summary | `OrderSummaryScreen.tsx` | ⬜ |
-| Order confirmation | `OrderConfirmationScreen.tsx` | ⬜ |
+| Multi-seller cart | `MultiSellerCartV2.tsx` | ✅ |
+| Order summary | `OrderSummaryScreen.tsx` | ✅ |
+| Order confirmation | `OrderConfirmationScreen.tsx` | ✅ |
 
 **Orders** (shared)
 | Screen | Source | Status |

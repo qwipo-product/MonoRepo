@@ -16,20 +16,20 @@
     "address": {
       "id": "addr-1",
       "label": "Lit Box",
-      "line": "Rai Durg, Hitech City",
+      "line": "Shop 14, Lit Box Complex, Rai Durg, Hitech City",
       "city": "Hyderabad",
       "state": "Telangana",
-      "pincode": "500081",
+      "pincode": "500032",
       "default": true
     },
     "addresses": [
       {
         "id": "addr-1",
         "label": "Lit Box",
-        "line": "Rai Durg, Hitech City",
+        "line": "Shop 14, Lit Box Complex, Rai Durg, Hitech City",
         "city": "Hyderabad",
         "state": "Telangana",
-        "pincode": "500081",
+        "pincode": "500032",
         "default": true
       },
       {
@@ -25165,26 +25165,56 @@
   ],
   "coupons": [
     {
-      "code": "FIRST100",
-      "label": "₹100 off first order",
-      "discount": 100,
+      "id": "c1",
+      "code": "QWIPO500",
+      "title": "Flat ₹500 OFF",
+      "sub": "On orders above ₹6,000",
       "type": "flat",
-      "minOrder": 2000
+      "value": 500,
+      "minOrder": 6000,
+      "expires": "30 Jun",
+      "tag": "BEST OFFER"
     },
     {
-      "code": "SAVE5",
-      "label": "5% off up to ₹250",
-      "discount": 5,
+      "id": "c2",
+      "code": "WELCOME10",
+      "title": "10% OFF up to ₹400",
+      "sub": "For new business — first 3 orders",
       "type": "percent",
-      "cap": 250,
-      "minOrder": 5000
+      "value": 10,
+      "minOrder": 2500,
+      "expires": "15 Jul"
     },
     {
+      "id": "c3",
       "code": "FREESHIP",
-      "label": "Free delivery",
-      "discount": 0,
-      "type": "shipping",
-      "minOrder": 3000
+      "title": "Free delivery",
+      "sub": "On all orders above ₹3,500",
+      "type": "free",
+      "value": 0,
+      "minOrder": 3500,
+      "expires": "20 Jun"
+    },
+    {
+      "id": "c4",
+      "code": "GROC200",
+      "title": "₹200 OFF on Groceries",
+      "sub": "Min order ₹4,000 from Sri Sai Krishna",
+      "type": "flat",
+      "value": 200,
+      "minOrder": 4000,
+      "expires": "28 Jun"
+    },
+    {
+      "id": "c5",
+      "code": "CASHBACK5",
+      "title": "5% Cashback to wallet",
+      "sub": "Credited within 24 hours",
+      "type": "cashback",
+      "value": 5,
+      "minOrder": 5000,
+      "expires": "31 Jul",
+      "tag": "WALLET"
     }
   ],
   "cart": {
