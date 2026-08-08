@@ -112,12 +112,12 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 **Browse & shop** (shared)
 | Screen | Source | Status |
 |---|---|---|
-| Home | `HomeScreen.tsx` | ⬜ |
-| Global search | `GlobalSearchScreen.tsx` | ⬜ |
-| All brands | `AllBrandsScreen.tsx` | ⬜ |
-| Wholesalers categories | `WholesalersCategoriesScreen.tsx` | ⬜ |
+| Home (both / distributors-only / wholesalers-only) | `HomeScreen.tsx` | ✅ |
+| Global search | `GlobalSearchScreen.tsx` | ✅ |
+| All brands | `AllBrandsScreen.tsx` | ✅ |
+| Wholesalers categories | `WholesalersCategoriesScreen.tsx` | ✅ |
 | Wholesaler product list | `WholesalerProductListScreen.tsx` | ⬜ |
-| Distributors list | `DistributorsListScreen.tsx` | ⬜ |
+| Distributors list | `DistributorsListScreen.tsx` | ✅ |
 | Seller storefront | `SellerStorefront.tsx` | ⬜ |
 | Product listing | `ProductListing.tsx` / `ProductListingV2.tsx` | ⬜ |
 | View items | `ViewItemsScreen.tsx` | ⬜ |

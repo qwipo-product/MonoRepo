@@ -10,118 +10,122 @@ import OTPScreen from './screens-buyer-only/OTPScreen';
 import OnboardingScreen from './screens-buyer-only/OnboardingScreen';
 import CompleteKycScreen from './screens-buyer-only/CompleteKycScreen';
 import KycSuccessScreen from './screens-buyer-only/KycSuccessScreen';
-import Home from './screens/Home';
+import HomeScreen from './screens/HomeScreen';
+import GlobalSearchScreen from './screens/GlobalSearchScreen';
+import AllBrandsScreen from './screens/AllBrandsScreen';
+import DistributorsListScreen from './screens/DistributorsListScreen';
+import WholesalersCategoriesScreen from './screens/WholesalersCategoriesScreen';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 
-/* Screens migrated so far. FlowIndex greys the rest and they render a
-   placeholder in the frame; each phase adds its ids here. */
-const BUILT = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success', 'home']);
-const AUTH = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
+const BUILT = new Set<ScreenId>([
+  'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
+  'home', 'home-distributors-only', 'home-wholesalers-only',
+  'global-search', 'distributors-list', 'wholesaler-categories', 'all-brands',
+]);
+const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
+  home: 'both',
+  'home-distributors-only': 'distributors',
+  'home-wholesalers-only': 'wholesalers',
+};
 
-/* One codebase, two chrome shells. Auth screens render chromeless; the main app
-   renders inside the selected shell. State-based nav mirrors qwipo-buyer-app.
-   The FlowIndex sidebar jumps straight to any screen for review. */
+/* One codebase, two chrome shells. Auth + pushed detail screens render in the
+   bare phone frame (own status bar, no tab bar); the home roots render inside
+   the selected shell. State-based nav mirrors qwipo-buyer-app. FlowIndex jumps
+   to any screen for review. */
 export default function App() {
-  const [screen, setScreen] = useState<ScreenId>('splash');
+  const [screen, setScreen] = useState<ScreenId>(
+    () => new URLSearchParams(window.location.search).get('screen') || 'splash'
+  );
   const [shell, setShell] = useState<Shell>(
     new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
   );
   const [phone, setPhone] = useState('');
-  const [onboarding, setOnboarding] = useState<OnboardingData>({
-    location: '',
-    businessName: '',
-    businessType: '',
-  });
+  const [onboarding, setOnboarding] = useState<OnboardingData>({ location: '', businessName: '', businessType: '' });
   const [kycPending, setKycPending] = useState(false);
+  const [wholesalerVariant, setWholesalerVariant] = useState<'groceries' | 'fmcg' | 'all'>('all');
+  const [distListTab, setDistListTab] = useState<'categories' | 'brands' | 'sellers'>('categories');
+  const go = setScreen;
+  const isHome = screen in HOME_AVAILABILITY;
 
-  const frame = (() => {
+  const homeProps = {
+    kycPending,
+    onCompleteKyc: () => go('kyc-complete'),
+    onOpenNotifications: () => go('notifications'),
+    onOpenProfile: () => go('profile'),
+    onOpenAddresses: () => go('sub:addresses'),
+    onOpenSearch: () => go('global-search'),
+    onSelectDistributor: () => go('storefront'),
+    onSelectBrand: () => go('all-brands'),
+    onSelectDistributorBrand: () => go('all-brands'),
+    onSelectCategory: () => go('listing'),
+    onSeeAllDistributors: () => { setDistListTab('sellers'); go('distributors-list'); },
+    onSeeAllBrands: () => go('all-brands'),
+    onSeeAllCategories: () => { setWholesalerVariant('all'); go('wholesaler-categories'); },
+    onOpenWholesalerCategory: (id: string) => { setWholesalerVariant(id === 'groceries' ? 'groceries' : 'fmcg'); go('wholesaler-categories'); },
+    onOpenBannerListing: () => go('listing'),
+  };
+
+  const bareScreen = (() => {
     switch (screen) {
       case 'splash':
-        return <SplashScreen onContinue={() => setScreen('login')} />;
+        return <SplashScreen onContinue={() => go('login')} />;
       case 'login':
-        return (
-          <LoginScreen
-            onSubmit={(p) => {
-              setPhone(p);
-              setScreen('otp');
-            }}
-          />
-        );
+        return <LoginScreen onSubmit={(p) => { setPhone(p); go('otp'); }} />;
       case 'otp':
-        return <OTPScreen phone={phone} onBack={() => setScreen('login')} onVerify={() => setScreen('onboarding')} />;
+        return <OTPScreen phone={phone} onBack={() => go('login')} onVerify={() => go('onboarding')} />;
       case 'onboarding':
-        return (
-          <OnboardingScreen
-            onBack={() => setScreen('otp')}
-            onProceed={(data) => {
-              setOnboarding(data);
-              setKycPending(true);
-              setScreen('home');
-            }}
-          />
-        );
+        return <OnboardingScreen onBack={() => go('otp')} onProceed={(data) => { setOnboarding(data); setKycPending(true); go('home'); }} />;
       case 'kyc-complete':
-        return (
-          <CompleteKycScreen
-            initialBusinessType={onboarding.businessType}
-            initialLocation={onboarding.location}
-            onCancel={() => setScreen('home')}
-            onRegister={() => setScreen('kyc-success')}
-          />
-        );
+        return <CompleteKycScreen initialBusinessType={onboarding.businessType} initialLocation={onboarding.location} onCancel={() => go('home')} onRegister={() => go('kyc-success')} />;
       case 'kyc-success':
-        return (
-          <KycSuccessScreen
-            onCallSupport={() => alert('Calling customer support…')}
-            onPlaceOrder={() => {
-              setKycPending(false);
-              setScreen('home');
-            }}
-          />
-        );
-      case 'home': {
-        const CurrentShell = shell === 'paytm' ? PaytmShell : BuyerShell;
-        return (
-          <CurrentShell>
-            <Home kycPending={kycPending} onCompleteKyc={() => setScreen('kyc-complete')} />
-          </CurrentShell>
-        );
-      }
+        return <KycSuccessScreen onCallSupport={() => alert('Calling customer support…')} onPlaceOrder={() => { setKycPending(false); go('home'); }} />;
+      case 'global-search':
+        return <GlobalSearchScreen onBack={() => go('home')} onSelectProduct={() => go('listing')} />;
+      case 'all-brands':
+        return <AllBrandsScreen onBack={() => go('home')} onSelectBrand={() => go('storefront')} onOpenSearch={() => go('global-search')} />;
+      case 'distributors-list':
+        return <DistributorsListScreen initialTab={distListTab} onBack={() => go('home')} onSelectDistributor={() => go('storefront')} onSelectBrand={() => go('storefront')} onSelectCategory={() => go('listing')} />;
+      case 'wholesaler-categories':
+        return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={() => go('listing')} onOpenSearch={() => go('global-search')} />;
       default:
-        return <Placeholder />;
+        return null;
     }
   })();
 
-  const isAuth = AUTH.has(screen);
+  if (bareScreen) {
+    return (
+      <div className="flex min-h-dvh bg-shell">
+        <FlowIndex active={screen} built={BUILT} onPick={go} />
+        <main className="flex flex-1 items-center justify-center p-6">
+          <div className="h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+            {bareScreen}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const CurrentShell = shell === 'paytm' ? PaytmShell : BuyerShell;
+  const content = isHome ? (
+    <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />
+  ) : (
+    <Placeholder />
+  );
 
   return (
     <div className="flex min-h-dvh bg-shell">
-      <FlowIndex active={screen} built={BUILT} onPick={setScreen} />
-
+      <FlowIndex active={screen} built={BUILT} onPick={go} />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-        {screen === 'home' && <ShellSwitcher value={shell} onChange={setShell} />}
-        {/* 'home' brings its own shell/frame; everything else sits in the bare phone frame. */}
-        {screen === 'home' ? (
-          frame
-        ) : (
-          <div
-            className={`h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl ${
-              isAuth ? '' : 'grid place-items-center'
-            }`}
-          >
-            {frame}
-          </div>
-        )}
+        <ShellSwitcher value={shell} onChange={setShell} />
+        <CurrentShell active="home" cartCount={0} onNavigate={go}>
+          {content}
+        </CurrentShell>
       </main>
     </div>
   );
 }
 
 function Placeholder() {
-  return (
-    <div className="p-8 text-center text-sm text-muted-foreground">
-      This screen lands in a later phase.
-    </div>
-  );
+  return <div className="grid h-full place-items-center p-8 text-center text-sm text-muted-foreground">This screen lands in a later phase.</div>;
 }
