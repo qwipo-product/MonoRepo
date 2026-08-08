@@ -1,4 +1,5 @@
 import { Icon, StatusBar } from '../components/Icons';
+import VendorSummary from '../components/VendorSummary';
 
 export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty, onItemTap }: any) {
   if (!seller) return null;
@@ -33,6 +34,10 @@ export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty
             </button>
           </div>
         </div>
+
+        {seller.items.length > 0 && (
+          <VendorSummary seller={seller} className="vendor-summary-inset" />
+        )}
 
         <div className="vi-list">
           {seller.items.map((item: any, idx: number) => (

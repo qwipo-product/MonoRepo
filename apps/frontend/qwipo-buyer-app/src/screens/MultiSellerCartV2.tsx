@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon, StatusBar } from '../components/Icons';
+import VendorSummary from '../components/VendorSummary';
 
 // Cart Summary — reference-matched layout: per-seller card with a thumbnail
 // rail, "Add More"/"View items" actions, and a radio-selectable "Delivery by"
@@ -57,11 +58,6 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
         </div>
 
         <div className="cart-v2-screen">
-          {distributorRows.length > 0 && (
-            <div className="cart-v2-divider">
-              <span>From Distributors</span>
-            </div>
-          )}
           {distributorRows.map((s: any) => (
             <SellerCardV2
               key={s.id}
@@ -75,11 +71,6 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
             />
           ))}
 
-          {wholesalerRow && (
-            <div className="cart-v2-divider">
-              <span>From Wholesalers</span>
-            </div>
-          )}
           {wholesalerRow && (
             <SellerCardV2
               seller={wholesalerRow}
@@ -202,6 +193,8 @@ function SellerCardV2({ seller, activeIndex, onPickDelivery, onAddMore, onViewIt
           </div>
         </div>
       </div>
+
+      <VendorSummary seller={seller} />
     </div>
   );
 }

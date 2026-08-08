@@ -713,6 +713,80 @@
   font-weight: 600;
 }
 
+/* Per-vendor money + minimum-order summary (Cart Summary card + View Items).
+   Inside the cart card it's a plain flex child; .vendor-summary-inset adds the
+   page margins for the standalone View Items placement. */
+.vendor-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.vendor-summary-inset {
+  margin: 12px 16px 0;
+}
+
+.vendor-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.vendor-summary-label {
+  color: var(--text-muted);
+}
+
+.vendor-summary-save,
+.vendor-summary-free {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.vendor-summary-fee {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.vendor-summary-mov {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.vendor-summary-mov-req {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.vendor-summary-mov-req svg {
+  width: 14px;
+  height: 14px;
+  color: var(--primary);
+}
+
+.vendor-summary-mov-remain {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.vendor-summary-mov.short .vendor-summary-mov-remain {
+  color: var(--danger);
+}
+
+.vendor-summary-mov.met .vendor-summary-mov-remain {
+  color: var(--success);
+}
+
 .cart-v2-card-actions {
   display: flex;
   gap: 6px;

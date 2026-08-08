@@ -151,6 +151,8 @@ export interface CartItem {
   freeQty?: number;
   extraDiscount?: number;
   flatOff?: number;
+  // Per-piece weight in kg — drives a vendor's minimum-order-weight check.
+  weight?: number;
 }
 
 export interface CartSeller {
@@ -159,6 +161,9 @@ export interface CartSeller {
   logo: string;
   logoColor: string;
   mov: number;
+  // Optional minimum order weight (kg). A vendor may enforce value, weight,
+  // or both.
+  minOrderWeight?: number;
   deliveryTime: string;
   sellerOffer: string | null;
   type?: 'distributor' | 'wholesaler';
