@@ -14,9 +14,11 @@
 @import "./styles/theme.css";
 
 /* Phone-frame backdrop behind the mockup shells (review chrome only,
-   not part of the DS palette). */
+   not part of the DS palette). --color-border-token aliases the DS
+   --border so @mockups/ui's outline components resolve off the token. */
 @theme {
   --color-shell: #f7f7f9;
+  --color-border-token: var(--border);
 }
 
 html,
