@@ -41,6 +41,42 @@ export function computeVendorSummary(seller: any) {
   return { subtotal, savings, value, weight: wt, allMet, deliveryFee };
 }
 
+// Savings + delivery, stacked under the "Total" in a vendor card header.
+export function VendorMoney({ seller }: any) {
+  const { savings, deliveryFee } = computeVendorSummary(seller);
+  return (
+    <div className="vendor-money">
+      {savings > 0 && <span className="vendor-money-save">You save {fmt(savings)}</span>}
+      <span className={deliveryFee > 0 ? 'vendor-money-fee' : 'vendor-money-free'}>
+        {deliveryFee > 0 ? `Delivery ${fmt(deliveryFee)}` : 'Free Delivery'}
+      </span>
+    </div>
+  );
+}
+
+// Min. order value/weight + remaining, under "Total Items" in a vendor card
+// header. Shows only unmet requirements (value and weight can both appear).
+export function VendorRequirements({ seller }: any) {
+  const { value, weight } = computeVendorSummary(seller);
+  if ((!value || value.met) && (!weight || weight.met)) return null;
+  return (
+    <div className="vendor-req">
+      {value && !value.met && (
+        <div className="vendor-req-row">
+          <span className="vendor-req-label">Min. value {fmt(value.min)}</span>
+          <span className="vendor-req-remain">Add {fmt(value.remaining)} more</span>
+        </div>
+      )}
+      {weight && !weight.met && (
+        <div className="vendor-req-row">
+          <span className="vendor-req-label">Min. weight {weight.min} kg</span>
+          <span className="vendor-req-remain">Add {weight.remaining} kg more</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VendorSummary({ seller, className = '' }: any) {
   const { savings, value, weight, deliveryFee } = computeVendorSummary(seller);
 

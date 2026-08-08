@@ -10,9 +10,12 @@
 
 .os-card {
   background: var(--surface-1);
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--border-soft);
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
 }
 
 .os-card-head {
@@ -115,9 +118,12 @@
 
 .os-bill {
   background: var(--surface-1);
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--border-soft);
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
 }
 
 .os-bill-head {
@@ -240,9 +246,12 @@
 
 .os-address {
   background: var(--surface-1);
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid var(--border-soft);
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
 }
 
 .os-address-head {
@@ -296,20 +305,28 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--surface-1);
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   border-top: 1px solid var(--border-soft);
-  padding: 14px 16px 20px;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 28px -12px rgba(15, 23, 42, 0.18);
 }
 
 .os-place-btn {
   width: 100%;
-  height: 48px;
-  background: #2563eb;
+  height: 50px;
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #ffffff;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: var(--radius-full);
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.5);
+  transition: transform 0.12s ease;
+}
+
+.os-place-btn:active {
+  transform: scale(0.985);
 }
 

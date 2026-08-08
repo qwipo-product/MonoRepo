@@ -8,6 +8,13 @@ import {
 
 type TabKey = 'categories' | 'brands' | 'sellers';
 
+// Rotating accent wash for the Categories grid — the category photos are all
+// light product piles, so a per-tile hue is the fastest way to tell them apart.
+const CAT_TINTS = [
+  '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed',
+  '#0891b2', '#db2777', '#4338ca', '#ea580c', '#0d9488',
+];
+
 export default function DistributorsListScreen({
   onBack,
   onSelectBrand,
@@ -198,16 +205,22 @@ export default function DistributorsListScreen({
             {filteredCategories.length === 0 ? (
               <div className="dl-empty">No categories match "{query}".</div>
             ) : (
-              filteredCategories.map((c: any) => (
+              filteredCategories.map((c: any, i: number) => (
                 <button
                   key={c.id}
-                  className="cat-tile cat-tile-grid"
+                  className="cat-tile dl-cat-tile"
                   onClick={() => onSelectCategory?.(c)}
                 >
-                  <div className="cat-tile-card">
+                  <div className="dl-cat-card">
                     <img src={c.image} alt={c.name} />
+                    {/* Per-category colour wash so near-identical product-pile
+                        photos are told apart at a glance. */}
+                    <span
+                      className="dl-cat-tint"
+                      style={{ background: CAT_TINTS[i % CAT_TINTS.length] }}
+                    />
+                    <span className="dl-cat-name">{c.name}</span>
                   </div>
-                  <div className="cat-tile-name">{c.name}</div>
                 </button>
               ))
             )}

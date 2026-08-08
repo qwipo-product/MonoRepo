@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Icon, StatusBar } from '../components/Icons';
-import VendorSummary from '../components/VendorSummary';
+import { VendorMoney, VendorRequirements } from '../components/VendorSummary';
 
 // Cart Summary — reference-matched layout: per-seller card with a thumbnail
 // rail, "Add More"/"View items" actions, and a radio-selectable "Delivery by"
@@ -140,11 +140,13 @@ function SellerCardV2({ seller, activeIndex, onPickDelivery, onAddMore, onViewIt
           <div className="cart-v2-card-meta">Buying from</div>
           <div className="cart-v2-card-name">{seller.name}</div>
           <div className="cart-v2-card-meta">Total Items: {seller.items.length}</div>
+          <VendorRequirements seller={seller} />
         </div>
         <div className="cart-v2-card-headr">
           <div className="cart-v2-card-total">
             Total: <span>₹{Math.round(seller.subtotal).toLocaleString('en-IN')}</span>
           </div>
+          <VendorMoney seller={seller} />
         </div>
       </div>
 
@@ -193,8 +195,6 @@ function SellerCardV2({ seller, activeIndex, onPickDelivery, onAddMore, onViewIt
           </div>
         </div>
       </div>
-
-      <VendorSummary seller={seller} />
     </div>
   );
 }

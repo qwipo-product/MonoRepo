@@ -21,8 +21,9 @@
 }
 
 .orders-tab.on {
-  background: #2563eb;
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #ffffff;
+  box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.45);
 }
 
 .orders-list {
@@ -35,8 +36,17 @@
 .orders-card {
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
+  transition: box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+.orders-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -12px rgba(15, 23, 42, 0.18);
 }
 
 .orders-card-head {
@@ -89,14 +99,19 @@
 
 .orders-action {
   flex: 1;
-  height: 38px;
-  border-radius: 10px;
+  height: 40px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.orders-action:active {
+  transform: scale(0.97);
 }
 
 .orders-action svg {
@@ -110,9 +125,14 @@
   color: var(--foreground);
 }
 
+.orders-action.ghost:hover {
+  background: var(--surface-3);
+}
+
 .orders-action.primary {
-  background: #2563eb;
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #ffffff;
+  box-shadow: 0 5px 14px -4px rgba(37, 99, 235, 0.45);
 }
 
 /* Tracking timeline (inside bottom sheet) */

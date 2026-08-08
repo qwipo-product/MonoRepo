@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-07T10:13:04.056Z",
+  "timestamp": "2026-08-08T06:13:14.514Z",
   "projectRoot": "/Users/rac/Documents/GitHub/qwipo/mockups-lab/apps/frontend/qwipo-buyer-app",
   "structure": {
     "hasPackageJson": true,
@@ -7,5 +7,5 @@
     "hasClaudeConfig": true,
     "hasClaudeFlow": true
   },
-  "scannedAt": 1786097584057
+  "scannedAt": 1786169594514
 }

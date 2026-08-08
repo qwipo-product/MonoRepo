@@ -1,5 +1,5 @@
 import { Icon, StatusBar } from '../components/Icons';
-import VendorSummary from '../components/VendorSummary';
+import { VendorMoney, VendorRequirements } from '../components/VendorSummary';
 
 export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty, onItemTap }: any) {
   if (!seller) return null;
@@ -24,20 +24,18 @@ export default function ViewItemsScreen({ seller, onBack, onAddMore, onUpdateQty
             <div className="vi-head-label">Buying from</div>
             <div className="vi-head-seller">{seller.name}</div>
             <div className="vi-head-label">Total Items: {seller.items.length}</div>
+            <VendorRequirements seller={seller} />
           </div>
           <div className="vi-head-right">
             <div className="vi-head-total">
               Total: <span>₹{Math.round(total).toLocaleString('en-IN')}</span>
             </div>
+            <VendorMoney seller={seller} />
             <button className="cart-v2-pill" onClick={onAddMore}>
               <Icon.Plus /> Add More
             </button>
           </div>
         </div>
-
-        {seller.items.length > 0 && (
-          <VendorSummary seller={seller} className="vendor-summary-inset" />
-        )}
 
         <div className="vi-list">
           {seller.items.map((item: any, idx: number) => (

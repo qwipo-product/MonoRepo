@@ -10,9 +10,12 @@
 
 .dl-card {
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
   padding: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
 }
 
 /* Tappable distributor header row — name on left, arrow on right, opens
@@ -363,10 +366,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px;
-  background: #FFFFFF;
-  border-radius: 10px;
-  margin: 8px 16px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  margin: 10px 16px;
 }
 
 .toggle-tab {
@@ -375,29 +379,34 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 10px;
-  background: #F4F4F4;
-  color: #2781E7;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--primary);
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-full);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 16px;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.16s, color 0.16s, box-shadow 0.16s, transform 0.12s;
+}
+
+.toggle-tab:active {
+  transform: scale(0.98);
 }
 
 .toggle-tab.active {
-  background: #2781E7;
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #FFFFFF;
+  box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.45);
 }
 
 /* Dark-mode flip — container becomes the surface and grey pills follow it. */
-[data-theme='dark'] .toggle-tabs { background: var(--surface-1); }
-[data-theme='dark'] .toggle-tab { background: var(--surface-2); }
-[data-theme='dark'] .toggle-tab.active { background: #2781E7; color: #FFFFFF; }
+[data-theme='dark'] .toggle-tabs { background: var(--surface-2); }
+[data-theme='dark'] .toggle-tab.active { color: #FFFFFF; }
 
-/* Categories tab — 2-col grid of cat tiles inside the list body. */
+/* Categories tab — 2-col grid of image tiles with the name overlaid. */
 .dl-tabpane-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -405,11 +414,65 @@
   padding: 8px 16px 110px;   /* match the search→content gap */
 }
 
-/* Match the home "Top categories" name styling — 11px / 500 / centered. */
-.dl-tabpane-grid .cat-tile-name {
-  font-size: 11px;
-  font-weight: 500;
-  text-align: center;
+.dl-cat-tile {
+  padding: 0;
+}
+
+/* Square photo tile: image fills it, a per-category colour wash separates
+   otherwise-identical product-pile shots, name sits on a legibility scrim. */
+.dl-cat-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-1);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 10px 22px -14px rgba(15, 23, 42, 0.30);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.dl-cat-tile:hover .dl-cat-card {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px -14px rgba(15, 23, 42, 0.36);
+}
+
+.dl-cat-tile:active .dl-cat-card {
+  transform: scale(0.98);
+}
+
+.dl-cat-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dl-cat-tint {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.dl-cat-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24px 12px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-align: left;
+  color: #ffffff;
+  background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.80));
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 /* Brands tab — 4-col brand grid sitting directly on the list body (no card). */

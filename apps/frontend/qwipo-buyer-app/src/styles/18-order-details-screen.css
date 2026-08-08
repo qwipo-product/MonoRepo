@@ -75,12 +75,15 @@
 
 .od-card {
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 5px 16px -10px rgba(15, 23, 42, 0.1);
 }
 
 .od-card .orders-row.total {
@@ -107,20 +110,24 @@
   gap: 12px;
   padding: 10px;
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 4px 12px -10px rgba(15, 23, 42, 0.1);
 }
 
 .od-item-img {
   width: 56px;
   height: 56px;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
+  background: linear-gradient(155deg, var(--surface-2) 0%, var(--surface-3) 100%);
 }
 
 .od-item-img img {
@@ -218,24 +225,32 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--surface-1);
-  border-top: 1px solid var(--border);
-  padding: 12px 16px 24px;
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-top: 1px solid var(--border-soft);
+  padding: 12px 16px calc(18px + env(safe-area-inset-bottom));
   display: flex;
   gap: 10px;
   z-index: 10;
+  box-shadow: 0 -8px 28px -12px rgba(15, 23, 42, 0.18);
 }
 
 .od-btn {
   flex: 1;
-  height: 42px;
-  border-radius: 8px;
+  height: 44px;
+  border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: transform 0.12s ease;
+}
+
+.od-btn:active {
+  transform: scale(0.97);
 }
 
 .od-btn.ghost {
@@ -251,8 +266,9 @@
 }
 
 .od-btn.primary {
-  background: #2563eb;
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #ffffff;
+  box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.5);
 }
 
 .od-btn svg {
@@ -463,12 +479,21 @@
    total / expected delivery box, Cancel + Track Order actions) */
 .mo-card {
   background: var(--surface-1);
-  border-radius: 14px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+.mo-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -12px rgba(15, 23, 42, 0.18);
 }
 
 .mo-card-top {
@@ -517,9 +542,10 @@
 
 .mo-info-box {
   display: flex;
-  background: var(--surface-3);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 11px 14px;
   margin: 2px 0;
 }
 
@@ -550,31 +576,43 @@
 
 .mo-cancel-btn {
   flex: 1;
-  height: 42px;
-  border-radius: 10px;
+  height: 44px;
+  border-radius: var(--radius-full);
   border: 1.5px solid #dc2626;
   color: #dc2626;
   font-size: 14px;
   font-weight: 700;
   background: transparent;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.mo-cancel-btn:active {
+  transform: scale(0.97);
+  background: var(--danger-bg);
 }
 
 .mo-track-btn {
   flex: 1;
-  height: 42px;
-  border-radius: 10px;
-  background: #2563eb;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, #3b82f6 0%, var(--primary) 100%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
+  box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.5);
+  transition: transform 0.12s ease;
+}
+
+.mo-track-btn:active {
+  transform: scale(0.97);
 }
 
 .mo-invoice-btn {
   width: 100%;
-  height: 42px;
-  border-radius: 10px;
-  border: 1.5px solid #2563eb;
-  color: #2563eb;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
   font-size: 14px;
   font-weight: 700;
   display: flex;
@@ -582,6 +620,12 @@
   justify-content: center;
   gap: 8px;
   background: transparent;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.mo-invoice-btn:active {
+  transform: scale(0.99);
+  background: var(--info-bg);
 }
 
 .mo-cancel-note {
@@ -602,11 +646,20 @@
   flex-direction: column;
   gap: 12px;
   background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
   padding: 14px;
   text-align: left;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 6px 18px -10px rgba(15, 23, 42, 0.12);
+  transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.orders-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 26px -12px rgba(15, 23, 42, 0.18);
 }
 
 .orders-card:active {
@@ -726,8 +779,8 @@
 
 .orders-actions.compact .orders-action {
   flex: 1;
-  height: 36px;
-  border-radius: 8px;
+  height: 38px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   padding: 0 12px;
 }
