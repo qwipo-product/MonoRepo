@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Truck, Package } from 'lucide-react';
-import { products } from '../data';
+import { useAvailable } from '../data/availability';
 import StatusBar from '../components/StatusBar';
 import ScreenHeader from '../components/ScreenHeader';
 import ShopProductCard from '../components/ShopProductCard';
@@ -26,7 +26,8 @@ export default function WholesalerProductListScreen({ category, cartItems = {}, 
   const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({});
   const [selectedSeller, setSelectedSeller] = useState<Record<string, string>>({});
   const cat = category || { name: 'Cooking Oils & Ghee' };
-  const list = useMemo(() => (products as any[]).slice(0, 10), []);
+  const { products: availableProducts } = useAvailable();
+  const list = useMemo(() => availableProducts.filter((p: any) => p.sellerType === 'wholesaler').slice(0, 10), [availableProducts]);
   const getQty = (pid: string, vid: string) => cartItems[`${pid}_${vid}`] || 0;
 
   return (

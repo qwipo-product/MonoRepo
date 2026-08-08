@@ -5,14 +5,17 @@ import StatusBar from '../../components/StatusBar';
 import ScreenHeader from '../../components/ScreenHeader';
 import AddAddressSheet from '../../components/AddAddressSheet';
 
-export default function AddressesScreen({ onBack, onSaved }: any) {
+export default function AddressesScreen({ onBack, onSaved, activeId, onSelect }: any) {
   const [addresses, setAddresses] = useState(initial as any[]);
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const currentId = activeId ?? addresses.find((a) => a.isDefault)?.id;
 
+  // Selecting an address changes the delivery location → the serviceable
+  // sellers/distributors/products update across the app (bms behaviour).
   const setDefault = (id: string) => {
-    setAddresses(addresses.map((a) => ({ ...a, isDefault: a.id === id })));
-    setToast('Address updated successfully');
+    onSelect?.(id);
+    setToast('Delivery location updated');
     setTimeout(() => onSaved?.(), 1100);
   };
   const handleSave = (next: any) => {
@@ -35,7 +38,7 @@ export default function AddressesScreen({ onBack, onSaved }: any) {
         </button>
 
         {addresses.map((a) => (
-          <div key={a.id} className={`rounded-xl border bg-card p-3 shadow-sm ${a.isDefault ? 'border-primary' : 'border-border'}`}>
+          <div key={a.id} className={`rounded-xl border bg-card p-3 shadow-sm ${a.id === currentId ? 'border-primary' : 'border-border'}`}>
             <div className="flex gap-3">
               <span className="text-2xl">{a.icon}</span>
               <div className="min-w-0 flex-1">
@@ -45,10 +48,10 @@ export default function AddressesScreen({ onBack, onSaved }: any) {
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
               <span className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" /> {a.pincode}</span>
-              {a.isDefault ? (
+              {a.id === currentId ? (
                 <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700"><Truck className="h-3 w-3" /> Delivering here</span>
               ) : (
-                <button onClick={() => setDefault(a.id)} className="text-xs font-medium text-primary">Set as default</button>
+                <button onClick={() => setDefault(a.id)} className="text-xs font-medium text-primary">Deliver here</button>
               )}
             </div>
           </div>

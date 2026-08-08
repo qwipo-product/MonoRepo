@@ -41,7 +41,8 @@ import FiltersSheet, { DEFAULT_FILTERS, type Filters } from './components/Filter
 import DiscountsSheet from './components/DiscountsSheet';
 import ProductImageSheet from './components/ProductImageSheet';
 import CartValidationSheet from './components/CartValidationSheet';
-import { products, seller, orders } from './data';
+import { products, seller, sellers, orders } from './data';
+import { LocationContext, addressById, deliveryLocations } from './data/availability';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 type CartLine = { product: any; variant: any; qty: number; price: number };
@@ -86,6 +87,8 @@ export default function App() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponSellerId, setCouponSellerId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<any>((orders as any[])[0] ?? null);
+  const [addressId, setAddressId] = useState<string>((deliveryLocations.find((a) => a.isDefault) || deliveryLocations[0])?.id || 'addr1');
+  const deliveryAddress = addressById(addressId);
   const go = (id: ScreenId) => { setSheet(null); setExtra(null); setScreen(id); };
 
   // ── cart ──────────────────────────────────────────────────────────────────
@@ -107,16 +110,28 @@ export default function App() {
   const cartCount = Object.values(cart).reduce((n, i) => n + i.qty, 0);
 
   // Group the flat cart into the seller-keyed model the cart/checkout screens
-  // expect. All lines pool under one distributor (matches the source).
+  // expect. Each product carries its owning vendor (sellerId), so lines bucket
+  // per distributor/wholesaler — the bms Home→Confirmation flow keeps each
+  // seller's delivery days + MOV intact through checkout.
+  const sellerById = Object.fromEntries((sellers as any[]).map((s) => [s.id, s]));
   const cartModel = (() => {
     const lines = Object.entries(cart);
     if (!lines.length) return { sellers: [] as any[] };
-    const items = lines.map(([k, l]) => ({
-      key: k, productId: l.product.id, name: l.product.name, variant: l.variant.size,
-      image: l.product.image, bgColor: l.product.bgColor, brand: l.product.brand,
-      mrp: l.variant.mrp, price: l.price, quantity: l.qty, unit: 'Pcs', scheme: l.variant.scheme,
-    }));
-    return { sellers: [{ id: 'sskt', name: (seller as any).name || 'Sri Sai Krishna Traders', type: 'distributor', mov: (seller as any).mov ?? 5000, deliveryWindows: (seller as any).deliveryWindows, items }] };
+    const buckets: Record<string, any> = {};
+    for (const [k, l] of lines) {
+      const sid = l.product.sellerId || 'sskt';
+      const vendor = sellerById[sid] || (seller as any);
+      (buckets[sid] ||= {
+        id: sid, name: l.product.sellerName || vendor.name, type: l.product.sellerType || vendor.type || 'distributor',
+        fulfilmentType: vendor.fulfilmentType, source: vendor.source, businessType: vendor.businessType,
+        mov: vendor.mov ?? 5000, deliveryWindows: vendor.deliveryWindows, deliveryOptions: vendor.deliveryOptions, items: [],
+      }).items.push({
+        key: k, productId: l.product.id, name: l.product.name, variant: l.variant.size,
+        image: l.product.image, bgColor: l.product.bgColor, brand: l.product.brand,
+        mrp: l.variant.mrp, price: l.price, quantity: l.qty, unit: 'Pcs', scheme: l.variant.scheme,
+      });
+    }
+    return { sellers: Object.values(buckets) };
   })();
   const viewItemsSeller = cartModel.sellers.find((s) => s.id === viewItemsSellerId) || cartModel.sellers[0] || null;
   const updateItem = (item: any, qty: number) => setCart((prev) => { const n = { ...prev }; if (qty <= 0) delete n[item.key]; else if (n[item.key]) n[item.key] = { ...n[item.key], qty }; return n; });
@@ -160,6 +175,7 @@ export default function App() {
 
   const homeProps = {
     kycPending,
+    deliveryLabel: `${deliveryAddress?.name || ''}, ${deliveryAddress?.line2 || ''}`.replace(/^,\s*|,\s*$/g, ''),
     onCompleteKyc: () => go('kyc-complete'),
     onOpenNotifications: () => go('notifications'),
     onOpenProfile: () => go('profile'),
@@ -192,7 +208,7 @@ export default function App() {
       case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} />;
       case 'cart': return <MultiSellerCartV2 cart={cartModel} onBack={() => go('home')} onCheckout={() => setExtra({ kind: 'validation' })} onAddMore={() => go('home')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} />;
       case 'view-items': return <ViewItemsScreen seller={viewItemsSeller} onBack={() => go('cart')} onAddMore={() => go('home')} onUpdateItem={updateItem} onItemTap={openSheetForItem} />;
-      case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
+      case 'order-summary': return <OrderSummaryScreen cart={cartModel} deliveryAddress={deliveryAddress} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
       case 'coupons': return <CouponsScreen cartTotal={cartTotal || 4250} appliedId={appliedCoupon?.id ?? null} onBack={() => go('order-summary')} onApply={(c: any) => { setAppliedCoupon(c); go('order-summary'); }} />;
       case 'order-confirmation': return <OrderConfirmationScreen onBackToHome={() => { setCart({}); setAppliedCoupon(null); go('home'); }} />;
       case 'my-orders': return <MyOrdersScreen onBack={() => go('profile')} onOpenDetails={(o: any) => { setActiveOrder(o); go('order-details'); }} />;
@@ -204,7 +220,7 @@ export default function App() {
       case 'sub:payment': return <PaymentScreen onBack={() => go('profile')} />;
       case 'sub:help': return <HelpScreen onBack={() => go('profile')} />;
       case 'sub:terms': return <TermsConditionsScreen onBack={() => go('profile')} />;
-      case 'sub:addresses': return <AddressesScreen onBack={() => go('home')} onSaved={() => go('home')} />;
+      case 'sub:addresses': return <AddressesScreen activeId={addressId} onSelect={setAddressId} onBack={() => go('home')} onSaved={() => go('home')} />;
       case 'sub:language': return <LanguageScreen onBack={() => go('settings')} />;
       default: return null;
     }
@@ -251,13 +267,15 @@ export default function App() {
   );
 
   return (
-    <div className="flex min-h-dvh bg-shell">
-      <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-        {showSwitcher && <ShellSwitcher value={shell} onChange={setShell} />}
-        {frame}
-      </main>
-    </div>
+    <LocationContext.Provider value={{ addressId, setAddressId }}>
+      <div className="flex min-h-dvh bg-shell">
+        <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
+        <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+          {showSwitcher && <ShellSwitcher value={shell} onChange={setShell} />}
+          {frame}
+        </main>
+      </div>
+    </LocationContext.Provider>
   );
 }
 

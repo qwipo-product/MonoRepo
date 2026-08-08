@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight, Truck } from 'lucide-react';
-import { homepage, sellers } from '../data';
+import { homepage } from '../data';
+import { useAvailable } from '../data/availability';
 import StatusBar from '../components/StatusBar';
 import ScreenHeader from '../components/ScreenHeader';
 import SearchField from '../components/SearchField';
@@ -21,24 +22,25 @@ export default function DistributorsListScreen({
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
 
-  const distributors = homepage.distributors as any[];
+  // Location-serviceable sellers only (mirrors bms per-location home bootstrap).
+  const { distributors, sellers: availSellers } = useAvailable();
   const distributorCategories = homepage.distributorCategories as any[];
-  const findDistributor = (name: string) => distributors.find((d) => d.name.toLowerCase() === name.toLowerCase());
+  const findDistributor = (name: string) => distributors.find((d: any) => d.name.toLowerCase() === name.toLowerCase());
 
   const allBrands = useMemo(() => {
     const seen = new Set<string>();
     const out: any[] = [];
-    (sellers as any[]).forEach((d) => d.brands.forEach((b: any) => {
+    availSellers.forEach((d: any) => d.brands.forEach((b: any) => {
       if (seen.has(b.id)) return;
       seen.add(b.id);
       out.push(b);
     }));
     return out;
-  }, []);
+  }, [availSellers]);
 
   const filteredCategories = q ? distributorCategories.filter((c) => c.name.toLowerCase().includes(q)) : distributorCategories;
   const filteredBrands = q ? allBrands.filter((b) => (b.short || b.name || '').toLowerCase().includes(q)) : allBrands;
-  const sellerPool = filterDistributorIds ? (sellers as any[]).filter((d) => filterDistributorIds.includes(d.id)) : (sellers as any[]);
+  const sellerPool = filterDistributorIds ? availSellers.filter((d: any) => filterDistributorIds.includes(d.id)) : availSellers;
   const filteredSellers = q
     ? sellerPool.filter((d) => d.name.toLowerCase().includes(q) || d.brands.some((b: any) => (b.short || b.name || '').toLowerCase().includes(q)))
     : sellerPool;

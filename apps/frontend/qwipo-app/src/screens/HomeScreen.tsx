@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, Check } from 'lucide-react';
 import { useI18n } from '@mockups/i18n';
 import { homepage } from '../data';
+import { useAvailable } from '../data/availability';
 import BannerCarousel from '../components/BannerCarousel';
 import SectionHeader from '../components/SectionHeader';
 import Logo from '../components/Logo';
 
-// Everything the home feeds render comes from the one centralized source.
+// Static home feeds (banners, categories, brands) come from the one centralized
+// source; the distributor/wholesaler lists are location-filtered at runtime.
 const {
-  distributors,
   brands,
   heroBanners,
   wholesalerBanners,
@@ -25,6 +26,7 @@ const {
 export default function HomeScreen({
   sellerAvailability = 'both',
   kycPending,
+  deliveryLabel,
   onCompleteKyc,
   onOpenNotifications,
   onOpenProfile,
@@ -45,8 +47,10 @@ export default function HomeScreen({
   const wholesalersAvailable = sellerAvailability !== 'distributors';
   const [tab, setTab] = useState(distributorsAvailable ? 'distributors' : 'wholesalers');
 
+  // Sellers serviceable to the current delivery location (mirrors bms bootstrap).
+  const { distributors } = useAvailable();
   const visibleDistributors = distributors
-    .filter((d) => (tab === 'distributors' ? d.isAuthorised : true))
+    .filter((d: any) => (tab === 'distributors' ? d.isAuthorised : true))
     .slice(0, 16);
 
   return (
@@ -77,7 +81,7 @@ export default function HomeScreen({
         >
           <MapPin className="h-4 w-4 shrink-0 text-primary" />
           <span className="shrink-0 text-muted-foreground">{t('common.deliver_to')}</span>
-          <span className="min-w-0 flex-1 truncate font-medium">Lit Box, Rai Durg, Hitech City</span>
+          <span className="min-w-0 flex-1 truncate font-medium">{deliveryLabel || 'Lit Box, Rai Durg, Hitech City'}</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
 

@@ -6,21 +6,18 @@ import { VendorMoney, VendorRequirements, computeVendorSummary } from '../compon
 
 const FALLBACK_WINDOWS = [{ day: 'Fri (Beat day)' }, { day: 'Tomorrow' }];
 
-/* Cart Summary — per-seller card (MOV requirement, thumbnail rail, delivery-by
-   radios) + grand total + Checkout. Wholesalers pool into one "Qwipo Sellers"
-   block. Parity port. */
+/* Cart Summary — one card per seller (MOV requirement, thumbnail rail,
+   delivery-by radios) + grand total + Checkout. bms parity: every vendor is its
+   own card under a "From Distributors" / "From Wholesalers" header — JIT Vendor,
+   VFF and Qwipo are NOT merged. */
 export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore, onViewItems }: any) {
   const [deliveryIndex, setDeliveryIndex] = useState<Record<string, number>>({});
 
-  const distributors = cart.sellers.filter((s: any) => (s.type || 'distributor') === 'distributor').map((s: any) => ({ ...s, subtotal: computeVendorSummary(s).subtotal }));
-  const wholesalers = cart.sellers.filter((s: any) => s.type === 'wholesaler');
-  let wholesalerRow: any = null;
-  if (wholesalers.length) {
-    const items = wholesalers.flatMap((w: any) => w.items);
-    wholesalerRow = { id: 'qwipo-sellers', name: 'Qwipo Sellers', type: 'wholesaler', items, subtotal: items.reduce((n: number, i: any) => n + i.price * i.quantity, 0), deliveryWindows: [{ day: 'Saturday' }] };
-  }
-  const rows = [...distributors, ...(wholesalerRow ? [wholesalerRow] : [])];
-  const grandTotal = rows.reduce((n, r) => n + r.subtotal, 0);
+  const withSub = (s: any) => ({ ...s, type: s.type || 'distributor', subtotal: computeVendorSummary(s).subtotal });
+  const distributors = cart.sellers.filter((s: any) => (s.type || 'distributor') === 'distributor').map(withSub);
+  const wholesalers = cart.sellers.filter((s: any) => s.type === 'wholesaler').map(withSub);
+  const grandTotal = [...distributors, ...wholesalers].reduce((n, r) => n + r.subtotal, 0);
+  const rows = [...distributors, ...wholesalers];
 
   return (
     <div className="flex h-full flex-col bg-gray-50 text-foreground">
@@ -37,15 +34,13 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
             <div className="mt-1 text-sm text-muted-foreground">Add products to see them here.</div>
           </div>
         )}
-        {rows.map((s: any) => (
-          <SellerCard
-            key={s.id}
-            seller={s}
-            activeIndex={deliveryIndex[s.id] || 0}
-            onPickDelivery={(idx: number) => setDeliveryIndex((prev) => ({ ...prev, [s.id]: idx }))}
-            onAddMore={() => onAddMore?.(s)}
-            onViewItems={() => onViewItems?.(s)}
-          />
+        {distributors.length > 0 && <SectionLabel>From Distributors</SectionLabel>}
+        {distributors.map((s: any) => (
+          <SellerCard key={s.id} seller={s} activeIndex={deliveryIndex[s.id] || 0} onPickDelivery={(idx: number) => setDeliveryIndex((prev) => ({ ...prev, [s.id]: idx }))} onAddMore={() => onAddMore?.(s)} onViewItems={() => onViewItems?.(s)} />
+        ))}
+        {wholesalers.length > 0 && <SectionLabel>From Wholesalers</SectionLabel>}
+        {wholesalers.map((s: any) => (
+          <SellerCard key={s.id} seller={s} activeIndex={deliveryIndex[s.id] || 0} onPickDelivery={(idx: number) => setDeliveryIndex((prev) => ({ ...prev, [s.id]: idx }))} onAddMore={() => onAddMore?.(s)} onViewItems={() => onViewItems?.(s)} />
         ))}
       </div>
 
@@ -60,6 +55,10 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
       )}
     </div>
   );
+}
+
+function SectionLabel({ children }: any) {
+  return <div className="px-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{children}</div>;
 }
 
 function SellerCard({ seller, activeIndex, onPickDelivery, onAddMore, onViewItems }: any) {

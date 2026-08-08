@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { products, seller, sellers, homepage } from '../data';
+import { seller } from '../data';
+import { useAvailable } from '../data/availability';
 import StatusBar from '../components/StatusBar';
 import ScreenHeader from '../components/ScreenHeader';
 import ShopProductCard from '../components/ShopProductCard';
@@ -9,15 +10,9 @@ import { DEFAULT_FILTERS, countActiveFilters, applyFilters, type Filters } from 
 
 const DELIVERY_LABELS = { beat: { day: 'Fri (Beat day)', mov: 500 }, tomorrow: { day: 'Tomorrow', mov: 2500 } } as const;
 
+// Products now carry their owning vendor directly (bms-style ownership).
 function sellerForProduct(product: any): string {
-  const target = (product.brand || '').toLowerCase();
-  for (const d of sellers as any[]) {
-    if (d.brands.some((b: any) => (b.short || b.name || '').toLowerCase() === target)) {
-      const canonical = (homepage.distributors as any[]).find((x) => x.id === d.id);
-      return canonical?.name || d.name;
-    }
-  }
-  return (seller as any).name;
+  return product.sellerName || (seller as any).name;
 }
 
 export default function ProductListingV2({
@@ -36,15 +31,16 @@ export default function ProductListingV2({
 }: { filters?: Filters; [k: string]: any }) {
   const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({});
   const activeFilterCount = countActiveFilters(filters);
+  const { products: availableProducts } = useAvailable(); // location-serviceable only
 
   const list = useMemo(() => {
-    const byCategory = (products as any[]).filter((p) => {
+    const byCategory = availableProducts.filter((p: any) => {
       if (!category) return true;
       if (category.isBrand) return p.brand === category.name;
       return p.category === category.id;
     });
     return applyFilters(byCategory, filters);
-  }, [category, filters]);
+  }, [category, filters, availableProducts]);
 
   const getQty = (pid: string, vid: string) => cartItems[`${pid}_${vid}`] || 0;
 
