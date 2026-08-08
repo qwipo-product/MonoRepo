@@ -14,7 +14,7 @@ export default function ProductCard({
 }) {
   const variant = p.variants[0];
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
+    <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
       <div className="flex gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-1.5">

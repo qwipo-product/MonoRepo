@@ -13,20 +13,25 @@ export default function AllBrandsScreen({ onBack, onSelectBrand, onOpenSearch }:
   const filtered = q ? list.filter((b) => b.name.toLowerCase().includes(q)) : list;
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
-      <StatusBar />
-      <ScreenHeader
-        title="All Brands"
-        onBack={onBack}
-        right={
-          <button onClick={onOpenSearch} aria-label="Search" className="grid h-11 w-11 place-items-center">
-            <Search className="h-5 w-5" />
-          </button>
-        }
-      />
-      <SearchField value={query} onChange={setQuery} placeholder="Search brands" onClear={() => setQuery('')} />
+    <div className="flex h-full flex-col bg-gray-50 text-foreground">
+      <div className="flex-shrink-0 border-b border-border bg-card pb-3 shadow-sm">
+        <StatusBar />
+        <ScreenHeader
+          title="All Brands"
+          subtitle={`${list.length} brands`}
+          onBack={onBack}
+          right={
+            <button onClick={onOpenSearch} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-lg bg-muted transition-colors hover:bg-muted/70 active:scale-95">
+              <Search className="h-5 w-5" />
+            </button>
+          }
+        />
+        <div className="mt-1">
+          <SearchField value={query} onChange={setQuery} placeholder="Search brands" onClear={() => setQuery('')} />
+        </div>
+      </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
         {filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">No brands match "{query}".</p>
         ) : (

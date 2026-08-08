@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import StatusBar from '../components/StatusBar';
 import AuthBrand from '../components/AuthBrand';
+import BackButton from '../components/BackButton';
 
 export default function OTPScreen({
   phone,
@@ -47,13 +47,9 @@ export default function OTPScreen({
       {/* Top 50% — brand */}
       <div className="flex flex-1 flex-col">
         <StatusBar />
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="grid h-11 w-11 place-items-center text-foreground"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
+        <div className="px-3">
+          <BackButton onClick={onBack} />
+        </div>
         <div className="flex flex-1 items-center justify-center">
           <AuthBrand />
         </div>

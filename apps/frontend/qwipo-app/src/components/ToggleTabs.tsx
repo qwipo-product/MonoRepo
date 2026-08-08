@@ -1,4 +1,5 @@
-/* Segmented control (2–4 mutually-exclusive options), DS pill style. */
+/* Segmented control — pill track with an elevated active segment (white card,
+   soft shadow, primary label). Enterprise-clean, DS §4 pill style. */
 export default function ToggleTabs({
   tabs,
   active,
@@ -9,18 +10,23 @@ export default function ToggleTabs({
   onChange: (key: string) => void;
 }) {
   return (
-    <div className="mx-4 flex gap-1 rounded-lg bg-muted p-1">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => onChange(t.key)}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${
-            active === t.key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div className="mx-4 flex gap-1 rounded-xl bg-muted p-1">
+      {tabs.map((t) => {
+        const on = active === t.key;
+        return (
+          <button
+            key={t.key}
+            onClick={() => onChange(t.key)}
+            className={`flex-1 rounded-lg py-2 text-sm transition-all ${
+              on
+                ? 'bg-card font-semibold text-primary shadow-sm'
+                : 'font-medium text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

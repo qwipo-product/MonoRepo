@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronDown, MapPin, Check } from 'lucide-react';
+import { ChevronDown, MapPin, Check } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import StatusBar from '../components/StatusBar';
 import Field, { controlClass } from '../components/Field';
 import BusinessTypeSheet from '../components/BusinessTypeSheet';
 import ScreenFooter from '../components/ScreenFooter';
+import BackButton from '../components/BackButton';
 
 const DOC_FIELDS = [
   { key: 'shopImage', label: 'Shop Image', required: true },
@@ -42,14 +43,8 @@ export default function CompleteKycScreen({
   return (
     <div className="relative flex h-full flex-col bg-background text-foreground">
       <StatusBar />
-      <div className="flex h-14 items-center gap-2 px-2">
-        <button
-          onClick={() => (step === 1 ? onCancel() : setStep(1))}
-          aria-label="Back"
-          className="grid h-11 w-11 place-items-center"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
+      <div className="flex h-14 items-center gap-3 px-3">
+        <BackButton onClick={() => (step === 1 ? onCancel() : setStep(1))} />
         <div>
           <h1 className="text-base font-semibold">Complete KYC</h1>
           <p className="text-xs text-muted-foreground">

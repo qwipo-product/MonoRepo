@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Search, Clock, TrendingUp, RotateCcw, ArrowUpRight, PackageOpen } from 'lucide-react';
+import { Search, Clock, TrendingUp, RotateCcw, ArrowUpRight, PackageOpen } from 'lucide-react';
 import { products, homepage, reorderHistory } from '../data';
 import Logo from '../components/Logo';
 import ProductCard from '../components/ProductCard';
+import BackButton from '../components/BackButton';
 
 const INITIAL_RECENT = ['Durga Ghee,50 Ml Pouch', 'freedom', 'Beauty & Hygiene', 'Hanamanja', 'Mung daal', 'Mung dal', 'Mung da', 'Mung', 'Red label', 'Nirma'];
 const TRENDING = ['oil', 'ajay', 'Annapurna', 'Beauty & Hygiene', 'Cycle', 'vijaya sunflower oil,1 ltr pouch'];
@@ -70,11 +71,9 @@ export default function GlobalSearchScreen({ onBack, onSelectProduct }: any) {
   );
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
-      <div className="flex flex-shrink-0 items-center gap-2 p-3">
-        <button onClick={onBack} aria-label="Back" className="grid h-10 w-10 place-items-center">
-          <ChevronLeft className="h-6 w-6" />
-        </button>
+    <div className="flex h-full flex-col bg-gray-50 text-foreground">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-card p-3 shadow-sm">
+        <BackButton onClick={onBack} />
         <div className="flex h-11 flex-1 items-center gap-2 rounded-lg border border-border bg-input-background px-3">
           <Search className="h-5 w-5 text-muted-foreground" />
           <input

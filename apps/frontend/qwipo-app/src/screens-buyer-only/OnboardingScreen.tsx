@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronDown, MapPin } from 'lucide-react';
+import { ChevronDown, MapPin } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import StatusBar from '../components/StatusBar';
 import Field, { controlClass } from '../components/Field';
 import BusinessTypeSheet from '../components/BusinessTypeSheet';
 import ScreenFooter from '../components/ScreenFooter';
+import BackButton from '../components/BackButton';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 
@@ -30,11 +31,9 @@ export default function OnboardingScreen({
   return (
     <div className="relative flex h-full flex-col bg-background text-foreground">
       <StatusBar />
-      <div className="flex h-14 items-center gap-2 px-2">
-        <button onClick={onBack} aria-label="Back" className="grid h-11 w-11 place-items-center">
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <h1 className="text-base font-semibold">On Boarding</h1>
+      <div className="flex h-14 items-center gap-3 px-3">
+        <BackButton onClick={onBack} />
+        <h1 className="text-lg font-semibold">On Boarding</h1>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 pt-2">

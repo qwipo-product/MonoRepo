@@ -46,34 +46,32 @@ export default function DistributorsListScreen({
   const placeholder = { categories: 'Search categories', brands: 'Search brands', sellers: 'Search sellers or brands' }[tab];
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
-      <StatusBar />
-      <ScreenHeader title="Authorised Distributors" onBack={onBack} />
-      <ToggleTabs
-        tabs={[{ key: 'categories', label: 'Categories' }, { key: 'brands', label: 'Brands' }, { key: 'sellers', label: 'Sellers' }]}
-        active={tab}
-        onChange={(k) => setTab(k as TabKey)}
-      />
-      <div className="mt-2">
-        <SearchField value={query} onChange={setQuery} placeholder={placeholder} onClear={() => setQuery('')} />
+    <div className="flex h-full flex-col bg-gray-50 text-foreground">
+      <div className="flex-shrink-0 border-b border-border bg-card pb-3 shadow-sm">
+        <StatusBar />
+        <ScreenHeader title="Authorised Distributors" subtitle="Verified sellers near you" onBack={onBack} />
+        <ToggleTabs
+          tabs={[{ key: 'categories', label: 'Categories' }, { key: 'brands', label: 'Brands' }, { key: 'sellers', label: 'Sellers' }]}
+          active={tab}
+          onChange={(k) => setTab(k as TabKey)}
+        />
+        <div className="mt-3">
+          <SearchField value={query} onChange={setQuery} placeholder={placeholder} onClear={() => setQuery('')} />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4">
         {tab === 'categories' && (
           filteredCategories.length === 0 ? (
             <Empty q={query} what="categories" />
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {filteredCategories.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => onSelectCategory?.(c)}
-                  className="relative overflow-hidden rounded-lg border border-border"
-                >
-                  <img src={c.image} alt={c.name} className="h-24 w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 text-left text-xs font-medium text-white">
-                    {c.name}
-                  </span>
+                <button key={c.id} onClick={() => onSelectCategory?.(c)} className="flex flex-col gap-2 text-left">
+                  <div className="h-28 w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                    <img src={c.image} alt={c.name} className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  </div>
+                  <div className="truncate px-0.5 text-sm font-medium">{c.name}</div>
                 </button>
               ))}
             </div>
@@ -103,7 +101,7 @@ export default function DistributorsListScreen({
               {filteredSellers.map((d) => {
                 const full = findDistributor(d.name) || { id: d.id, name: d.name, shortName: d.name, featuredColor: '#FEF3C7', isAuthorised: true };
                 return (
-                  <div key={d.id} className="rounded-xl border border-border bg-card">
+                  <div key={d.id} className="rounded-xl border border-border bg-card shadow-sm">
                     <button
                       onClick={() => onSelectDistributor?.({ ...full, deliveryWindows: d.deliveryWindows })}
                       aria-label={`Open ${d.name} storefront`}
