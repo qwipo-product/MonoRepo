@@ -73,12 +73,12 @@ export default function SellerStorefront({ distributor, onBack, onSelectCategory
 
         <section className="space-y-3">
           <SectionHeader title="Top brands" />
-          <div className="flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="grid grid-cols-4 gap-x-3 gap-y-4 px-4">
             {brands.map((brand: any) => (
               <button
                 key={brand.id}
                 onClick={() => onSelectCategory({ id: brand.id, name: brand.name, isBrand: true })}
-                className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                className="flex flex-col items-center gap-1.5"
               >
                 <Logo src={brand.logo} text={brand.logoText} color={brand.color} className="h-14 w-14 rounded-full border border-border" />
                 <div className="w-full truncate text-center text-xs">{brand.name}</div>

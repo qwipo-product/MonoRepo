@@ -105,8 +105,9 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
           {grandSavings > 0 && <Row label="You Save" value={`₹${Math.round(grandSavings).toLocaleString('en-IN')}`} good />}
           <Row label="Delivery Fee" value={`₹${deliveryFee}`} />
           {appliedCoupon && discount > 0 && <Row label={`Coupon (${appliedCoupon.code})`} value={`−₹${discount.toLocaleString('en-IN')}`} good />}
-          <div className="mt-1 flex items-center justify-between border-t border-border pt-2 text-sm font-semibold">
-            <span>To pay</span><span>₹{Math.round(toPay).toLocaleString('en-IN')}</span>
+          <div className="mt-2 flex items-center justify-between border-t border-border pt-2.5">
+            <span className="text-base font-semibold">To pay</span>
+            <span className="text-lg font-bold tabular-nums tracking-tight">₹{Math.round(toPay).toLocaleString('en-IN')}</span>
           </div>
         </div>
 
@@ -122,8 +123,8 @@ export default function OrderSummaryScreen({ cart, onBack, onPlaceOrder, onViewI
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-border bg-card p-4">
-        <button onClick={onPlaceOrder} className="w-full rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground">Place Order</button>
+      <div className="flex-shrink-0 border-t border-border bg-card p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        <button onClick={onPlaceOrder} className="w-full rounded-lg bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform active:scale-[0.98]">Place Order</button>
       </div>
     </div>
   );

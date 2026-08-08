@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Truck } from 'lucide-react';
+import { Search, Truck, Package } from 'lucide-react';
 import { products } from '../data';
 import StatusBar from '../components/StatusBar';
 import ScreenHeader from '../components/ScreenHeader';
@@ -74,8 +74,9 @@ export default function WholesalerProductListScreen({ category, cartItems = {}, 
                     const on = pr.seller.id === activeSellerId;
                     return (
                       <button key={pr.seller.id} onClick={() => setSelectedSeller({ ...selectedSeller, [product.id]: pr.seller.id })} className={`rounded-lg border p-2 text-left ${on ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                        <div className="text-sm font-semibold">₹{pr.price.toLocaleString('en-IN')}</div>
+                        <div className="text-sm font-semibold tabular-nums">₹{pr.price.toLocaleString('en-IN')}</div>
                         <div className="text-xs text-muted-foreground">{pr.seller.name}</div>
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Package className="h-3 w-3" /> Fee: ₹{on ? 2 : 1}/kg</div>
                       </button>
                     );
                   })}

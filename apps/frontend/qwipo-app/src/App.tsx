@@ -61,6 +61,7 @@ const BUILT = new Set<ScreenId>([
 const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
   home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
 };
+const AUTH = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
 
 /* One codebase, two chrome shells. Home roots / storefront / reorder render in
    the selected shell (status bar + tab bar); auth + pushed detail screens render
@@ -188,7 +189,7 @@ export default function App() {
       case 'distributors-list': return <DistributorsListScreen initialTab={distListTab} onBack={() => go('home')} onSelectDistributor={openStorefront} onSelectBrand={(b: any) => openListing({ id: b.id, name: b.short || b.name, isBrand: true }, 'distributors-list')} onSelectCategory={(c: any) => openListing(c, 'distributors-list')} />;
       case 'wholesaler-categories': return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={openWholesalerProducts} onOpenSearch={() => go('global-search')} />;
       case 'listing': return <ProductListingV2 category={listingCategory} cartItems={cartItems} cartTotal={cartTotal} filters={filters} onBack={() => go(listingBack)} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} onOpenFilters={() => setExtra({ kind: 'filters' })} />;
-      case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
+      case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} />;
       case 'cart': return <MultiSellerCartV2 cart={cartModel} onBack={() => go('home')} onCheckout={() => setExtra({ kind: 'validation' })} onAddMore={() => go('home')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} />;
       case 'view-items': return <ViewItemsScreen seller={viewItemsSeller} onBack={() => go('cart')} onAddMore={() => go('home')} onUpdateItem={updateItem} onItemTap={openSheetForItem} />;
       case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
@@ -221,37 +222,38 @@ export default function App() {
   );
   const overlays = <>{cartSheet}{extraSheet}</>;
 
-  if (bareScreen) {
-    return (
-      <div className="flex min-h-dvh bg-shell">
-        <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
-        <main className="flex flex-1 items-center justify-center p-6">
-          <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
-            {bareScreen}
-            {overlays}
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const CurrentShell = shell === 'paytm' ? PaytmShell : BuyerShell;
   const shellContent = (() => {
     if (screen in HOME_AVAILABILITY) return <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />;
     if (screen === 'storefront') return <SellerStorefront distributor={storefrontDistributor} onBack={() => go('home')} onSelectCategory={(c: any) => openListing({ ...c, fromStorefront: true }, 'storefront')} onOpenSearch={() => go('global-search')} />;
-    if (screen === 'reorder') return <ReorderScreen cartItems={cartItems} cartTotal={cartTotal} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
+    if (screen === 'reorder') return <ReorderScreen cartItems={cartItems} cartTotal={cartTotal} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} />;
     return <Placeholder />;
   })();
   const activeTab = screen === 'reorder' ? 'reorder' : 'home';
+
+  // Auth is pre-login — the Paytm surface has no auth (SSO via the container),
+  // so the buyer/paytm toggle only makes sense once you're in the app.
+  const showSwitcher = !AUTH.has(screen);
+
+  // Bare screens (auth + pushed detail) render chromeless in the phone frame;
+  // home/storefront/reorder render inside the selected shell (its chrome).
+  const frame = bareScreen ? (
+    <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+      {bareScreen}
+      {overlays}
+    </div>
+  ) : (
+    <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={overlays}>
+      {shellContent}
+    </CurrentShell>
+  );
 
   return (
     <div className="flex min-h-dvh bg-shell">
       <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-        <ShellSwitcher value={shell} onChange={setShell} />
-        <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={overlays}>
-          {shellContent}
-        </CurrentShell>
+        {showSwitcher && <ShellSwitcher value={shell} onChange={setShell} />}
+        {frame}
       </main>
     </div>
   );

@@ -116,14 +116,14 @@ export default function AddToCartSheet({
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div>
-            <div className="text-xs text-muted-foreground">Total Cart Value:</div>
-            <div className="text-base font-semibold">₹{totalValue.toLocaleString('en-IN')}</div>
+        <div className="flex items-center justify-between border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+          <div className="leading-tight">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Cart Value</div>
+            <div className="text-lg font-bold tabular-nums tracking-tight">₹{totalValue.toLocaleString('en-IN')}</div>
           </div>
           <button
             onClick={() => (totalPcs === 0 ? onClose() : onConfirm(product, variant, totalPcs))}
-            className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
+            className="rounded-lg bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-transform active:scale-[0.98]"
           >
             {totalPcs === 0 ? 'Close' : 'Continue'}
           </button>
