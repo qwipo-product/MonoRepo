@@ -26,6 +26,16 @@ import CouponsScreen from './screens/CouponsScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
 import MyOrdersScreen from './screens/MyOrdersScreen';
 import OrderDetailsScreen from './screens/OrderDetailsScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
+import BusinessDetailsScreen from './screens/sub/BusinessDetailsScreen';
+import CreditScreen from './screens/sub/CreditScreen';
+import PaymentScreen from './screens/sub/PaymentScreen';
+import HelpScreen from './screens/sub/HelpScreen';
+import TermsConditionsScreen from './screens/sub/TermsConditionsScreen';
+import AddressesScreen from './screens/sub/AddressesScreen';
+import LanguageScreen from './screens/sub/LanguageScreen';
+import SettingsScreen from './screens/sub/SettingsScreen';
 import AddToCartSheet from './components/AddToCartSheet';
 import { products, seller, orders } from './data';
 
@@ -41,6 +51,8 @@ const BUILT = new Set<ScreenId>([
   'wholesaler-products', 'distributor-units', 'wholesaler-units',
   'cart', 'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
   'my-orders', 'order-details',
+  'profile', 'notifications', 'settings',
+  'sub:business-details', 'sub:credit', 'sub:payment', 'sub:help', 'sub:terms', 'sub:addresses', 'sub:language',
 ]);
 const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
   home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
@@ -176,8 +188,18 @@ export default function App() {
       case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
       case 'coupons': return <CouponsScreen cartTotal={cartTotal || 4250} appliedId={appliedCoupon?.id ?? null} onBack={() => go('order-summary')} onApply={(c: any) => { setAppliedCoupon(c); go('order-summary'); }} />;
       case 'order-confirmation': return <OrderConfirmationScreen onBackToHome={() => { setCart({}); setAppliedCoupon(null); go('home'); }} />;
-      case 'my-orders': return <MyOrdersScreen onBack={() => go('home')} onOpenDetails={(o: any) => { setActiveOrder(o); go('order-details'); }} />;
+      case 'my-orders': return <MyOrdersScreen onBack={() => go('profile')} onOpenDetails={(o: any) => { setActiveOrder(o); go('order-details'); }} />;
       case 'order-details': return <OrderDetailsScreen order={activeOrder} onBack={() => go('my-orders')} />;
+      case 'profile': return <ProfileScreen onOpenSubPage={(id: ScreenId) => go(id)} onOpenNotifications={() => go('notifications')} onSignOut={() => { setCart({}); go('splash'); }} />;
+      case 'notifications': return <NotificationsScreen onBack={() => go('profile')} />;
+      case 'settings': return <SettingsScreen onBack={() => go('profile')} onOpenLanguage={() => go('sub:language')} />;
+      case 'sub:business-details': return <BusinessDetailsScreen onBack={() => go('profile')} />;
+      case 'sub:credit': return <CreditScreen onBack={() => go('profile')} />;
+      case 'sub:payment': return <PaymentScreen onBack={() => go('profile')} />;
+      case 'sub:help': return <HelpScreen onBack={() => go('profile')} />;
+      case 'sub:terms': return <TermsConditionsScreen onBack={() => go('profile')} />;
+      case 'sub:addresses': return <AddressesScreen onBack={() => go('home')} onSaved={() => go('home')} />;
+      case 'sub:language': return <LanguageScreen onBack={() => go('settings')} />;
       default: return null;
     }
   })();

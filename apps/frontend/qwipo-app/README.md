@@ -138,19 +138,19 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 | My orders (+ tracking sheet, cancel dialog) | `MyOrdersScreen.tsx` | ✅ |
 | Order details | `OrderDetailsScreen.tsx` | ✅ |
 
-**Profile & settings** (buyer-only)
+**Profile & settings** (buyer-only) — ✅ Phase 6 complete
 | Screen | Source | Status |
 |---|---|---|
-| Profile | `ProfileScreen.tsx` | ⬜ |
-| Notifications | `NotificationsScreen.tsx` | ⬜ |
-| Settings | `sub/SettingsScreen.tsx` | ⬜ |
-| Addresses | `sub/AddressesScreen.tsx` | ⬜ |
-| Business details | `sub/BusinessDetailsScreen.tsx` | ⬜ |
-| Credit | `sub/CreditScreen.tsx` | ⬜ |
-| Payment | `sub/PaymentScreen.tsx` | ⬜ |
-| Language | `sub/LanguageScreen.tsx` | ⬜ |
-| Help | `sub/HelpScreen.tsx` | ⬜ |
-| Terms & conditions | `sub/TermsConditionsScreen.tsx` | ⬜ |
+| Profile | `ProfileScreen.tsx` | ✅ |
+| Notifications | `NotificationsScreen.tsx` | ✅ |
+| Settings | `sub/SettingsScreen.tsx` | ✅ |
+| Addresses (+ add-address sheet) | `sub/AddressesScreen.tsx` | ✅ |
+| Business details | `sub/BusinessDetailsScreen.tsx` | ✅ |
+| Credit | `sub/CreditScreen.tsx` | ✅ |
+| Payment | `sub/PaymentScreen.tsx` | ✅ |
+| Language | `sub/LanguageScreen.tsx` | ✅ |
+| Help | `sub/HelpScreen.tsx` | ✅ |
+| Terms & conditions | `sub/TermsConditionsScreen.tsx` | ✅ |
 
 **Shared overlays** (sheets/dialogs — build as their screen needs them)
 `AddToCartSheet`, `FiltersSheet`, `DiscountsSheet`, `CartValidationSheet`,

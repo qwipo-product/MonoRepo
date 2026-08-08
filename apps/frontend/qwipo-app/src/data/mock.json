@@ -8,6 +8,7 @@
     "businessType": "Kirana",
     "kycStatus": "verified",
     "gst": "36ABCDE1234F1Z5",
+    "location": "Rai Durg, Hitech City, Hyderabad",
     "credit": {
       "limit": 50000,
       "used": 12500,
@@ -25324,6 +25325,109 @@
         "Maggi 280g × 12",
         "Parle-G 800g × 4"
       ]
+    }
+  ],
+  "notifications": [
+    {
+      "id": "n1",
+      "type": "promo",
+      "icon": "🌾",
+      "iconColor": "#FED7AA",
+      "title": "🌾 Atta Savings",
+      "body": "🌾🌾💰 Stock up & save on Flours!",
+      "time": "6, August 2026 | 12:51 PM",
+      "unread": true
+    },
+    {
+      "id": "n2",
+      "type": "promo",
+      "icon": "⭐",
+      "iconColor": "#FEF3C7",
+      "title": "⭐ Top Everyday Deals 🛒",
+      "body": "✨ Upto 20% OFF on FMCG Essentials! 😍",
+      "time": "6, August 2026 | 9:47 AM",
+      "unread": true
+    },
+    {
+      "id": "n3",
+      "type": "promo",
+      "icon": "🌧️",
+      "iconColor": "#DBEAFE",
+      "title": "🌧️ Monsoon Delights",
+      "body": "☕🍜☕ Upto 15% OFF on Monsoon Favorites! 😍",
+      "time": "5, August 2026 | 11:48 AM",
+      "unread": true
+    },
+    {
+      "id": "n4",
+      "type": "promo",
+      "icon": "🛒",
+      "iconColor": "#FED7AA",
+      "title": "🛒 Best Urad Deals 🍚",
+      "body": "🌾🔥 Grab your Double Horse Urad at great prices!",
+      "time": "5, August 2026 | 10:36 AM",
+      "unread": true
+    },
+    {
+      "id": "n5",
+      "type": "promo",
+      "icon": "🍚",
+      "iconColor": "#FEE2E2",
+      "title": "Quick Meal Essentials 🍚",
+      "body": "⏰🍚💛 Ready in minutes, save more!",
+      "time": "4, August 2026 | 3:18 PM",
+      "unread": true
+    },
+    {
+      "id": "n6",
+      "type": "promo",
+      "icon": "🌾",
+      "iconColor": "#D1FAE5",
+      "title": "Mega Dal Deals 🌾",
+      "body": "🍚💛✨ Best prices on your favorite Dals!",
+      "time": "4, August 2026 | 12:26 PM",
+      "unread": true
+    }
+  ],
+  "savedAddresses": [
+    {
+      "id": "addr1",
+      "type": "Shop",
+      "name": "Sri Venkateswara Kirana Store",
+      "line1": "Shop 14, Lit Box Complex",
+      "line2": "Rai Durg, Hitech City",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "pincode": "500032",
+      "contact": "+91 98480 12345",
+      "isDefault": true,
+      "icon": "🏪"
+    },
+    {
+      "id": "addr2",
+      "type": "Warehouse",
+      "name": "SVKS Storage Unit",
+      "line1": "Plot 27, Industrial Estate",
+      "line2": "Madhapur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "pincode": "500081",
+      "contact": "+91 98480 12345",
+      "isDefault": false,
+      "icon": "📦"
+    },
+    {
+      "id": "addr3",
+      "type": "Home",
+      "name": "Vikas Mittapalli",
+      "line1": "Flat 502, Sigma Towers",
+      "line2": "Gachibowli",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "pincode": "500032",
+      "contact": "+91 98480 12345",
+      "isDefault": false,
+      "icon": "🏠"
     }
   ]
 }
