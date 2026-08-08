@@ -37,6 +37,10 @@ import AddressesScreen from './screens/sub/AddressesScreen';
 import LanguageScreen from './screens/sub/LanguageScreen';
 import SettingsScreen from './screens/sub/SettingsScreen';
 import AddToCartSheet from './components/AddToCartSheet';
+import FiltersSheet, { DEFAULT_FILTERS, type Filters } from './components/FiltersSheet';
+import DiscountsSheet from './components/DiscountsSheet';
+import ProductImageSheet from './components/ProductImageSheet';
+import CartValidationSheet from './components/CartValidationSheet';
 import { products, seller, orders } from './data';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
@@ -75,11 +79,13 @@ export default function App() {
   const [wholesalerProductCategory, setWholesalerProductCategory] = useState<any>(null);
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [sheet, setSheet] = useState<SheetState>(null);
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [extra, setExtra] = useState<{ kind: string; product?: any; variant?: any } | null>(null);
   const [viewItemsSellerId, setViewItemsSellerId] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponSellerId, setCouponSellerId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<any>((orders as any[])[0] ?? null);
-  const go = (id: ScreenId) => { setSheet(null); setScreen(id); };
+  const go = (id: ScreenId) => { setSheet(null); setExtra(null); setScreen(id); };
 
   // ── cart ──────────────────────────────────────────────────────────────────
   const key = (pid: string, vid: string) => `${pid}_${vid}`;
@@ -120,7 +126,7 @@ export default function App() {
   const confirmSheet = (product: any, variant: any, totalPcs: number) => { updateQty(product, variant, totalPcs); setSheet(null); };
 
   // ── navigation helpers ──────────────────────────────────────────────────────
-  const openListing = (category: any, from: ScreenId = 'home') => { setListingCategory(category); setListingBack(from); go('listing'); };
+  const openListing = (category: any, from: ScreenId = 'home') => { setListingCategory(category); setListingBack(from); setFilters(DEFAULT_FILTERS); go('listing'); };
   const openStorefront = (distributor: any) => { setStorefrontDistributor(distributor); go('storefront'); };
   const openWholesalerProducts = (category: any) => { setWholesalerProductCategory(category); go('wholesaler-products'); };
 
@@ -181,9 +187,9 @@ export default function App() {
       case 'all-brands': return <AllBrandsScreen onBack={() => go('home')} onSelectBrand={(b: any) => openListing({ id: b.id, name: b.name, isBrand: true }, 'all-brands')} onOpenSearch={() => go('global-search')} />;
       case 'distributors-list': return <DistributorsListScreen initialTab={distListTab} onBack={() => go('home')} onSelectDistributor={openStorefront} onSelectBrand={(b: any) => openListing({ id: b.id, name: b.short || b.name, isBrand: true }, 'distributors-list')} onSelectCategory={(c: any) => openListing(c, 'distributors-list')} />;
       case 'wholesaler-categories': return <WholesalersCategoriesScreen variant={wholesalerVariant} onBack={() => go('home')} onSelectCategory={openWholesalerProducts} onOpenSearch={() => go('global-search')} />;
-      case 'listing': return <ProductListingV2 category={listingCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go(listingBack)} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} onOpenFilters={() => {}} />;
+      case 'listing': return <ProductListingV2 category={listingCategory} cartItems={cartItems} cartTotal={cartTotal} filters={filters} onBack={() => go(listingBack)} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} onOpenFilters={() => setExtra({ kind: 'filters' })} />;
       case 'wholesaler-products': return <WholesalerProductListScreen category={wholesalerProductCategory} cartItems={cartItems} cartTotal={cartTotal} onBack={() => go('wholesaler-categories')} onOpenSheet={openSheet} onGoToCart={() => go('cart')} onOpenSearch={() => go('global-search')} onOpenImageSheet={() => {}} onOpenDiscounts={() => {}} />;
-      case 'cart': return <MultiSellerCartV2 cart={cartModel} onBack={() => go('home')} onCheckout={() => go('order-summary')} onAddMore={() => go('home')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} />;
+      case 'cart': return <MultiSellerCartV2 cart={cartModel} onBack={() => go('home')} onCheckout={() => setExtra({ kind: 'validation' })} onAddMore={() => go('home')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} />;
       case 'view-items': return <ViewItemsScreen seller={viewItemsSeller} onBack={() => go('cart')} onAddMore={() => go('home')} onUpdateItem={updateItem} onItemTap={openSheetForItem} />;
       case 'order-summary': return <OrderSummaryScreen cart={cartModel} appliedCoupon={appliedCoupon} couponSellerId={couponSellerId} onBack={() => go('cart')} onPlaceOrder={() => go('order-confirmation')} onViewItems={(s: any) => { setViewItemsSellerId(s.id); go('view-items'); }} onOpenCoupons={(sid: string) => { setCouponSellerId(sid); go('coupons'); }} onRemoveCoupon={() => setAppliedCoupon(null)} />;
       case 'coupons': return <CouponsScreen cartTotal={cartTotal || 4250} appliedId={appliedCoupon?.id ?? null} onBack={() => go('order-summary')} onApply={(c: any) => { setAppliedCoupon(c); go('order-summary'); }} />;
@@ -207,6 +213,13 @@ export default function App() {
   const cartSheet = sheet && (
     <AddToCartSheet product={sheet.product} initialVariant={sheet.variant} sellerOptions={sheet.sellerOptions} hidePrice={sheet.hidePrice} onClose={() => setSheet(null)} onConfirm={confirmSheet} />
   );
+  const extraSheet = extra && (
+    extra.kind === 'filters' ? <FiltersSheet initialFilters={filters} onClose={() => setExtra(null)} onApply={setFilters} /> :
+    extra.kind === 'discounts' ? <DiscountsSheet variant={extra.variant} onClose={() => setExtra(null)} /> :
+    extra.kind === 'image' ? <ProductImageSheet product={extra.product} onClose={() => setExtra(null)} onAddClick={() => { const p = extra.product; setExtra(null); openSheet(p, p.variants[0]); }} /> :
+    extra.kind === 'validation' ? <CartValidationSheet cart={cartModel} onClose={() => setExtra(null)} onProceed={() => { setExtra(null); go('order-summary'); }} onAddItems={() => go('home')} /> : null
+  );
+  const overlays = <>{cartSheet}{extraSheet}</>;
 
   if (bareScreen) {
     return (
@@ -215,7 +228,7 @@ export default function App() {
         <main className="flex flex-1 items-center justify-center p-6">
           <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
             {bareScreen}
-            {cartSheet}
+            {overlays}
           </div>
         </main>
       </div>
@@ -236,7 +249,7 @@ export default function App() {
       <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
         <ShellSwitcher value={shell} onChange={setShell} />
-        <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={cartSheet}>
+        <CurrentShell active={activeTab} cartCount={cartCount} onNavigate={go} overlay={overlays}>
           {shellContent}
         </CurrentShell>
       </main>

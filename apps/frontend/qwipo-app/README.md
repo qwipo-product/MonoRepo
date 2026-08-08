@@ -152,7 +152,5 @@ Status: ⬜ not started · 🟨 in progress · ✅ parity reached
 | Help | `sub/HelpScreen.tsx` | ✅ |
 | Terms & conditions | `sub/TermsConditionsScreen.tsx` | ✅ |
 
-**Shared overlays** (sheets/dialogs — build as their screen needs them)
-`AddToCartSheet`, `FiltersSheet`, `DiscountsSheet`, `CartValidationSheet`,
-`ProductImageSheet`, `AddAddressSheet`, `CancelOrderDialog`,
-`ConfirmChangesDialog`, `CouponAppliedDialog`, `BannerCarousel`, `VendorSummary`.
+**Shared overlays** — ✅ all wired
+`AddToCartSheet` ✅ (the Add flow) · `FiltersSheet` ✅ (sort/stock/margin/brand/schemes, live-applied) · `DiscountsSheet` ✅ (price slabs + offers) · `ProductImageSheet` ✅ (gallery) · `CartValidationSheet` ✅ (pre-checkout MOV/serviceability alerts) · `AddAddressSheet` ✅ · `ConfirmDialog` ✅ (cancel order, language + theme switch) · `BannerCarousel` ✅ · `vendorSummary` ✅ · `CopyText` ✅ · tracking sheet ✅.

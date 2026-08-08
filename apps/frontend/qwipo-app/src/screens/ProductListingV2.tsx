@@ -5,6 +5,7 @@ import StatusBar from '../components/StatusBar';
 import ScreenHeader from '../components/ScreenHeader';
 import ShopProductCard from '../components/ShopProductCard';
 import CartStrip from '../components/CartStrip';
+import { DEFAULT_FILTERS, countActiveFilters, applyFilters, type Filters } from '../components/FiltersSheet';
 
 const DELIVERY_LABELS = { beat: { day: 'Fri (Beat day)', mov: 500 }, tomorrow: { day: 'Tomorrow', mov: 2500 } } as const;
 
@@ -23,6 +24,7 @@ export default function ProductListingV2({
   category,
   cartItems = {},
   cartTotal = 0,
+  filters = DEFAULT_FILTERS,
   onBack,
   onOpenSheet,
   onUpdateQty,
@@ -31,18 +33,18 @@ export default function ProductListingV2({
   onOpenImageSheet,
   onOpenDiscounts,
   onOpenFilters,
-}: any) {
+}: { filters?: Filters; [k: string]: any }) {
   const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({});
+  const activeFilterCount = countActiveFilters(filters);
 
-  const list = useMemo(
-    () =>
-      (products as any[]).filter((p) => {
-        if (!category) return true;
-        if (category.isBrand) return p.brand === category.name;
-        return p.category === category.id;
-      }),
-    [category]
-  );
+  const list = useMemo(() => {
+    const byCategory = (products as any[]).filter((p) => {
+      if (!category) return true;
+      if (category.isBrand) return p.brand === category.name;
+      return p.category === category.id;
+    });
+    return applyFilters(byCategory, filters);
+  }, [category, filters]);
 
   const getQty = (pid: string, vid: string) => cartItems[`${pid}_${vid}`] || 0;
 
@@ -59,8 +61,9 @@ export default function ProductListingV2({
               <button onClick={onOpenSearch} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-lg bg-muted transition-colors hover:bg-muted/70 active:scale-95">
                 <Search className="h-5 w-5" />
               </button>
-              <button onClick={onOpenFilters} aria-label="Filters" className="grid h-10 w-10 place-items-center rounded-lg bg-muted transition-colors hover:bg-muted/70 active:scale-95">
+              <button onClick={onOpenFilters} aria-label="Filters" className="relative grid h-10 w-10 place-items-center rounded-lg bg-muted transition-colors hover:bg-muted/70 active:scale-95">
                 <SlidersHorizontal className="h-5 w-5" />
+                {activeFilterCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{activeFilterCount}</span>}
               </button>
             </div>
           }
