@@ -38,7 +38,7 @@ import ProductImageSheet from './components/ProductImageSheet';
 import DiscountsSheet from './components/DiscountsSheet';
 import FiltersSheet from './components/FiltersSheet';
 import { filtersDefault } from './screens/ProductListing';
-import { initialCart, categories, distributors, distributorsList, brands, products, DIST_CAT_TO_PRODUCT_CAT } from '@mockups/mock-data';
+import { initialCart, categories, distributors, distributorsList, brands, products, orderHistoryList, DIST_CAT_TO_PRODUCT_CAT } from '@mockups/mock-data';
 
 export default function App() {
   // Always boot into the Splash screen so the full Splash → Login → OTP →
@@ -106,8 +106,11 @@ export default function App() {
   const [cartValidationOpen, setCartValidationOpen] = useState<boolean>(false);
   const [cart, setCart] = useState(initialCart);
   const [listingCart, setListingCart] = useState({});
-  // Coupon applied to the current order + success popup toggle.
+  // Coupon applied to the current order + success popup toggle. couponSellerId
+  // tracks which vendor's coupon section the coupon belongs to, so the applied
+  // banner shows under that vendor's card only.
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponSellerId, setCouponSellerId] = useState<string | null>(null);
   const [couponSuccess, setCouponSuccess] = useState<any>(null);
   // Id of the seller currently shown on the View Items screen — resolved
   // fresh from `cart` on every render so qty/delete changes stay live.
@@ -282,6 +285,46 @@ export default function App() {
     setScreen('view-items');
   };
 
+  // Left-nav preview picker. Most ids are plain screens, but Selling Units
+  // (the Add-to-Cart sheet), View Items and Order Details need data seeded
+  // first, so they get intercepted here before falling through to setScreen.
+  const openSellingUnits = (withSellers: boolean) => {
+    const product = products[0];
+    setSheetHidePrice(false);
+    setSheetSellerOptions(
+      withSellers
+        ? [
+            { id: 'wh1', name: 'Omkar Enterprises', price: product.variants[0].sellingPrice },
+            { id: 'wh2', name: 'Sri Sai Krishna Traders', price: product.variants[0].sellingPrice + 7 },
+          ]
+        : null
+    );
+    setSheetProduct(product);
+    setSheetVariant(product.variants[0]);
+  };
+
+  const handlePick = (id: string) => {
+    if (id === 'distributor-units') return openSellingUnits(false);
+    if (id === 'wholesaler-units') return openSellingUnits(true);
+    if (id === 'view-items') {
+      if (cart.sellers[0]) setViewItemsSellerId(cart.sellers[0].id);
+      return setScreen('view-items');
+    }
+    if (id === 'cart-units') {
+      const seller = cart.sellers[0];
+      if (seller) setViewItemsSellerId(seller.id);
+      setScreen('view-items');
+      const item = seller?.items?.[0];
+      if (item) setTimeout(() => handleViewItemTap(item), 60);
+      return;
+    }
+    if (id === 'order-details') {
+      setActiveOrder(orderHistoryList[0]);
+      return setScreen('order-details');
+    }
+    setScreen(id);
+  };
+
   const handleNavigate = (target) => {
     // From bottom nav, "listing" tab maps to Reorder screen
     if (target === 'listing') {
@@ -370,7 +413,7 @@ export default function App() {
             Qwipo · B2B Commerce
           </div>
           <h2 className="showcase-title">Qwipo Buyer App</h2>
-          <ScreenPills active={screen} onPick={setScreen} />
+          <ScreenPills active={screen} onPick={handlePick} />
         </div>
 
         <div className="phone-frame">
@@ -497,8 +540,15 @@ export default function App() {
                 onPlaceOrder={() => setScreen('order-confirmation')}
                 onViewItems={handleViewItems}
                 appliedCoupon={appliedCoupon}
-                onOpenCoupons={() => setScreen('coupons')}
-                onRemoveCoupon={() => setAppliedCoupon(null)}
+                couponSellerId={couponSellerId}
+                onOpenCoupons={(sellerId: string) => {
+                  setCouponSellerId(sellerId);
+                  setScreen('coupons');
+                }}
+                onRemoveCoupon={() => {
+                  setAppliedCoupon(null);
+                  setCouponSellerId(null);
+                }}
               />
             )}
             {screen === 'coupons' && (
@@ -814,7 +864,9 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
     items: [
       { id: 'storefront', label: 'Authorised Distributor Storefront' },
       { id: 'listing', label: 'Product List (Distributor)' },
+      { id: 'distributor-units', label: 'Distributor Selling Units' },
       { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
+      { id: 'wholesaler-units', label: 'Wholesaler Selling Units' },
       { id: 'reorder', label: 'Reorder' },
     ],
   },
@@ -822,6 +874,8 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
     title: 'Cart & Checkout',
     items: [
       { id: 'cart', label: 'Cart Summary' },
+      { id: 'view-items', label: 'Cart · View Items' },
+      { id: 'cart-units', label: 'Cart · View Items · Selling Units' },
       { id: 'order-summary', label: 'Order Summary' },
       { id: 'coupons', label: 'Coupons / Offers' },
       { id: 'order-confirmation', label: 'Order Confirmation' },
@@ -831,6 +885,7 @@ const SCREEN_GROUPS: { title: string; items: { id: string; label: string }[] }[]
     title: 'Orders',
     items: [
       { id: 'my-orders', label: 'My Orders + Tracking' },
+      { id: 'order-details', label: 'Order Details' },
     ],
   },
   {
