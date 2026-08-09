@@ -46,12 +46,13 @@ export function GlobalSearchScreen({
 
   const q = query.trim().toLowerCase();
 
+  // Brands & categories are wayfinding only — keep them tight (top 2) so the
+  // actual product rows own the space.
+  const BRAND_CAP = 2;
+  const CATEGORY_CAP = 2;
+
   const brandMatches = useMemo(
-    () => (q ? BRANDS.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 6) : []),
-    [q]
-  );
-  const categoryMatches = useMemo(
-    () => (q ? CATEGORIES.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 6) : []),
+    () => (q ? BRANDS.filter((b) => b.name.toLowerCase().includes(q)).slice(0, BRAND_CAP) : []),
     [q]
   );
   const productMatches = useMemo(
@@ -63,9 +64,17 @@ export function GlobalSearchScreen({
         : [],
     [q]
   );
+  // Categories that match by name OR that own a matching product
+  // (e.g. "red" → Personal Care & Beverages, via its products).
+  const categoryMatches = useMemo(() => {
+    if (!q) return [];
+    const byName = CATEGORIES.filter((c) => c.name.toLowerCase().includes(q)).map((c) => c.name);
+    const byProduct = productMatches.map((p) => p.category);
+    return Array.from(new Set([...byName, ...byProduct])).slice(0, CATEGORY_CAP);
+  }, [q, productMatches]);
 
-  const suggestions = brandMatches.length + categoryMatches.length;
-  const hasAnyMatch = suggestions + productMatches.length > 0;
+  const term = query.trim();
+  const hasAnyMatch = brandMatches.length + categoryMatches.length + productMatches.length > 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -104,47 +113,55 @@ export function GlobalSearchScreen({
             <ChipSection title="Start with a category" items={CATEGORIES.map((c) => c.name)} onPick={setQuery} />
           </div>
         ) : hasAnyMatch ? (
-          <div className="space-y-4 p-3">
-            {/* Brand + category suggestions — shown before products */}
-            {suggestions > 0 && (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {brandMatches.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setQuery(b.name)}
-                    className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-2 text-left last:border-0 active:scale-[0.99]"
-                  >
-                    <Tag className="h-4 w-4 shrink-0 text-foreground-secondary" />
-                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      <Highlight text={b.name} q={q} />
-                    </span>
-                    <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">Brand</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-                  </button>
-                ))}
-                {categoryMatches.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setQuery(c.name)}
-                    className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-2 text-left last:border-0 active:scale-[0.99]"
-                  >
-                    <LayoutGrid className="h-4 w-4 shrink-0 text-foreground-secondary" />
-                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                      <Highlight text={c.name} q={q} />
-                    </span>
-                    <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">Category</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-3 p-3">
+            {/* Brands — "<term> in Brands" */}
+            {brandMatches.length > 0 && (
+              <section className="space-y-1.5">
+                <GroupHeader term={term} group="Brands" />
+                <div className="overflow-hidden rounded-lg border border-border bg-card">
+                  {brandMatches.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setQuery(b.name)}
+                      className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
+                    >
+                      <Tag className="h-4 w-4 shrink-0 text-foreground-secondary" />
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                        <Highlight text={b.name} q={q} />
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
+                    </button>
+                  ))}
+                </div>
+              </section>
             )}
 
-            {/* Product name rows */}
+            {/* Categories — "<term> in Categories" */}
+            {categoryMatches.length > 0 && (
+              <section className="space-y-1.5">
+                <GroupHeader term={term} group="Categories" />
+                <div className="overflow-hidden rounded-lg border border-border bg-card">
+                  {categoryMatches.map((name) => (
+                    <button
+                      key={name}
+                      onClick={() => setQuery(name)}
+                      className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
+                    >
+                      <LayoutGrid className="h-4 w-4 shrink-0 text-foreground-secondary" />
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                        <Highlight text={name} q={q} />
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Products — "<term> in Products" */}
             {productMatches.length > 0 && (
               <section className="space-y-2">
-                <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
-                  {productMatches.length} {productMatches.length === 1 ? 'product' : 'products'}
-                </div>
+                <GroupHeader term={term} group="Products" />
                 <div className="overflow-hidden rounded-lg border border-border bg-card">
                   {productMatches.map((p, idx) => (
                     <button
@@ -189,6 +206,15 @@ export function GlobalSearchScreen({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Group label — "<term> in Brands / Categories / Products". */
+function GroupHeader({ term, group }: { term: string; group: string }) {
+  return (
+    <div className="px-1 text-xs text-foreground-secondary">
+      <span className="font-semibold text-foreground">{term}</span> in {group}
     </div>
   );
 }
