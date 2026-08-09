@@ -8,6 +8,7 @@ import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './screens/HomeScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
+import { ViewItemsScreen } from './screens/ViewItemsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
@@ -18,11 +19,13 @@ import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { PRODUCTS, productById } from './data/products';
+import { buildCart } from './data/cart';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
+  'view-items', 'cart-units',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -31,8 +34,13 @@ const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile']);
 function readInitialScreen(): ScreenId {
   const s = new URLSearchParams(window.location.search).get('screen');
   if (!s) return 'listing';
-  return s === 'distributor-units' ? 'listing' : s;
+  if (s === 'distributor-units') return 'listing';
+  if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
+  return s;
 }
+
+// Shared cart model (self-contained mock) — resolves the seller for View Items.
+const CART = buildCart();
 
 export default function App() {
   const { isDark, toggleTheme } = useTheme();
@@ -42,11 +50,13 @@ export default function App() {
   );
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
 
-  // Deep-link parity: ?screen=distributor-units opens the sheet over the listing.
+  // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
     const s = new URLSearchParams(window.location.search).get('screen');
     if (s === 'distributor-units') setSheetId(PRODUCTS[0].id);
+    if (s === 'cart-units') setSheetId(CART.sellers[0]?.items[0]?.product.id ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -64,11 +74,21 @@ export default function App() {
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
 
   // Navigate. `distributor-units` isn't a page — it's the sheet over the listing.
+  const viewSeller = CART.sellers.find((s) => s.id === viewSellerId) ?? CART.sellers[0] ?? null;
+
   const go = (id: ScreenId) => {
     setSheetId(null);
     if (id === 'distributor-units') {
       setScreen('listing');
       setSheetId(PRODUCTS[0].id);
+      return;
+    }
+    if (id === 'cart-units') {
+      // Not a page — the selling-units sheet over View Items.
+      const seller = CART.sellers[0];
+      setViewSellerId(seller?.id ?? null);
+      setScreen('view-items');
+      if (seller) setSheetId(seller.items[0].product.id);
       return;
     }
     setScreen(id);
@@ -110,9 +130,24 @@ export default function App() {
           <CartScreen
             onBack={() => go('home')}
             onCheckout={() => go('order-summary')}
-            onViewItems={() => go('view-items')}
+            onViewItems={(sellerId) => {
+              setSheetId(null);
+              setViewSellerId(sellerId);
+              setScreen('view-items');
+            }}
             onAddMore={() => go('listing')}
           />
+        );
+      case 'view-items':
+        return viewSeller ? (
+          <ViewItemsScreen
+            seller={viewSeller}
+            onBack={() => go('cart')}
+            onAddMore={() => go('listing')}
+            onItemTap={(productId) => setSheetId(productId)}
+          />
+        ) : (
+          <Placeholder id={screen} />
         );
       default:
         return <Placeholder id={screen} />;

@@ -163,7 +163,7 @@ function SellerCard({
               <div className="relative grid h-16 w-16 place-items-center rounded-lg border border-border bg-card text-2xl">
                 {item.product.image}
                 {item.free && (
-                  <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
                     FREE
                   </span>
                 )}
