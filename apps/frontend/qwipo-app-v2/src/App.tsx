@@ -14,6 +14,7 @@ import { CouponsScreen } from './screens/CouponsScreen';
 import { OrderConfirmationScreen } from './screens/OrderConfirmationScreen';
 import { MyOrdersScreen } from './screens/MyOrdersScreen';
 import { OrderDetailsScreen } from './screens/OrderDetailsScreen';
+import { MyAccountScreen } from './screens/MyAccountScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
@@ -32,7 +33,7 @@ const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
-  'my-orders', 'order-details',
+  'my-orders', 'order-details', 'profile',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -174,6 +175,8 @@ export default function App() {
         return <CouponsScreen onBack={() => go('order-summary')} onApply={() => go('order-summary')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
+      case 'profile':
+        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} />;
       case 'my-orders':
         return (
           <MyOrdersScreen
