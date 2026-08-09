@@ -10,6 +10,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
 import { ViewItemsScreen } from './screens/ViewItemsScreen';
 import { OrderSummaryScreen } from './screens/OrderSummaryScreen';
+import { CouponsScreen } from './screens/CouponsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
@@ -26,7 +27,7 @@ import { buildCart } from './data/cart';
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'view-items', 'cart-units', 'order-summary',
+  'view-items', 'cart-units', 'order-summary', 'coupons',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -155,6 +156,7 @@ export default function App() {
           <OrderSummaryScreen
             onBack={() => go('cart')}
             onPlaceOrder={() => go('order-confirmation')}
+            onOpenCoupons={() => go('coupons')}
             onViewItems={(sellerId) => {
               setSheetId(null);
               setViewSellerId(sellerId);
@@ -162,6 +164,8 @@ export default function App() {
             }}
           />
         );
+      case 'coupons':
+        return <CouponsScreen onBack={() => go('order-summary')} onApply={() => go('order-summary')} />;
       default:
         return <Placeholder id={screen} />;
     }
