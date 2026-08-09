@@ -1,6 +1,20 @@
 // Shared product-list filter model (mirrors v1's FiltersSheet), applied to both
 // the distributor and wholesaler product lists.
 
+// Applied navigation filter — the category/brand/distributor context a product
+// list is opened WITH (from a Home tile, a browse tab, or a storefront). Shown
+// as removable chips; separate from the manual FiltersSheet model below.
+export type AppliedType = 'category' | 'brand' | 'distributor';
+export interface AppliedFilter {
+  type: AppliedType;
+  value: string;
+}
+export const APPLIED_LABEL: Record<AppliedType, string> = {
+  category: 'Category',
+  brand: 'Brand',
+  distributor: 'Distributor',
+};
+
 export type Stock = 'available' | 'limited' | 'out';
 export type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'margin_desc';
 

@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS, type Product } from '../data/products';
+import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
-import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
+import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
 
+// Narrow the catalog to the category / brand / distributor a screen linked in with.
+const matchesApplied = (p: Product, a: AppliedFilter) =>
+  a.type === 'category'
+    ? p.category === a.value
+    : a.type === 'brand'
+      ? p.shortName.toLowerCase().startsWith(a.value.toLowerCase())
+      : p.seller === a.value;
+
 export function CatalogScreen({
+  applied: appliedProp = [],
+  onBack,
   qty,
   onOpenSheet,
   onSetQty,
@@ -17,6 +28,8 @@ export function CatalogScreen({
   cartCount,
   cartTotal,
 }: {
+  applied?: AppliedFilter[];
+  onBack?: () => void;
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onSetQty: (id: string, n: number) => void;
@@ -27,7 +40,11 @@ export function CatalogScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const items = applyFilters(PRODUCTS, filters, {
+  const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
+  useEffect(() => setApplied(appliedProp), [appliedProp]);
+
+  const base = applied.length ? PRODUCTS.filter((p) => applied.every((a) => matchesApplied(p, a))) : PRODUCTS;
+  const items = applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.shortName),
     price: (p) => p.price,
@@ -37,11 +54,11 @@ export function CatalogScreen({
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
-        <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Back">
+        <button onClick={onBack} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Back">
           <ChevronLeft size={18} />
         </button>
         <div className="flex-1">
-          <div className="text-base font-semibold leading-tight">Catalog</div>
+          <div className="text-base font-semibold leading-tight">Product List</div>
           <div className="text-xs text-foreground-secondary">{items.length} products</div>
         </div>
         <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Search">
@@ -60,6 +77,8 @@ export function CatalogScreen({
           )}
         </button>
       </header>
+
+      <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-3">
         {items.length === 0 ? (

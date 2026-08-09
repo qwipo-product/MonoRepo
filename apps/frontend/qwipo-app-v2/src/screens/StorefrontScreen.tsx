@@ -1,10 +1,13 @@
-import { ChevronLeft, Search, BadgeCheck } from 'lucide-react';
-import type { ScreenId } from '../review/screenIndex';
+import { ChevronLeft, Search, BadgeCheck, ArrowRight } from 'lucide-react';
+import { Button } from '@mockups/ui';
+import type { Navigate } from '../nav';
+import type { AppliedFilter } from '../data/filters';
 import { BrandLogo } from '../components/BrandLogo';
 import { DIST_CATEGORIES, BRANDS } from '../data/home';
 
 /* Authorised Distributor storefront — brand hero (MOV + delivery), shop-by-
-   category grid, and a top-brands rail. */
+   category grid, and a top-brands rail. Category / brand taps open the Product
+   List scoped to THIS distributor (distributor chip + the category/brand chip). */
 
 const STOREFRONT = {
   initials: 'SSKT',
@@ -13,7 +16,13 @@ const STOREFRONT = {
   delivery: 'Tomorrow',
 };
 
-export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; onNavigate: (id: ScreenId) => void }) {
+export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; onNavigate: Navigate }) {
+  // Every product-list link from the storefront is scoped to this distributor.
+  const openList = (extra?: AppliedFilter) =>
+    onNavigate('listing', {
+      applied: extra ? [{ type: 'distributor', value: STOREFRONT.name }, extra] : [{ type: 'distributor', value: STOREFRONT.name }],
+      backTo: 'storefront',
+    });
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -66,6 +75,12 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
         </div>
 
         <div className="space-y-6 p-4">
+          {/* view all products from this distributor */}
+          <Button variant="secondary" fullWidth onClick={() => openList()}>
+            View all products
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+
           {/* shop by category */}
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">Shop by category</h2>
@@ -73,7 +88,7 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
               {DIST_CATEGORIES.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => onNavigate('listing')}
+                  onClick={() => openList({ type: 'category', value: c.name })}
                   className="flex flex-col gap-2 text-left active:scale-[0.99]"
                 >
                   <span className="aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
@@ -92,7 +107,7 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
               {BRANDS.map((b) => (
                 <button
                   key={b.id}
-                  onClick={() => onNavigate('listing')}
+                  onClick={() => openList({ type: 'brand', value: b.name })}
                   className="flex w-16 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
                   <BrandLogo src={b.logo} alt={b.name} className="h-16 w-16 rounded-full border border-border shadow-sm" />

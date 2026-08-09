@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@mockups/ui';
-import type { ScreenId } from '../review/screenIndex';
+import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import {
   HERO_BANNERS,
@@ -21,7 +21,7 @@ export function HomeScreen({
 }: {
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
-  onNavigate: (id: ScreenId) => void;
+  onNavigate: Navigate;
 }) {
   const [tab, setTab] = useState<'distributors' | 'wholesalers'>('distributors');
 
@@ -107,10 +107,10 @@ export function HomeScreen({
         {effectiveTab === 'distributors' ? (
           <>
             <section className="space-y-3">
-              <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list')} />
+              <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
                 {DISTRIBUTORS.map((d) => (
-                  <button key={d.id} onClick={() => onNavigate('storefront')} className="flex w-28 shrink-0 flex-col gap-1.5 text-left">
+                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home' })} className="flex w-28 shrink-0 flex-col gap-1.5 text-left">
                     <BrandLogo src={d.logo} alt={d.title} className="h-28 w-28 rounded-lg border border-border shadow-sm" />
                     <div className="truncate text-sm font-medium">{d.title}</div>
                     <div className="truncate text-xs text-foreground-secondary">{d.short}</div>
@@ -120,19 +120,27 @@ export function HomeScreen({
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="Categories" onSeeAll={() => onNavigate('distributors-list')} />
+              <SectionHeader title="Categories" onSeeAll={() => onNavigate('distributors-list', { tab: 'categories' })} />
               <div className={rail}>
                 {DIST_CATEGORIES.map((c) => (
-                  <CategoryTile key={c.id} cat={c} onClick={() => onNavigate('listing')} />
+                  <CategoryTile
+                    key={c.id}
+                    cat={c}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                  />
                 ))}
               </div>
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="All Brands" onSeeAll={() => onNavigate('distributors-list')} />
+              <SectionHeader title="All Brands" onSeeAll={() => onNavigate('distributors-list', { tab: 'brands' })} />
               <div className="grid grid-cols-4 gap-3 px-4">
                 {BRANDS.map((b) => (
-                  <button key={b.id} onClick={() => onNavigate('listing')} className="flex flex-col items-center gap-1.5">
+                  <button
+                    key={b.id}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    className="flex flex-col items-center gap-1.5"
+                  >
                     <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
                     <div className="w-full truncate text-center text-xs">{b.name}</div>
                   </button>
@@ -143,10 +151,14 @@ export function HomeScreen({
         ) : (
           <>
             <section className="space-y-3">
-              <SectionHeader title="Categories" onSeeAll={() => onNavigate('wholesaler-categories')} />
+              <SectionHeader title="Categories" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'categories' })} />
               <div className="grid grid-cols-2 gap-3 px-4">
                 {WHOLESALER_CATEGORIES.map((c) => (
-                  <button key={c.id} onClick={() => onNavigate('wholesaler-categories')} className="flex flex-col gap-1.5">
+                  <button
+                    key={c.id}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                    className="flex flex-col gap-1.5"
+                  >
                     <span className="grid h-24 place-items-center overflow-hidden rounded-lg bg-muted">
                       <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
                     </span>
@@ -157,10 +169,14 @@ export function HomeScreen({
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="Top Brands" onSeeAll={() => onNavigate('wholesaler-categories')} />
+              <SectionHeader title="Top Brands" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'brands' })} />
               <div className={rail}>
                 {BRANDS.map((b) => (
-                  <button key={b.id} onClick={() => onNavigate('listing')} className="flex w-16 shrink-0 flex-col items-center gap-1.5">
+                  <button
+                    key={b.id}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                  >
                     <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
                     <div className="w-full truncate text-center text-xs">{b.name}</div>
                   </button>

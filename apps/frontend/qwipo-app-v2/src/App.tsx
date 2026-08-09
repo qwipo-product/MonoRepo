@@ -32,9 +32,11 @@ import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
 import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
-import { SellerBrowseScreen } from './screens/SellerBrowseScreen';
+import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
+import type { NavOpts } from './nav';
+import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS } from './data/home';
 import { buildCart } from './data/cart';
@@ -53,6 +55,9 @@ const BUILT = new Set<ScreenId>([
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
 const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefront']);
+
+// Product-list screens that accept an incoming applied filter + Back target.
+const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
 
 function readInitialScreen(): ScreenId {
   const s = new URLSearchParams(window.location.search).get('screen');
@@ -76,6 +81,11 @@ export default function App() {
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
+  // Filter/back context carried into product lists, storefront, and browse tabs.
+  const [listApplied, setListApplied] = useState<AppliedFilter[]>([]);
+  const [listBackTo, setListBackTo] = useState<ScreenId>('home');
+  const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
+  const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -101,9 +111,11 @@ export default function App() {
   // Navigate. `distributor-units` isn't a page — it's the sheet over the listing.
   const viewSeller = CART.sellers.find((s) => s.id === viewSellerId) ?? CART.sellers[0] ?? null;
 
-  const go = (id: ScreenId) => {
+  const go = (id: ScreenId, opts?: NavOpts) => {
     setSheetId(null);
     if (id === 'distributor-units') {
+      setListApplied([]);
+      setListBackTo('home');
       setScreen('listing');
       setSheetId(PRODUCTS[0].id);
       return;
@@ -115,6 +127,17 @@ export default function App() {
       setScreen('view-items');
       if (seller) setSheetId(seller.items[0].product.id);
       return;
+    }
+    // Capture context for the destination (resets when navigated without opts).
+    if (PRODUCT_LISTS.has(id)) {
+      setListApplied(opts?.applied ?? []);
+      setListBackTo(opts?.backTo ?? 'home');
+    }
+    // Only overwrite on a real entry (home rail / browse); a list→storefront
+    // bounce carries no backTo and should keep the original target.
+    if (id === 'storefront' && opts?.backTo) setStorefrontBackTo(opts.backTo);
+    if (id === 'distributors-list' || id === 'wholesaler-categories') {
+      setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
     setScreen(id);
   };
@@ -160,6 +183,8 @@ export default function App() {
             categories={DIST_CATEGORIES}
             brands={BRANDS}
             sellers={DISTRIBUTORS}
+            selfId="distributors-list"
+            initialTab={browseTab}
             onBack={() => go('home')}
             onNavigate={go}
           />
@@ -173,19 +198,23 @@ export default function App() {
             categories={WHOLESALER_CATEGORIES}
             brands={BRANDS}
             productListId="wholesaler-products"
+            selfId="wholesaler-categories"
+            initialTab={browseTab}
             onBack={() => go('home')}
             onNavigate={go}
           />
         );
       case 'wholesaler-products':
-        return <WholesalerProductsScreen onBack={() => go('wholesaler-categories')} onGoToCart={() => go('cart')} />;
+        return <WholesalerProductsScreen applied={listApplied} onBack={() => go(listBackTo)} onGoToCart={() => go('cart')} />;
       case 'wholesaler-units':
-        return <WholesalerProductsScreen initialSheet onBack={() => go('wholesaler-categories')} onGoToCart={() => go('cart')} />;
+        return <WholesalerProductsScreen initialSheet applied={listApplied} onBack={() => go(listBackTo)} onGoToCart={() => go('cart')} />;
       case 'storefront':
-        return <StorefrontScreen onBack={() => go('home')} onNavigate={go} />;
+        return <StorefrontScreen onBack={() => go(storefrontBackTo)} onNavigate={go} />;
       case 'listing':
         return (
           <CatalogScreen
+            applied={listApplied}
+            onBack={() => go(listBackTo)}
             qty={qty}
             onOpenSheet={setSheetId}
             onSetQty={setLineQty}

@@ -13,6 +13,10 @@ export interface WholesalerVendor {
 export interface WholesalerProduct {
   id: string;
   name: string;
+  /** Merchandising category — drives the "category" applied filter. */
+  category: string;
+  /** Brand label — drives the "brand" applied filter. */
+  brand: string;
   caseLabel: string;
   /** Pieces per case — drives the selling-unit pack tiers. */
   caseSize: number;
@@ -23,7 +27,7 @@ export interface WholesalerProduct {
 
 export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
   {
-    id: 'wp1', name: 'Refined Sunflower Oil', caseLabel: 'Case: 16 pc', caseSize: 16, image: '🛢️',
+    id: 'wp1', name: 'Refined Sunflower Oil', category: 'Cooking Oils & Ghee', brand: 'Freedom', caseLabel: 'Case: 16 pc', caseSize: 16, image: '🛢️',
     variants: [
       { id: '1l', label: '1 Ltr' }, { id: '500ml', label: '500 ml' },
       { id: '5l', label: '5 Ltr' }, { id: '15kg', label: '15 Kg' },
@@ -35,7 +39,7 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
   },
   {
-    id: 'wp2', name: 'Fortune Besan', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🫘',
+    id: 'wp2', name: 'Fortune Besan', category: 'Dals & Pulses', brand: 'Fortune', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🫘',
     variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 Kg' }],
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 55, fee: '₹1/kg' },
@@ -43,7 +47,7 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
   },
   {
-    id: 'wp3', name: 'Red Label Tea', caseLabel: 'Case: 40 pc', caseSize: 40, image: '🍵',
+    id: 'wp3', name: 'Red Label Tea', category: 'Beverages', brand: 'Red Label', caseLabel: 'Case: 40 pc', caseSize: 40, image: '🍵',
     variants: [
       { id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }, { id: '1kg', label: '1 Kg' },
     ],
@@ -53,7 +57,7 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
   },
   {
-    id: 'wp4', name: 'Maggi 2-Minute Noodles', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🍜',
+    id: 'wp4', name: 'Maggi 2-Minute Noodles', category: 'Snacks & Namkeen', brand: 'Maggi', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🍜',
     variants: [{ id: '280g', label: '280 g' }, { id: '560g', label: '560 g' }],
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 57, fee: '₹1/kg' },

@@ -1,24 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
-import { Button, Card, Chip, QtyStepper, cn } from '@mockups/ui';
+import { Button, Card, Chip, EmptyState, QtyStepper, cn } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
+import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
-import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
+import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 
 const minPrice = (p: WholesalerProduct) => Math.min(...p.vendors.map((v) => v.price));
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(WHOLESALER_PRODUCTS.map((p) => brandOf(p.name)))];
 
+// Narrow to the category / brand / distributor a screen linked in with.
+const matchesApplied = (p: WholesalerProduct, a: AppliedFilter) =>
+  a.type === 'category'
+    ? p.category === a.value
+    : a.type === 'brand'
+      ? p.brand.toLowerCase() === a.value.toLowerCase() || p.name.toLowerCase().includes(a.value.toLowerCase())
+      : p.vendors.some((v) => v.name === a.value);
+
 /* Wholesaler Product List — replica of the distributor list, but each product
    is offered by MULTIPLE vendors (price + fee). The buyer selects a vendor per
    line; the cheapest is tagged "Best". Add opens the selling-units sheet. */
 export function WholesalerProductsScreen({
+  applied: appliedProp = [],
   onBack,
   onGoToCart,
   initialSheet = false,
 }: {
+  applied?: AppliedFilter[];
   onBack: () => void;
   onGoToCart: () => void;
   initialSheet?: boolean;
@@ -28,8 +39,11 @@ export function WholesalerProductsScreen({
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
+  useEffect(() => setApplied(appliedProp), [appliedProp]);
 
-  const products = applyFilters(WHOLESALER_PRODUCTS, filters, {
+  const base = applied.length ? WHOLESALER_PRODUCTS.filter((p) => applied.every((a) => matchesApplied(p, a))) : WHOLESALER_PRODUCTS;
+  const products = applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.name),
     price: minPrice,
@@ -54,7 +68,7 @@ export function WholesalerProductsScreen({
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-base font-semibold leading-tight">Product List</h1>
-          <p className="text-xs text-foreground-secondary">{WHOLESALER_PRODUCTS.length} products · multiple vendors</p>
+          <p className="text-xs text-foreground-secondary">{products.length} products · multiple vendors</p>
         </div>
         <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
@@ -73,18 +87,24 @@ export function WholesalerProductsScreen({
         </button>
       </header>
 
+      <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
+
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-        {products.map((p) => (
-          <VendorProductCard
-            key={p.id}
-            product={p}
-            vendorId={vendorSel[p.id] ?? cheapestVendorId(p)}
-            onVendor={(vid) => setVendorSel((s) => ({ ...s, [p.id]: vid }))}
-            qty={qty[p.id] ?? 0}
-            onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
-            onAdd={() => setSheetId(p.id)}
-          />
-        ))}
+        {products.length === 0 ? (
+          <EmptyState icon="🔍" title="No products here" description="No vendors match this selection yet." />
+        ) : (
+          products.map((p) => (
+            <VendorProductCard
+              key={p.id}
+              product={p}
+              vendorId={vendorSel[p.id] ?? cheapestVendorId(p)}
+              onVendor={(vid) => setVendorSel((s) => ({ ...s, [p.id]: vid }))}
+              qty={qty[p.id] ?? 0}
+              onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
+              onAdd={() => setSheetId(p.id)}
+            />
+          ))
+        )}
       </div>
 
       <WholesalerUnitsSheet

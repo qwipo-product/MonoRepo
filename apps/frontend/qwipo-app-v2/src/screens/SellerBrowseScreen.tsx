@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, BadgeCheck } from 'lucide-react';
 import { SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
+import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import { SearchField } from '../components/SearchField';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
@@ -27,6 +28,8 @@ export function SellerBrowseScreen({
   brands,
   sellers = [],
   productListId = 'listing',
+  selfId,
+  initialTab,
   onBack,
   onNavigate,
 }: {
@@ -38,10 +41,19 @@ export function SellerBrowseScreen({
   sellers?: Distributor[];
   /** Where a category/brand tap goes (distributor vs wholesaler product list). */
   productListId?: ScreenId;
+  /** This screen's own id — used as the Back target for product-list links. */
+  selfId: ScreenId;
+  /** Tab to open on (from a "See all Brands/Categories/Sellers" link). */
+  initialTab?: BrowseTab;
   onBack: () => void;
-  onNavigate: (id: ScreenId) => void;
+  onNavigate: Navigate;
 }) {
-  const [tab, setTab] = useState<BrowseTab>(tabs[0]);
+  const [tab, setTab] = useState<BrowseTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  // Re-sync when a new "See all" link picks a different tab for the same surface.
+  useEffect(() => {
+    setTab(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
 
@@ -91,7 +103,7 @@ export function SellerBrowseScreen({
             {catList.map((c) => (
               <button
                 key={c.id}
-                onClick={() => onNavigate(productListId)}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
                 <span className="aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
@@ -106,7 +118,7 @@ export function SellerBrowseScreen({
             {brandList.map((b) => (
               <button
                 key={b.id}
-                onClick={() => onNavigate(productListId)}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }], backTo: selfId })}
                 className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
               >
                 <BrandLogo src={b.logo} alt={b.name} className="h-16 w-16 rounded-full border border-border shadow-sm" />
@@ -119,7 +131,7 @@ export function SellerBrowseScreen({
             {sellerList.map((d) => (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
-                  onClick={() => onNavigate('storefront')}
+                  onClick={() => onNavigate('storefront', { backTo: selfId })}
                   aria-label={`Open ${d.title} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
