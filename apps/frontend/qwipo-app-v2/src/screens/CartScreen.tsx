@@ -1,19 +1,13 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Plus, Truck } from 'lucide-react';
-import { Button, cn } from '@mockups/ui';
+import { Button, SegmentedControl } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { buildCart, type CartSeller, type CartStatus } from '../data/cart';
+import { buildCart, type CartSeller } from '../data/cart';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
    a retailer can see at a glance which sellers are ready to check out. Data is
    self-contained (the Shop add-to-cart flow is owned by another dev). */
-
-const STATUS: Record<CartStatus, { dot: string; label: string; text: string }> = {
-  free: { dot: 'bg-success', label: 'Eligible · Free delivery', text: 'text-success-foreground' },
-  paid: { dot: 'bg-foreground-tertiary', label: 'Paid delivery', text: 'text-foreground-secondary' },
-  below: { dot: 'bg-warning', label: 'Below minimum', text: 'text-warning-foreground' },
-};
 
 export function CartScreen({
   onBack,
@@ -103,21 +97,13 @@ function SellerCard({
   onViewItems: () => void;
   onAddMore: () => void;
 }) {
-  const [window, setWindow] = useState(0);
-  const s = STATUS[seller.status];
+  const [win, setWin] = useState(seller.windows[0]);
   const CAP = 3;
   const shown = seller.items.slice(0, CAP);
   const extra = seller.items.length - shown.length;
 
   return (
-    <div>
-      {/* status header */}
-      <div className="mb-1.5 flex items-center gap-1.5 px-1">
-        <span className={cn('h-2 w-2 rounded-full', s.dot)} />
-        <span className={cn('text-[10px] font-semibold uppercase tracking-wider', s.text)}>{s.label}</span>
-      </div>
-
-      <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
         {/* seller + total */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -202,60 +188,29 @@ function SellerCard({
         {seller.status !== 'below' && (
           <div className="mt-3">
             <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
-            <div className="flex rounded-md bg-muted p-0.5" role="radiogroup" aria-label="Delivery window">
-              {seller.windows.map((day, i) => {
-                const active = i === window;
-                return (
-                  <button
-                    key={day}
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => setWindow(i)}
-                    className={cn(
-                      'flex-1 rounded-sm py-1.5 text-xs font-medium transition-colors',
-                      active ? 'bg-card text-primary shadow-sm' : 'text-foreground-secondary'
-                    )}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedControl
+              options={seller.windows.map((w) => ({ value: w, label: w }))}
+              value={win}
+              onChange={setWin}
+            />
           </div>
         )}
 
-        {/* actions */}
-        <div className="mt-3 flex items-center gap-3">
-          {seller.status === 'below' ? (
-            <>
-              <button
-                onClick={onAddMore}
-                className="flex-1 rounded-md bg-warning py-2.5 text-sm font-bold text-white active:scale-[0.98]"
-              >
-                Add more items
-              </button>
-              <button
-                onClick={onViewItems}
-                className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
-              >
-                View items
-              </button>
-            </>
-          ) : (
-            <>
-              <Button className="flex-1" onClick={onViewItems}>
-                View items
-              </Button>
-              <button
-                onClick={onAddMore}
-                className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary active:scale-[0.98]"
-              >
-                <Plus size={16} /> Add more
-              </button>
-            </>
-          )}
+        {/* actions — same two slots on every card (View items · Add more).
+            Only the below-minimum Add-more takes colour emphasis, in its fixed
+            slot, so the buttons never reorder between cards. */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button fullWidth onClick={onViewItems}>
+            View items
+          </Button>
+          <Button
+            variant={seller.status === 'below' ? 'warning' : 'secondary'}
+            fullWidth
+            onClick={onAddMore}
+          >
+            <Plus size={16} /> Add more
+          </Button>
         </div>
       </div>
-    </div>
   );
 }

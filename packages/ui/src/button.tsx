@@ -30,6 +30,7 @@ const buttonVariants = cva(
         soft: 'bg-primary-soft text-primary-soft-foreground hover:opacity-90', // tonal ("Discounts")
         destructive: 'bg-error text-white hover:opacity-90',
         success: 'bg-success text-white hover:opacity-90',
+        warning: 'bg-warning text-white hover:opacity-90',
       },
       size: {
         sm: 'h-9 gap-1.5 px-3 text-xs',
