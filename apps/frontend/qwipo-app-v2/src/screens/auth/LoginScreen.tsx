@@ -43,8 +43,8 @@ export function LoginScreen({ onNext }: { onNext: () => void }) {
 
         <p className="mt-auto pt-5 text-center text-xs text-foreground-secondary">
           By continuing, you agree to our{' '}
-          <a className="font-semibold text-primary underline underline-offset-2">Terms of Service</a> and{' '}
-          <a className="font-semibold text-primary underline underline-offset-2">Privacy Policy</a>
+          <a className="font-medium text-primary underline underline-offset-2">Terms of Service</a> and{' '}
+          <a className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>
         </p>
       </div>
     </div>

@@ -43,7 +43,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
         <span className={`h-1 flex-1 rounded-full ${step === 2 ? 'bg-primary' : 'bg-muted'}`} />
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 pt-1">
+      <div className="flex flex-1 flex-col space-y-4 overflow-y-auto px-4 pt-1">
         {step === 1 ? (
           <>
             <Field label="Customer Name" required>
@@ -94,7 +94,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
               type="button"
               onClick={() => setAgreed((a) => !a)}
               aria-pressed={agreed}
-              className="flex items-start gap-2 text-left"
+              className="mt-auto flex items-start gap-2 pb-2 text-left"
             >
               <span
                 className={`mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border ${
@@ -104,8 +104,9 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
                 {agreed && <Check className="h-3.5 w-3.5" />}
               </span>
               <span className="text-sm text-foreground-secondary">
-                I have read &amp; agree to the <a className="text-primary">Terms of Use</a> and{' '}
-                <a className="text-primary">Privacy Policy</a>
+                I have read &amp; agree to the{' '}
+                <a className="font-medium text-primary underline underline-offset-2">Terms of Use</a> and{' '}
+                <a className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>
               </span>
             </button>
           </>
