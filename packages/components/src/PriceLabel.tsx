@@ -17,6 +17,9 @@ export interface PriceLabelProps {
 }
 
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+/** Exact ₹ with two decimals — for bill totals (e.g. ₹4,200.00). */
+const inrExact = (n: number) =>
+  `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export function PriceLabel({
   price,
@@ -47,4 +50,4 @@ export function PriceLabel({
   );
 }
 
-export { inr as formatInr };
+export { inr as formatInr, inrExact as formatInrExact };

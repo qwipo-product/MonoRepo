@@ -13,6 +13,7 @@ import { OrderSummaryScreen } from './screens/OrderSummaryScreen';
 import { CouponsScreen } from './screens/CouponsScreen';
 import { OrderConfirmationScreen } from './screens/OrderConfirmationScreen';
 import { MyOrdersScreen } from './screens/MyOrdersScreen';
+import { OrderDetailsScreen } from './screens/OrderDetailsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
@@ -24,13 +25,14 @@ import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { PRODUCTS, productById } from './data/products';
 import { buildCart } from './data/cart';
+import { ORDERS } from './data/orders';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
-  'my-orders',
+  'my-orders', 'order-details',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -56,6 +58,7 @@ export default function App() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
+  const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -172,7 +175,23 @@ export default function App() {
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'my-orders':
-        return <MyOrdersScreen onBack={() => go('home')} onOpenDetails={() => go('order-details')} />;
+        return (
+          <MyOrdersScreen
+            onBack={() => go('home')}
+            onOpenDetails={(id) => {
+              setDetailsOrderId(id);
+              go('order-details');
+            }}
+          />
+        );
+      case 'order-details': {
+        const order = ORDERS.find((o) => o.id === detailsOrderId) ?? ORDERS[0];
+        return order ? (
+          <OrderDetailsScreen order={order} onBack={() => go('my-orders')} />
+        ) : (
+          <Placeholder id={screen} />
+        );
+      }
       default:
         return <Placeholder id={screen} />;
     }

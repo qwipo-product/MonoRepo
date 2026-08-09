@@ -7,5 +7,5 @@
  * `.tsx` (web) / `.native.tsx` (React Native) files as the set grows.
  */
 export { StatusBadge, orderStatusMap, type StatusBadgeProps } from './StatusBadge';
-export { PriceLabel, formatInr, type PriceLabelProps } from './PriceLabel';
+export { PriceLabel, formatInr, formatInrExact, type PriceLabelProps } from './PriceLabel';
 export { ProductCard, type ProductCardProps, type PackPill } from './ProductCard';

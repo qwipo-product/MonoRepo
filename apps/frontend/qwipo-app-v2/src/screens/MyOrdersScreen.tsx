@@ -1,11 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Copy, Check, FileText } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
-import { StatusBadge } from '@mockups/components';
+import { StatusBadge, formatInrExact } from '@mockups/components';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
-
-const money = (n: number) =>
-  `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
 
@@ -158,7 +155,7 @@ function OrderCard({
       <div className="mt-2 flex items-center justify-between rounded-md bg-background-subtle p-2.5">
         <div>
           <div className="text-[11px] text-foreground-secondary">Grand total</div>
-          <div className="text-sm font-semibold tabular-nums text-foreground">{money(order.total)}</div>
+          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInrExact(order.total)}</div>
         </div>
         <div className="text-right">
           <div className="text-[11px] text-foreground-secondary">Expected delivery</div>
