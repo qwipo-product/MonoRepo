@@ -19,7 +19,6 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
   const [docs, setDocs] = useState<Record<string, string>>({});
   const [agreed, setAgreed] = useState(false);
 
-  const step1Valid = name.trim().length > 0 && businessType;
   const step2Valid = docs.shopImage && docs.ownerId && agreed;
   const uploadDoc = (key: string) => setDocs((d) => ({ ...d, [key]: 'uploaded.jpg' }));
 
@@ -120,7 +119,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
               <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button size="lg" className="flex-1" disabled={!step1Valid} onClick={() => setStep(2)}>
+              <Button size="lg" className="flex-1" onClick={() => setStep(2)}>
                 Next
               </Button>
             </>
