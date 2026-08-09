@@ -59,6 +59,7 @@ export const BRANDS: HomeBrand[] = [
   { id: 'b10', name: 'Eastern', logo: '/brand-logos/Eastern.png' },
   { id: 'b11', name: 'Madhur', logo: '/brand-logos/Madhur.png' },
   { id: 'b12', name: 'Gokul', logo: '/brand-logos/Gokul.png' },
+  { id: 'b13', name: 'Mysore Sandal', logo: '/brand-logos/Mysore Sandal.png' },
 ];
 
 export const WHOLESALER_CATEGORIES: HomeCategory[] = [

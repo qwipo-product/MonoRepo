@@ -162,8 +162,9 @@ export function GlobalSearchScreen({
                         <Highlight text={p.name} q={q} />
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className="block text-[11px] text-foreground-secondary">
-                          {p.variants.map((v) => v.label).join(' · ')}
+                        <span className="block whitespace-nowrap text-[11px] leading-snug text-foreground-secondary">
+                          {p.variants.slice(0, 2).map((v) => v.label).join(' · ')}
+                          {p.variants.length > 2 && ` +${p.variants.length - 2}`}
                         </span>
                         <span className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
                           {formatInr(p.price)}

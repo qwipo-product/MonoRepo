@@ -52,6 +52,39 @@ export const PRODUCTS: Product[] = [
     seller: 'Omkar Enterprises', source: 'wholesaler', delivery: 'Delivery by Tomorrow', margin: '10% Margin',
     price: 57, mrp: 60, deliveryDay: 'Tomorrow', mov: 5000,
   },
+  {
+    id: 'p5', name: 'Mysore Sandal Soap - 150 G Carton X 72 Nos', shortName: 'Mysore Sandal Soap',
+    caseLabel: 'Case: 72 pc', caseSize: 72, image: '🧼',
+    variants: [
+      { id: 's20', label: '20 g' }, { id: 's40', label: '40 g' }, { id: 's75', label: '75 g' },
+      { id: 's100', label: '100 g' }, { id: 's125', label: '125 g' }, { id: 's150', label: '150 g' },
+      { id: 's3x150', label: '3 × 150 g' }, { id: 's6x150', label: '6 × 150 g' },
+    ],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 42, mrp: 48, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p6', name: 'Mysore Sandal Dhoop - 24 Sticks Box X 120 Nos', shortName: 'Mysore Sandal Dhoop',
+    caseLabel: 'Case: 120 pc', caseSize: 120, image: '🪔',
+    variants: [
+      { id: 'd12', label: '12 Sticks' }, { id: 'd24', label: '24 Sticks' }, { id: 'd40', label: '40 Sticks' },
+      { id: 'd80', label: '80 Sticks' }, { id: 'd100g', label: '100 g' }, { id: 'd200g', label: '200 g' },
+      { id: 'dp3', label: 'Pack of 3' }, { id: 'dp6', label: 'Pack of 6' }, { id: 'dp12', label: 'Pack of 12' },
+      { id: 'dcup', label: 'Cup Dhoop' },
+    ],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '14% Margin',
+    price: 45, mrp: 50, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p7', name: 'Mysore Sandal Talcum Powder - 100 G Bottle X 48 Nos', shortName: 'Mysore Sandal Talcum Powder',
+    caseLabel: 'Case: 48 pc', caseSize: 48, image: '🧴',
+    variants: [
+      { id: 't60', label: '60 g' }, { id: 't100', label: '100 g' },
+      { id: 't200', label: '200 g' }, { id: 't300', label: '300 g' },
+    ],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '11% Margin',
+    price: 88, mrp: 98, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);
