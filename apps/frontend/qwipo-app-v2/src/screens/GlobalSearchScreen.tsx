@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, Search, X, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronLeft, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
+import { SearchField } from '../components/SearchField';
 import { PRODUCTS } from '../data/products';
 import { BRANDS, DIST_CATEGORIES, WHOLESALER_CATEGORIES, type HomeCategory } from '../data/home';
 
@@ -38,11 +39,6 @@ export function GlobalSearchScreen({
   onOpenSheet: (id: string) => void;
 }) {
   const [query, setQuery] = useState('');
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const q = query.trim().toLowerCase();
 
@@ -87,22 +83,13 @@ export function GlobalSearchScreen({
         >
           <ChevronLeft size={18} />
         </button>
-        <div className="flex h-11 flex-1 items-center gap-2 rounded-md border border-border bg-card px-3 focus-within:ring-2 focus-within:ring-ring">
-          <Search className="h-5 w-5 shrink-0 text-primary" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for products"
-            aria-label="Search for products"
-            className="h-full flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-secondary"
-          />
-          {query && (
-            <button onClick={() => setQuery('')} aria-label="Clear search" className="text-foreground-secondary active:scale-[0.98]">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="Search for products"
+          autoFocus
+          className="flex-1"
+        />
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle">
