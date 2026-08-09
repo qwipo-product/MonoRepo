@@ -35,3 +35,23 @@ export const ADDRESSES: Address[] = [
 
 /** Address delivering by default (the last one, per the mockup). */
 export const DEFAULT_ADDRESS_ID = 'flat-502';
+
+/** Which seller types are serviceable at a location. */
+export type Availability = 'both' | 'distributors' | 'wholesalers';
+
+// Serviceability per delivery address — mirrors v1's address→vendor geofencing:
+// each location serves distributors, wholesalers, or both. Drives the Home tabs
+// (the unavailable one shows "Coming Soon").
+const AVAILABILITY: Record<string, Availability> = {
+  'flat-502': 'both', // Gachibowli — distributors + wholesalers
+  'plot-27': 'distributors', // Madhapur — distributors only
+  'shop-14': 'wholesalers', // Rai Durg — wholesalers only
+};
+
+export function availabilityFor(id: string): Availability {
+  return AVAILABILITY[id] ?? 'both';
+}
+
+export function addressById(id: string): Address | undefined {
+  return ADDRESSES.find((a) => a.id === id);
+}

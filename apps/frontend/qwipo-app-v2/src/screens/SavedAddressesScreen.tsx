@@ -1,20 +1,27 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, MapPin, Truck } from 'lucide-react';
 import { Button, Input, Sheet, cn } from '@mockups/ui';
-import { ADDRESSES, DEFAULT_ADDRESS_ID, type Address } from '../data/addresses';
+import { ADDRESSES, type Address } from '../data/addresses';
 
 /* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
    add-new tile over the saved list; the delivering address is outlined and
-   carries a green "Delivering here" pill. Adding an address opens a bottom
-   sheet built on the shared Sheet primitive. */
-export function SavedAddressesScreen({ onBack }: { onBack: () => void }) {
+   carries a green "Delivering here" pill. Selection is lifted to App so the
+   Home tabs follow the chosen location. */
+export function SavedAddressesScreen({
+  onBack,
+  selectedId,
+  onSelect,
+}: {
+  onBack: () => void;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
   const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
-  const [selectedId, setSelectedId] = useState<string>(DEFAULT_ADDRESS_ID);
   const [adding, setAdding] = useState(false);
 
   const addAddress = (a: Address) => {
     setAddresses((list) => [a, ...list]);
-    setSelectedId(a.id);
+    onSelect(a.id);
     setAdding(false);
   };
 
@@ -83,7 +90,7 @@ export function SavedAddressesScreen({ onBack }: { onBack: () => void }) {
                   </span>
                 ) : (
                   <button
-                    onClick={() => setSelectedId(a.id)}
+                    onClick={() => onSelect(a.id)}
                     className="rounded-md px-1 text-sm font-medium text-primary active:scale-[0.98]"
                   >
                     Deliver here

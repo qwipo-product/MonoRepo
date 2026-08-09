@@ -35,6 +35,7 @@ import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { PRODUCTS, productById } from './data/products';
 import { buildCart } from './data/cart';
 import { ORDERS } from './data/orders';
+import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/addresses';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
@@ -69,6 +70,7 @@ export default function App() {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
+  const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -127,9 +129,21 @@ export default function App() {
       case 'kyc-success':
         return <KycSuccessScreen onPlaceOrder={() => go('listing')} />;
       case 'home':
-        return <HomeScreen onNavigate={go} />;
+        return (
+          <HomeScreen
+            onNavigate={go}
+            availability={availabilityFor(deliveryAddressId)}
+            deliveryLabel={addressById(deliveryAddressId)?.title}
+          />
+        );
       case 'sub:addresses':
-        return <SavedAddressesScreen onBack={() => go('home')} />;
+        return (
+          <SavedAddressesScreen
+            onBack={() => go('home')}
+            selectedId={deliveryAddressId}
+            onSelect={setDeliveryAddressId}
+          />
+        );
       case 'global-search':
         return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} />;
       case 'listing':

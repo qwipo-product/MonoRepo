@@ -16,12 +16,21 @@ const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit
 
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
+  availability = 'both',
   onNavigate,
 }: {
   deliveryLabel?: string;
+  availability?: 'both' | 'distributors' | 'wholesalers';
   onNavigate: (id: ScreenId) => void;
 }) {
   const [tab, setTab] = useState<'distributors' | 'wholesalers'>('distributors');
+
+  // Availability at the selected address decides which tabs are open. The
+  // unavailable one shows "Coming Soon"; the active tab always resolves to an
+  // available one.
+  const distAvailable = availability !== 'wholesalers';
+  const wholeAvailable = availability !== 'distributors';
+  const effectiveTab = !distAvailable ? 'wholesalers' : !wholeAvailable ? 'distributors' : tab;
 
   return (
     <div className="no-scrollbar flex h-full flex-col overflow-y-auto pb-6">
@@ -75,15 +84,27 @@ export function HomeScreen({
         </div>
 
         <div className="flex gap-2 px-4 pb-3">
-          <TabButton active={tab === 'distributors'} img="/home-category-cards/distributors.png" label="Authorised distributors" onClick={() => setTab('distributors')} />
-          <TabButton active={tab === 'wholesalers'} img="/home-category-cards/wholesalers.png" label="Wholesalers" onClick={() => setTab('wholesalers')} />
+          <TabButton
+            active={effectiveTab === 'distributors'}
+            disabled={!distAvailable}
+            img="/home-category-cards/distributors.png"
+            label="Authorised distributors"
+            onClick={() => setTab('distributors')}
+          />
+          <TabButton
+            active={effectiveTab === 'wholesalers'}
+            disabled={!wholeAvailable}
+            img="/home-category-cards/wholesalers.png"
+            label="Wholesalers"
+            onClick={() => setTab('wholesalers')}
+          />
         </div>
       </div>
 
       <div className="mt-4 space-y-6">
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
-        {tab === 'distributors' ? (
+        {effectiveTab === 'distributors' ? (
           <>
             <section className="space-y-3">
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list')} />
@@ -155,19 +176,49 @@ export function HomeScreen({
   );
 }
 
-function TabButton({ active, img, label, onClick }: { active: boolean; img: string; label: string; onClick: () => void }) {
+function TabButton({
+  active,
+  disabled,
+  img,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  img: string;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
-      onClick={onClick}
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
       className={cn(
         'flex flex-1 items-center gap-2 rounded-lg border p-2 text-left transition-colors',
-        active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-primary'
+        disabled ? 'border-border bg-card opacity-70' : active ? 'border-primary bg-card' : 'border-border bg-card'
       )}
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-muted">
+      <span
+        className={cn(
+          'grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-muted',
+          disabled && 'grayscale'
+        )}
+      >
         <img src={img} alt="" className="h-full w-full object-cover" />
       </span>
-      <span className="text-xs font-medium">{label}</span>
+      <span className="min-w-0">
+        <span
+          className={cn(
+            'block text-xs font-medium leading-tight',
+            disabled ? 'text-foreground-secondary' : active ? 'text-primary' : 'text-foreground'
+          )}
+        >
+          {label}
+        </span>
+        {disabled && <span className="mt-0.5 block text-[10px] text-foreground-tertiary">Coming Soon</span>}
+      </span>
     </button>
   );
 }
