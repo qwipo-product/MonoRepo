@@ -77,7 +77,7 @@ export function CartScreen({
                 </div>
                 <div className="text-lg font-bold tabular-nums">{formatInr(grandTotal)}</div>
               </div>
-              <Button className="px-8" disabled={anyBelow} onClick={onCheckout}>
+              <Button className="px-8" onClick={onCheckout}>
                 Checkout
               </Button>
             </div>

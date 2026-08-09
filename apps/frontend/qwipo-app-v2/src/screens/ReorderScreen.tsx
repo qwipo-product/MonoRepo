@@ -18,10 +18,12 @@ export function ReorderScreen({
   qty,
   onOpenSheet,
   onSetQty,
+  onSearch,
 }: {
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onSetQty: (id: string, n: number) => void;
+  onSearch?: () => void;
 }) {
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -44,7 +46,7 @@ export function ReorderScreen({
           <h1 className="text-base font-semibold leading-tight">Reorder</h1>
           <p className="text-xs text-foreground-secondary">{items.length} items you buy often</p>
         </div>
-        <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Search">
+        <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
         </button>
         <button

@@ -21,6 +21,7 @@ const matchesApplied = (p: Product, a: AppliedFilter) =>
 export function CatalogScreen({
   applied: appliedProp = [],
   onBack,
+  onSearch,
   qty,
   onOpenSheet,
   onSetQty,
@@ -30,6 +31,7 @@ export function CatalogScreen({
 }: {
   applied?: AppliedFilter[];
   onBack?: () => void;
+  onSearch?: () => void;
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onSetQty: (id: string, n: number) => void;
@@ -57,11 +59,11 @@ export function CatalogScreen({
         <button onClick={onBack} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Back">
           <ChevronLeft size={18} />
         </button>
-        <div className="flex-1">
-          <div className="text-base font-semibold leading-tight">Product List</div>
-          <div className="text-xs text-foreground-secondary">{items.length} products</div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base font-semibold leading-tight">Product List</h1>
+          <p className="text-xs text-foreground-secondary">{items.length} products</p>
         </div>
-        <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Search">
+        <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
         </button>
         <button
@@ -80,7 +82,7 @@ export function CatalogScreen({
 
       <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
 
-      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {items.length === 0 ? (
           <EmptyState icon="🔍" title="No products here" description="New products are on the way." />
         ) : (

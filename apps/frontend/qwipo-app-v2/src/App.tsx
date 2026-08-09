@@ -206,9 +206,9 @@ export default function App() {
           />
         );
       case 'wholesaler-products':
-        return <WholesalerProductsScreen applied={listApplied} onBack={() => go(listBackTo)} onGoToCart={() => go('cart')} />;
+        return <WholesalerProductsScreen applied={listApplied} onBack={() => go(listBackTo)} onSearch={() => go('global-search')} onGoToCart={() => go('cart')} />;
       case 'wholesaler-units':
-        return <WholesalerProductsScreen initialSheet applied={listApplied} onBack={() => go(listBackTo)} onGoToCart={() => go('cart')} />;
+        return <WholesalerProductsScreen initialSheet applied={listApplied} onBack={() => go(listBackTo)} onSearch={() => go('global-search')} onGoToCart={() => go('cart')} />;
       case 'storefront':
         return <StorefrontScreen onBack={() => go(storefrontBackTo)} onNavigate={go} />;
       case 'listing':
@@ -216,6 +216,7 @@ export default function App() {
           <CatalogScreen
             applied={listApplied}
             onBack={() => go(listBackTo)}
+            onSearch={() => go('global-search')}
             qty={qty}
             onOpenSheet={setSheetId}
             onSetQty={setLineQty}
@@ -266,7 +267,7 @@ export default function App() {
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
-        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} />;
+        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} />;
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} />;
       case 'notifications':

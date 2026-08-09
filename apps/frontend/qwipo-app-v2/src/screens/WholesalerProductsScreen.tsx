@@ -26,11 +26,13 @@ const matchesApplied = (p: WholesalerProduct, a: AppliedFilter) =>
 export function WholesalerProductsScreen({
   applied: appliedProp = [],
   onBack,
+  onSearch,
   onGoToCart,
   initialSheet = false,
 }: {
   applied?: AppliedFilter[];
   onBack: () => void;
+  onSearch?: () => void;
   onGoToCart: () => void;
   initialSheet?: boolean;
 }) {
@@ -70,7 +72,7 @@ export function WholesalerProductsScreen({
           <h1 className="text-base font-semibold leading-tight">Product List</h1>
           <p className="text-xs text-foreground-secondary">{products.length} products · multiple vendors</p>
         </div>
-        <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
+        <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
         </button>
         <button
