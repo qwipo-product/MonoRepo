@@ -75,14 +75,15 @@ export function OtpScreen({ onBack, onVerify }: { onBack: () => void; onVerify: 
         </Button>
 
         <p className="mt-4 text-center text-sm text-foreground-secondary">
-          Resend OTP in {secs}s{' '}
-          <button
-            disabled={secs !== 0}
-            onClick={() => setSecs(23)}
-            className={secs === 0 ? 'font-semibold text-primary' : 'font-medium text-foreground-secondary'}
-          >
-            Resend OTP
-          </button>
+          {secs > 0 ? (
+            <>
+              Resend OTP in <span className="font-semibold">{secs}s</span>
+            </>
+          ) : (
+            <button onClick={() => setSecs(23)} className="font-semibold text-primary">
+              Resend OTP
+            </button>
+          )}
         </p>
       </div>
     </div>
