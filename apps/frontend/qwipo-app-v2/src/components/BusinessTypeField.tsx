@@ -48,7 +48,8 @@ export function BusinessTypeField({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border p-1.5 shadow-sm transition-colors',
+                    'flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-lg border p-1.5 shadow-sm transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     active
                       ? 'border-primary bg-primary-soft'
                       : 'border-border bg-card hover:border-primary hover:bg-primary-soft'
@@ -57,12 +58,12 @@ export function BusinessTypeField({
                   <div
                     className={cn(
                       'rounded-full p-1.5 transition-colors',
-                      active ? 'bg-primary/15 text-primary' : 'bg-muted text-foreground-secondary'
+                      active ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground-secondary'
                     )}
                   >
                     <BtIcon paths={bt.paths} />
                   </div>
-                  <span className="text-center text-[9px] font-medium leading-tight text-foreground">
+                  <span className="text-center text-[10px] font-medium leading-tight text-foreground">
                     {bt.label}
                   </span>
                 </button>
