@@ -125,12 +125,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
               <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button
-                size="lg"
-                className="flex-1 disabled:bg-muted disabled:text-foreground-secondary disabled:opacity-100"
-                disabled={!step1Valid}
-                onClick={() => setStep(2)}
-              >
+              <Button size="lg" className="flex-1" disabled={!step1Valid} onClick={() => setStep(2)}>
                 Next
               </Button>
             </>
@@ -139,12 +134,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
               <Button variant="secondary" size="lg" className="flex-1" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button
-                size="lg"
-                className="flex-1 disabled:bg-muted disabled:text-foreground-secondary disabled:opacity-100"
-                disabled={!step2Valid}
-                onClick={onRegister}
-              >
+              <Button size="lg" className="flex-1" disabled={!step2Valid} onClick={onRegister}>
                 Register
               </Button>
             </>

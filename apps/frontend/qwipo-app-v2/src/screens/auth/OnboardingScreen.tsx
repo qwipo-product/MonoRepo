@@ -61,12 +61,7 @@ export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; on
       </div>
 
       <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <Button
-          size="lg"
-          className="w-full disabled:bg-muted disabled:text-foreground-secondary disabled:opacity-100"
-          disabled={!valid}
-          onClick={onProceed}
-        >
+        <Button size="lg" className="w-full" disabled={!valid} onClick={onProceed}>
           Proceed
         </Button>
       </div>

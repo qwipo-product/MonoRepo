@@ -236,6 +236,15 @@
     background-color: var(--background);
     color: var(--foreground);
   }
+
+  /* Browsers reset form-control fonts to the OS default — force them back to
+     Inter so every button, input, textarea and select matches surrounding text. */
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
 }
 
 @layer components {

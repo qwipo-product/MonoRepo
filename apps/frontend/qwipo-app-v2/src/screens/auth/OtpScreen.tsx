@@ -43,7 +43,7 @@ export function OtpScreen({ onBack, onVerify }: { onBack: () => void; onVerify: 
       </div>
 
       {/* bottom half — content */}
-      <div className="flex flex-1 flex-col rounded-t-xl border-t border-border p-5 shadow-[var(--shadow-bar-top)]">
+      <div className="flex flex-1 flex-col rounded-t-2xl border-t border-border bg-background p-6 shadow-[var(--shadow-bar-top)]">
         <h1 className="text-xl font-semibold">OTP Verification</h1>
         <p className="mt-1 text-sm text-foreground-secondary">
           Enter the verification code we just sent on your phone number.
@@ -58,6 +58,7 @@ export function OtpScreen({ onBack, onVerify }: { onBack: () => void; onVerify: 
               }}
               inputMode="numeric"
               maxLength={1}
+              aria-label={`Digit ${i + 1}`}
               value={d}
               onChange={(e) => setAt(i, e.target.value)}
               onKeyDown={(e) => onKeyDown(i, e)}
@@ -69,12 +70,7 @@ export function OtpScreen({ onBack, onVerify }: { onBack: () => void; onVerify: 
           ))}
         </div>
 
-        <Button
-          size="lg"
-          className="mt-5 w-full disabled:bg-muted disabled:text-foreground-secondary disabled:opacity-100"
-          disabled={!filled}
-          onClick={onVerify}
-        >
+        <Button size="lg" className="mt-5 w-full" disabled={!filled} onClick={onVerify}>
           Verify
         </Button>
 
@@ -83,7 +79,7 @@ export function OtpScreen({ onBack, onVerify }: { onBack: () => void; onVerify: 
           <button
             disabled={secs !== 0}
             onClick={() => setSecs(23)}
-            className={secs === 0 ? 'font-medium text-primary' : 'text-foreground-secondary'}
+            className={secs === 0 ? 'font-semibold text-primary' : 'font-medium text-foreground-secondary'}
           >
             Resend OTP
           </button>

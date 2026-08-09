@@ -12,7 +12,7 @@ export function AuthBrand() {
         alt="Qwipo"
         className="h-[130px] w-auto"
       />
-      <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-6" />
+      <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-9 w-auto" />
     </div>
   );
 }
