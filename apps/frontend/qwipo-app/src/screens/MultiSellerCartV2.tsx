@@ -34,12 +34,7 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
             <div className="mt-1 text-sm text-muted-foreground">Add products to see them here.</div>
           </div>
         )}
-        {distributors.length > 0 && <SectionLabel>From Distributors</SectionLabel>}
-        {distributors.map((s: any) => (
-          <SellerCard key={s.id} seller={s} activeIndex={deliveryIndex[s.id] || 0} onPickDelivery={(idx: number) => setDeliveryIndex((prev) => ({ ...prev, [s.id]: idx }))} onAddMore={() => onAddMore?.(s)} onViewItems={() => onViewItems?.(s)} />
-        ))}
-        {wholesalers.length > 0 && <SectionLabel>From Wholesalers</SectionLabel>}
-        {wholesalers.map((s: any) => (
+        {rows.map((s: any) => (
           <SellerCard key={s.id} seller={s} activeIndex={deliveryIndex[s.id] || 0} onPickDelivery={(idx: number) => setDeliveryIndex((prev) => ({ ...prev, [s.id]: idx }))} onAddMore={() => onAddMore?.(s)} onViewItems={() => onViewItems?.(s)} />
         ))}
       </div>
@@ -55,10 +50,6 @@ export default function MultiSellerCartV2({ cart, onBack, onCheckout, onAddMore,
       )}
     </div>
   );
-}
-
-function SectionLabel({ children }: any) {
-  return <div className="px-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{children}</div>;
 }
 
 function SellerCard({ seller, activeIndex, onPickDelivery, onAddMore, onViewItems }: any) {

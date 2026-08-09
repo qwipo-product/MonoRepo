@@ -392,26 +392,6 @@
         "logoText": "MS"
       },
       {
-        "id": "madhur",
-        "name": "Madhur",
-        "parent": "Bajaj Hindusthan Sugar Ltd",
-        "founded": 1931,
-        "hq": "Mumbai, Maharashtra",
-        "color": "#EA580C",
-        "logo": "/brand-logos/Madhur.png",
-        "logoText": "M"
-      },
-      {
-        "id": "lal-kila",
-        "name": "Lal Kila",
-        "parent": "Amar Singh Chawal Wala",
-        "founded": 1955,
-        "hq": "New Delhi",
-        "color": "#B91C1C",
-        "logo": "/brand-logos/Lal Kila.png",
-        "logoText": "LK"
-      },
-      {
         "id": "maggi",
         "name": "Maggi",
         "parent": "Nestlé India Ltd",
@@ -430,360 +410,158 @@
         "color": "#FACC15",
         "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Parle_G_logo.jpg/250px-Parle_G_logo.jpg",
         "logoText": "P"
+      },
+      {
+        "id": "sri-lalitha",
+        "name": "Sri Lalitha",
+        "parent": "Sri Lalitha Foods",
+        "founded": 1995,
+        "hq": "Hyderabad, Telangana",
+        "color": "#16A34A",
+        "logo": "/brand-logos/Sri Lalitha.png",
+        "logoText": "श"
       }
     ],
     "allBrands": [
       {
-        "id": "freedom-oil",
-        "name": "Freedom Oil",
+        "id": "aashirvaad",
+        "name": "Aashirvaad",
+        "logo": "/brand-logos/Aashirvaad.png",
+        "color": "#DC2626",
+        "logoText": "आ"
+      },
+      {
+        "id": "freedom",
+        "name": "Freedom",
         "logo": "/brand-logos/Freedon Oil.png",
-        "color": "#FEF3C7",
+        "color": "#E63946",
         "logoText": "F"
       },
       {
-        "id": "nescafe-classic",
-        "name": "Nescafe Classic",
-        "logo": null,
-        "color": "#1F2937",
-        "logoText": "NC"
+        "id": "fortune",
+        "name": "Fortune",
+        "logo": "/brand-logos/Forture Oil.png",
+        "color": "#1D4ED8",
+        "logoText": "Fo"
       },
       {
-        "id": "nescafe-sunrise",
-        "name": "Nescafe Sunrise",
-        "logo": null,
-        "color": "#EA580C",
-        "logoText": "NS"
+        "id": "tata",
+        "name": "Tata Salt",
+        "logo": "/brand-logos/Tata.png",
+        "color": "#0891B2",
+        "logoText": "Tata"
       },
       {
-        "id": "nescafe-gold",
-        "name": "Nescafe Gold",
-        "logo": null,
-        "color": "#B45309",
-        "logoText": "NG"
-      },
-      {
-        "id": "nestea",
-        "name": "Nestea",
-        "logo": null,
-        "color": "#059669",
-        "logoText": "NT"
-      },
-      {
-        "id": "as-brand",
-        "name": "AS Brand",
-        "logo": "/brand-logos/As Brand.png",
-        "color": "#E0E7FF",
-        "logoText": "AS"
-      },
-      {
-        "id": "gd-hing",
-        "name": "GD Hing",
-        "logo": "/brand-logos/GD Hing.png",
-        "color": "#FEF3C7",
-        "logoText": "GD"
-      },
-      {
-        "id": "madhur-sugar",
-        "name": "Madhur Sugar",
-        "logo": "/brand-logos/Madhur.png",
-        "color": "#D1FAE5",
-        "logoText": "M"
-      },
-      {
-        "id": "ajay-care",
-        "name": "Ajay Care",
-        "logo": "/brand-logos/Ajy.png",
-        "color": "#E0E7FF",
-        "logoText": "AC"
-      },
-      {
-        "id": "sneha-sukhibhava",
-        "name": "Sneha & Sukhibhava",
-        "logo": "/brand-logos/Sneha.png",
-        "color": "#FDE047",
-        "logoText": "S"
-      },
-      {
-        "id": "cycle",
-        "name": "Cycle",
-        "logo": "/brand-logos/Cycle.png",
-        "color": "#FEF3C7",
-        "logoText": "C"
-      },
-      {
-        "id": "grb",
-        "name": "GRB",
-        "logo": "/brand-logos/GRB.png",
-        "color": "#D1FAE5",
-        "logoText": "GR"
+        "id": "itc",
+        "name": "ITC",
+        "logo": "/brand-logos/Aashirvaad.png",
+        "color": "#0A6E3D",
+        "logoText": "ITC"
       },
       {
         "id": "mtr",
         "name": "MTR",
         "logo": "/brand-logos/MTR.png",
-        "color": "#FEE2E2",
-        "logoText": "MT"
+        "color": "#15803D",
+        "logoText": "MTR"
       },
       {
-        "id": "sri-lalitha",
-        "name": "Sri Lalitha",
-        "logo": "/brand-logos/Sri Lalitha.png",
-        "color": "#FCE7F3",
-        "logoText": "SL"
+        "id": "priya",
+        "name": "Priya Foods",
+        "logo": "/brand-logos/Priya Foods.png",
+        "color": "#B91C1C",
+        "logoText": "Pri"
       },
       {
-        "id": "mysore-sandal",
-        "name": "Mysore Sandal",
-        "logo": "/brand-logos/Mysore Sandal.png",
-        "color": "#FCE7F3",
-        "logoText": "MS"
+        "id": "eastern",
+        "name": "Eastern",
+        "logo": "/brand-logos/Eastern.png",
+        "color": "#16A34A",
+        "logoText": "E"
       },
       {
-        "id": "fortune-oil",
-        "name": "Fortune Oil",
-        "logo": "/brand-logos/Forture Oil.png",
-        "color": "#DBEAFE",
-        "logoText": "FO"
-      },
-      {
-        "id": "zindha-tilismath",
-        "name": "Zindha Tilismath",
-        "logo": "/brand-logos/Zindha Tilismath.png",
-        "color": "#FED7AA",
-        "logoText": "ZT"
-      },
-      {
-        "id": "dwibhashi-ayurveda",
-        "name": "Dwibhashi Ayurveda",
-        "logo": "/brand-logos/Dwibhashi Ayurveda.png",
-        "color": "#D1FAE5",
-        "logoText": "D"
+        "id": "himalaya",
+        "name": "Himalaya",
+        "logo": "/brand-logos/Himalaya.png",
+        "color": "#16A34A",
+        "logoText": "H"
       },
       {
         "id": "vicco",
         "name": "Vicco",
         "logo": "/brand-logos/Vicco.png",
-        "color": "#FEE2E2",
+        "color": "#0E7490",
         "logoText": "V"
       },
       {
-        "id": "black-rose",
-        "name": "Black Rose Hair Color",
-        "logo": "/brand-logos/Blackrose.png",
-        "color": "#F3F4F6",
-        "logoText": "BR"
+        "id": "mysore",
+        "name": "Mysore Sandal",
+        "logo": "/brand-logos/Mysore Sandal.png",
+        "color": "#9F1239",
+        "logoText": "MS"
+      },
+      {
+        "id": "maggi",
+        "name": "Maggi",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Maggi_logo.svg/250px-Maggi_logo.svg.png",
+        "color": "#FBBF24",
+        "logoText": "M"
+      },
+      {
+        "id": "parle-g",
+        "name": "Parle-G",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Parle_G_logo.jpg/250px-Parle_G_logo.jpg",
+        "color": "#FACC15",
+        "logoText": "P"
+      },
+      {
+        "id": "sri-lalitha",
+        "name": "Sri Lalitha",
+        "logo": "/brand-logos/Sri Lalitha.png",
+        "color": "#16A34A",
+        "logoText": "श"
       }
     ],
     "distributorCategories": [
       {
-        "id": "atta-flours-sooji",
-        "name": "Atta, Flours and Sooji",
-        "image": "/distributor-category-images/Atta, Flours and Sooji.png"
+        "id": "cooking-oil",
+        "name": "Cooking Oils & Ghee",
+        "image": "/wholesaler-category-images/Cooking Oils & Ghee.png"
       },
       {
-        "id": "ayurvedic",
-        "name": "Ayurvedic",
-        "image": "/distributor-category-images/Ayurvedic.png"
+        "id": "rice",
+        "name": "Rice & Rice Products",
+        "image": "/wholesaler-category-images/Rice & Rice Products.png"
       },
       {
-        "id": "baby-care",
-        "name": "Baby care",
-        "image": "/distributor-category-images/Baby care.png"
+        "id": "flour",
+        "name": "Atta, Flours & Sooji",
+        "image": "/wholesaler-category-images/Atta, Flours & Sooji.png"
       },
       {
-        "id": "bakery-cakes-dairy",
-        "name": "Bakery, Cakes & Dairy",
-        "image": "/distributor-category-images/Bakery, Cakes & Dairy .png"
+        "id": "personal-care",
+        "name": "Personal Care",
+        "image": "/wholesaler-category-images/Personal Care.png"
       },
       {
-        "id": "beauty-hygiene",
-        "name": "Beauty & Hygiene",
-        "image": "/distributor-category-images/Beauty & Hygiene.png"
+        "id": "snacks",
+        "name": "Biscuits, Snacks & Namkeen",
+        "image": "/wholesaler-category-images/Biscuits, Snacks & Namkeen.png"
       },
       {
-        "id": "beverages",
-        "name": "Beverages",
-        "image": "/distributor-category-images/Beverages.png"
+        "id": "dals",
+        "name": "Dals & Pulses",
+        "image": "/wholesaler-category-images/Dals & Pulses.png"
       },
       {
-        "id": "bins-bathrooms",
-        "name": "Bins and Bathrooms",
-        "image": "/distributor-category-images/Bins and Bathrooms.png"
+        "id": "spices",
+        "name": "Sugar & Spices",
+        "image": "/wholesaler-category-images/Sugar & Spices.png"
       },
       {
-        "id": "cereals-breakfast",
-        "name": "Cereals and Breakfast",
-        "image": "/distributor-category-images/Cereals and Breakfast.png"
-      },
-      {
-        "id": "chocolates-biscuits",
-        "name": "Chocolates and Biscuits",
-        "image": "/distributor-category-images/Chocolates and Biscuits.png"
-      },
-      {
-        "id": "cooking-baking",
-        "name": "Cooking and Baking Needs",
-        "image": "/distributor-category-images/Cooking and Baking Needs.png"
-      },
-      {
-        "id": "dairy-cheese",
-        "name": "Dairy and Cheese",
-        "image": "/distributor-category-images/Dairy and Cheese.png"
-      },
-      {
-        "id": "dals-pulses",
-        "name": "Dals and Pulses",
-        "image": "/distributor-category-images/Dals and Pulses.png"
-      },
-      {
-        "id": "detergents-dishwash",
-        "name": "Detergents and Dishwash",
-        "image": "/distributor-category-images/Detergents and Dishwash.png"
-      },
-      {
-        "id": "eggs-meat-fish",
-        "name": "Eggs, Meat & Fish",
-        "image": "/distributor-category-images/Eggs, Meat & Fish .png"
-      },
-      {
-        "id": "energy-soft-drinks",
-        "name": "Energy and Soft Drinks",
-        "image": "/distributor-category-images/Energy and Soft Drinks.png"
-      },
-      {
-        "id": "foodgrains",
-        "name": "Foodgrains",
-        "image": "/distributor-category-images/Foodgrains.png"
-      },
-      {
-        "id": "frozen-snacks",
-        "name": "Frozen Snacks",
-        "image": "/distributor-category-images/Frozen Snacks.png"
-      },
-      {
-        "id": "frozen-vegetables",
-        "name": "Frozen Vegetables",
-        "image": "/distributor-category-images/Frozen Vegetables.png"
-      },
-      {
-        "id": "fruit-juices",
-        "name": "Fruit Juices and Fruit Drinks",
-        "image": "/distributor-category-images/Fruit Juices and Fruit Drinks.png"
-      },
-      {
-        "id": "fruits-vegetables",
-        "name": "Fruits and Vegetables",
-        "image": "/distributor-category-images/Fruits and Vegetables.png"
-      },
-      {
-        "id": "gift-voucher",
-        "name": "Gift Voucher",
-        "image": "/distributor-category-images/Gift Voucher.png"
-      },
-      {
-        "id": "gourmet-world-foods",
-        "name": "Gourmet & World Foods",
-        "image": "/distributor-category-images/Gourmet & World Foods.png"
-      },
-      {
-        "id": "health-safety",
-        "name": "Health and Safety",
-        "image": "/distributor-category-images/Health and Safety.png"
-      },
-      {
-        "id": "indian-sweets",
-        "name": "Indian Sweets",
-        "image": "/distributor-category-images/Indian Sweets.png"
-      },
-      {
-        "id": "kitchen-accessories",
-        "name": "Kitchen Accessories",
-        "image": "/distributor-category-images/Kitchen Accessories.png"
-      },
-      {
-        "id": "masala-seasoning",
-        "name": "Masala & Seasoning",
-        "image": "/distributor-category-images/Masala & Seasoning.png"
-      },
-      {
-        "id": "oil-ghee",
-        "name": "Oil & Ghee",
-        "image": "/distributor-category-images/Oil & Ghee.png"
-      },
-      {
-        "id": "oral-care",
-        "name": "Oral care",
-        "image": "/distributor-category-images/Oral care.png"
-      },
-      {
-        "id": "pasta-soup-noodles",
-        "name": "Pasta, Soup and Noodles",
-        "image": "/distributor-category-images/Pasta, Soup and Noodles.png"
-      },
-      {
-        "id": "pet-care",
-        "name": "Pet Care",
-        "image": "/distributor-category-images/Pet Care.png"
-      },
-      {
-        "id": "pickles-chutney",
-        "name": "Pickles and Chutney",
-        "image": "/distributor-category-images/Pickles and Chutney.png"
-      },
-      {
-        "id": "pooja-needs",
-        "name": "Pooja Needs",
-        "image": "/distributor-category-images/Pooja Needs.png"
-      },
-      {
-        "id": "ready-cook-eat",
-        "name": "Ready to Cook and Eat",
-        "image": "/distributor-category-images/Ready to Cook and Eat.png"
-      },
-      {
-        "id": "rice-rice-products",
-        "name": "Rice and Rice Products",
-        "image": "/distributor-category-images/Rice and Rice Products.png"
-      },
-      {
-        "id": "salt-sugar-jaggery",
-        "name": "Salt, Sugar and Jaggery",
-        "image": "/distributor-category-images/Salt, Sugar and Jaggery.png"
-      },
-      {
-        "id": "sauces-spreads-dips",
-        "name": "Sauces, Spreads and Dips",
-        "image": "/distributor-category-images/Sauces, Spreads and Dips.png"
-      },
-      {
-        "id": "snacks-branded-foods",
-        "name": "Snacks & Branded Foods",
-        "image": "/distributor-category-images/Snacks & Branded Foods.png"
-      },
-      {
-        "id": "snacks-namkeen",
-        "name": "Snacks and Namkeen",
-        "image": "/distributor-category-images/Snacks and Namkeen.png"
-      },
-      {
-        "id": "snacks-dryfruits-nuts",
-        "name": "Snacks, Dry Fruits, Nuts",
-        "image": "/distributor-category-images/Snacks, Dry Fruits, Nuts.png"
-      },
-      {
-        "id": "tea-coffee",
-        "name": "Tea and Coffee",
-        "image": "/distributor-category-images/Tea and Coffee .png"
-      },
-      {
-        "id": "tinned-processed",
-        "name": "Tinned and Processed Food",
-        "image": "/distributor-category-images/Tinned and Processed Food.png"
-      },
-      {
-        "id": "water",
-        "name": "Water",
-        "image": "/distributor-category-images/Water.png"
+        "id": "pickles",
+        "name": "Pickles & Podis",
+        "image": "/wholesaler-category-images/Pickles & Podis.png"
       }
     ],
     "wholesalerCategories": [
@@ -1074,28 +852,12 @@
         "image": "/wholesaler-category-images/Atta, Flours & Sooji.png"
       },
       {
-        "id": "beverages",
-        "name": "Beverages",
-        "icon": "🥤",
-        "count": 218,
-        "color": "#DBEAFE",
-        "image": "/wholesaler-category-images/Beverages.png"
-      },
-      {
         "id": "personal-care",
         "name": "Personal Care",
         "icon": "🧴",
         "count": 312,
         "color": "#FCE7F3",
         "image": "/wholesaler-category-images/Personal Care.png"
-      },
-      {
-        "id": "cleaning",
-        "name": "Cleaning & Household",
-        "icon": "🧼",
-        "count": 156,
-        "color": "#E0E7FF",
-        "image": "/wholesaler-category-images/Cleaning & Household.png"
       },
       {
         "id": "snacks",
@@ -1122,36 +884,12 @@
         "image": "/wholesaler-category-images/Sugar & Spices.png"
       },
       {
-        "id": "dry-fruits",
-        "name": "Dry Fruits",
-        "icon": "🥜",
-        "count": 56,
-        "color": "#FDE68A",
-        "image": "/wholesaler-category-images/Dry Fruits.png"
-      },
-      {
         "id": "pickles",
         "name": "Pickles & Podis",
         "icon": "🥒",
         "count": 42,
         "color": "#FBCFE8",
         "image": "/wholesaler-category-images/Pickles & Podis.png"
-      },
-      {
-        "id": "pooja",
-        "name": "Pooja Needs",
-        "icon": "🕉️",
-        "count": 38,
-        "color": "#FED7AA",
-        "image": "/wholesaler-category-images/Pooja Needs.png"
-      },
-      {
-        "id": "dairy",
-        "name": "Dairy & Cheese",
-        "icon": "🧈",
-        "count": 64,
-        "color": "#FEF3C7",
-        "image": "/wholesaler-category-images/Cooking Oils & Ghee.png"
       }
     ],
     "exclusiveOffers": [
@@ -1209,7 +947,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "1 Ltr Pouch",
+          "size": "1 L",
           "casePack": "16 Pcs/Case",
           "casePcs": 16,
           "mrp": 185,
@@ -1223,7 +961,7 @@
         },
         {
           "id": "v2",
-          "size": "5 Ltr Jar",
+          "size": "5 L",
           "casePack": "4 Pcs/Case",
           "casePcs": 4,
           "mrp": 925,
@@ -1237,7 +975,7 @@
         },
         {
           "id": "v3",
-          "size": "15 Kg Tin",
+          "size": "15 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 2725,
@@ -1275,7 +1013,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "500 g Pouch",
+          "size": "500 g",
           "casePack": "20 Pcs/Case",
           "casePcs": 20,
           "mrp": 62,
@@ -1289,7 +1027,7 @@
         },
         {
           "id": "v2",
-          "size": "1 Kg Pouch",
+          "size": "1 kg",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 120,
@@ -1327,7 +1065,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "300 g Jar",
+          "size": "300 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 95,
@@ -1341,7 +1079,7 @@
         },
         {
           "id": "v2",
-          "size": "1 Kg Jar",
+          "size": "1 kg",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 280,
@@ -1380,7 +1118,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "5 Kg Bag",
+          "size": "5 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 285,
@@ -1394,7 +1132,7 @@
         },
         {
           "id": "v2",
-          "size": "10 Kg Bag",
+          "size": "10 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 540,
@@ -1433,7 +1171,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "100 g Box",
+          "size": "100 g",
           "casePack": "40 Pcs/Case",
           "casePcs": 40,
           "mrp": 62,
@@ -1447,7 +1185,7 @@
         },
         {
           "id": "v2",
-          "size": "200 g Box",
+          "size": "200 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 118,
@@ -1461,7 +1199,7 @@
         },
         {
           "id": "v3",
-          "size": "500 g Pack",
+          "size": "500 g",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 285,
@@ -1500,7 +1238,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "100 g Pouch",
+          "size": "100 g",
           "casePack": "40 Pcs/Case",
           "casePcs": 40,
           "mrp": 48,
@@ -1514,7 +1252,7 @@
         },
         {
           "id": "v2",
-          "size": "500 g Pouch",
+          "size": "500 g",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 225,
@@ -1552,7 +1290,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "5 Kg Bag",
+          "size": "5 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 420,
@@ -1566,7 +1304,7 @@
         },
         {
           "id": "v2",
-          "size": "26 Kg Bag",
+          "size": "26 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 1980,
@@ -1604,7 +1342,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "500 g Pack",
+          "size": "500 g",
           "casePack": "20 Pcs/Case",
           "casePcs": 20,
           "mrp": 92,
@@ -1618,7 +1356,7 @@
         },
         {
           "id": "v2",
-          "size": "1 Kg Pack",
+          "size": "1 kg",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 178,
@@ -1656,7 +1394,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "30 g Tube",
+          "size": "30 g",
           "casePack": "48 Pcs/Case",
           "casePcs": 48,
           "mrp": 75,
@@ -1670,7 +1408,7 @@
         },
         {
           "id": "v2",
-          "size": "70 g Tube",
+          "size": "70 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 150,
@@ -1708,7 +1446,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "4-Pack (280 g)",
+          "size": "280 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 60,
@@ -1722,7 +1460,7 @@
         },
         {
           "id": "v2",
-          "size": "8-Pack (560 g)",
+          "size": "560 g",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 118,
@@ -1736,7 +1474,7 @@
         },
         {
           "id": "v3",
-          "size": "12-Pack Case",
+          "size": "840 g",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 172,
@@ -1774,7 +1512,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "100 g Pack",
+          "size": "100 g",
           "casePack": "48 Pcs/Case",
           "casePcs": 48,
           "mrp": 10,
@@ -1788,7 +1526,7 @@
         },
         {
           "id": "v2",
-          "size": "250 g Pack",
+          "size": "250 g",
           "casePack": "36 Pcs/Case",
           "casePcs": 36,
           "mrp": 25,
@@ -1802,7 +1540,7 @@
         },
         {
           "id": "v3",
-          "size": "800 g Family",
+          "size": "800 g",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 80,
@@ -1840,7 +1578,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "50 g Tube",
+          "size": "50 g",
           "casePack": "48 Pcs/Case",
           "casePcs": 48,
           "mrp": 90,
@@ -1854,7 +1592,7 @@
         },
         {
           "id": "v2",
-          "size": "100 g Tube",
+          "size": "100 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 155,
@@ -1892,7 +1630,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "1 Ltr Pouch",
+          "size": "1 L",
           "casePack": "16 Pcs/Case",
           "casePcs": 16,
           "mrp": 180,
@@ -1906,7 +1644,7 @@
         },
         {
           "id": "v2",
-          "size": "5 Ltr Jar",
+          "size": "5 L",
           "casePack": "4 Pcs/Case",
           "casePcs": 4,
           "mrp": 900,
@@ -1944,7 +1682,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "1 Kg Pack",
+          "size": "1 kg",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 28,
@@ -1958,7 +1696,7 @@
         },
         {
           "id": "v2",
-          "size": "1 Kg × 10 Case",
+          "size": "10 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 280,
@@ -1996,7 +1734,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "1 Kg Pack",
+          "size": "1 kg",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 30,
@@ -2010,7 +1748,7 @@
         },
         {
           "id": "v2",
-          "size": "1 Kg × 2 Combo",
+          "size": "2 kg",
           "casePack": "12 Pcs/Case",
           "casePcs": 12,
           "mrp": 60,
@@ -2048,7 +1786,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "100 g Box",
+          "size": "100 g",
           "casePack": "40 Pcs/Case",
           "casePcs": 40,
           "mrp": 78,
@@ -2062,7 +1800,7 @@
         },
         {
           "id": "v2",
-          "size": "200 g Box",
+          "size": "200 g",
           "casePack": "24 Pcs/Case",
           "casePcs": 24,
           "mrp": 150,
@@ -2100,7 +1838,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "1 Ltr Pouch",
+          "size": "1 L",
           "casePack": "16 Pcs/Case",
           "casePcs": 16,
           "mrp": 210,
@@ -2114,7 +1852,7 @@
         },
         {
           "id": "v2",
-          "size": "5 Ltr Jar",
+          "size": "5 L",
           "casePack": "4 Pcs/Case",
           "casePcs": 4,
           "mrp": 1030,
@@ -2128,7 +1866,7 @@
         },
         {
           "id": "v3",
-          "size": "15 Kg Tin",
+          "size": "15 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 3050,
@@ -2166,7 +1904,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "5 Kg Bag",
+          "size": "5 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 340,
@@ -2180,7 +1918,7 @@
         },
         {
           "id": "v2",
-          "size": "10 Kg Bag",
+          "size": "10 kg",
           "casePack": "1 Pc",
           "casePcs": 1,
           "mrp": 650,
@@ -2218,7 +1956,7 @@
       "variants": [
         {
           "id": "v1",
-          "size": "100 g Bar",
+          "size": "100 g",
           "casePack": "48 Pcs/Case",
           "casePcs": 48,
           "mrp": 55,
@@ -2232,7 +1970,7 @@
         },
         {
           "id": "v2",
-          "size": "100 g × 3 Pack",
+          "size": "300 g",
           "casePack": "16 Pcs/Case",
           "casePcs": 16,
           "mrp": 160,

@@ -6,27 +6,15 @@ import ScreenHeader from '../components/ScreenHeader';
 import ShopProductCard from '../components/ShopProductCard';
 import CartStrip from '../components/CartStrip';
 
-const WHOLESALERS = [
-  { id: 'wh1', name: 'Omkar Enterprises', delivery: 'Today by 8 PM' },
-  { id: 'wh2', name: 'Sri Sai Krishna Traders', delivery: 'Tomorrow by 11 AM' },
-  { id: 'wh3', name: 'KVS Wholesale Mart', delivery: 'Tomorrow by 4 PM' },
-  { id: 'wh4', name: 'Ramesh Trading Co.', delivery: 'Today by 9 PM' },
-];
-
-function pricesForProduct(productId: string, basePrice: number) {
-  let hash = 0;
-  for (let i = 0; i < productId.length; i++) hash = (hash * 31 + productId.charCodeAt(i)) >>> 0;
-  return WHOLESALERS.map((w, i) => {
-    const offset = ((hash >> (i * 3)) & 0xf) - 7;
-    return { seller: w, price: Math.max(Math.round(basePrice + offset), 1) };
-  });
-}
-
+/* Wholesaler products — each product shows its ACTUAL owning wholesaler
+   (Qwipo / JIT Vendor / VFF / …). Seller association comes straight from the
+   product's sellerId, so a distributor's product can never surface here under a
+   wrong seller. */
 export default function WholesalerProductListScreen({ category, cartItems = {}, cartTotal = 0, onBack, onOpenSheet, onOpenImageSheet, onOpenDiscounts, onGoToCart, onOpenSearch }: any) {
   const [selectedVariant, setSelectedVariant] = useState<Record<string, string>>({});
-  const [selectedSeller, setSelectedSeller] = useState<Record<string, string>>({});
   const cat = category || { name: 'Cooking Oils & Ghee' };
-  const { products: availableProducts } = useAvailable();
+  const { products: availableProducts, sellers } = useAvailable();
+  const sellerById = useMemo(() => Object.fromEntries(sellers.map((s: any) => [s.id, s])), [sellers]);
   const list = useMemo(() => availableProducts.filter((p: any) => p.sellerType === 'wholesaler').slice(0, 10), [availableProducts]);
   const getQty = (pid: string, vid: string) => cartItems[`${pid}_${vid}`] || 0;
 
@@ -36,7 +24,7 @@ export default function WholesalerProductListScreen({ category, cartItems = {}, 
         <StatusBar />
         <ScreenHeader
           title={cat.name}
-          subtitle={`Multi-seller · ${list.length} products`}
+          subtitle={`${list.length} products`}
           onBack={onBack}
           right={
             <button onClick={onOpenSearch} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-lg bg-muted transition-colors hover:bg-muted/70 active:scale-95">
@@ -47,14 +35,14 @@ export default function WholesalerProductListScreen({ category, cartItems = {}, 
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {list.map((product) => {
+        {list.map((product: any) => {
           const activeVarId = selectedVariant[product.id] || product.variants[0].id;
           const variant = product.variants.find((v: any) => v.id === activeVarId);
-          const prices = pricesForProduct(product.id, variant.sellingPrice);
-          const activeSellerId = selectedSeller[product.id] || prices[0].seller.id;
-          const activePrice = prices.find((p) => p.seller.id === activeSellerId)!;
+          const seller = sellerById[product.sellerId];
+          const deliveryDay = seller?.deliveryWindows?.[0]?.day || 'Tomorrow';
           const qty = getQty(product.id, variant.id);
-          const sellerOpts = prices.slice(0, 2).map((pr) => ({ id: pr.seller.id, name: pr.seller.name, price: pr.price }));
+          // Real owning seller — the only seller this product is sold by.
+          const sellerOpts = [{ id: product.sellerId, name: product.sellerName, price: variant.sellingPrice }];
 
           return (
             <ShopProductCard
@@ -63,34 +51,36 @@ export default function WholesalerProductListScreen({ category, cartItems = {}, 
               variant={variant}
               activeVarId={activeVarId}
               onSelectVariant={(vid) => setSelectedVariant({ ...selectedVariant, [product.id]: vid })}
-              priceOverride={activePrice.price}
               qty={qty}
               onAdd={() => onOpenSheet?.(product, variant, sellerOpts)}
               onUpdateQty={() => onOpenSheet?.(product, variant, sellerOpts)}
               onImage={() => onOpenImageSheet?.(product)}
               onDiscounts={() => onOpenDiscounts?.(product, variant)}
               middle={
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {prices.slice(0, 2).map((pr) => {
-                    const on = pr.seller.id === activeSellerId;
-                    return (
-                      <button key={pr.seller.id} onClick={() => setSelectedSeller({ ...selectedSeller, [product.id]: pr.seller.id })} className={`rounded-lg border p-2 text-left ${on ? 'border-primary bg-primary/5' : 'border-border'}`}>
-                        <div className="text-sm font-semibold tabular-nums">₹{pr.price.toLocaleString('en-IN')}</div>
-                        <div className="text-xs text-muted-foreground">{pr.seller.name}</div>
-                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Package className="h-3 w-3" /> Fee: ₹{on ? 2 : 1}/kg</div>
-                      </button>
-                    );
-                  })}
+                <div className="mt-2 flex items-center justify-between rounded-lg border border-border bg-gray-50 p-2">
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-muted-foreground">Sold by</div>
+                    <div className="truncate text-sm font-medium">{product.sellerName}</div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground"><Package className="h-3 w-3" /> Fee: ₹1/kg</div>
                 </div>
               }
               footer={
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Truck className="h-3.5 w-3.5" /> Delivery by {activePrice.seller.delivery.replace(/\s+by\s+.*$/i, '')}
+                  <Truck className="h-3.5 w-3.5" /> Delivery by {deliveryDay}
                 </div>
               }
             />
           );
         })}
+
+        {list.length === 0 && (
+          <div className="pt-16 text-center">
+            <div className="text-4xl">🛒</div>
+            <div className="mt-2 text-base font-semibold">No wholesaler products here</div>
+            <div className="mt-1 text-sm text-muted-foreground">Try a different delivery location or category.</div>
+          </div>
+        )}
       </div>
 
       <CartStrip total={cartTotal} onGoToCart={onGoToCart} />

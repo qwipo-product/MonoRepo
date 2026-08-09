@@ -77,11 +77,11 @@ export default function HomeScreen({
         <button
           onClick={onOpenAddresses}
           aria-label="Change delivery address"
-          className="mx-4 mt-1 mb-2 flex items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm transition-colors hover:bg-muted/70 active:scale-95"
+          className="mx-4 mt-1 mb-2 flex w-fit max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm transition-colors hover:bg-muted/70 active:scale-95"
         >
           <MapPin className="h-4 w-4 shrink-0 text-primary" />
           <span className="shrink-0 text-muted-foreground">{t('common.deliver_to')}</span>
-          <span className="min-w-0 flex-1 truncate font-medium">{deliveryLabel || 'Lit Box, Rai Durg, Hitech City'}</span>
+          <span className="min-w-0 max-w-[10rem] truncate font-medium">{deliveryLabel || 'Lit Box, Rai Durg, Hitech City'}</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
 
