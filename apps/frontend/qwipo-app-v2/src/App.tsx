@@ -16,12 +16,13 @@ import { OnboardingScreen } from './screens/auth/OnboardingScreen';
 import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
 import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
+import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { PRODUCTS, productById } from './data/products';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses',
+  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -92,6 +93,8 @@ export default function App() {
         return <HomeScreen onNavigate={go} />;
       case 'sub:addresses':
         return <SavedAddressesScreen onBack={() => go('home')} />;
+      case 'global-search':
+        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} />;
       case 'listing':
         return (
           <CatalogScreen
