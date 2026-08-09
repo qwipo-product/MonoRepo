@@ -1,8 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
-import { EmptyState, SegmentedControl, Button } from '@mockups/ui';
+import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
-import { PRODUCTS, type Source } from '../data/products';
+import { PRODUCTS } from '../data/products';
+import { FiltersSheet } from '../sheets/FiltersSheet';
+import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
+
+const brandOf = (name: string) => name.split(' ')[0];
+const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
 
 export function CatalogScreen({
   qty,
@@ -19,9 +24,15 @@ export function CatalogScreen({
   cartCount: number;
   cartTotal: number;
 }) {
-  const [tab, setTab] = useState<Source>('distributor');
   const [variant, setVariant] = useState<Record<string, string>>({});
-  const items = useMemo(() => PRODUCTS.filter((p) => p.source === tab), [tab]);
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const items = applyFilters(PRODUCTS, filters, {
+    id: (p) => p.id,
+    brand: (p) => brandOf(p.shortName),
+    price: (p) => p.price,
+  });
+  const activeFilters = countActiveFilters(filters);
 
   return (
     <div className="flex h-full flex-col">
@@ -36,23 +47,23 @@ export function CatalogScreen({
         <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Search">
           <Search size={18} />
         </button>
-        <button className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground" aria-label="Filters">
+        <button
+          onClick={() => setFilterOpen(true)}
+          className="relative grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]"
+          aria-label="Sort and filter"
+        >
           <SlidersHorizontal size={18} />
+          {activeFilters > 0 && (
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+              {activeFilters}
+            </span>
+          )}
         </button>
       </header>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-3">
-        <SegmentedControl<Source>
-          options={[
-            { value: 'distributor', label: 'Distributors' },
-            { value: 'wholesaler', label: 'Wholesalers' },
-          ]}
-          value={tab}
-          onChange={setTab}
-        />
-
         {items.length === 0 ? (
-          <EmptyState icon="🔍" title="No products here" description="Try the other category." />
+          <EmptyState icon="🔍" title="No products here" description="New products are on the way." />
         ) : (
           items.map((p) => (
             <ProductCard
@@ -96,6 +107,14 @@ export function CatalogScreen({
           </Button>
         </div>
       )}
+
+      <FiltersSheet
+        open={filterOpen}
+        value={filters}
+        brands={BRAND_OPTIONS}
+        onApply={setFilters}
+        onClose={() => setFilterOpen(false)}
+      />
     </div>
   );
 }

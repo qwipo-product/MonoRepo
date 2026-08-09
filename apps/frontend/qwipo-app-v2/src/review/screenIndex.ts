@@ -29,7 +29,7 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     title: 'Shop',
     items: [
       { id: 'storefront', label: 'Authorised Distributor Storefront' },
-      { id: 'listing', label: 'Product List (Distributor)' },
+      { id: 'listing', label: 'Product List' },
       { id: 'distributor-units', label: 'Distributor Selling Units' },
       { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
       { id: 'wholesaler-units', label: 'Wholesaler Selling Units' },

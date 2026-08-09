@@ -26,6 +26,7 @@ export function SellerBrowseScreen({
   categories,
   brands,
   sellers = [],
+  productListId = 'listing',
   onBack,
   onNavigate,
 }: {
@@ -35,6 +36,8 @@ export function SellerBrowseScreen({
   categories: HomeCategory[];
   brands: HomeBrand[];
   sellers?: Distributor[];
+  /** Where a category/brand tap goes (distributor vs wholesaler product list). */
+  productListId?: ScreenId;
   onBack: () => void;
   onNavigate: (id: ScreenId) => void;
 }) {
@@ -88,7 +91,7 @@ export function SellerBrowseScreen({
             {catList.map((c) => (
               <button
                 key={c.id}
-                onClick={() => onNavigate('listing')}
+                onClick={() => onNavigate(productListId)}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
                 <span className="aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
@@ -103,7 +106,7 @@ export function SellerBrowseScreen({
             {brandList.map((b) => (
               <button
                 key={b.id}
-                onClick={() => onNavigate('listing')}
+                onClick={() => onNavigate(productListId)}
                 className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
               >
                 <BrandLogo src={b.logo} alt={b.name} className="h-16 w-16 rounded-full border border-border shadow-sm" />

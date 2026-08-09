@@ -34,6 +34,7 @@ import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen } from './screens/SellerBrowseScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
+import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS } from './data/home';
 import { buildCart } from './data/cart';
@@ -44,7 +45,7 @@ import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/address
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'wholesaler-categories', 'storefront',
+  'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
@@ -171,10 +172,15 @@ export default function App() {
             tabs={['categories', 'brands']}
             categories={WHOLESALER_CATEGORIES}
             brands={BRANDS}
+            productListId="wholesaler-products"
             onBack={() => go('home')}
             onNavigate={go}
           />
         );
+      case 'wholesaler-products':
+        return <WholesalerProductsScreen onBack={() => go('wholesaler-categories')} onGoToCart={() => go('cart')} />;
+      case 'wholesaler-units':
+        return <WholesalerProductsScreen initialSheet onBack={() => go('wholesaler-categories')} onGoToCart={() => go('cart')} />;
       case 'storefront':
         return <StorefrontScreen onBack={() => go('home')} onNavigate={go} />;
       case 'listing':
