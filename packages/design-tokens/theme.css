@@ -251,7 +251,7 @@
   .type-micro   { font-size: 10px; font-weight: 600; line-height: 1.3; letter-spacing: 0.06em; text-transform: uppercase; }
   .type-price   { font-size: 18px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .type-price-sm{ font-size: 14px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; }
-  .type-button  { font-size: 14px; font-weight: 600; line-height: 1; }
+  .type-button  { font-size: 14px; font-weight: 700; line-height: 1; }
 }
 
 /* ---- Sheet / overlay animations (used by @mockups/ui Sheet) ------------- */

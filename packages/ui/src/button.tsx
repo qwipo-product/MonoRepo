@@ -15,7 +15,7 @@ const SECONDARY = 'border border-border bg-card text-foreground hover:bg-muted';
 const SIZE_MD = 'h-11 gap-2 px-4 text-sm';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold ' +
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-bold ' +
     'transition-[color,background-color,transform] duration-150 ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
     'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none',

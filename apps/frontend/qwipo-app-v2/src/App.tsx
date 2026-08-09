@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { type ScreenId } from './review/screenIndex';
-import { StatusBar } from './components/StatusBar';
+import { type Shell } from './review/ShellSwitcher';
+import { ShellChrome } from './shells/ShellChrome';
 import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
@@ -29,6 +30,9 @@ function readInitialScreen(): ScreenId {
 export default function App() {
   const { isDark, toggleTheme } = useTheme();
   const [screen, setScreen] = useState<ScreenId>(readInitialScreen);
+  const [shell, setShell] = useState<Shell>(() =>
+    new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
+  );
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [couponId, setCouponId] = useState<string | null>(null);
@@ -40,12 +44,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep the URL in sync so any screen is a shareable link.
+  // Keep the URL in sync so any screen + surface is a shareable link.
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set('screen', screen);
+    url.searchParams.set('shell', shell);
     window.history.replaceState(null, '', url);
-  }, [screen]);
+  }, [screen, shell]);
 
   const setLineQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: Math.max(0, n) }));
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
@@ -105,13 +110,20 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh items-start justify-center gap-8 bg-background-subtle p-6">
-      <FlowIndex active={screen} built={BUILT} onPick={go} isDark={isDark} onToggleTheme={toggleTheme} />
+      <FlowIndex
+        active={screen}
+        built={BUILT}
+        onPick={go}
+        shell={shell}
+        onShellChange={setShell}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+      />
 
       <main className="sticky top-6">
         {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it */}
         <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
-          <StatusBar />
-          <div className="min-h-0 flex-1">{phoneScreen}</div>
+          <ShellChrome shell={shell}>{phoneScreen}</ShellChrome>
 
           <AddToCartSheet
             product={sheetProduct}

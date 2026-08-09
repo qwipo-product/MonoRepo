@@ -103,7 +103,7 @@ export const typography = {
   /** Primary price — tabular figures so columns align. */
   price: { size: 18, weight: fontWeight.bold, lineHeight: 1.2, tabular: true },
   priceSm: { size: 14, weight: fontWeight.semibold, lineHeight: 1.3, tabular: true },
-  button: { size: 14, weight: fontWeight.semibold, lineHeight: 1 },
+  button: { size: 14, weight: fontWeight.bold, lineHeight: 1 },
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

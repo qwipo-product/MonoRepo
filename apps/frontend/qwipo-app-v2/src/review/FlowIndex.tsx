@@ -1,30 +1,34 @@
 import { Moon, Sun } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
+import { ShellSwitcher, type Shell } from './ShellSwitcher';
 
-/* Review-only navigator: numbered, grouped index of every screen. Click any to
-   jump straight to it (and the URL updates to ?screen=<id> for shareable
-   links). Not shipped in either surface. */
+/* Review-only navigator: switch mockup surface (Buyer App / Paytm Mini) at the
+   top, then click any screen to jump to it. The URL tracks ?shell= & ?screen=
+   for shareable links. Not shipped in either surface. */
 export default function FlowIndex({
   active,
   built,
   onPick,
+  shell,
+  onShellChange,
   isDark,
   onToggleTheme,
 }: {
   active: ScreenId;
   built: Set<ScreenId>;
   onPick: (id: ScreenId) => void;
+  shell: Shell;
+  onShellChange: (s: Shell) => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }) {
   let n = 0;
   return (
     <aside className="max-h-dvh w-80 shrink-0 overflow-y-auto p-6">
-      <div className="flex items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium">
-          <span className="h-2 w-2 rounded-full bg-success" />
-          Qwipo · B2B Commerce
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <ShellSwitcher value={shell} onChange={onShellChange} />
         </div>
         <button
           onClick={onToggleTheme}
@@ -35,8 +39,14 @@ export default function FlowIndex({
         </button>
       </div>
 
-      <h1 className="mt-3 text-3xl font-bold tracking-tight">Qwipo Buyer App</h1>
-      <p className="mt-1 text-sm text-foreground-secondary">Click any screen to jump to it.</p>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight">
+        {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}
+      </h1>
+      <p className="mt-1 text-sm text-foreground-secondary">
+        {shell === 'paytm'
+          ? 'Same screens, inside the Paytm WebView container.'
+          : 'Click any screen to jump to it.'}
+      </p>
 
       <div className="mt-5 space-y-5">
         {SCREEN_GROUPS.map((group) => (
