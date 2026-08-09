@@ -20,9 +20,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     title: 'Browse',
     items: [
       { id: 'home', label: 'Home · Distributors & Wholesalers' },
-      { id: 'distributors-list', label: 'All Authorised Distributors (tabbed)' },
-      { id: 'wholesaler-categories', label: 'Wholesaler · Groceries / FMCG' },
-      { id: 'all-brands', label: 'All Brands (Wholesalers)' },
+      { id: 'distributors-list', label: 'Authorised Distributors (Categories / Brands / Sellers)' },
+      { id: 'wholesaler-categories', label: 'Wholesalers (Categories / Brands)' },
       { id: 'global-search', label: 'Global Search' },
     ],
   },

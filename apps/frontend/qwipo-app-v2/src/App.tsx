@@ -32,8 +32,9 @@ import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
 import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
-import { DistributorsListScreen } from './screens/DistributorsListScreen';
+import { SellerBrowseScreen } from './screens/SellerBrowseScreen';
 import { PRODUCTS, productById } from './data/products';
+import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS } from './data/home';
 import { buildCart } from './data/cart';
 import { ORDERS } from './data/orders';
 import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/addresses';
@@ -41,7 +42,8 @@ import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/address
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search', 'distributors-list',
+  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
+  'distributors-list', 'wholesaler-categories',
   'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
@@ -148,7 +150,30 @@ export default function App() {
       case 'global-search':
         return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} />;
       case 'distributors-list':
-        return <DistributorsListScreen onBack={() => go('home')} onNavigate={go} />;
+        return (
+          <SellerBrowseScreen
+            title="Authorised Distributors"
+            subtitle="Verified sellers near you"
+            tabs={['categories', 'brands', 'sellers']}
+            categories={DIST_CATEGORIES}
+            brands={BRANDS}
+            sellers={DISTRIBUTORS}
+            onBack={() => go('home')}
+            onNavigate={go}
+          />
+        );
+      case 'wholesaler-categories':
+        return (
+          <SellerBrowseScreen
+            title="Wholesalers"
+            subtitle="Bulk sellers near you"
+            tabs={['categories', 'brands']}
+            categories={WHOLESALER_CATEGORIES}
+            brands={BRANDS}
+            onBack={() => go('home')}
+            onNavigate={go}
+          />
+        );
       case 'listing':
         return (
           <CatalogScreen

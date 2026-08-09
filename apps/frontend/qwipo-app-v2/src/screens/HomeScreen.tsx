@@ -120,7 +120,7 @@ export function HomeScreen({
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="Categories" onSeeAll={() => onNavigate('wholesaler-categories')} />
+              <SectionHeader title="Categories" onSeeAll={() => onNavigate('distributors-list')} />
               <div className={rail}>
                 {DIST_CATEGORIES.map((c) => (
                   <CategoryTile key={c.id} cat={c} onClick={() => onNavigate('listing')} />
@@ -129,7 +129,7 @@ export function HomeScreen({
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="All Brands" onSeeAll={() => onNavigate('all-brands')} />
+              <SectionHeader title="All Brands" onSeeAll={() => onNavigate('distributors-list')} />
               <div className="grid grid-cols-4 gap-3 px-4">
                 {BRANDS.map((b) => (
                   <button key={b.id} onClick={() => onNavigate('listing')} className="flex flex-col items-center gap-1.5">
@@ -157,7 +157,7 @@ export function HomeScreen({
             </section>
 
             <section className="space-y-3">
-              <SectionHeader title="Top Brands" onSeeAll={() => onNavigate('all-brands')} />
+              <SectionHeader title="Top Brands" onSeeAll={() => onNavigate('wholesaler-categories')} />
               <div className={rail}>
                 {BRANDS.map((b) => (
                   <button key={b.id} onClick={() => onNavigate('listing')} className="flex w-16 shrink-0 flex-col items-center gap-1.5">
