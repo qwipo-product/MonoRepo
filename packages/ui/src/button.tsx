@@ -1,45 +1,77 @@
-// shadcn-style Button — foundational primitive.
-// Variants follow the DS rule: only weight 500 ("font-medium"), no font-bold.
+// Button — foundational primitive, bound to @mockups/design-tokens.
+// Mobile-first: default height is a 44px touch target; variants read from
+// semantic tokens (bg-primary, bg-success, bg-error, bg-primary-soft).
+//
+// Old variant/size names (default, outline) are kept as aliases so the
+// retiring qwipo-app keeps rendering while qwipo-app-v2 is built.
 
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './cn';
 
+const PRIMARY =
+  'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active';
+const SECONDARY = 'border border-border bg-card text-foreground hover:bg-muted';
+const SIZE_MD = 'h-11 gap-2 px-4 text-sm';
+
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:pointer-events-none',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold ' +
+    'transition-[color,background-color,transform] duration-150 ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
+    'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/95',
-        outline:
-          'border border-[var(--color-border-token)] bg-background hover:bg-muted',
-        ghost: 'bg-transparent hover:bg-muted',
-        destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        success: 'bg-success text-white hover:bg-success/90',
+        primary: PRIMARY,
+        default: PRIMARY, // alias
+        secondary: SECONDARY,
+        outline: SECONDARY, // alias
+        ghost: 'bg-transparent text-foreground hover:bg-muted',
+        soft: 'bg-primary-soft text-primary-soft-foreground hover:opacity-90', // tonal ("Discounts")
+        destructive: 'bg-error text-white hover:opacity-90',
+        success: 'bg-success text-white hover:opacity-90',
       },
       size: {
-        sm: 'h-8 px-3 text-xs',
-        default: 'h-9 px-4',
-        lg: 'h-11 px-6 text-base',
-        icon: 'h-9 w-9 p-0',
+        sm: 'h-9 gap-1.5 px-3 text-xs',
+        md: SIZE_MD,
+        default: SIZE_MD, // alias
+        lg: 'h-12 gap-2 px-6 text-base',
+        icon: 'h-11 w-11 p-0',
       },
+      fullWidth: { true: 'w-full', false: '' },
     },
-    defaultVariants: { variant: 'default', size: 'default' },
+    defaultVariants: { variant: 'primary', size: 'md', fullWidth: false },
   }
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'>,
+    VariantProps<typeof buttonVariants> {
+  /** Shows a spinner and disables the button. */
+  loading?: boolean;
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+    />
+  );
+}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => (
+  ({ className, variant, size, fullWidth, loading, disabled, children, ...props }, ref) => (
     <button
       ref={ref}
-      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       {...props}
-    />
+    >
+      {loading && <Spinner />}
+      {children}
+    </button>
   )
 );
 Button.displayName = 'Button';

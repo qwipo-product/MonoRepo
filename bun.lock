@@ -53,6 +53,31 @@
         "vite": "catalog:",
       },
     },
+    "apps/frontend/qwipo-app-v2": {
+      "name": "@mockups/qwipo-app-v2",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/components": "workspace:*",
+        "@mockups/design-tokens": "workspace:*",
+        "@mockups/types": "workspace:*",
+        "@mockups/ui": "workspace:*",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@tailwindcss/vite": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "eslint": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
     "apps/frontend/qwipo-buyer-app": {
       "name": "@mockups/qwipo-buyer-app",
       "version": "0.0.0",
@@ -78,6 +103,35 @@
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
         "vite": "catalog:",
+      },
+    },
+    "packages/components": {
+      "name": "@mockups/components",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/types": "workspace:*",
+        "@mockups/ui": "workspace:*",
+      },
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@types/react": "catalog:",
+        "eslint": "catalog:",
+        "react": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "*",
+      },
+    },
+    "packages/design-tokens": {
+      "name": "@mockups/design-tokens",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "eslint": "catalog:",
+        "typescript": "catalog:",
       },
     },
     "packages/eslint-config": {
@@ -258,6 +312,10 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
+    "@mockups/components": ["@mockups/components@workspace:packages/components"],
+
+    "@mockups/design-tokens": ["@mockups/design-tokens@workspace:packages/design-tokens"],
+
     "@mockups/eslint-config": ["@mockups/eslint-config@workspace:packages/eslint-config"],
 
     "@mockups/i18n": ["@mockups/i18n@workspace:packages/i18n"],
@@ -267,6 +325,8 @@
     "@mockups/mock-data": ["@mockups/mock-data@workspace:packages/mock-data"],
 
     "@mockups/qwipo-app": ["@mockups/qwipo-app@workspace:apps/frontend/qwipo-app"],
+
+    "@mockups/qwipo-app-v2": ["@mockups/qwipo-app-v2@workspace:apps/frontend/qwipo-app-v2"],
 
     "@mockups/qwipo-buyer-app": ["@mockups/qwipo-buyer-app@workspace:apps/frontend/qwipo-buyer-app"],
 

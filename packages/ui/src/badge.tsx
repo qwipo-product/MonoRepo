@@ -1,19 +1,26 @@
-// shadcn-style Badge primitive. Variants follow the DS semantic palette.
+// Badge — status pill. Semantic variants read from the status tokens
+// (success / warning / error / info / neutral / accent), so a "delivered"
+// badge is the same green everywhere instead of hand-picked emerald shades.
+
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase whitespace-nowrap',
+  'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ' +
+    'uppercase tracking-wider whitespace-nowrap',
   {
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground',
-        secondary: 'bg-muted text-foreground',
-        outline: 'border border-[var(--color-border-token)] text-foreground',
-        success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-        warning: 'bg-amber-50 text-amber-700 border border-amber-200',
-        danger: 'bg-red-50 text-red-700 border border-red-200',
+        neutral: 'bg-neutral-subtle text-neutral-foreground border border-neutral-border',
+        secondary: 'bg-muted text-foreground', // alias / low-emphasis
+        outline: 'border border-border text-foreground',
+        success: 'bg-success-subtle text-success-foreground border border-success-border',
+        warning: 'bg-warning-subtle text-warning-foreground border border-warning-border',
+        danger: 'bg-error-subtle text-error-foreground border border-error-border',
+        info: 'bg-info-subtle text-info-foreground border border-info-border',
+        accent: 'bg-accent-subtle text-accent-foreground border border-accent-border',
         destructive: 'bg-destructive text-destructive-foreground',
       },
     },

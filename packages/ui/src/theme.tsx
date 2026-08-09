@@ -21,10 +21,19 @@ interface ThemeCtx {
 
 const Ctx = createContext<ThemeCtx | null>(null);
 
+/**
+ * Dark mode is driven by a `.dark` class on <html> — that is the contract
+ * @mockups/design-tokens/theme.css reads (`@custom-variant dark (&:is(.dark *))`).
+ *
+ * The previous implementation set only a `data-theme` attribute, which the CSS
+ * never read, so the in-app toggle changed nothing. We now toggle the class
+ * (and keep the attribute for any consumer that reads it).
+ */
 function applyToDom(next: ThemeMode) {
   if (typeof document === 'undefined') return;
-  document.documentElement.setAttribute('data-theme', next);
-  document.body.setAttribute('data-theme', next);
+  const root = document.documentElement;
+  root.classList.toggle('dark', next === 'dark');
+  root.setAttribute('data-theme', next);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -32,8 +41,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined') return 'light';
     const saved = window.localStorage.getItem(LS_KEY);
     if (saved === 'dark' || saved === 'light') return saved;
-    // Design reference is light-only — default to light regardless of OS
-    // preference. Dark mode stays available via the in-app toggle.
+    // Design reference is light-first — default to light regardless of OS
+    // preference. Dark stays available via the in-app toggle.
     return 'light';
   });
 
