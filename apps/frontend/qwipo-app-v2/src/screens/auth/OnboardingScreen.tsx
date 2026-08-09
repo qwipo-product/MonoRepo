@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button } from '@mockups/ui';
-import { Field, SelectField, BUSINESS_TYPES, controlClass } from '../../components/formbits';
+import { Field, controlClass } from '../../components/formbits';
+import { BusinessTypeField } from '../../components/BusinessTypeField';
 
 export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; onProceed: () => void }) {
   const [location, setLocation] = useState('');
@@ -48,14 +49,7 @@ export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; on
           />
         </Field>
 
-        <SelectField
-          label="Business Type"
-          required
-          placeholder="Select business type"
-          value={businessType}
-          options={BUSINESS_TYPES}
-          onChange={setBusinessType}
-        />
+        <BusinessTypeField required value={businessType} onChange={setBusinessType} />
 
         <img src="/onboarding-illustration.png" alt="" className="mx-auto max-h-52 object-contain" />
       </div>

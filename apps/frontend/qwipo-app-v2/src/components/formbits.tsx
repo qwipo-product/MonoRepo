@@ -42,21 +42,7 @@ export function Field({
 export const controlClass =
   'flex h-11 w-full items-center rounded-md border border-border bg-card px-3 text-sm text-foreground';
 
-/** Business types — verbatim from the source picker. */
-export const BUSINESS_TYPES = [
-  'Kirana',
-  'Restaurant',
-  'Caterers',
-  'Tiffin Centers',
-  'PG/Hostel',
-  'Wholesale',
-  'Bakery',
-  'Sweet House',
-  'Medicals',
-  'Supermarket',
-];
-
-/** Select-style control that opens a bottom Sheet of options (mirrors BusinessTypeSheet). */
+/** Select-style control that opens a bottom Sheet of a simple text option list. */
 export function SelectField({
   label,
   required,

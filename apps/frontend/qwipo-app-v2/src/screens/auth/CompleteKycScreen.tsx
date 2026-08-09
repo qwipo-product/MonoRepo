@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ChevronLeft, MapPin, Check } from 'lucide-react';
 import { Button } from '@mockups/ui';
-import { Field, SelectField, BUSINESS_TYPES, controlClass } from '../../components/formbits';
+import { Field, controlClass } from '../../components/formbits';
+import { BusinessTypeField } from '../../components/BusinessTypeField';
 
 const DOC_FIELDS = [
   { key: 'shopImage', label: 'Shop Image', required: true },
@@ -63,13 +64,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
             </Field>
-            <SelectField
-              label="Business Type"
-              placeholder="Select business type"
-              value={businessType}
-              options={BUSINESS_TYPES}
-              onChange={setBusinessType}
-            />
+            <BusinessTypeField value={businessType} onChange={setBusinessType} />
             <Field label="Shop Location">
               <div className={controlClass}>
                 <input
