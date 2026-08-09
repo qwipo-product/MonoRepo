@@ -4,6 +4,8 @@ import FlowIndex from './review/FlowIndex';
 import { type ScreenId } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { ShellChrome } from './shells/ShellChrome';
+import { BottomNav } from './components/BottomNav';
+import { HomeScreen } from './screens/HomeScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
@@ -18,8 +20,11 @@ import { PRODUCTS, productById } from './data/products';
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'listing', 'cart', 'distributor-units',
+  'home', 'listing', 'cart', 'distributor-units',
 ]);
+
+// Root screens get the bottom tab bar (buyer shell); pushed screens don't.
+const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile']);
 
 function readInitialScreen(): ScreenId {
   const s = new URLSearchParams(window.location.search).get('screen');
@@ -82,6 +87,8 @@ export default function App() {
         return <CompleteKycScreen onCancel={() => go('listing')} onRegister={() => go('kyc-success')} />;
       case 'kyc-success':
         return <KycSuccessScreen onPlaceOrder={() => go('listing')} />;
+      case 'home':
+        return <HomeScreen onNavigate={go} />;
       case 'listing':
         return (
           <CatalogScreen
@@ -109,7 +116,7 @@ export default function App() {
   })();
 
   return (
-    <div className="flex min-h-dvh items-start justify-center gap-8 bg-background-subtle p-6">
+    <div className="flex h-dvh items-center justify-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
       <FlowIndex
         active={screen}
         built={BUILT}
@@ -120,10 +127,19 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="sticky top-6">
+      <main className="shrink-0">
         {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it */}
         <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
-          <ShellChrome shell={shell}>{phoneScreen}</ShellChrome>
+          <ShellChrome
+            shell={shell}
+            bottomNav={
+              ROOT_SCREENS.has(screen) ? (
+                <BottomNav active={screen} cartCount={cartCount} onNavigate={go} />
+              ) : undefined
+            }
+          >
+            {phoneScreen}
+          </ShellChrome>
 
           <AddToCartSheet
             product={sheetProduct}

@@ -91,7 +91,7 @@ export function Sheet({
           </div>
         )}
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
 
         {footer && (
           <div className="border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

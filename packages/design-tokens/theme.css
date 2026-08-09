@@ -245,6 +245,16 @@
   button {
     font-family: inherit;
   }
+
+  /* Baseline keyboard focus for any interactive control not handled by a
+     primitive (hand-rolled icon buttons, tiles, links). Primitives that set
+     their own ring use `focus-visible:outline-none`, which wins over this. */
+  button:focus-visible,
+  a:focus-visible,
+  [role='button']:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -275,4 +285,8 @@
 @layer utilities {
   .animate-sheet { animation: qwipo-sheet-in 0.22s cubic-bezier(0, 0, 0.2, 1); }
   .animate-overlay { animation: qwipo-overlay-in 0.2s ease-out; }
+
+  /* Scroll without a visible scrollbar (device-like). */
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }

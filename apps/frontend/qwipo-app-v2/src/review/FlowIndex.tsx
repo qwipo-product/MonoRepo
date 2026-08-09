@@ -25,7 +25,7 @@ export default function FlowIndex({
 }) {
   let n = 0;
   return (
-    <aside className="max-h-dvh w-80 shrink-0 overflow-y-auto p-6">
+    <aside className="no-scrollbar max-h-dvh w-80 shrink-0 overflow-y-auto p-6">
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <ShellSwitcher value={shell} onChange={onShellChange} />

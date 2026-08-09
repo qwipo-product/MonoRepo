@@ -41,7 +41,7 @@ export function CatalogScreen({
         </button>
       </header>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-3">
         <SegmentedControl<Source>
           options={[
             { value: 'distributor', label: 'Distributors' },

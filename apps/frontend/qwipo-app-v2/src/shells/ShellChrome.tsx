@@ -6,7 +6,15 @@ import type { Shell } from '../review/ShellSwitcher';
 /* Wraps a screen in the selected surface's chrome:
    • buyer  → the standalone app (iOS status bar; screens carry their own headers)
    • paytm  → the Paytm Mini WebView container bar over the same screen. */
-export function ShellChrome({ shell, children }: { shell: Shell; children: ReactNode }) {
+export function ShellChrome({
+  shell,
+  bottomNav,
+  children,
+}: {
+  shell: Shell;
+  bottomNav?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <>
       <StatusBar />
@@ -34,6 +42,7 @@ export function ShellChrome({ shell, children }: { shell: Shell; children: React
       )}
 
       <div className="min-h-0 flex-1">{children}</div>
+      {shell === 'buyer' && bottomNav}
     </>
   );
 }

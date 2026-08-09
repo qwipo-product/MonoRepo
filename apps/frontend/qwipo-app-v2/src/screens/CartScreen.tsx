@@ -48,7 +48,7 @@ export function CartScreen({
         />
       ) : (
         <>
-          <div className="flex-1 space-y-4 overflow-y-auto p-3">
+          <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto p-3">
             {/* items */}
             <div className="space-y-2.5">
               {lines.map(({ product, qty: q }) => (
