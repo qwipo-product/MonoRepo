@@ -3,6 +3,7 @@ import BuyerShell from './shells/BuyerShell';
 import PaytmShell from './shells/PaytmShell';
 import ShellSwitcher, { type Shell } from './review/ShellSwitcher';
 import FlowIndex from './review/FlowIndex';
+import PhoneBezel from './review/PhoneBezel';
 import type { ScreenId } from './review/screenIndex';
 import SplashScreen from './screens-buyer-only/SplashScreen';
 import LoginScreen from './screens-buyer-only/LoginScreen';
@@ -42,7 +43,7 @@ import DiscountsSheet from './components/DiscountsSheet';
 import ProductImageSheet from './components/ProductImageSheet';
 import CartValidationSheet from './components/CartValidationSheet';
 import { products, seller, sellers, orders } from './data';
-import { LocationContext, addressById, deliveryLocations } from './data/availability';
+import { LocationContext, addressById, availabilityFor, deliveryLocations } from './data/availability';
 
 type OnboardingData = { location: string; businessName: string; businessType: string };
 type CartLine = { product: any; variant: any; qty: number; price: number };
@@ -50,7 +51,7 @@ type SheetState = { product: any; variant: any; sellerOptions: any; hidePrice?: 
 
 const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'home', 'home-distributors-only', 'home-wholesalers-only',
+  'home',
   'global-search', 'distributors-list', 'wholesaler-categories', 'all-brands',
   'storefront', 'listing', 'reorder',
   'wholesaler-products', 'distributor-units', 'wholesaler-units',
@@ -59,9 +60,6 @@ const BUILT = new Set<ScreenId>([
   'profile', 'notifications', 'settings',
   'sub:business-details', 'sub:credit', 'sub:payment', 'sub:help', 'sub:terms', 'sub:addresses', 'sub:language',
 ]);
-const HOME_AVAILABILITY: Record<string, 'both' | 'distributors' | 'wholesalers'> = {
-  home: 'both', 'home-distributors-only': 'distributors', 'home-wholesalers-only': 'wholesalers',
-};
 const AUTH = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
 
 /* One codebase, two chrome shells. Home roots / storefront / reorder render in
@@ -239,7 +237,9 @@ export default function App() {
 
   const CurrentShell = shell === 'paytm' ? PaytmShell : BuyerShell;
   const shellContent = (() => {
-    if (screen in HOME_AVAILABILITY) return <HomeScreen sellerAvailability={HOME_AVAILABILITY[screen]} {...homeProps} />;
+    // Home availability follows the selected delivery address (addr1 → both,
+    // addr2 → distributors, addr3 → wholesalers).
+    if (screen === 'home') return <HomeScreen sellerAvailability={availabilityFor(addressId)} {...homeProps} />;
     if (screen === 'storefront') return <SellerStorefront distributor={storefrontDistributor} onBack={() => go('home')} onSelectCategory={(c: any) => openListing({ ...c, fromStorefront: true }, 'storefront')} onOpenSearch={() => go('global-search')} />;
     if (screen === 'reorder') return <ReorderScreen cartItems={cartItems} cartTotal={cartTotal} onOpenSheet={openSheet} onUpdateQty={updateQty} onGoToCart={() => go('cart')} onOpenImageSheet={(p: any) => setExtra({ kind: 'image', product: p })} onOpenDiscounts={(p: any, v: any) => setExtra({ kind: 'discounts', variant: v })} />;
     if (screen === 'profile') return <ProfileScreen onOpenSubPage={(id: ScreenId) => go(id)} onOpenNotifications={() => go('notifications')} onSignOut={() => { setCart({}); go('splash'); }} />;
@@ -256,7 +256,7 @@ export default function App() {
   // reorder render inside BuyerShell. Paytm mini-app owns uniform container
   // chrome (no header/tab bar), so EVERY screen renders inside PaytmShell.
   const frame = bareScreen && shell !== 'paytm' ? (
-    <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+    <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground">
       {bareScreen}
       {overlays}
     </div>
@@ -268,11 +268,11 @@ export default function App() {
 
   return (
     <LocationContext.Provider value={{ addressId, setAddressId }}>
-      <div className="flex min-h-dvh bg-shell">
+      <div className="flex min-h-dvh items-center justify-center gap-8 bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6">
         <FlowIndex active={screen} built={BUILT} onPick={handlePick} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
+        <main className="flex flex-col items-center gap-4">
           {showSwitcher && <ShellSwitcher value={shell} onChange={setShell} />}
-          {frame}
+          <PhoneBezel>{frame}</PhoneBezel>
         </main>
       </div>
     </LocationContext.Provider>

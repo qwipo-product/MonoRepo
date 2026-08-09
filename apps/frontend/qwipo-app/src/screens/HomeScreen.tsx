@@ -19,10 +19,10 @@ const {
   distributorCategories,
 } = homepage;
 
-/* Home hub. Three review variants via `sellerAvailability`:
-   both (home) · distributors only · wholesalers only. Bespoke sticky header +
-   two tabbed feeds. Header/feeds own their layout; BuyerShell provides the
-   status bar + bottom tabs. Parity port of qwipo-buyer-app/HomeScreen. */
+/* Home hub. `sellerAvailability` (both · distributors · wholesalers) follows the
+   selected delivery address and gates the two tabbed feeds. Bespoke sticky header;
+   header/feeds own their layout, BuyerShell provides the status bar + bottom tabs.
+   Parity port of qwipo-buyer-app/HomeScreen. */
 export default function HomeScreen({
   sellerAvailability = 'both',
   kycPending,
@@ -46,11 +46,15 @@ export default function HomeScreen({
   const distributorsAvailable = sellerAvailability !== 'wholesalers';
   const wholesalersAvailable = sellerAvailability !== 'distributors';
   const [tab, setTab] = useState(distributorsAvailable ? 'distributors' : 'wholesalers');
+  // Availability changes with the delivery address, but `tab` is seeded once —
+  // force the tab onto the surviving feed when only one seller type is available
+  // (e.g. address switches to wholesalers-only while the distributors tab was open).
+  const activeTab = distributorsAvailable && wholesalersAvailable ? tab : distributorsAvailable ? 'distributors' : 'wholesalers';
 
   // Sellers serviceable to the current delivery location (mirrors bms bootstrap).
   const { distributors } = useAvailable();
   const visibleDistributors = distributors
-    .filter((d: any) => (tab === 'distributors' ? d.isAuthorised : true))
+    .filter((d: any) => (activeTab === 'distributors' ? d.isAuthorised : true))
     .slice(0, 16);
 
   return (
@@ -98,14 +102,14 @@ export default function HomeScreen({
 
         <div className="flex gap-2 px-4 pb-3">
           <TabButton
-            active={tab === 'distributors'}
+            active={activeTab === 'distributors'}
             disabled={!distributorsAvailable}
             img="/home-category-cards/distributors.png"
             label={t('home.authorised_distributors')}
             onClick={() => distributorsAvailable && setTab('distributors')}
           />
           <TabButton
-            active={tab === 'wholesalers'}
+            active={activeTab === 'wholesalers'}
             disabled={!wholesalersAvailable}
             img="/home-category-cards/wholesalers.png"
             label={t('home.wholesalers')}
@@ -131,7 +135,7 @@ export default function HomeScreen({
       )}
 
       <div className="mt-4 space-y-6">
-        {tab === 'distributors' ? (
+        {activeTab === 'distributors' ? (
           <DistributorsView
             visibleDistributors={visibleDistributors}
             onSelectDistributor={onSelectDistributor}
