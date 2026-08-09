@@ -35,6 +35,7 @@ import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
+import { ReorderScreen } from './screens/ReorderScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -48,7 +49,7 @@ const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
-  'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
+  'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
 ]);
@@ -264,6 +265,8 @@ export default function App() {
         return <CouponsScreen onBack={() => go('order-summary')} onApply={() => go('order-summary')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
+      case 'reorder':
+        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} />;
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} />;
       case 'notifications':
