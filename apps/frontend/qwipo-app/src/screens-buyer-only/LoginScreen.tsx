@@ -18,12 +18,12 @@ export default function LoginScreen({ onSubmit }: { onSubmit: (phone: string) =>
         </div>
       </div>
 
-      {/* Bottom 50% — content */}
-      <div className="flex flex-1 flex-col rounded-t-xl border-t border-border p-5">
+      {/* Bottom 50% — elevated sheet raised above the tinted app bg */}
+      <div className="flex flex-1 flex-col rounded-t-[24px] border-t border-border bg-background p-6 pb-8 shadow-[var(--shadow-card)]">
         <h1 className="text-xl font-semibold">Login</h1>
         <p className="mt-1 text-sm text-muted-foreground">Please enter your phone number</p>
 
-        <div className="mt-5 flex h-12 items-center rounded-md border border-border bg-input-background px-3">
+        <div className="mt-5 flex h-[52px] items-center rounded-xl border border-border bg-background px-3">
           <button className="flex items-center gap-1 text-sm font-medium" type="button">
             +91
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -42,17 +42,20 @@ export default function LoginScreen({ onSubmit }: { onSubmit: (phone: string) =>
 
         <Button
           size="lg"
-          className="mt-5 w-full"
+          className={`mt-5 w-full rounded-[14px] disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 ${
+            valid ? 'shadow-[0_6px_18px_rgba(37,99,235,0.3)]' : ''
+          }`}
           disabled={!valid}
           onClick={() => onSubmit(phone)}
         >
           Get OTP
         </Button>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        <p className="mt-auto pt-[18px] text-center text-xs text-gray-600">
           By continuing, you agree to our{' '}
-          <a className="text-primary">Terms of Service</a> and{' '}
-          <a className="text-primary">Privacy Policy</a>
+          <a className="font-semibold text-primary underline underline-offset-2">Terms of Service</a>{' '}
+          and{' '}
+          <a className="font-semibold text-primary underline underline-offset-2">Privacy Policy</a>
         </p>
       </div>
     </div>

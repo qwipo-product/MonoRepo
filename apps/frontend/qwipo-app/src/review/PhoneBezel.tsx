@@ -5,10 +5,16 @@ import type { ReactNode } from 'react';
    in either surface — purely presentation chrome for the review harness. */
 export default function PhoneBezel({ children }: { children: ReactNode }) {
   return (
-    <div className="relative shrink-0 rounded-[3rem] bg-neutral-950 p-3 shadow-2xl ring-1 ring-black/10">
+    <div
+      className="relative shrink-0 rounded-[48px] bg-[#1a1a1a] p-3"
+      style={{
+        boxShadow:
+          '0 50px 100px -20px rgba(50, 50, 93, 0.25), 0 30px 60px -30px rgba(0, 0, 0, 0.3), inset 0 0 0 2px #2d2d2d',
+      }}
+    >
       {children}
       {/* Notch — pill cutout centered over the status bar */}
-      <div className="pointer-events-none absolute left-1/2 top-5 z-30 h-7 w-28 -translate-x-1/2 rounded-full bg-neutral-950" />
+      <div className="pointer-events-none absolute left-1/2 top-[14px] z-30 h-7 w-[110px] -translate-x-1/2 rounded-full bg-[#1a1a1a]" />
     </div>
   );
 }

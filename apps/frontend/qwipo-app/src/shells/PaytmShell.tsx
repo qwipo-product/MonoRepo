@@ -15,7 +15,7 @@ export default function PaytmShell({
   children: ReactNode;
 }) {
   return (
-    <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+    <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] bg-background text-foreground shadow-xl">
       <div className="flex-shrink-0 flex h-10 items-center bg-muted px-4 text-xs text-muted-foreground">
         Paytm container chrome (not ours)
       </div>

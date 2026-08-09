@@ -256,7 +256,7 @@ export default function App() {
   // reorder render inside BuyerShell. Paytm mini-app owns uniform container
   // chrome (no header/tab bar), so EVERY screen renders inside PaytmShell.
   const frame = bareScreen && shell !== 'paytm' ? (
-    <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[2rem] bg-background text-foreground">
+    <div className="relative h-[844px] w-[390px] overflow-hidden rounded-[38px] bg-background text-foreground">
       {bareScreen}
       {overlays}
     </div>
