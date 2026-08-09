@@ -25,7 +25,7 @@ export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; on
         <h1 className="text-lg font-semibold">On Boarding</h1>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 pt-2">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-2">
         <Field label="Shop Location" required>
           <div className={controlClass}>
             <input
@@ -51,7 +51,9 @@ export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; on
 
         <BusinessTypeField required value={businessType} onChange={setBusinessType} />
 
-        <img src="/onboarding-illustration.png" alt="" className="mx-auto max-h-52 object-contain" />
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <img src="/onboarding-illustration.png" alt="" className="h-full w-full object-contain" />
+        </div>
       </div>
 
       <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
