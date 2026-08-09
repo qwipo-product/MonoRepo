@@ -42,7 +42,6 @@ export default function App() {
   );
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
-  const [couponId, setCouponId] = useState<string | null>(null);
 
   // Deep-link parity: ?screen=distributor-units opens the sheet over the listing.
   useEffect(() => {
@@ -109,11 +108,10 @@ export default function App() {
       case 'cart':
         return (
           <CartScreen
-            qty={qty}
-            onSetQty={setLineQty}
-            couponId={couponId}
-            onSelectCoupon={(id) => setCouponId((c) => (c === id ? null : id))}
-            onBack={() => go('listing')}
+            onBack={() => go('home')}
+            onCheckout={() => go('order-summary')}
+            onViewItems={() => go('view-items')}
+            onAddMore={() => go('listing')}
           />
         );
       default:
