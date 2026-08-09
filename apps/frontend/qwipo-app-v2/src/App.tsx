@@ -19,6 +19,10 @@ import { NotificationsScreen } from './screens/NotificationsScreen';
 import { BusinessDetailsScreen } from './screens/BusinessDetailsScreen';
 import { PaymentsScreen } from './screens/PaymentsScreen';
 import { CreditPartnersScreen } from './screens/CreditPartnersScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
+import { LanguageScreen } from './screens/LanguageScreen';
+import { ContactUsScreen } from './screens/ContactUsScreen';
+import { TermsScreen } from './screens/TermsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
@@ -38,7 +42,7 @@ const BUILT = new Set<ScreenId>([
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'sub:payment', 'sub:credit',
+  'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -190,6 +194,14 @@ export default function App() {
         return <PaymentsScreen onBack={() => go('profile')} />;
       case 'sub:credit':
         return <CreditPartnersScreen onBack={() => go('profile')} />;
+      case 'settings':
+        return <SettingsScreen onBack={() => go('profile')} onNavigate={go} />;
+      case 'sub:language':
+        return <LanguageScreen onBack={() => go('settings')} />;
+      case 'sub:help':
+        return <ContactUsScreen onBack={() => go('profile')} />;
+      case 'sub:terms':
+        return <TermsScreen onBack={() => go('profile')} />;
       case 'my-orders':
         return (
           <MyOrdersScreen

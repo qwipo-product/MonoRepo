@@ -39,3 +39,4 @@ export { Chip, chipVariants, type ChipProps } from './chip';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export { QtyStepper, type QtyStepperProps } from './qty-stepper';
 export { SelectableCard, type SelectableCardProps } from './selectable-card';
+export { Switch, type SwitchProps } from './switch';
