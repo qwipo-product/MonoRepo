@@ -113,7 +113,7 @@ export function HomeScreen({
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
                 {DISTRIBUTORS.map((d) => (
-                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home' })} className="flex w-28 shrink-0 flex-col gap-1.5 text-left">
+                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home' })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
                     <BrandLogo src={d.logo} alt={d.title} className="h-28 w-28 rounded-lg border border-border shadow-sm" />
                     <div className="truncate text-sm font-medium">{d.title}</div>
                     <div className="truncate text-xs text-foreground-secondary">{d.short}</div>
@@ -138,7 +138,7 @@ export function HomeScreen({
             <section className="space-y-3">
               <SectionHeader title="All Brands" onSeeAll={() => onNavigate('distributors-list', { tab: 'brands' })} />
               <div className="grid grid-cols-4 gap-3 px-4">
-                {BRANDS.map((b) => (
+                {BRANDS.slice(0, 8).map((b) => (
                   <button
                     key={b.id}
                     onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
@@ -203,7 +203,7 @@ export function HomeScreen({
             <section className="space-y-3">
               <SectionHeader title="All Brands" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'brands' })} />
               <div className="grid grid-cols-4 gap-3 px-4">
-                {BRANDS.map((b) => (
+                {BRANDS.slice(0, 8).map((b) => (
                   <button
                     key={b.id}
                     onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
