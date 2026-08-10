@@ -63,6 +63,28 @@ export const BRANDS: HomeBrand[] = [
   { id: 'b14', name: 'Red Label', logo: '/brand-logos/Red Label.png' },
 ];
 
+// Level-1 category tiles shown at the top of the Wholesaler feed.
+export const WHOLESALER_L1: HomeCategory[] = [
+  { id: 'l1-groceries', name: 'Groceries', image: '/home-category-cards/groceries.png' },
+  { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png' },
+];
+
+export interface HomeOffer {
+  id: string;
+  headline: string;
+  brand: string;
+  sub: string;
+  emoji: string;
+  tone: 'primary' | 'success' | 'warning';
+}
+
+// Exclusive-offer promo cards (Wholesaler feed).
+export const WHOLESALER_OFFERS: HomeOffer[] = [
+  { id: 'o1', headline: 'UP TO 30% OFF', brand: 'Tata Sampann', sub: 'Premium Quality Staples', emoji: '🌾', tone: 'warning' },
+  { id: 'o2', headline: 'SAVE ₹150', brand: 'Surf Excel', sub: 'Stain-Free Clean', emoji: '🧼', tone: 'primary' },
+  { id: 'o3', headline: '25% OFF', brand: 'Aashirvaad', sub: 'Whole Wheat Atta', emoji: '🌾', tone: 'success' },
+];
+
 export const WHOLESALER_CATEGORIES: HomeCategory[] = [
   { id: 'w1', name: 'Cooking Oils & Ghee', image: '/wholesaler-category-images/Cooking Oils & Ghee.png' },
   { id: 'w2', name: 'Rice & Rice Products', image: '/wholesaler-category-images/Rice & Rice Products.png' },

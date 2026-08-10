@@ -25,7 +25,6 @@ export function OrderItemsSheet({
       icon={<ShoppingBag size={18} />}
       title={seller.name}
       subtitle={`${seller.items.length} ${seller.items.length === 1 ? 'item' : 'items'} in this order`}
-      size="tall"
       footer={
         <div className="flex items-center gap-3">
           <div>

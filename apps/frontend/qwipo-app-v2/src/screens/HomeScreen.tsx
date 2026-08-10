@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, User, MapPin, ChevronDown, Search } from 'lucide-react';
+import { Bell, User, MapPin, ChevronDown, Search, ArrowRight } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
@@ -9,7 +9,10 @@ import {
   DIST_CATEGORIES,
   BRANDS,
   WHOLESALER_CATEGORIES,
+  WHOLESALER_L1,
+  WHOLESALER_OFFERS,
   type HomeCategory,
+  type HomeOffer,
 } from '../data/home';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
@@ -88,7 +91,7 @@ export function HomeScreen({
             active={effectiveTab === 'distributors'}
             disabled={!distAvailable}
             img="/home-category-cards/distributors.png"
-            label="Authorised distributors"
+            label="Authorized Distributors"
             onClick={() => setTab('distributors')}
           />
           <TabButton
@@ -150,32 +153,61 @@ export function HomeScreen({
           </>
         ) : (
           <>
+            {/* Level-1 categories — Groceries · FMCG */}
             <section className="space-y-3">
-              <SectionHeader title="Categories" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'categories' })} />
+              <SectionHeader title="Categories" />
               <div className="grid grid-cols-2 gap-3 px-4">
-                {WHOLESALER_CATEGORIES.map((c) => (
+                {WHOLESALER_L1.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
-                    className="flex flex-col gap-1.5"
+                    onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
+                    className="flex flex-col gap-2"
                   >
-                    <span className="grid h-24 place-items-center overflow-hidden rounded-lg bg-muted">
+                    <span className="grid h-32 place-items-center overflow-hidden rounded-lg bg-muted">
                       <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
                     </span>
-                    <div className="text-sm font-medium">{c.name}</div>
+                    <div className="text-center text-sm font-medium">{c.name}</div>
                   </button>
                 ))}
               </div>
             </section>
 
+            {/* Exclusive offers — promo KPIs */}
             <section className="space-y-3">
-              <SectionHeader title="Top Brands" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'brands' })} />
+              <SectionHeader title="Exclusive offers" />
               <div className={rail}>
+                {WHOLESALER_OFFERS.map((o) => (
+                  <OfferCard
+                    key={o.id}
+                    offer={o}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: o.brand }], backTo: 'home' })}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Categories & Brands — same structure as Distributors */}
+            <section className="space-y-3">
+              <SectionHeader title="Top categories" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'categories' })} />
+              <div className={rail}>
+                {WHOLESALER_CATEGORIES.map((c) => (
+                  <CategoryTile
+                    key={c.id}
+                    cat={c}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <SectionHeader title="All Brands" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'brands' })} />
+              <div className="grid grid-cols-4 gap-3 px-4">
                 {BRANDS.map((b) => (
                   <button
                     key={b.id}
                     onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
-                    className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+                    className="flex flex-col items-center gap-1.5"
                   >
                     <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
                     <div className="w-full truncate text-center text-xs">{b.name}</div>
@@ -249,6 +281,31 @@ function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => vo
         </button>
       )}
     </div>
+  );
+}
+
+const OFFER_TONE: Record<HomeOffer['tone'], string> = {
+  primary: 'bg-primary-soft text-primary',
+  success: 'bg-success-subtle text-success-foreground',
+  warning: 'bg-warning-subtle text-warning-foreground',
+};
+
+function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn('flex h-60 w-56 shrink-0 flex-col rounded-lg p-4 text-left', OFFER_TONE[offer.tone])}
+    >
+      <div className="text-xl font-bold leading-tight">{offer.headline}</div>
+      <div className="mt-3 text-3xl">{offer.emoji}</div>
+      <div className="mt-auto">
+        <div className="text-sm font-semibold text-foreground">{offer.brand}</div>
+        <div className="text-xs text-foreground-secondary">{offer.sub}</div>
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold">
+          Shop now <ArrowRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </button>
   );
 }
 
