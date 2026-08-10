@@ -109,7 +109,7 @@ export function SellerBrowseScreen({
                 <span className="aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
                   <img src={encodeURI(c.image)} alt="" className="h-full w-full object-cover" />
                 </span>
-                <span className="truncate px-0.5 text-sm font-medium text-foreground">{c.name}</span>
+                <span className="truncate px-0.5 text-center text-sm font-medium text-foreground">{c.name}</span>
               </button>
             ))}
           </div>
@@ -142,6 +142,7 @@ export function SellerBrowseScreen({
                       <BadgeCheck className="h-3.5 w-3.5 shrink-0" /> Verified seller
                     </span>
                   </span>
+                  <span className="shrink-0 text-xs font-medium text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
                 </button>
                 <div className="no-scrollbar flex gap-3 overflow-x-auto border-t border-border px-3 py-2.5">
