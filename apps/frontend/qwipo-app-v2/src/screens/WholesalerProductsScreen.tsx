@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
-import { Button, Card, Chip, EmptyState, QtyStepper, cn } from '@mockups/ui';
+import { Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
+import { VendorPicker } from '../components/VendorPicker';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -184,46 +185,13 @@ function VendorProductCard({
         </div>
       </div>
 
-      {/* vendor selector */}
-      <div className="mt-3">
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-xs font-medium text-foreground">Choose vendor</span>
-          <span className="text-xs text-foreground-secondary">{product.vendors.length} options</span>
-        </div>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto" role="radiogroup" aria-label="Vendor">
-          {product.vendors.map((vn) => {
-            const on = vn.id === vendorId;
-            return (
-              <button
-                key={vn.id}
-                role="radio"
-                aria-checked={on}
-                onClick={() => onVendor(vn.id)}
-                className={cn(
-                  'relative w-40 shrink-0 rounded-lg border p-2.5 text-left transition-colors',
-                  on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'
-                )}
-              >
-                {vn.id === cheapest && (
-                  <span
-                    className={cn(
-                      'absolute right-2 top-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
-                      on ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-success-subtle text-success-foreground'
-                    )}
-                  >
-                    Best
-                  </span>
-                )}
-                <div className="text-base font-bold tabular-nums">{formatInr(vn.price)}</div>
-                <div className="truncate pr-10 text-xs font-medium">{vn.name}</div>
-                <div className={cn('text-[11px]', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
-                  Fee: {vn.fee}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <VendorPicker
+        className="mt-3"
+        vendors={product.vendors}
+        value={vendorId}
+        onChange={onVendor}
+        cheapestId={cheapest}
+      />
 
       {/* add / qty for the selected vendor */}
       <div className="mt-3 flex items-center justify-between gap-3">

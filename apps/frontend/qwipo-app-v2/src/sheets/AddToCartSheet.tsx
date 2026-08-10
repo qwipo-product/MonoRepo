@@ -3,6 +3,7 @@ import { ShoppingCart } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { packTiers, type Product } from '../data/products';
+import { PackTierRow } from './PackTierRow';
 
 // Distributor selling-units sheet (screen 14). Content mirrors the source:
 // product header + variant pills · MRP/SP/Margin bar · one row per pack tier
@@ -88,24 +89,7 @@ export function AddToCartSheet({
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
-          <div key={t.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-base">📦</div>
-            <div>
-              <div className="text-sm font-semibold text-foreground">{t.label}</div>
-              <div className="text-xs text-foreground-secondary">
-                {t.pcs} {t.pcs === 1 ? 'Pc' : 'Pcs'}
-              </div>
-            </div>
-            <div className="ml-auto text-right">
-              <div className="text-[11px] tabular-nums text-foreground-secondary">{formatInr(product.price)}</div>
-              <div className="text-sm font-bold tabular-nums text-foreground">
-                {formatInr(product.price * t.pcs)}
-              </div>
-            </div>
-            <Button size="sm" onClick={() => onAdd(t.pcs)}>
-              + Add
-            </Button>
-          </div>
+          <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={product.price} onDelta={onAdd} />
         ))}
       </div>
     </Sheet>

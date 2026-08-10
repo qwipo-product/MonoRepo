@@ -3,7 +3,9 @@ import { Store } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { packTiers } from '../data/products';
-import type { WholesalerProduct, WholesalerVendor } from '../data/wholesaler';
+import { cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from '../data/wholesaler';
+import { PackTierRow } from './PackTierRow';
+import { VendorPicker } from '../components/VendorPicker';
 
 /* Wholesaler selling-units sheet — the distributor Add-to-Cart sheet adapted for
    the multi-vendor model: the header shows the chosen vendor + fee, and the pack
@@ -24,10 +26,12 @@ export function WholesalerUnitsSheet({
   onClose: () => void;
 }) {
   const [variant, setVariant] = useState('');
+  const [vendorId, setVendorId] = useState(vendor?.id ?? '');
   if (!product || !vendor) return <Sheet open={false} onClose={onClose} />;
 
   const tiers = packTiers(product.caseSize);
   const activeVariant = variant || product.variants[0].id;
+  const sel = product.vendors.find((v) => v.id === vendorId) ?? vendor;
 
   return (
     <Sheet
@@ -67,39 +71,19 @@ export function WholesalerUnitsSheet({
         </div>
       </div>
 
-      {/* vendor bar */}
-      <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted p-3">
-        <div className="min-w-0">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">Vendor</div>
-          <div className="truncate text-sm font-semibold text-foreground">{vendor.name}</div>
-        </div>
-        <div className="ml-auto text-right">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">Price · Fee</div>
-          <div className="text-sm font-semibold tabular-nums text-foreground">
-            {formatInr(vendor.price)} · {vendor.fee}
-          </div>
-        </div>
-      </div>
+      {/* vendor picker — same design as the product page's Choose vendor */}
+      <VendorPicker
+        className="mt-4"
+        vendors={product.vendors}
+        value={sel.id}
+        onChange={setVendorId}
+        cheapestId={cheapestVendorId(product)}
+      />
 
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
-          <div key={t.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-base">📦</div>
-            <div>
-              <div className="text-sm font-semibold text-foreground">{t.label}</div>
-              <div className="text-xs text-foreground-secondary">
-                {t.pcs} {t.pcs === 1 ? 'Pc' : 'Pcs'}
-              </div>
-            </div>
-            <div className="ml-auto text-right">
-              <div className="text-[11px] tabular-nums text-foreground-secondary">{formatInr(vendor.price)}</div>
-              <div className="text-sm font-bold tabular-nums text-foreground">{formatInr(vendor.price * t.pcs)}</div>
-            </div>
-            <Button size="sm" onClick={() => onAdd(t.pcs)}>
-              + Add
-            </Button>
-          </div>
+          <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={sel.price} onDelta={onAdd} />
         ))}
       </div>
     </Sheet>
