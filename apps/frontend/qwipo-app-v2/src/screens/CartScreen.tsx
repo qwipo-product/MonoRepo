@@ -116,13 +116,14 @@ function SellerCard({
               {seller.items.length} {seller.items.length === 1 ? 'item' : 'items'}
             </div>
           </div>
-          <div className="shrink-0 text-right">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">Total</div>
-            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(seller.subtotal)}</div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <div className="text-sm text-foreground">
+              Total: <span className="font-bold tabular-nums">{formatInr(seller.subtotal)}</span>
+            </div>
             {seller.savings > 0 && (
-              <div className="text-xs font-medium text-success-foreground">
+              <span className="text-xs font-medium text-success-foreground">
                 You save {formatInr(seller.savings)}
-              </div>
+              </span>
             )}
           </div>
         </div>
