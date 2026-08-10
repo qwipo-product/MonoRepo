@@ -84,7 +84,6 @@ export function CartAlertsSheet({
       iconClassName="bg-warning-subtle text-warning-foreground"
       title="Alerts"
       subtitle="Please review the following alerts before proceeding"
-      size="tall"
       footer={
         <Button fullWidth onClick={onProceed}>
           Proceed Anyway

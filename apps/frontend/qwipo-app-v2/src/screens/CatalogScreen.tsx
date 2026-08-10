@@ -5,6 +5,7 @@ import { ProductCard, formatInr } from '@mockups/components';
 import { PRODUCTS, type Product } from '../data/products';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
+import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 
 const brandOf = (name: string) => name.split(' ')[0];
@@ -42,6 +43,7 @@ export function CatalogScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [discountsOpen, setDiscountsOpen] = useState(false);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -103,7 +105,7 @@ export function CatalogScreen({
               qty={qty[p.id] ?? 0}
               onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
-              onDiscounts={() => undefined}
+              onDiscounts={() => setDiscountsOpen(true)}
               subtotal={p.price * (qty[p.id] ?? 0)}
               subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={
@@ -118,14 +120,14 @@ export function CatalogScreen({
       </div>
 
       {cartCount > 0 && (
-        <div className="flex items-center gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div>
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+          <div className="leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
               {cartCount} {cartCount === 1 ? 'item' : 'items'}
             </div>
             <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
           </div>
-          <Button className="flex-1" onClick={onGoToCart}>
+          <Button className="px-8" onClick={onGoToCart}>
             Go to cart
           </Button>
         </div>
@@ -138,6 +140,8 @@ export function CatalogScreen({
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />
+
+      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { PriceLabel, formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { VendorPicker } from '../components/VendorPicker';
+import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -42,6 +43,7 @@ export function WholesalerProductsScreen({
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [discountsOpen, setDiscountsOpen] = useState(false);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -105,6 +107,7 @@ export function WholesalerProductsScreen({
               qty={qty[p.id] ?? 0}
               onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
               onAdd={() => setSheetId(p.id)}
+              onDiscounts={() => setDiscountsOpen(true)}
             />
           ))
         )}
@@ -125,14 +128,14 @@ export function WholesalerProductsScreen({
       />
 
       {cartCount > 0 && (
-        <div className="flex items-center gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div>
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+          <div className="leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
               {cartCount} {cartCount === 1 ? 'item' : 'items'}
             </div>
             <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
           </div>
-          <Button className="flex-1" onClick={onGoToCart}>
+          <Button className="px-8" onClick={onGoToCart}>
             Go to cart
           </Button>
         </div>
@@ -145,6 +148,8 @@ export function WholesalerProductsScreen({
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />
+
+      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
     </div>
   );
 }
@@ -156,6 +161,7 @@ function VendorProductCard({
   qty,
   onQty,
   onAdd,
+  onDiscounts,
 }: {
   product: WholesalerProduct;
   vendorId: string;
@@ -163,6 +169,7 @@ function VendorProductCard({
   qty: number;
   onQty: (n: number) => void;
   onAdd: () => void;
+  onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
   const cheapest = cheapestVendorId(product);
@@ -204,7 +211,7 @@ function VendorProductCard({
 
       {/* actions */}
       <div className="mt-3 flex items-center gap-2">
-        <Button variant="soft" className="flex-1" onClick={() => undefined}>
+        <Button variant="soft" className="flex-1" onClick={onDiscounts}>
           Discounts ⌄
         </Button>
         {qty > 0 ? (

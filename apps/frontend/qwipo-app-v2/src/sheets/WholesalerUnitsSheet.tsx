@@ -41,14 +41,14 @@ export function WholesalerUnitsSheet({
       title="Add to Cart"
       subtitle="Select the quantity to add to your cart"
       footer={
-        <div className="flex items-center gap-3">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="leading-tight">
             <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
               Total cart value
             </div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(cartTotal)}</div>
           </div>
-          <Button className="flex-1" onClick={onContinue}>
+          <Button className="px-8" onClick={onContinue}>
             Continue
           </Button>
         </div>
