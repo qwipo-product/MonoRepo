@@ -160,6 +160,7 @@ than following the `docker-cd-*` / `argocd-*` convention the service repos use.
 | App | Service name | Build | Deploy |
 | --- | --- | --- | --- |
 | `qwipo-buyer-app` | `mockups-qwipo-buyer-app` | `Mockups Lab / Buyer App - Build` | `Mockups Lab / Buyer App - Deploy` |
+| `qwipo-app-v2` | `mockups-qwipo-app-v2` | `Mockups Lab / App V2 - Build` | `Mockups Lab / App V2 - Deploy` |
 | `mock-api` | `mockups-api` | `Mockups Lab / Mock API - Build` | `Mockups Lab / Mock API - Deploy` |
 
 Service names are prefixed `mockups-` so these images and ArgoCD apps can't be

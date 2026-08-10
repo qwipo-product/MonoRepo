@@ -1,9 +1,9 @@
 {
-  "name": "@mockups/qwipo-mobile",
+  "name": "qwipo-mobile",
   "version": "0.0.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Qwipo buyer app — Expo + NativeWind mockup, token-driven from @mockups/design-tokens. A clickable prototype; production RN is a separate codebase.",
+  "description": "Qwipo buyer app — standalone Expo + NativeWind mockup. Tokens inlined; production RN is a separate codebase.",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -12,20 +12,19 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@mockups/design-tokens": "workspace:*",
     "expo": "57.0.11",
-    "expo-status-bar": "~57.0.1",
+    "expo-status-bar": "3.0.8",
     "lucide-react-native": "1.31.0",
     "nativewind": "4.2.6",
-    "react": "19.2.3",
+    "react": "19.1.0",
     "react-native": "0.86.2",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-svg": "15.15.4"
+    "react-native-safe-area-context": "5.8.1",
+    "react-native-svg": "15.15.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
-    "@types/react": "catalog:",
+    "@babel/core": "^7.28.0",
+    "@types/react": "^19.1.0",
     "tailwindcss": "3.4.17",
-    "typescript": "~6.0.3"
+    "typescript": "~5.6.3"
   }
 }
