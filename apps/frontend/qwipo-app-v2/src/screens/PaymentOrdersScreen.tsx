@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ChevronLeft, Receipt } from 'lucide-react';
 import { SegmentedControl, EmptyState, Button, cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
+import { OrderListCard } from '../components/OrderListCard';
+import { statusFromLabel } from '../data/orders';
 import {
   PAYMENT_VENDORS,
   PAYMENT_ORDERS,
@@ -67,22 +69,28 @@ export function PaymentOrdersScreen({
         ) : (
           <>
             <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+              {/* Same card as My Orders, minus Order Details / Cancel / Track /
+                  cancel-hint. Vendor-fulfilled orders keep the Pay action. */}
               {orders.map((o) => (
-                <div key={o.id} className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                  {/* per-order Pay only when the vendor fulfils (source parity) */}
-                  {!isQwipo && (
-                    <div className="mb-2 flex justify-end border-b border-border pb-2">
-                      <Button size="sm" onClick={() => onPay(o.outstandingAmount)}>
+                <OrderListCard
+                  key={o.id}
+                  title={vendor.name}
+                  orderId={o.orderNumber}
+                  status={statusFromLabel(o.status)}
+                  statusLabel={o.status}
+                  meta={`Placed ${o.orderDate}`}
+                  total={o.outstandingAmount}
+                  totalLabel="Outstanding"
+                  rightLabel="Order amount"
+                  rightValue={formatInrExact(o.orderAmount)}
+                  actions={
+                    !isQwipo ? (
+                      <Button fullWidth onClick={() => onPay(o.outstandingAmount)}>
                         Pay
                       </Button>
-                    </div>
-                  )}
-                  <Row label="Order date" value={o.orderDate} />
-                  <Row label="Order ID" value={o.orderNumber} mono />
-                  <Row label="Order amount" value={formatInrExact(o.orderAmount)} />
-                  <Row label="Outstanding" value={formatInrExact(o.outstandingAmount)} strong />
-                  <Row label="Status" value={o.status} />
-                </div>
+                    ) : undefined
+                  }
+                />
               ))}
             </div>
 
@@ -116,33 +124,6 @@ export function PaymentOrdersScreen({
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  strong,
-  mono,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-0.5">
-      <span className="text-xs text-foreground-secondary">{label}</span>
-      <span
-        className={cn(
-          'text-sm text-foreground',
-          strong ? 'font-semibold' : 'font-medium',
-          mono && 'tabular-nums'
-        )}
-      >
-        {value}
-      </span>
     </div>
   );
 }

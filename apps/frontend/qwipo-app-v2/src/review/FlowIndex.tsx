@@ -1,7 +1,8 @@
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, UserRound } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
+import { RoleSwitcher, type Role } from './RoleSwitcher';
 
 /* Review-only navigator: switch mockup surface (Buyer App / Paytm Mini) at the
    top, then click any screen to jump to it. The URL tracks ?shell= & ?screen=
@@ -12,6 +13,8 @@ export default function FlowIndex({
   onPick,
   shell,
   onShellChange,
+  role,
+  onRoleChange,
   isDark,
   onToggleTheme,
 }: {
@@ -20,6 +23,8 @@ export default function FlowIndex({
   onPick: (id: ScreenId) => void;
   shell: Shell;
   onShellChange: (s: Shell) => void;
+  role: Role;
+  onRoleChange: (r: Role) => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }) {
@@ -39,6 +44,11 @@ export default function FlowIndex({
         </button>
       </div>
 
+      {/* persona: Customer vs Salesperson (unlocks the beat-day features) */}
+      <div className="mt-2">
+        <RoleSwitcher value={role} onChange={onRoleChange} />
+      </div>
+
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
         {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}
       </h1>
@@ -48,8 +58,25 @@ export default function FlowIndex({
           : 'Click any screen to jump to it.'}
       </p>
 
+      <button
+        onClick={() => onPick('login')}
+        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
+      >
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary-soft text-primary">
+          <UserRound size={15} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+            {role === 'salesperson' ? 'Salesperson login' : 'Customer login'}
+          </span>
+          <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
+            {role === 'salesperson' ? '9000000001' : '9876543210'}
+          </span>
+        </span>
+      </button>
+
       <div className="mt-5 space-y-5">
-        {SCREEN_GROUPS.map((group) => (
+        {SCREEN_GROUPS.filter((g) => role === 'salesperson' || g.title !== 'Salesperson').map((group) => (
           <div key={group.title}>
             <div className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary">
               {group.title}

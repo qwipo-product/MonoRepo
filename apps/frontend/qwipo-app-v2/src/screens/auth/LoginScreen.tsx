@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { AuthBrand } from '../../components/formbits';
 
-export function LoginScreen({ onNext }: { onNext: () => void }) {
+export function LoginScreen({ onNext }: { onNext: (phone: string) => void }) {
   const [phone, setPhone] = useState('');
   const valid = /^\d{10}$/.test(phone);
 
@@ -37,7 +37,7 @@ export function LoginScreen({ onNext }: { onNext: () => void }) {
           />
         </div>
 
-        <Button size="lg" className="mt-5 w-full" disabled={!valid} onClick={onNext}>
+        <Button size="lg" className="mt-5 w-full" disabled={!valid} onClick={() => onNext(phone)}>
           Get OTP
         </Button>
 

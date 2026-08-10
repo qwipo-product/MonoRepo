@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Check, FileText } from 'lucide-react';
+import { ChevronLeft, FileText, Check } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
-import { StatusBadge, formatInrExact } from '@mockups/components';
+import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
@@ -125,92 +125,34 @@ function OrderCard({
   const cancellable = CANCELLABLE.includes(order.status);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <button
-          onClick={onOpen}
-          aria-label={`Open order ${order.orderId}`}
-          className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground active:scale-[0.98]"
-        >
-          {order.seller}
-        </button>
-        <StatusBadge status={order.status} label={order.statusLabel} className="shrink-0" />
-      </div>
-
-      <div className="mt-1 text-xs text-foreground-secondary">
-        {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'} · Placed {order.placedAt}
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <CopyChip value={order.orderId} />
-        <button
-          onClick={onOpen}
-          className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-primary active:scale-[0.98]"
-        >
-          Order details
-          <ChevronRight size={15} />
-        </button>
-      </div>
-
-      <div className="mt-2 flex items-center justify-between rounded-md bg-background-subtle p-2.5">
-        <div>
-          <div className="text-[11px] text-foreground-secondary">Grand total</div>
-          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInrExact(order.total)}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-[11px] text-foreground-secondary">Expected delivery</div>
-          <div className="text-sm font-medium text-foreground">{order.eta}</div>
-        </div>
-      </div>
-
-      {!cancelled && (
-        <div className="mt-3 flex gap-2">
-          {delivered ? (
-            <Button variant="secondary" fullWidth onClick={onOpen}>
-              <FileText size={16} /> Invoice
+    <OrderListCard
+      title={order.seller}
+      orderId={order.orderId}
+      status={order.status}
+      statusLabel={order.statusLabel}
+      meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${order.placedAt}`}
+      total={order.total}
+      rightLabel="Expected delivery"
+      rightValue={order.eta}
+      onOpenDetails={onOpen}
+      actions={
+        cancelled ? undefined : delivered ? (
+          <Button variant="secondary" fullWidth onClick={onOpen}>
+            <FileText size={16} /> Invoice
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="secondary" fullWidth onClick={onCancel}>
+              Cancel
             </Button>
-          ) : (
-            <>
-              <Button variant="secondary" fullWidth onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button fullWidth onClick={onTrack}>
-                Track order
-              </Button>
-            </>
-          )}
-        </div>
-      )}
-
-      {cancellable && !cancelled && (
-        <div className="mt-2 text-[11px] text-foreground-secondary">
-          You can cancel this order before {order.eta}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CopyChip({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard?.writeText(value).then(
-      () => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      },
-      () => undefined
-    );
-  };
-  return (
-    <button
-      onClick={copy}
-      aria-label={`Copy order number ${value}`}
-      className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground active:scale-[0.98]"
-    >
-      {value}
-      {copied ? <Check size={13} className="text-success-foreground" /> : <Copy size={13} className="text-foreground-secondary" />}
-    </button>
+            <Button fullWidth onClick={onTrack}>
+              Track order
+            </Button>
+          </div>
+        )
+      }
+      hint={cancellable && !cancelled ? `You can cancel this order before ${order.eta}` : undefined}
+    />
   );
 }
 

@@ -3,6 +3,7 @@ import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { type ScreenId } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
+import { type Role } from './review/RoleSwitcher';
 import { ShellChrome } from './shells/ShellChrome';
 import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './screens/HomeScreen';
@@ -21,6 +22,16 @@ import { PaymentsScreen } from './screens/PaymentsScreen';
 import { PaymentOrdersScreen } from './screens/PaymentOrdersScreen';
 import { PaymentGatewaysScreen } from './screens/PaymentGatewaysScreen';
 import { CreditPartnersScreen } from './screens/CreditPartnersScreen';
+import { AttendanceScreen } from './screens/salesperson/AttendanceScreen';
+import { TaskListScreen } from './screens/salesperson/TaskListScreen';
+import { TaskDetailsScreen } from './screens/salesperson/TaskDetailsScreen';
+import { CreateInteractionScreen } from './screens/salesperson/CreateInteractionScreen';
+import { PerformanceScreen } from './screens/salesperson/PerformanceScreen';
+import { CustomerOrdersScreen } from './screens/salesperson/CustomerOrdersScreen';
+import { SwitchCustomerScreen } from './screens/salesperson/SwitchCustomerScreen';
+import { CustomerListScreen } from './screens/salesperson/CustomerListScreen';
+import { CustomerDetailsScreen } from './screens/salesperson/CustomerDetailsScreen';
+import { SALESPERSON_PHONE } from './data/salesperson';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
@@ -45,7 +56,7 @@ import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart } from './data/cart';
-import { ORDERS } from './data/orders';
+import { ORDERS, type Order } from './data/orders';
 import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/addresses';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
@@ -57,6 +68,8 @@ const BUILT = new Set<ScreenId>([
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'settings', 'sub:language', 'sub:help', 'sub:terms',
+  'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
+  'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -89,11 +102,20 @@ export default function App() {
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
-  const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
+  // Any order list → the one shared Order Details, with a per-source back target.
+  const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
+  const [detailsBackTo, setDetailsBackTo] = useState<ScreenId>('my-orders');
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
   // Payments flow context: selected vendor + amount carried into the pay screen.
   const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
   const [payAmount, setPayAmount] = useState<number>(0);
+  // Salesperson flow: phone entered at login (9000000001 → salesperson) + task context.
+  const [loginPhone, setLoginPhone] = useState<string>('');
+  const [taskId, setTaskId] = useState<string>('tk1');
+  const [spCustomerId, setSpCustomerId] = useState<string>('c1');
+  // Persona: salesperson unlocks the beat-day features (Home task icon, My
+  // Account section, sidebar group). Set by login 9000000001 or the switcher.
+  const [role, setRole] = useState<Role>('customer');
   // Filter/back context carried into product lists, storefront, and browse tabs.
   const [listApplied, setListApplied] = useState<AppliedFilter[]>([]);
   const [listBackTo, setListBackTo] = useState<ScreenId>('home');
@@ -175,14 +197,37 @@ export default function App() {
     setScreen(id);
   };
 
+  // Open the shared Order Details for any order, remembering where to return.
+  const openOrder = (order: Order, backTo: ScreenId) => {
+    setDetailsOrder(order);
+    setDetailsBackTo(backTo);
+    go('order-details');
+  };
+
   const phoneScreen = (() => {
     switch (screen) {
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
       case 'login':
-        return <LoginScreen onNext={() => go('otp')} />;
+        return (
+          <LoginScreen
+            onNext={(phone) => {
+              setLoginPhone(phone);
+              go('otp');
+            }}
+          />
+        );
       case 'otp':
-        return <OtpScreen onBack={() => go('login')} onVerify={() => go('onboarding')} />;
+        return (
+          <OtpScreen
+            onBack={() => go('login')}
+            onVerify={() => {
+              const isSp = loginPhone === SALESPERSON_PHONE;
+              setRole(isSp ? 'salesperson' : 'customer');
+              go(isSp ? 'home' : 'onboarding');
+            }}
+          />
+        );
       case 'onboarding':
         return <OnboardingScreen onBack={() => go('otp')} onProceed={() => go('kyc-complete')} />;
       case 'kyc-complete':
@@ -195,6 +240,7 @@ export default function App() {
             onNavigate={go}
             availability={availabilityFor(deliveryAddressId)}
             deliveryLabel={addressById(deliveryAddressId)?.title}
+            salesperson={role === 'salesperson'}
           />
         );
       case 'sub:addresses':
@@ -300,7 +346,7 @@ export default function App() {
       case 'reorder':
         return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} />;
       case 'profile':
-        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} />;
+        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} salesperson={role === 'salesperson'} />;
       case 'notifications':
         return <NotificationsScreen onBack={() => go('profile')} />;
       case 'sub:business-details':
@@ -345,20 +391,76 @@ export default function App() {
         return <ContactUsScreen onBack={() => go('profile')} />;
       case 'sub:terms':
         return <TermsScreen onBack={() => go('profile')} />;
+
+      // Salesperson features (login 9000000001) — surfaced in the customer app
+      // via the Home task icon + My Account section.
+      case 'sp:attendance':
+        return <AttendanceScreen onBack={() => go('profile')} />;
+      case 'sp:tasks':
+        return (
+          <TaskListScreen
+            onBack={() => go('profile')}
+            onOpenTask={(id) => {
+              setTaskId(id);
+              go('sp:task-details');
+            }}
+          />
+        );
+      case 'sp:task-details':
+        return (
+          <TaskDetailsScreen
+            taskId={taskId}
+            onBack={() => go('sp:tasks')}
+            onCreateInteraction={(id) => {
+              setTaskId(id);
+              go('sp:create-interaction');
+            }}
+            onOpenOrder={(o) => openOrder(o, 'sp:task-details')}
+          />
+        );
+      case 'sp:create-interaction':
+        return (
+          <CreateInteractionScreen onBack={() => go('sp:task-details')} onDone={() => go('sp:task-details')} />
+        );
+      case 'sp:performance':
+        return <PerformanceScreen onBack={() => go('profile')} />;
+      case 'sp:orders':
+        return <CustomerOrdersScreen onBack={() => go('profile')} onOpenOrder={(o) => openOrder(o, 'sp:orders')} />;
+      case 'sp:switch-customer':
+        return <SwitchCustomerScreen onBack={() => go('profile')} onSwitch={() => go('home')} />;
+      case 'sp:customers':
+        return (
+          <CustomerListScreen
+            onBack={() => go('profile')}
+            onOpenCustomer={(id) => {
+              setSpCustomerId(id);
+              go('sp:customer-details');
+            }}
+          />
+        );
+      case 'sp:customer-details':
+        return (
+          <CustomerDetailsScreen
+            customerId={spCustomerId}
+            onBack={() => go('sp:customers')}
+            onOpenOrder={(o) => openOrder(o, 'sp:customer-details')}
+          />
+        );
+
       case 'my-orders':
         return (
           <MyOrdersScreen
             onBack={() => go('home')}
             onOpenDetails={(id) => {
-              setDetailsOrderId(id);
-              go('order-details');
+              const o = ORDERS.find((x) => x.id === id) ?? ORDERS[0];
+              openOrder(o, 'my-orders');
             }}
           />
         );
       case 'order-details': {
-        const order = ORDERS.find((o) => o.id === detailsOrderId) ?? ORDERS[0];
+        const order = detailsOrder ?? ORDERS[0];
         return order ? (
-          <OrderDetailsScreen order={order} onBack={() => go('my-orders')} />
+          <OrderDetailsScreen order={order} onBack={() => go(detailsBackTo)} />
         ) : (
           <Placeholder id={screen} />
         );
@@ -376,6 +478,11 @@ export default function App() {
         onPick={go}
         shell={shell}
         onShellChange={setShell}
+        role={role}
+        onRoleChange={(r) => {
+          setRole(r);
+          if (r === 'customer' && screen.startsWith('sp:')) go('home');
+        }}
         isDark={isDark}
         onToggleTheme={toggleTheme}
       />

@@ -73,6 +73,20 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
     ],
   },
+  {
+    title: 'Salesperson',
+    items: [
+      { id: 'sp:attendance', label: 'Salesperson · Attendance' },
+      { id: 'sp:tasks', label: 'Salesperson · Tasks' },
+      { id: 'sp:task-details', label: 'Salesperson · Task Details' },
+      { id: 'sp:create-interaction', label: 'Salesperson · Create Interaction' },
+      { id: 'sp:performance', label: 'Salesperson · Performance' },
+      { id: 'sp:orders', label: 'Salesperson · Customer Orders' },
+      { id: 'sp:switch-customer', label: 'Salesperson · Switch Customer' },
+      { id: 'sp:customers', label: 'Salesperson · Customers' },
+      { id: 'sp:customer-details', label: 'Salesperson · Customer Details' },
+    ],
+  },
 ];
 
 /** Flat list in display order — handy for prev/next and index lookups. */

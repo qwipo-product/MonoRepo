@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, User, MapPin, ChevronDown, Search, ArrowRight } from 'lucide-react';
+import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
@@ -21,10 +21,13 @@ export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
   availability = 'both',
   onNavigate,
+  salesperson = false,
 }: {
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
   onNavigate: Navigate;
+  /** Salesperson persona → show the beat-day task shortcut in the header. */
+  salesperson?: boolean;
 }) {
   const [tab, setTab] = useState<'distributors' | 'wholesalers'>('distributors');
 
@@ -44,6 +47,16 @@ export function HomeScreen({
           <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
           <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="mx-auto h-5 shrink-0" />
           <div className="flex items-center gap-2">
+            {salesperson && (
+              <button
+                onClick={() => onNavigate('sp:tasks')}
+                aria-label="My tasks"
+                className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground active:scale-[0.98]"
+              >
+                <ClipboardList className="h-5 w-5" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-card" />
+              </button>
+            )}
             <button
               onClick={() => onNavigate('notifications')}
               aria-label="Notifications"

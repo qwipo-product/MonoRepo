@@ -63,6 +63,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
         </Section>
 
         {/* items */}
+        {order.items.length > 0 && (
         <Section title={`Items (${order.items.length})`}>
           <div className="space-y-2">
             {order.items.map((item, i) => (
@@ -82,6 +83,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
             ))}
           </div>
         </Section>
+        )}
 
         {/* delivery address */}
         <Section title="Delivery Address">

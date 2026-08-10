@@ -66,6 +66,45 @@ export const ORDERS: Order[] = [
   },
 ];
 
+/** Map a free-text status label to the canonical OrderStatus (for StatusBadge
+ * + the shared Order Details, when an order comes from a leaner data source). */
+export function statusFromLabel(label: string): OrderStatus {
+  const k = label.toLowerCase();
+  if (k.includes('cancel')) return 'cancelled';
+  if (k.includes('deliver')) return 'delivered';
+  if (k.includes('transit') || k.includes('out for')) return 'in_transit';
+  if (k.includes('pack') || k.includes('process')) return 'processing';
+  return 'placed';
+}
+
+/** Build a full Order from a leaner order (salesperson / payments) so the one
+ * OrderDetailsScreen can render it. Items default to empty. */
+export function buildOrder(o: {
+  id: string;
+  orderId: string;
+  seller: string;
+  placedAt: string;
+  total: number;
+  deliveryFee?: number;
+  statusLabel: string;
+  eta?: string;
+  items?: OrderItem[];
+}): Order {
+  return {
+    id: o.id,
+    orderId: o.orderId,
+    seller: o.seller,
+    itemCount: o.items?.length ?? 0,
+    placedAt: o.placedAt,
+    total: o.total,
+    deliveryFee: o.deliveryFee ?? 0,
+    status: statusFromLabel(o.statusLabel),
+    statusLabel: o.statusLabel,
+    eta: o.eta ?? '—',
+    items: o.items ?? [],
+  };
+}
+
 /** Ordered tracking milestones. */
 export const TRACKING_STEPS = ['Placed', 'Confirmed', 'Being Packed', 'Out for Delivery', 'Delivered'] as const;
 
