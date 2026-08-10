@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { useTheme } from '@mockups/ui';
 
-/* Brand mark on the DS background, auto-advances after 2.7s, tap to skip. */
+/* Color-morph splash: lavender bg + white mark scales in, then the background
+   fades to white while the mark cross-fades into the colored primary. Auto-
+   advances after 2.7s; tap to skip. Animation lives in index.css. */
 export function SplashScreen({ onContinue }: { onContinue: () => void }) {
-  const { isDark } = useTheme();
   useEffect(() => {
     const t = setTimeout(onContinue, 2700);
     return () => clearTimeout(t);
@@ -13,13 +13,12 @@ export function SplashScreen({ onContinue }: { onContinue: () => void }) {
     <button
       onClick={onContinue}
       aria-label="Tap to continue"
-      className="flex h-full w-full items-center justify-center bg-background"
+      className="splash-screen-v2"
     >
-      <img
-        src={isDark ? '/brand/qwipo-primary-white.svg' : '/brand/qwipo-primary.svg'}
-        alt="Qwipo"
-        className="w-40"
-      />
+      <span className="splash-stage" aria-hidden="true">
+        <img className="splash-logo splash-logo-white" src="/brand/qwipo-primary-white.svg" alt="" />
+        <img className="splash-logo splash-logo-primary" src="/brand/qwipo-primary.svg" alt="Qwipo" />
+      </span>
     </button>
   );
 }
