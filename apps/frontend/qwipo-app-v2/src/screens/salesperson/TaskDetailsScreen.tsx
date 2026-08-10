@@ -3,6 +3,7 @@ import { ChevronLeft, Phone, MapPin, CheckCircle2, LogIn, LogOut, MessageSquareP
 import { SegmentedControl, EmptyState, Button, Sheet } from '@mockups/ui';
 import { OrdersPanel, RecoPanel } from './customerPanels';
 import type { Order } from '../../data/orders';
+import { formatDate } from '../../date';
 import {
   TASKS,
   INTERACTIONS,
@@ -149,7 +150,7 @@ function InteractionTab({ customerId, onCreate }: { customerId: string; onCreate
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-sm font-medium text-foreground">{i.category}</span>
-                <span className="shrink-0 text-xs text-foreground-secondary">{i.date}</span>
+                <span className="shrink-0 text-xs text-foreground-secondary">{formatDate(i.date)}</span>
               </div>
               <div className="mt-1 line-clamp-2 text-xs text-foreground-secondary">{i.comments}</div>
             </button>
@@ -163,7 +164,7 @@ function InteractionTab({ customerId, onCreate }: { customerId: string; onCreate
         </Button>
       </div>
 
-      <Sheet open={!!detail} onClose={() => setDetail(null)} title="Interaction details" subtitle={detail?.date}>
+      <Sheet open={!!detail} onClose={() => setDetail(null)} title="Interaction details" subtitle={detail ? formatDate(detail.date) : undefined}>
         {detail && (
           <div className="space-y-3">
             <Field label="Category" value={detail.category} />

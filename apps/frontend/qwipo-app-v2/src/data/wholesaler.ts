@@ -71,6 +71,106 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
       { id: 'balaji', name: 'Balaji Traders', price: 56, mrp: 66, margin: '15% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
     ],
   },
+
+  // ── Coverage fill: every wholesaler category + brand gets ≥1 product (each
+  // with 1–2 variants and ≥2 vendors), so no wholesaler category / brand page
+  // is ever empty.
+  {
+    id: 'wp5', name: 'Aashirvaad Sona Masoori Rice', category: 'Rice & Rice Products', brand: 'Aashirvaad', caseLabel: 'Case: 1 pc', caseSize: 1, image: '🍚',
+    variants: [{ id: '5kg', label: '5 Kg' }, { id: '26kg', label: '26 Kg' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 1380, mrp: 1560, margin: '12% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 1420, mrp: 1580, margin: '10% Margin', delivery: 'Delivery by Friday', fee: 'Free' },
+    ],
+  },
+  {
+    id: 'wp6', name: 'Tata Salt', category: 'Sugar & Spices', brand: 'Tata', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🧂',
+    variants: [{ id: '1kg', label: '1 Kg' }, { id: '2kg', label: '2 Kg' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 22, mrp: 28, margin: '21% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 24, mrp: 28, margin: '14% Margin', delivery: 'Delivery by Wednesday', fee: 'Free' },
+    ],
+  },
+  {
+    id: 'wp7', name: 'Priya Gold Cashews W320', category: 'Dry Fruits', brand: 'Priya Gold', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
+    variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 420, mrp: 500, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 445, mrp: 520, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
+    ],
+  },
+  {
+    id: 'wp8', name: 'MTR Rasam Powder', category: 'Sugar & Spices', brand: 'MTR', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🥘',
+    variants: [{ id: '100g', label: '100 g' }, { id: '200g', label: '200 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 88, mrp: 105, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 92, mrp: 108, margin: '15% Margin', delivery: 'Delivery by Wednesday', fee: 'Free' },
+    ],
+  },
+  {
+    id: 'wp9', name: 'Eastern Turmeric Powder', category: 'Sugar & Spices', brand: 'Eastern', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🌿',
+    variants: [{ id: '200g', label: '200 g' }, { id: '500g', label: '500 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 78, mrp: 92, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 82, mrp: 96, margin: '15% Margin', delivery: 'Delivery by Friday', fee: '₹1/kg' },
+    ],
+  },
+  {
+    id: 'wp10', name: 'Madhur Refined Sugar', category: 'Sugar & Spices', brand: 'Madhur', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🍬',
+    variants: [{ id: '1kg', label: '1 Kg' }, { id: '5kg', label: '5 Kg' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 42, mrp: 50, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 44, mrp: 52, margin: '15% Margin', delivery: 'Delivery by Wednesday', fee: '₹1/kg' },
+    ],
+  },
+  {
+    id: 'wp11', name: 'GRB Pure Cow Ghee', category: 'Cooking Oils & Ghee', brand: 'GRB', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🧈',
+    variants: [{ id: '500ml', label: '500 ml' }, { id: '1l', label: '1 Ltr' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 590, mrp: 690, margin: '14% Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 615, mrp: 700, margin: '12% Margin', delivery: 'Delivery by Friday', fee: '₹1/kg' },
+    ],
+  },
+  {
+    id: 'wp12', name: 'Gokul Cow Ghee', category: 'Cooking Oils & Ghee', brand: 'Gokul', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🧈',
+    variants: [{ id: '200ml', label: '200 ml' }, { id: '500ml', label: '500 ml' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 300, mrp: 350, margin: '14% Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 312, mrp: 355, margin: '12% Margin', delivery: 'Delivery by Wednesday', fee: '₹1/kg' },
+    ],
+  },
+  {
+    id: 'wp13', name: 'Himalaya Premium Almonds', category: 'Dry Fruits', brand: 'Himalaya', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
+    variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 520, mrp: 620, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 548, mrp: 640, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
+    ],
+  },
+  {
+    id: 'wp14', name: 'Cycle Pure Filter Coffee', category: 'Beverages', brand: 'Cycle', caseLabel: 'Case: 24 pc', caseSize: 24, image: '☕',
+    variants: [{ id: '200g', label: '200 g' }, { id: '500g', label: '500 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 165, mrp: 195, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 172, mrp: 200, margin: '14% Margin', delivery: 'Delivery by Wednesday', fee: 'Free' },
+    ],
+  },
+  {
+    id: 'wp15', name: 'Vicco Vajradanti Powder', category: 'Sugar & Spices', brand: 'Vicco', caseLabel: 'Case: 36 pc', caseSize: 36, image: '🌿',
+    variants: [{ id: '50g', label: '50 g' }, { id: '100g', label: '100 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 68, mrp: 82, margin: '17% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 72, mrp: 85, margin: '15% Margin', delivery: 'Delivery by Friday', fee: '₹1/kg' },
+    ],
+  },
+  {
+    id: 'wp16', name: 'Mysore Sandal Premium Cashews', category: 'Dry Fruits', brand: 'Mysore Sandal', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
+    variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 440, mrp: 520, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 460, mrp: 535, margin: '14% Margin', delivery: 'Delivery by Wednesday', fee: '₹2/kg' },
+    ],
+  },
 ];
 
 /** Cheapest vendor id for a product (marked "Best"). */

@@ -59,7 +59,7 @@ export function SellerBrowseScreen({
 
   const catList = useMemo(() => (q ? categories.filter((c) => c.name.toLowerCase().includes(q)) : categories), [q, categories]);
   const brandList = useMemo(() => (q ? brands.filter((b) => b.name.toLowerCase().includes(q)) : brands), [q, brands]);
-  const sellerList = useMemo(() => (q ? sellers.filter((d) => d.title.toLowerCase().includes(q)) : sellers), [q, sellers]);
+  const sellerList = useMemo(() => (q ? sellers.filter((d) => d.name.toLowerCase().includes(q)) : sellers), [q, sellers]);
 
   const active = tab === 'categories' ? catList : tab === 'brands' ? brandList : sellerList;
 
@@ -106,7 +106,7 @@ export function SellerBrowseScreen({
                 onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
-                <span className="aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
+                <span className="aspect-[2/1] w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
                   <img src={encodeURI(c.image)} alt="" className="h-full w-full object-cover" />
                 </span>
                 <span className="truncate px-0.5 text-center text-sm font-medium text-foreground">{c.name}</span>
@@ -132,12 +132,12 @@ export function SellerBrowseScreen({
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
                   onClick={() => onNavigate('storefront', { backTo: selfId, distributor: d })}
-                  aria-label={`Open ${d.title} storefront`}
+                  aria-label={`Open ${d.name} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
-                  <BrandLogo src={d.logo} alt={d.title} className="h-12 w-12 shrink-0 rounded-lg border border-border" />
+                  <BrandLogo src={d.logo} alt={d.name} className="h-12 w-12 shrink-0 rounded-lg border border-border" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{d.title}</span>
+                    <span className="block truncate text-sm font-semibold text-foreground">{d.name}</span>
                     <span className="mt-0.5 flex items-center gap-1 text-xs text-success-foreground">
                       <BadgeCheck className="h-3.5 w-3.5 shrink-0" /> Verified seller
                     </span>

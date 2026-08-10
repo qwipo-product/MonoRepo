@@ -116,6 +116,80 @@ export const PRODUCTS: Product[] = [
     seller: 'Omkar Enterprises', source: 'wholesaler', delivery: 'Delivery by Tomorrow', margin: '12% Margin',
     price: 135, mrp: 150, deliveryDay: 'Tomorrow', mov: 5000,
   },
+
+  // ── Coverage fill: every distributor + distributor category + brand gets ≥1
+  // product (each with 1–2 variants), so no storefront / category / brand page
+  // is ever empty. Distributor source, Beat-day delivery.
+  {
+    id: 'p11', name: 'Tata Sampann Sona Masoori Rice - 26 kg Bag X 1 No', shortName: 'Tata Sampann Sona Masoori Rice',
+    category: 'Rice & Rice Products', caseLabel: 'Case: 1 pc', caseSize: 1, image: '🍚',
+    variants: [{ id: '5kg', label: '5 kg' }, { id: '26kg', label: '26 kg' }],
+    seller: 'Annapurna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '8% Margin',
+    price: 1420, mrp: 1560, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p12', name: 'Madhur Toor Dal - 1 kg Pack X 12 Nos', shortName: 'Madhur Toor Dal',
+    category: 'Dals & Pulses', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🫘',
+    variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Annapurna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '10% Margin',
+    price: 145, mrp: 165, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p13', name: 'GRB Pure Cow Ghee - 1 L Jar X 12 Nos', shortName: 'GRB Pure Cow Ghee',
+    category: 'Dairy & Cheese', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🧈',
+    variants: [{ id: '500ml', label: '500 ml' }, { id: '1l', label: '1 L' }],
+    seller: 'Sri Krishna Agencies', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
+    price: 620, mrp: 690, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p14', name: 'Gokul Cow Ghee - 500 ml Jar X 12 Nos', shortName: 'Gokul Cow Ghee',
+    category: 'Dairy & Cheese', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🧈',
+    variants: [{ id: '200ml', label: '200 ml' }, { id: '500ml', label: '500 ml' }],
+    seller: 'Sri Krishna Agencies', source: 'distributor', delivery: 'Free Delivery', margin: '11% Margin',
+    price: 310, mrp: 350, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p15', name: 'MTR Sambar Masala - 200 g Box X 24 Nos', shortName: 'MTR Sambar Masala',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🥘',
+    variants: [{ id: '100g', label: '100 g' }, { id: '200g', label: '200 g' }],
+    seller: 'Balaji Distributors', source: 'distributor', delivery: 'Free Delivery', margin: '14% Margin',
+    price: 92, mrp: 105, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p16', name: 'Eastern Chilli Powder - 500 g Pack X 20 Nos', shortName: 'Eastern Chilli Powder',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🌶️',
+    variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
+    seller: 'Balaji Distributors', source: 'distributor', delivery: 'Free Delivery', margin: '13% Margin',
+    price: 165, mrp: 185, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p17', name: 'Cycle Pure Agarbatti - 3-in-1 Pack X 48 Nos', shortName: 'Cycle Pure Agarbatti',
+    category: 'Personal Care', caseLabel: 'Case: 48 pc', caseSize: 48, image: '🕯️',
+    variants: [{ id: 'small', label: 'Small' }, { id: 'big', label: 'Big' }],
+    seller: 'Vijaya Traders', source: 'distributor', delivery: 'Free Delivery', margin: '18% Margin',
+    price: 45, mrp: 55, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p18', name: 'Priya Gold Butter Bite Biscuits - 200 g Pack X 24 Nos', shortName: 'Priya Gold Butter Bite Biscuits',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🍪',
+    variants: [{ id: '75g', label: '75 g' }, { id: '200g', label: '200 g' }],
+    seller: 'Vijaya Traders', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 35, mrp: 40, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p19', name: 'Vicco Turmeric Skin Cream - 70 g Tube X 36 Nos', shortName: 'Vicco Turmeric Skin Cream',
+    category: 'Personal Care', caseLabel: 'Case: 36 pc', caseSize: 36, image: '🧴',
+    variants: [{ id: '30g', label: '30 g' }, { id: '70g', label: '70 g' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '15% Margin',
+    price: 95, mrp: 110, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p20', name: 'Himalaya Neem Face Wash - 100 ml Tube X 36 Nos', shortName: 'Himalaya Neem Face Wash',
+    category: 'Personal Care', caseLabel: 'Case: 36 pc', caseSize: 36, image: '🧼',
+    variants: [{ id: '50ml', label: '50 ml' }, { id: '100ml', label: '100 ml' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '16% Margin',
+    price: 120, mrp: 140, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);

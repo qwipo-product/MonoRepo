@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, CalendarClock, CheckCircle2, LogIn, LogOut, CalendarDays } from 'lucide-react';
 import { Button, Sheet, Input, cn } from '@mockups/ui';
+import { formatDate } from '../../date';
 import {
   ATTENDANCE,
   LEAVES,
@@ -168,7 +169,7 @@ export function AttendanceScreen({ onBack }: { onBack: () => void }) {
           {leaves.map((l) => (
             <div key={l.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-foreground">{l.appliedOn}</div>
+                <div className="text-sm font-medium text-foreground">{formatDate(l.appliedOn)}</div>
                 <div className="truncate text-xs text-foreground-secondary">{l.reason}</div>
               </div>
               <span

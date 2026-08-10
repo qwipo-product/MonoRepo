@@ -3,6 +3,7 @@ import { ChevronLeft, CalendarDays } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { dayPerformanceFor, MONTH_PERFORMANCE, PERFORMANCE_TODAY } from '../../data/salesperson';
+import { formatDate } from '../../date';
 
 /* Salesperson · Performance — pick a date, see that day's targets vs achieved.
    A month-to-date allowance card sits below. (No Today/Month tabs.) */
@@ -29,7 +30,7 @@ export function PerformanceScreen({ onBack }: { onBack: () => void }) {
         <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 shadow-sm active:scale-[0.99]">
           <span className="text-sm font-medium text-foreground">Selected date</span>
           <span className="flex items-center gap-2 text-sm font-semibold tabular-nums text-foreground">
-            {date}
+            {formatDate(date)}
             <CalendarDays className="h-4 w-4 text-primary" />
           </span>
           <input
