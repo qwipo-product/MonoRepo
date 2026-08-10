@@ -40,7 +40,7 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 158, mrp: 185, margin: '14% Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },
-      { id: 'srisai', name: 'Sri Sai Krishna Traders', price: 172, mrp: 190, margin: '9% Margin', delivery: 'Delivery by Thursday', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 172, mrp: 190, margin: '9% Margin', delivery: 'Delivery by Friday', fee: '₹1/kg' },
       { id: 'vasudha', name: 'Vasudha Wholesalers', price: 165, mrp: 188, margin: '12% Margin', delivery: 'Delivery by Wednesday', fee: '₹1.5/kg' },
     ],
   },
@@ -59,7 +59,7 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 135, mrp: 160, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
-      { id: 'srisai', name: 'Sri Sai Krishna Traders', price: 142, mrp: 165, margin: '13% Margin', delivery: 'Delivery by Thursday', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 142, mrp: 165, margin: '13% Margin', delivery: 'Delivery by Wednesday', fee: '₹1/kg' },
     ],
   },
   {

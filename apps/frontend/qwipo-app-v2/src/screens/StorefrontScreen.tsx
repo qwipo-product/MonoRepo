@@ -1,26 +1,33 @@
 import { ChevronLeft, Search, BadgeCheck, ArrowRight } from 'lucide-react';
 import { Button } from '@mockups/ui';
+import { formatInr } from '@mockups/components';
 import type { Navigate } from '../nav';
 import type { AppliedFilter } from '../data/filters';
 import { BrandLogo } from '../components/BrandLogo';
-import { DIST_CATEGORIES, BRANDS } from '../data/home';
+import { DIST_CATEGORIES, BRANDS, type Distributor } from '../data/home';
+import { deliveryFor, dayLabel } from '../data/delivery';
 
 /* Authorised Distributor storefront — brand hero (MOV + delivery), shop-by-
-   category grid, and a top-brands rail. Category / brand taps open the Product
-   List scoped to THIS distributor (distributor chip + the category/brand chip). */
+   category grid, and a top-brands rail. Renders whichever distributor was
+   tapped; category / brand taps open the Product List scoped to THIS
+   distributor (distributor chip + the category/brand chip). */
 
-const STOREFRONT = {
-  initials: 'SSKT',
-  name: 'Sri Sai Krishna Traders',
-  mov: '₹5,000',
-  delivery: 'Tomorrow',
-};
-
-export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; onNavigate: Navigate }) {
+export function StorefrontScreen({
+  distributor,
+  onBack,
+  onNavigate,
+}: {
+  distributor: Distributor;
+  onBack: () => void;
+  onNavigate: Navigate;
+}) {
+  const dist = deliveryFor(distributor.name);
   // Every product-list link from the storefront is scoped to this distributor.
   const openList = (extra?: AppliedFilter) =>
     onNavigate('listing', {
-      applied: extra ? [{ type: 'distributor', value: STOREFRONT.name }, extra] : [{ type: 'distributor', value: STOREFRONT.name }],
+      applied: extra
+        ? [{ type: 'distributor', value: distributor.name }, extra]
+        : [{ type: 'distributor', value: distributor.name }],
       backTo: 'storefront',
     });
   return (
@@ -48,11 +55,11 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
         <div className="bg-gradient-to-br from-primary to-primary-active px-4 pb-4 pt-4 text-primary-foreground">
           <div className="flex items-center gap-3">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-white text-sm font-bold text-primary">
-              {STOREFRONT.initials}
+              {distributor.short}
             </span>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-base font-bold">{STOREFRONT.name}</span>
+                <span className="truncate text-base font-bold">{distributor.name}</span>
                 <BadgeCheck className="h-4 w-4 shrink-0" />
               </div>
               <span className="mt-1 inline-flex items-center rounded-full bg-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
@@ -61,16 +68,20 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
             </div>
           </div>
 
+          {/* delivery days — one cell per option, each with its own MOV (info only) */}
           <div className="mt-3 flex overflow-hidden rounded-lg bg-primary-foreground/10">
-            <div className="flex-1 px-3 py-2.5 text-center">
-              <div className="text-[11px] text-primary-foreground/70">Minimum Order Value</div>
-              <div className="mt-0.5 text-sm font-bold tabular-nums">{STOREFRONT.mov}</div>
-            </div>
-            <div className="w-px bg-primary-foreground/20" />
-            <div className="flex-1 px-3 py-2.5 text-center">
-              <div className="text-[11px] text-primary-foreground/70">Delivery by</div>
-              <div className="mt-0.5 text-sm font-bold">{STOREFRONT.delivery}</div>
-            </div>
+            {dist.options.map((o, i) => (
+              <div
+                key={i}
+                className="flex-1 border-l border-primary-foreground/20 px-3 py-2.5 text-center first:border-l-0"
+              >
+                <div className="text-[11px] text-primary-foreground/70">Delivery by</div>
+                <div className="mt-0.5 text-sm font-bold">{dayLabel(o)}</div>
+                <div className="mt-1 text-[11px] font-medium text-primary-foreground/80 tabular-nums">
+                  {o.mov != null ? `Min. order ${formatInr(o.mov)}` : 'No minimum'}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

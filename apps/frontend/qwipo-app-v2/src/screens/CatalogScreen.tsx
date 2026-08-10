@@ -7,6 +7,23 @@ import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
+import { deliveryFor, dayLabel } from '../data/delivery';
+
+// Delivery day(s) + MOV per distributor — one row per option; MOV omitted when
+// the distributor has none (Omkar).
+function deliveryFooter(seller: string) {
+  const d = deliveryFor(seller);
+  return (
+    <div className="flex w-full flex-col gap-1">
+      {d.options.map((o, i) => (
+        <div key={i} className="flex items-center justify-between">
+          <span>{dayLabel(o)}</span>
+          {o.mov != null && <span>MOV {formatInr(o.mov)}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
@@ -47,7 +64,10 @@ export function CatalogScreen({
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
-  const base = applied.length ? PRODUCTS.filter((p) => applied.every((a) => matchesApplied(p, a))) : PRODUCTS;
+  // Distributor flow: only distributor-source SKUs (wholesaler products live in
+  // their own catalog + WholesalerProductsScreen — no channel cross-over).
+  const distProducts = PRODUCTS.filter((p) => p.source === 'distributor');
+  const base = applied.length ? distProducts.filter((p) => applied.every((a) => matchesApplied(p, a))) : distProducts;
   const items = applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.shortName),
@@ -108,12 +128,7 @@ export function CatalogScreen({
               onDiscounts={() => setDiscountsOpen(true)}
               subtotal={p.price * (qty[p.id] ?? 0)}
               subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
-              footer={
-                <>
-                  <span>{p.deliveryDay}</span>
-                  <span>MOV {formatInr(p.mov)}</span>
-                </>
-              }
+              footer={deliveryFooter(p.seller)}
             />
           ))
         )}

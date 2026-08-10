@@ -1,4 +1,5 @@
 import { PRODUCTS, type Product } from './products';
+import { deliveryFor, dayLabel } from './delivery';
 
 /* Self-contained cart mock. The Shop section (product list → selling-units →
    add-to-cart) is owned by another developer, so Cart Summary carries its own
@@ -19,19 +20,6 @@ export interface CartLine {
   free?: boolean;
 }
 
-interface SellerConfig {
-  mov: number;
-  freeDeliveryAt: number;
-  windows: [string, string];
-}
-
-// Per-seller thresholds + beat-day windows.
-const SELLER_CONFIG: Record<string, SellerConfig> = {
-  'Sri Sai Krishna Traders': { mov: 2000, freeDeliveryAt: 3000, windows: ['Sat 8th · Beat', 'Tomorrow'] },
-  'Omkar Enterprises': { mov: 1000, freeDeliveryAt: 3000, windows: ['Fri · Beat day', 'Tomorrow'] },
-  'Karnataka Soaps & Detergents': { mov: 5000, freeDeliveryAt: 6000, windows: ['Sat 8th · Beat', 'Tomorrow'] },
-};
-const DEFAULT_CONFIG: SellerConfig = { mov: 1000, freeDeliveryAt: 3000, windows: ['Tomorrow', 'Day after'] };
 
 // Seeded to show all three states + a FREE item + a "+N more" rail.
 export const CART_LINES: CartLine[] = [
@@ -68,7 +56,7 @@ export interface CartSeller {
   unlockRemaining: number;
   /** 0–100, subtotal toward the minimum. */
   progress: number;
-  windows: [string, string];
+  windows: string[];
 }
 
 export function buildCart(): {
@@ -92,7 +80,11 @@ export function buildCart(): {
   const sellers: CartSeller[] = [];
   for (const [name, items] of bySeller) {
     const type = items[0].product.source;
-    const cfg = SELLER_CONFIG[name] ?? DEFAULT_CONFIG;
+    const d = deliveryFor(name);
+    // MOV is per delivery day; gate on the lowest (clear the cheapest day → order
+    // allowed). A day with no MOV (e.g. Omkar) → 0, so the seller never blocks.
+    const mov = Math.min(...d.options.map((o) => o.mov ?? 0));
+    const cfg = { mov, freeDeliveryAt: d.freeDeliveryAt, windows: d.options.map(dayLabel) };
     const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
     const savings = items.reduce(
       (s, i) => s + (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)),

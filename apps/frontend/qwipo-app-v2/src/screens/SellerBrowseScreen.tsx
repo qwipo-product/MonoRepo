@@ -131,7 +131,7 @@ export function SellerBrowseScreen({
             {sellerList.map((d) => (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
-                  onClick={() => onNavigate('storefront', { backTo: selfId })}
+                  onClick={() => onNavigate('storefront', { backTo: selfId, distributor: d })}
                   aria-label={`Open ${d.title} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >

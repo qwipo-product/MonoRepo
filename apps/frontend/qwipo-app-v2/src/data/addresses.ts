@@ -9,12 +9,16 @@ export interface Address {
   pincode: string;
 }
 
+// Order = Location 1 / 2 / 3 as shown in Saved Addresses:
+//   1 (default) Gachibowli — distributors + wholesalers
+//   2           Madhapur   — distributors only
+//   3           Rai Durg   — wholesalers only
 export const ADDRESSES: Address[] = [
   {
-    id: 'shop-14',
-    emoji: '🏪',
-    title: 'Shop 14, Lit Box Complex',
-    locality: 'Rai Durg, Hitech City, Hyderabad, Telangana',
+    id: 'flat-502',
+    emoji: '🏠',
+    title: 'Flat 502, Sigma Towers',
+    locality: 'Gachibowli, Hyderabad, Telangana',
     pincode: '500032',
   },
   {
@@ -25,15 +29,15 @@ export const ADDRESSES: Address[] = [
     pincode: '500081',
   },
   {
-    id: 'flat-502',
-    emoji: '🏠',
-    title: 'Flat 502, Sigma Towers',
-    locality: 'Gachibowli, Hyderabad, Telangana',
+    id: 'shop-14',
+    emoji: '🏪',
+    title: 'Shop 14, Lit Box Complex',
+    locality: 'Rai Durg, Hitech City, Hyderabad, Telangana',
     pincode: '500032',
   },
 ];
 
-/** Address delivering by default (the last one, per the mockup). */
+/** Address delivering by default — Location 1 (Gachibowli, both channels). */
 export const DEFAULT_ADDRESS_ID = 'flat-502';
 
 /** Which seller types are serviceable at a location. */

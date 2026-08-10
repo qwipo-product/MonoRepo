@@ -18,6 +18,8 @@ import { MyAccountScreen } from './screens/MyAccountScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import { BusinessDetailsScreen } from './screens/BusinessDetailsScreen';
 import { PaymentsScreen } from './screens/PaymentsScreen';
+import { PaymentOrdersScreen } from './screens/PaymentOrdersScreen';
+import { PaymentGatewaysScreen } from './screens/PaymentGatewaysScreen';
 import { CreditPartnersScreen } from './screens/CreditPartnersScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { LanguageScreen } from './screens/LanguageScreen';
@@ -41,7 +43,7 @@ import { ReorderScreen } from './screens/ReorderScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
-import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS } from './data/home';
+import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart } from './data/cart';
 import { ORDERS } from './data/orders';
 import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/addresses';
@@ -53,7 +55,8 @@ const BUILT = new Set<ScreenId>([
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
+  'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
+  'settings', 'sub:language', 'sub:help', 'sub:terms',
 ]);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
@@ -88,10 +91,14 @@ export default function App() {
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
+  // Payments flow context: selected vendor + amount carried into the pay screen.
+  const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
+  const [payAmount, setPayAmount] = useState<number>(0);
   // Filter/back context carried into product lists, storefront, and browse tabs.
   const [listApplied, setListApplied] = useState<AppliedFilter[]>([]);
   const [listBackTo, setListBackTo] = useState<ScreenId>('home');
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
+  const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
@@ -161,6 +168,7 @@ export default function App() {
     // Only overwrite on a real entry (home rail / browse); a list→storefront
     // bounce carries no backTo and should keep the original target.
     if (id === 'storefront' && opts?.backTo) setStorefrontBackTo(opts.backTo);
+    if (id === 'storefront' && opts?.distributor) setSelectedDistributor(opts.distributor);
     if (id === 'distributors-list' || id === 'wholesaler-categories') {
       setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
@@ -234,7 +242,7 @@ export default function App() {
       case 'wholesaler-units':
         return <WholesalerProductsScreen initialSheet applied={listApplied} onBack={() => go(listBackTo)} onSearch={() => go('global-search')} onGoToCart={() => go('cart')} />;
       case 'storefront':
-        return <StorefrontScreen onBack={() => go(storefrontBackTo)} onNavigate={go} />;
+        return <StorefrontScreen distributor={selectedDistributor} onBack={() => go(storefrontBackTo)} onNavigate={go} />;
       case 'listing':
         return (
           <CatalogScreen
@@ -298,7 +306,35 @@ export default function App() {
       case 'sub:business-details':
         return <BusinessDetailsScreen onBack={() => go('profile')} />;
       case 'sub:payment':
-        return <PaymentsScreen onBack={() => go('profile')} />;
+        return (
+          <PaymentsScreen
+            onBack={() => go('profile')}
+            onOpenVendor={(id) => {
+              setPaymentVendorId(id);
+              go('sub:payment-orders');
+            }}
+          />
+        );
+      case 'sub:payment-orders':
+        return (
+          <PaymentOrdersScreen
+            vendorId={paymentVendorId}
+            onBack={() => go('sub:payment')}
+            onPay={(amount) => {
+              setPayAmount(amount);
+              go('sub:payment-gateways');
+            }}
+          />
+        );
+      case 'sub:payment-gateways':
+        return (
+          <PaymentGatewaysScreen
+            vendorId={paymentVendorId}
+            amount={payAmount}
+            onBack={() => go('sub:payment-orders')}
+            onDone={() => go('sub:payment')}
+          />
+        );
       case 'sub:credit':
         return <CreditPartnersScreen onBack={() => go('profile')} />;
       case 'settings':

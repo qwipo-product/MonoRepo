@@ -113,7 +113,7 @@ export function HomeScreen({
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
                 {DISTRIBUTORS.map((d) => (
-                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home' })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
+                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
                     <BrandLogo src={d.logo} alt={d.title} className="h-28 w-28 rounded-lg border border-border shadow-sm" />
                     <div className="truncate text-sm font-medium">{d.title}</div>
                     <div className="truncate text-xs text-foreground-secondary">{d.short}</div>
