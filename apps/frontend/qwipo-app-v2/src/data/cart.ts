@@ -13,6 +13,29 @@ import { deliveryFor, dayLabel } from './delivery';
 
 export type CartStatus = 'free' | 'paid' | 'below';
 
+// Weight per selling unit (kg) for the seeded cart products — drives the
+// Minimum Order Weight (MOW) check alongside the value-based MOV.
+export const UNIT_WEIGHT_KG: Record<string, number> = {
+  p1: 1, // Freedom Oil 1 L
+  p2: 5, // Aashirvaad Atta 5 kg
+  p3: 0.5, // Fortune Besan 500 g
+  p4: 0.28, // Maggi 280 g
+  p5: 0.15, // Mysore Soap 150 g
+  p8: 0.15, // Close Up 150 g
+  p9: 0.1, // Dabur Red 100 g
+  p10: 0.25, // Red Label Tea 250 g
+};
+
+/** Minimum order WEIGHT (kg) per seller. 0 → no weight minimum. */
+export const SELLER_MOW: Record<string, number> = {
+  'Sri Sai Krishna Traders': 25, // ~53 kg in cart → cleared
+  'Omkar Enterprises': 25, // ~13 kg in cart → MOW alert (MOV is fine → MOW only)
+  'Karnataka Soaps & Detergents': 5, // ~0.45 kg → MOW alert (also below MOV → both)
+};
+
+export const itemWeight = (item: CartItem): number =>
+  item.quantity * (UNIT_WEIGHT_KG[item.product.id] ?? 0);
+
 export interface CartLine {
   productId: string;
   quantity: number;
@@ -57,6 +80,19 @@ export interface CartSeller {
   /** 0–100, subtotal toward the minimum. */
   progress: number;
   windows: string[];
+  // ── Minimum Order Weight (MOW) ──
+  /** Minimum order weight (kg) for this seller; 0 → no weight minimum. */
+  mow: number;
+  /** Current order weight (kg) for this seller. */
+  weight: number;
+  /** True when weight is under the seller's MOW. */
+  belowWeight: boolean;
+  /** kg still needed to clear the MOW (0 unless belowWeight). */
+  weightRemaining: number;
+  /** 0–100, weight toward the MOW. */
+  weightProgress: number;
+  /** Checkout is blocked when below MOV or below MOW. */
+  blocked: boolean;
 }
 
 export function buildCart(): {
@@ -96,6 +132,10 @@ export function buildCart(): {
     else if (subtotal < cfg.freeDeliveryAt) status = 'paid';
     else status = 'free';
 
+    const mow = SELLER_MOW[name] ?? 0;
+    const weight = items.reduce((s, i) => s + itemWeight(i), 0);
+    const belowWeight = mow > 0 && weight < mow;
+
     sellers.push({
       id: name.toLowerCase().replace(/\s+/g, '-'),
       name,
@@ -110,11 +150,17 @@ export function buildCart(): {
       unlockRemaining: status === 'below' ? cfg.mov - subtotal : 0,
       progress: Math.min(100, Math.round((subtotal / cfg.mov) * 100)),
       windows: cfg.windows,
+      mow,
+      weight,
+      belowWeight,
+      weightRemaining: belowWeight ? mow - weight : 0,
+      weightProgress: mow > 0 ? Math.min(100, Math.round((weight / mow) * 100)) : 100,
+      blocked: status === 'below' || belowWeight,
     });
   }
 
   const grandTotal = sellers.reduce((s, x) => s + x.subtotal, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.length, 0);
-  const anyBelow = sellers.some((s) => s.status === 'below');
+  const anyBelow = sellers.some((s) => s.blocked);
   return { sellers, grandTotal, totalItems, anyBelow };
 }

@@ -79,8 +79,8 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     id: 'wp5', name: 'Aashirvaad Sona Masoori Rice', category: 'Rice & Rice Products', brand: 'Aashirvaad', caseLabel: 'Case: 1 pc', caseSize: 1, image: '🍚',
     variants: [{ id: '5kg', label: '5 Kg' }, { id: '26kg', label: '26 Kg' }],
     vendors: [
-      { id: 'omkar', name: 'Omkar Enterprises', price: 1380, mrp: 1560, margin: '12% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
-      { id: 'balaji', name: 'Balaji Traders', price: 1420, mrp: 1580, margin: '10% Margin', delivery: 'Delivery by Friday', fee: 'Free' },
+      { id: 'omkar', name: 'Omkar Enterprises', price: 2500, mrp: 2800, margin: '12% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 2650, mrp: 2900, margin: '10% Margin', delivery: 'Delivery by Friday', fee: 'Free' },
     ],
   },
   {
@@ -95,8 +95,8 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     id: 'wp7', name: 'Priya Gold Cashews W320', category: 'Dry Fruits', brand: 'Priya Gold', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
     variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
     vendors: [
-      { id: 'omkar', name: 'Omkar Enterprises', price: 420, mrp: 500, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
-      { id: 'balaji', name: 'Balaji Traders', price: 445, mrp: 520, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
+      { id: 'omkar', name: 'Omkar Enterprises', price: 4200, mrp: 4800, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 4400, mrp: 5000, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
     ],
   },
   {
@@ -143,8 +143,8 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     id: 'wp13', name: 'Himalaya Premium Almonds', category: 'Dry Fruits', brand: 'Himalaya', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
     variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
     vendors: [
-      { id: 'omkar', name: 'Omkar Enterprises', price: 520, mrp: 620, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
-      { id: 'balaji', name: 'Balaji Traders', price: 548, mrp: 640, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
+      { id: 'omkar', name: 'Omkar Enterprises', price: 5000, mrp: 5600, margin: '16% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 5200, mrp: 5800, margin: '14% Margin', delivery: 'Delivery by Friday', fee: '₹2/kg' },
     ],
   },
   {
@@ -167,8 +167,8 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     id: 'wp16', name: 'Mysore Sandal Premium Cashews', category: 'Dry Fruits', brand: 'Mysore Sandal', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🥜',
     variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
     vendors: [
-      { id: 'omkar', name: 'Omkar Enterprises', price: 440, mrp: 520, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
-      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 460, mrp: 535, margin: '14% Margin', delivery: 'Delivery by Wednesday', fee: '₹2/kg' },
+      { id: 'omkar', name: 'Omkar Enterprises', price: 4800, mrp: 5400, margin: '15% Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 5000, mrp: 5600, margin: '14% Margin', delivery: 'Delivery by Wednesday', fee: '₹2/kg' },
     ],
   },
 ];

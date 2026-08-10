@@ -49,7 +49,7 @@ export function VendorPicker({
                 </span>
               )}
               <div className="text-base font-bold tabular-nums">{formatInr(vn.price)}</div>
-              <div className="truncate pr-10 text-xs font-medium">{vn.name}</div>
+              <div className="truncate text-xs font-medium">{vn.name}</div>
               <div className={cn('text-xs', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
                 Fee: {vn.fee}
               </div>

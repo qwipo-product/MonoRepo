@@ -120,10 +120,7 @@ export function WholesalerProductsScreen({
         onAdd={(pcs) => {
           if (sheetId) setQty((s) => ({ ...s, [sheetId]: (s[sheetId] ?? 0) + pcs }));
         }}
-        onContinue={() => {
-          setSheetId(null);
-          onGoToCart();
-        }}
+        onContinue={() => setSheetId(null)}
         onClose={() => setSheetId(null)}
       />
 

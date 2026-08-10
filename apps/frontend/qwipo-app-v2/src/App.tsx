@@ -32,7 +32,6 @@ import { SwitchCustomerScreen } from './screens/salesperson/SwitchCustomerScreen
 import { CustomerListScreen } from './screens/salesperson/CustomerListScreen';
 import { CustomerDetailsScreen } from './screens/salesperson/CustomerDetailsScreen';
 import { SALESPERSON_PHONE } from './data/salesperson';
-import { SettingsScreen } from './screens/SettingsScreen';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
@@ -67,7 +66,7 @@ const BUILT = new Set<ScreenId>([
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
-  'settings', 'sub:language', 'sub:help', 'sub:terms',
+  'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
   'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
 ]);
@@ -77,6 +76,10 @@ const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefron
 
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
+
+// Auth flow — Qwipo app only. The Paytm mini surface is already authenticated,
+// so these screens are never shown there.
+const AUTH_SCREENS = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
 
 function readInitialScreen(): ScreenId {
   const s = new URLSearchParams(window.location.search).get('screen');
@@ -140,6 +143,11 @@ export default function App() {
     url.searchParams.set('shell', shell);
     window.history.replaceState(null, '', url);
   }, [screen, shell]);
+
+  // Paytm mini is pre-authenticated — never sit on an auth screen there.
+  useEffect(() => {
+    if (shell === 'paytm' && AUTH_SCREENS.has(screen)) setScreen('listing');
+  }, [shell, screen]);
 
   const setLineQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: Math.max(0, n) }));
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
@@ -348,7 +356,7 @@ export default function App() {
       case 'reorder':
         return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} />;
       case 'profile':
-        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} salesperson={isSalesperson} />;
+        return <MyAccountScreen onNavigate={go} onSignOut={() => go(shell === 'paytm' ? 'home' : 'login')} salesperson={isSalesperson} />;
       case 'notifications':
         return <NotificationsScreen onBack={() => go('profile')} />;
       case 'sub:business-details':
@@ -385,10 +393,8 @@ export default function App() {
         );
       case 'sub:credit':
         return <CreditPartnersScreen onBack={() => go('profile')} />;
-      case 'settings':
-        return <SettingsScreen onBack={() => go('profile')} onNavigate={go} />;
       case 'sub:language':
-        return <LanguageScreen onBack={() => go('settings')} />;
+        return <LanguageScreen onBack={() => go('profile')} />;
       case 'sub:help':
         return <ContactUsScreen onBack={() => go('profile')} />;
       case 'sub:terms':

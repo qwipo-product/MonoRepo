@@ -62,25 +62,29 @@ export default function FlowIndex({
           : 'Click any screen to jump to it.'}
       </p>
 
-      <button
-        onClick={() => onPick('login')}
-        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
-      >
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary-soft text-primary">
-          <UserRound size={15} />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
-            {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
+      {shell !== 'paytm' && (
+        <button
+          onClick={() => onPick('login')}
+          className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary-soft text-primary">
+            <UserRound size={15} />
           </span>
-          <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
-            {effectiveRole === 'salesperson' ? '9000000001' : '9876543210'}
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+              {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
+            </span>
+            <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
+              {effectiveRole === 'salesperson' ? '9000000001' : '9876543210'}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      )}
 
       <div className="mt-5 space-y-5">
-        {SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson').map((group) => (
+        {SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
+          .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
+          .map((group) => (
           <div key={group.title}>
             <div className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary">
               {group.title}

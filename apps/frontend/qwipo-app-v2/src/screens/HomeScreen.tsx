@@ -176,7 +176,7 @@ export function HomeScreen({
                     onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
                     className="flex flex-col gap-2"
                   >
-                    <span className="grid h-32 place-items-center overflow-hidden rounded-lg bg-muted">
+                    <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
                       <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
                     </span>
                     <div className="text-center text-sm font-medium">{c.name}</div>
@@ -287,7 +287,7 @@ function TabButton({
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => void }) {
   return (
     <div className="flex items-center justify-between px-4">
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-base font-semibold tracking-tight">{title}</h2>
       {onSeeAll && (
         <button onClick={onSeeAll} className="text-sm font-medium text-primary">
           See all
@@ -307,14 +307,16 @@ function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className={cn('flex h-60 w-56 shrink-0 flex-col rounded-lg p-4 text-left', OFFER_TONE[offer.tone])}
+      className={cn('flex h-40 w-52 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
     >
-      <div className="text-xl font-bold leading-tight">{offer.headline}</div>
-      <div className="mt-3 text-3xl">{offer.emoji}</div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-base font-bold leading-tight">{offer.headline}</div>
+        <div className="shrink-0 text-2xl leading-none">{offer.emoji}</div>
+      </div>
       <div className="mt-auto">
         <div className="text-sm font-semibold text-foreground">{offer.brand}</div>
-        <div className="text-xs text-foreground-secondary">{offer.sub}</div>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold">
+        <div className="truncate text-xs text-foreground-secondary">{offer.sub}</div>
+        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold">
           Shop now <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </div>
@@ -324,8 +326,8 @@ function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }
 
 function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex w-20 shrink-0 flex-col items-center gap-1.5">
-      <span className="grid h-20 w-20 place-items-center overflow-hidden rounded-lg bg-muted">
+    <button onClick={onClick} className="flex w-28 shrink-0 flex-col items-center gap-1.5">
+      <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
         <img src={encodeURI(cat.image)} alt={cat.name} className="h-full w-full object-cover" />
       </span>
       <div className="w-full truncate text-center text-xs">{cat.name}</div>

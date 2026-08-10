@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { ChevronLeft, Plus, Truck, X } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import type { CartSeller } from '../data/cart';
+import { itemWeight, type CartSeller } from '../data/cart';
+
+const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 
 /* Cart · View Items — the per-seller line list reached from a Cart Summary
    card's "View items". Edit quantities or remove lines; tapping a line opens
@@ -28,6 +30,10 @@ export function ViewItemsScreen({
   );
   const met = subtotal >= seller.mov;
   const remaining = Math.max(0, seller.mov - subtotal);
+  // MOW — recomputed live from the remaining items.
+  const weight = items.reduce((s, i) => s + itemWeight(i), 0);
+  const weightMet = seller.mow === 0 || weight >= seller.mow;
+  const weightRemaining = Math.max(0, seller.mow - weight);
 
   const remove = (index: number) => setItems((list) => list.filter((_, i) => i !== index));
 
@@ -66,12 +72,22 @@ export function ViewItemsScreen({
         </div>
       </div>
 
-      {/* below-minimum strip */}
+      {/* below minimum-order-value strip */}
       {items.length > 0 && !met && (
         <div className="flex items-center gap-1.5 border-b border-border bg-warning-subtle px-4 py-2 text-xs text-warning-foreground">
           <Truck className="h-3.5 w-3.5 shrink-0" />
           <span>
-            Add <strong>{formatInr(remaining)}</strong> to reach the {formatInr(seller.mov)} minimum
+            Add <strong>{formatInr(remaining)}</strong> to reach the {formatInr(seller.mov)} minimum order value
+          </span>
+        </div>
+      )}
+
+      {/* below minimum-order-weight strip */}
+      {items.length > 0 && !weightMet && (
+        <div className="flex items-center gap-1.5 border-b border-border bg-warning-subtle px-4 py-2 text-xs text-warning-foreground">
+          <Truck className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Add <strong>{kg(weightRemaining)}</strong> to reach the {kg(seller.mow)} minimum order weight
           </span>
         </div>
       )}

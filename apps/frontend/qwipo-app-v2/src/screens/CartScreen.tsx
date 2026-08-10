@@ -4,6 +4,9 @@ import { Button, SegmentedControl } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 
+/** kg with at most 2 decimals + unit (e.g. "0.45 kg", "25 kg"). */
+const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
+
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
    a retailer can see at a glance which sellers are ready to check out. Data is
@@ -128,12 +131,12 @@ function SellerCard({
           </div>
         </div>
 
-        {/* delivery pill OR below-minimum progress */}
-        {seller.status === 'below' ? (
+        {/* MOV — below-minimum-value progress */}
+        {seller.status === 'below' && (
           <div className="mt-2.5 rounded-lg bg-warning-subtle p-2.5">
             <div className="flex items-start justify-between gap-2">
               <div className="text-xs font-semibold text-warning-foreground">
-                Add {formatInr(seller.unlockRemaining)} to unlock checkout
+                Add {formatInr(seller.unlockRemaining)} to meet minimum order value
               </div>
               <div className="shrink-0 text-[11px] tabular-nums text-warning-foreground">
                 {formatInr(seller.subtotal)} / {formatInr(seller.mov)}
@@ -143,10 +146,33 @@ function SellerCard({
               <div className="h-full rounded-full bg-warning" style={{ width: `${seller.progress}%` }} />
             </div>
             <div className="mt-1.5 text-[11px] text-foreground-secondary">
-              Minimum order for this supplier is {formatInr(seller.mov)}
+              Minimum order value for this supplier is {formatInr(seller.mov)}
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* MOW — below-minimum-weight progress */}
+        {seller.belowWeight && (
+          <div className="mt-2.5 rounded-lg bg-warning-subtle p-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-xs font-semibold text-warning-foreground">
+                Add {kg(seller.weightRemaining)} to meet minimum order weight
+              </div>
+              <div className="shrink-0 text-[11px] tabular-nums text-warning-foreground">
+                {kg(seller.weight)} / {kg(seller.mow)}
+              </div>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-warning-border">
+              <div className="h-full rounded-full bg-warning" style={{ width: `${seller.weightProgress}%` }} />
+            </div>
+            <div className="mt-1.5 text-[11px] text-foreground-secondary">
+              Minimum order weight for this supplier is {kg(seller.mow)}
+            </div>
+          </div>
+        )}
+
+        {/* delivery pill — only when nothing is blocking checkout */}
+        {!seller.blocked && (
           <div className="mt-2.5">
             {seller.status === 'free' ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
@@ -188,8 +214,8 @@ function SellerCard({
           )}
         </div>
 
-        {/* delivery window — hidden while blocked below minimum */}
-        {seller.status !== 'below' && (
+        {/* delivery window — hidden while blocked below MOV or MOW */}
+        {!seller.blocked && (
           <div className="mt-3">
             <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
             <SegmentedControl
@@ -208,7 +234,7 @@ function SellerCard({
             View items
           </Button>
           <Button
-            variant={seller.status === 'below' ? 'warning' : 'secondary'}
+            variant={seller.blocked ? 'warning' : 'secondary'}
             fullWidth
             onClick={onAddMore}
           >

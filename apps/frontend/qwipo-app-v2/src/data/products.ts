@@ -125,7 +125,7 @@ export const PRODUCTS: Product[] = [
     category: 'Rice & Rice Products', caseLabel: 'Case: 1 pc', caseSize: 1, image: '🍚',
     variants: [{ id: '5kg', label: '5 kg' }, { id: '26kg', label: '26 kg' }],
     seller: 'Annapurna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '8% Margin',
-    price: 1420, mrp: 1560, deliveryDay: 'Fri (Beat day)', mov: 500,
+    price: 2500, mrp: 2750, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
   {
     id: 'p12', name: 'Madhur Toor Dal - 1 kg Pack X 12 Nos', shortName: 'Madhur Toor Dal',
@@ -139,7 +139,7 @@ export const PRODUCTS: Product[] = [
     category: 'Dairy & Cheese', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🧈',
     variants: [{ id: '500ml', label: '500 ml' }, { id: '1l', label: '1 L' }],
     seller: 'Sri Krishna Agencies', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
-    price: 620, mrp: 690, deliveryDay: 'Fri (Beat day)', mov: 500,
+    price: 3250.5, mrp: 3600, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
   {
     id: 'p14', name: 'Gokul Cow Ghee - 500 ml Jar X 12 Nos', shortName: 'Gokul Cow Ghee',

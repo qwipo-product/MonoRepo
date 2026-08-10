@@ -67,7 +67,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'sub:payment-orders', label: 'Account · Payments · Orders' },
       { id: 'sub:payment-gateways', label: 'Account · Payments · Pay' },
       { id: 'sub:credit', label: 'Account · Credit Partners' },
-      { id: 'settings', label: 'Account · Settings' },
       { id: 'sub:language', label: 'Account · Language' },
       { id: 'sub:help', label: 'Account · Contact Us' },
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
