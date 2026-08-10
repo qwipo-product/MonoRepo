@@ -226,18 +226,20 @@ function VendorProductCard({
         <PriceLabel price={selected.price} mrp={selected.mrp} suffix="/pc" size="lg" />
       </div>
 
-      {/* actions */}
+      {/* actions — fixed widths so the row never reflows when qty changes. */}
       <div className="mt-3 flex items-center gap-2">
         <Button variant="soft" className="flex-1" onClick={onDiscounts}>
           Discounts ⌄
         </Button>
-        {qty > 0 ? (
-          <QtyStepper value={qty} onChange={onQty} tone="soft" className="ml-auto" />
-        ) : (
-          <Button className="flex-1" onClick={onAdd}>
-            + Add
-          </Button>
-        )}
+        <div className="w-28 shrink-0">
+          {qty > 0 ? (
+            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
+          ) : (
+            <Button className="w-full" onClick={onAdd}>
+              + Add
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* total for the selected qty */}

@@ -36,16 +36,16 @@ export function PackTierRow({
         <div className="text-xs tabular-nums text-foreground-secondary">{formatInr(unitPrice)}</div>
         <div className="text-sm font-bold tabular-nums text-foreground">{formatInr(unitPrice * pcs)}</div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
+      <div className="flex w-28 shrink-0 flex-col items-end gap-1">
         {packs > 0 ? (
           <>
-            <QtyStepper value={packs} onChange={set} min={0} tone="soft" />
+            <QtyStepper value={packs} onChange={set} min={0} tone="soft" className="w-full" />
             <span className="text-xs font-medium tabular-nums text-foreground-secondary">
               {packs * pcs} {packs * pcs === 1 ? 'pc' : 'pcs'}
             </span>
           </>
         ) : (
-          <Button size="sm" onClick={() => set(1)}>
+          <Button size="sm" className="w-full" onClick={() => set(1)}>
             + Add
           </Button>
         )}

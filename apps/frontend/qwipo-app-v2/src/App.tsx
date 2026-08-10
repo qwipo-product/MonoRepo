@@ -364,10 +364,7 @@ export default function App() {
             onAdd={(pcs) => {
               if (sheetId) setLineQty(sheetId, (qty[sheetId] ?? 0) + pcs);
             }}
-            onContinue={() => {
-              setSheetId(null);
-              go('cart');
-            }}
+            onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}
           />
 

@@ -143,20 +143,25 @@ export function ProductCard({
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
 
-      {/* actions */}
+      {/* actions — Discounts + Add/Qty keep fixed widths so the row never
+          reflows when qty changes (Add ⇄ stepper swap inside a fixed box). */}
       <div className="mt-3 flex items-center gap-2">
         {onDiscounts && (
           <Button variant="soft" className="flex-1" onClick={onDiscounts}>
             Discounts ⌄
           </Button>
         )}
-        {qty > 0 && onQty ? (
-          <QtyStepper value={qty} onChange={onQty} tone="soft" className="ml-auto" />
-        ) : (
-          <Button className="flex-1" onClick={onAdd}>
-            + Add
-          </Button>
-        )}
+        <div className={onDiscounts ? 'w-28 shrink-0' : 'flex-1'}>
+          {qty > 0 ? (
+            // Tapping − / + reopens the selling-units sheet (the qty editor)
+            // rather than stepping inline — reuses the QtyStepper primitive.
+            <QtyStepper value={qty} onChange={() => onAdd?.()} tone="soft" className="w-full" />
+          ) : (
+            <Button className="w-full" onClick={onAdd}>
+              + Add
+            </Button>
+          )}
+        </div>
       </div>
 
       {subtotal != null && subtotal > 0 && (
