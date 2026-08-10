@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
-import { Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { Badge, Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
+import { PriceLabel, formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { VendorPicker } from '../components/VendorPicker';
@@ -193,20 +193,38 @@ function VendorProductCard({
         cheapestId={cheapest}
       />
 
-      {/* add / qty for the selected vendor */}
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="min-w-0 text-sm">
-          <span className="font-bold tabular-nums text-foreground">{formatInr(selected.price)}</span>
-          <span className="truncate text-xs text-foreground-secondary"> · from {selected.name}</span>
+      {/* selected vendor: margin + delivery date + price (with discount) */}
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <Badge variant="success">{selected.margin}</Badge>
+          <div className="text-sm text-success-foreground">{selected.delivery}</div>
         </div>
+        <PriceLabel price={selected.price} mrp={selected.mrp} suffix="/pc" size="lg" />
+      </div>
+
+      {/* actions */}
+      <div className="mt-3 flex items-center gap-2">
+        <Button variant="soft" className="flex-1" onClick={() => undefined}>
+          Discounts ⌄
+        </Button>
         {qty > 0 ? (
-          <QtyStepper value={qty} onChange={onQty} />
+          <QtyStepper value={qty} onChange={onQty} tone="soft" className="ml-auto" />
         ) : (
-          <Button size="sm" onClick={onAdd}>
+          <Button className="flex-1" onClick={onAdd}>
             + Add
           </Button>
         )}
       </div>
+
+      {/* total for the selected qty */}
+      {qty > 0 && (
+        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
+            Total ({qty} pcs)
+          </span>
+          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(selected.price * qty)}</span>
+        </div>
+      )}
     </Card>
   );
 }

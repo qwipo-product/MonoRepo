@@ -104,6 +104,8 @@ export function CatalogScreen({
               onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onDiscounts={() => undefined}
+              subtotal={p.price * (qty[p.id] ?? 0)}
+              subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={
                 <>
                   <span>{p.deliveryDay}</span>
