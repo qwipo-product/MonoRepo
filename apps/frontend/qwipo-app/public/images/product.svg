@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Product">
-  <rect width="200" height="200" rx="20" fill="#FEF3C7"/>
-  <rect x="66" y="48" width="68" height="104" rx="10" fill="#F59E0B"/>
-  <rect x="82" y="30" width="36" height="26" rx="6" fill="#B45309"/>
-  <rect x="78" y="82" width="44" height="46" rx="4" fill="#FFFBEB"/>
-  <text x="100" y="184" font-family="system-ui,Arial" font-size="18" font-weight="600" fill="#92400E" text-anchor="middle">Product</text>
-</svg>
