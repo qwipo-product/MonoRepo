@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, Plus, Truck, X } from 'lucide-react';
-import { Button } from '@mockups/ui';
+import { Button, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { itemWeight, type CartSeller } from '../data/cart';
 
@@ -95,13 +95,11 @@ export function ViewItemsScreen({
       {/* item list */}
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {items.length === 0 ? (
-          <div className="pt-16 text-center">
-            <div className="text-4xl">🛒</div>
-            <div className="mt-2 text-base font-semibold text-foreground">No items left</div>
-            <div className="mt-1 text-sm text-foreground-secondary">
-              Everything from this seller has been removed.
-            </div>
-          </div>
+          <EmptyState
+            icon="🛒"
+            title="No items left"
+            description="Everything from this seller has been removed."
+          />
         ) : (
           items.map((item, idx) => (
             <div

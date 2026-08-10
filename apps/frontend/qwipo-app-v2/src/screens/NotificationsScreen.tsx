@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, Bell } from 'lucide-react';
+import { EmptyState } from '@mockups/ui';
 import { NOTIFICATIONS, type AppNotification } from '../data/notifications';
 
 /* Notifications — a single feed. Each card can be marked read on tap, or all at
@@ -38,11 +39,7 @@ export function NotificationsScreen({ onBack }: { onBack: () => void }) {
 
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto bg-background-subtle p-3">
         {notifs.length === 0 ? (
-          <div className="pt-16 text-center">
-            <div className="text-4xl">🔕</div>
-            <div className="mt-2 text-base font-semibold text-foreground">All caught up</div>
-            <div className="mt-1 text-sm text-foreground-secondary">You have no notifications.</div>
-          </div>
+          <EmptyState icon="🔕" title="All caught up" description="You have no notifications." />
         ) : (
           notifs.map((n) => (
             <button

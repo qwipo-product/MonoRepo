@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Plus, Truck } from 'lucide-react';
-import { Button, SegmentedControl } from '@mockups/ui';
+import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 
@@ -48,12 +48,8 @@ export function CartScreen({
       </header>
 
       {sellers.length === 0 ? (
-        <div className="grid flex-1 place-items-center bg-background-subtle p-8 text-center">
-          <div>
-            <div className="text-4xl">🛒</div>
-            <div className="mt-2 text-base font-semibold text-foreground">Your cart is empty</div>
-            <div className="mt-1 text-sm text-foreground-secondary">Add products to see them here.</div>
-          </div>
+        <div className="grid flex-1 place-items-center bg-background-subtle">
+          <EmptyState icon="🛒" title="Your cart is empty" description="Add products to see them here." />
         </div>
       ) : (
         <>
