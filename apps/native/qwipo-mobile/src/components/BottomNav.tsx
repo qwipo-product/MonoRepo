@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, RotateCcw, ShoppingCart, type LucideIcon } from 'lucide-react-native';
-import { lightTheme } from '@mockups/design-tokens';
+import { lightTheme } from '../theme/tokens';
 import { cn } from '../ui/cn';
 
 export type TabId = 'home' | 'reorder' | 'cart';

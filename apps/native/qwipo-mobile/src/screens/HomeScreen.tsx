@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, User, MapPin, ChevronDown, Search } from 'lucide-react-native';
-import { lightTheme } from '@mockups/design-tokens';
+import { lightTheme } from '../theme/tokens';
 import { cn } from '../ui/cn';
 import { DISTRIBUTORS, CATEGORIES, BRANDS } from '../data/home';
 import type { Navigate } from '../nav';
