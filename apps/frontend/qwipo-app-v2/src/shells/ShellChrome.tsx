@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronLeft, MoreVertical, X } from 'lucide-react';
+import { ChevronsLeft, MoreVertical } from 'lucide-react';
 import { StatusBar } from '../components/StatusBar';
 import type { Shell } from '../review/ShellSwitcher';
 
@@ -21,19 +21,13 @@ export function ShellChrome({
 
       {shell === 'paytm' && (
         <>
-          <div className="flex h-11 flex-shrink-0 items-center gap-1 border-b border-border bg-card px-1.5">
-            <button className="grid h-9 w-9 place-items-center text-foreground" aria-label="Back">
-              <ChevronLeft size={20} />
+          <div className="flex h-12 flex-shrink-0 items-center justify-between bg-card px-4">
+            <button className="flex items-center gap-2 text-foreground active:opacity-70" aria-label="Back to Paytm">
+              <ChevronsLeft size={22} />
+              <span className="text-lg font-medium">Paytm</span>
             </button>
-            <div className="flex-1 text-center">
-              <div className="text-sm font-semibold leading-none">Qwipo</div>
-              <div className="mt-0.5 text-[9px] text-foreground-secondary">Mini app · Paytm</div>
-            </div>
-            <button className="grid h-9 w-9 place-items-center text-foreground" aria-label="More">
-              <MoreVertical size={18} />
-            </button>
-            <button className="grid h-9 w-9 place-items-center text-foreground" aria-label="Close">
-              <X size={18} />
+            <button className="grid h-9 w-9 place-items-center text-foreground active:opacity-70" aria-label="More">
+              <MoreVertical size={20} />
             </button>
           </div>
           {/* Paytm brand accent line */}
