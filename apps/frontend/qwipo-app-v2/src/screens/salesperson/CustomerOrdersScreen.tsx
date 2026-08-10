@@ -4,6 +4,7 @@ import { formatInrExact } from '@mockups/components';
 import { OrderListCard } from '../../components/OrderListCard';
 import { buildOrder, type Order } from '../../data/orders';
 import { SP_ORDERS, SP_ORDER_SUMMARY, type SpOrder } from '../../data/salesperson';
+import { formatDate } from '../../date';
 
 /* Salesperson · Customer Orders — the salesperson's order book for today: a
    revenue summary (task vs unassigned) then the day's orders, each a My-Orders
@@ -57,7 +58,7 @@ export function CustomerOrdersScreen({
               meta={o.seller}
               total={o.total}
               rightLabel="Order date"
-              rightValue={o.date}
+              rightValue={formatDate(o.date)}
               onOpenDetails={() => onOpenOrder(toOrder(o))}
               hint={o.discount ? `Coupon −${formatInrExact(o.discount)}` : undefined}
             />

@@ -5,8 +5,6 @@ import {
   CreditCard,
   Users,
   Bell,
-  Settings,
-  Languages,
   LifeBuoy,
   FileText,
   LogOut,
@@ -17,7 +15,9 @@ import {
   ShoppingBag,
   Repeat,
   Phone,
+  Moon,
 } from 'lucide-react';
+import { Switch, useTheme } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import { SALESPERSON } from '../data/salesperson';
 
@@ -41,8 +41,6 @@ const ACCOUNT: Item[] = [
 
 const PREFERENCES: Item[] = [
   { icon: Bell, label: 'Notifications', to: 'notifications', badge: 6 },
-  { icon: Settings, label: 'Settings', to: 'settings' },
-  { icon: Languages, label: 'Language', to: 'sub:language' },
 ];
 
 const SUPPORT: Item[] = [
@@ -70,6 +68,7 @@ export function MyAccountScreen({
   /** Salesperson persona → surface the Salesperson feature group. */
   salesperson?: boolean;
 }) {
+  const { isDark, toggleTheme } = useTheme();
   const initials = PROFILE.name
     .split(' ')
     .slice(0, 2)
@@ -113,6 +112,20 @@ export function MyAccountScreen({
         <MenuGroup title="Account" items={ACCOUNT} onNavigate={onNavigate} />
         <MenuGroup title="Preferences" items={PREFERENCES} onNavigate={onNavigate} />
         <MenuGroup title="Support" items={SUPPORT} onNavigate={onNavigate} />
+
+        <section className="space-y-1.5">
+          <h2 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+            Appearance
+          </h2>
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3.5 shadow-sm">
+            <Moon className="h-5 w-5 shrink-0 text-foreground-secondary" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-foreground">Dark mode</div>
+              <div className="text-xs text-foreground-secondary">Switch the whole app theme</div>
+            </div>
+            <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Dark mode" />
+          </div>
+        </section>
 
         <button
           onClick={onSignOut}

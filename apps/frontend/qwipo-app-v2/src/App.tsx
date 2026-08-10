@@ -145,6 +145,8 @@ export default function App() {
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
   const cartTotal = PRODUCTS.reduce((s, p) => s + p.price * (qty[p.id] ?? 0), 0);
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
+  // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
+  const isSalesperson = role === 'salesperson' && shell === 'buyer';
 
   // Navigate. `distributor-units` isn't a page — it's the sheet over the listing.
   const viewSeller = CART.sellers.find((s) => s.id === viewSellerId) ?? CART.sellers[0] ?? null;
@@ -240,7 +242,7 @@ export default function App() {
             onNavigate={go}
             availability={availabilityFor(deliveryAddressId)}
             deliveryLabel={addressById(deliveryAddressId)?.title}
-            salesperson={role === 'salesperson'}
+            salesperson={isSalesperson}
           />
         );
       case 'sub:addresses':
@@ -346,7 +348,7 @@ export default function App() {
       case 'reorder':
         return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} />;
       case 'profile':
-        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} salesperson={role === 'salesperson'} />;
+        return <MyAccountScreen onNavigate={go} onSignOut={() => go('login')} salesperson={isSalesperson} />;
       case 'notifications':
         return <NotificationsScreen onBack={() => go('profile')} />;
       case 'sub:business-details':

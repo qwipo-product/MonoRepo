@@ -1,19 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, Bell } from 'lucide-react';
-import { Chip } from '@mockups/ui';
-import { NOTIFICATIONS, NOTIFICATION_TABS, type AppNotification } from '../data/notifications';
+import { NOTIFICATIONS, type AppNotification } from '../data/notifications';
 
-/* Notifications — filterable feed. Chip row filters by category; each card can
-   be marked read on tap, or all at once from the header. */
+/* Notifications — a single feed. Each card can be marked read on tap, or all at
+   once from the header. */
 export function NotificationsScreen({ onBack }: { onBack: () => void }) {
-  const [tab, setTab] = useState<(typeof NOTIFICATION_TABS)[number]['key']>('all');
   const [notifs, setNotifs] = useState<AppNotification[]>(NOTIFICATIONS);
 
   const unread = notifs.filter((n) => n.unread).length;
-  const filtered = useMemo(
-    () => (tab === 'all' ? notifs : notifs.filter((n) => n.type === tab)),
-    [tab, notifs]
-  );
 
   const markAll = () => setNotifs((list) => list.map((n) => ({ ...n, unread: false })));
   const markRead = (id: string) =>
@@ -40,34 +34,17 @@ export function NotificationsScreen({ onBack }: { onBack: () => void }) {
             </button>
           )}
         </header>
-
-        <div
-          role="group"
-          aria-label="Filter notifications"
-          className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3"
-        >
-          {NOTIFICATION_TABS.map((t) => (
-            <Chip
-              key={t.key}
-              selected={tab === t.key}
-              aria-pressed={tab === t.key}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </Chip>
-          ))}
-        </div>
       </div>
 
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto bg-background-subtle p-3">
-        {filtered.length === 0 ? (
+        {notifs.length === 0 ? (
           <div className="pt-16 text-center">
             <div className="text-4xl">🔕</div>
             <div className="mt-2 text-base font-semibold text-foreground">All caught up</div>
-            <div className="mt-1 text-sm text-foreground-secondary">No notifications in this category.</div>
+            <div className="mt-1 text-sm text-foreground-secondary">You have no notifications.</div>
           </div>
         ) : (
-          filtered.map((n) => (
+          notifs.map((n) => (
             <button
               key={n.id}
               onClick={() => markRead(n.id)}

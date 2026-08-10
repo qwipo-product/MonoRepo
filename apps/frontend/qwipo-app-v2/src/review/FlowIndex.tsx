@@ -29,6 +29,8 @@ export default function FlowIndex({
   onToggleTheme: () => void;
 }) {
   let n = 0;
+  // Paytm mini is customer-only — no salesperson persona there.
+  const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return (
     <aside className="no-scrollbar max-h-dvh w-80 shrink-0 overflow-y-auto p-6">
       <div className="flex items-center gap-2">
@@ -44,10 +46,12 @@ export default function FlowIndex({
         </button>
       </div>
 
-      {/* persona: Customer vs Salesperson (unlocks the beat-day features) */}
-      <div className="mt-2">
-        <RoleSwitcher value={role} onChange={onRoleChange} />
-      </div>
+      {/* persona: Customer vs Salesperson (Qwipo app only — Paytm is customer-only) */}
+      {shell !== 'paytm' && (
+        <div className="mt-2">
+          <RoleSwitcher value={role} onChange={onRoleChange} />
+        </div>
+      )}
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
         {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}
@@ -67,16 +71,16 @@ export default function FlowIndex({
         </span>
         <span className="min-w-0">
           <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
-            {role === 'salesperson' ? 'Salesperson login' : 'Customer login'}
+            {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
           </span>
           <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
-            {role === 'salesperson' ? '9000000001' : '9876543210'}
+            {effectiveRole === 'salesperson' ? '9000000001' : '9876543210'}
           </span>
         </span>
       </button>
 
       <div className="mt-5 space-y-5">
-        {SCREEN_GROUPS.filter((g) => role === 'salesperson' || g.title !== 'Salesperson').map((group) => (
+        {SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson').map((group) => (
           <div key={group.title}>
             <div className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary">
               {group.title}

@@ -4,6 +4,7 @@ import { formatInrExact } from '@mockups/components';
 import { OrderListCard } from '../../components/OrderListCard';
 import { buildOrder, statusFromLabel, type Order } from '../../data/orders';
 import { CUSTOMER_ORDERS, RECOMMENDATIONS } from '../../data/salesperson';
+import { formatDate } from '../../date';
 
 /* Shared read-only panels for a customer — reused by Task Details and Customer
    Details so the Orders / Recommendation tabs never drift between the two. */
@@ -28,7 +29,7 @@ export function OrdersPanel({
           orderId={o.orderNo}
           status={statusFromLabel(o.status)}
           statusLabel={o.status}
-          meta={`Placed ${o.date}`}
+          meta={`Placed ${formatDate(o.date)}`}
           total={o.amount}
           onOpenDetails={() =>
             onOpenOrder(
@@ -49,7 +50,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
       <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">Last order</div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-          <Mini label="Date" value={reco.lastOrderDate} />
+          <Mini label="Date" value={formatDate(reco.lastOrderDate)} />
           <Mini label="Value" value={formatInrExact(reco.lastOrderValue)} />
           <Mini label="Days ago" value={String(reco.daysSince)} />
         </div>

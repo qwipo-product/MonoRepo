@@ -4,6 +4,7 @@ import { SegmentedControl } from '@mockups/ui';
 import { OrdersPanel, RecoPanel } from './customerPanels';
 import type { Order } from '../../data/orders';
 import { CUSTOMERS } from '../../data/salesperson';
+import { formatDate } from '../../date';
 
 /* Salesperson · Customer Details — read-only view of one retailer: Info,
    Orders, Recommendation (shares the Orders/Reco panels with Task Details). */
@@ -72,7 +73,7 @@ export function CustomerDetailsScreen({
               </a>
             </div>
             <div className="mt-3 border-t border-border pt-3 text-xs font-medium text-success-foreground">
-              {c.lastOrderDate}
+              {formatDate(c.lastOrderDate)}
             </div>
           </div>
         </div>

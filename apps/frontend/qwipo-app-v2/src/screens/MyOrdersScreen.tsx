@@ -3,6 +3,7 @@ import { ChevronLeft, FileText, Check } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
+import { formatDate } from '../date';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
 
@@ -130,10 +131,10 @@ function OrderCard({
       orderId={order.orderId}
       status={order.status}
       statusLabel={order.statusLabel}
-      meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${order.placedAt}`}
+      meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${formatDate(order.placedAt)}`}
       total={order.total}
       rightLabel="Expected delivery"
-      rightValue={order.eta}
+      rightValue={formatDate(order.eta)}
       onOpenDetails={onOpen}
       actions={
         cancelled ? undefined : delivered ? (
@@ -151,7 +152,7 @@ function OrderCard({
           </div>
         )
       }
-      hint={cancellable && !cancelled ? `You can cancel this order before ${order.eta}` : undefined}
+      hint={cancellable && !cancelled ? `You can cancel this order before ${formatDate(order.eta)}` : undefined}
     />
   );
 }

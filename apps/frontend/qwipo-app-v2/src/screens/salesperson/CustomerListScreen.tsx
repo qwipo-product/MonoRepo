@@ -3,6 +3,7 @@ import { ChevronLeft, Search, Users } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ShopCard } from './ShopCard';
 import { CUSTOMERS } from '../../data/salesperson';
+import { formatDate } from '../../date';
 
 /* Salesperson · Customers — every retailer assigned to the salesperson (broader
    than today's tasks). Search by business name or mobile; each card opens the
@@ -68,7 +69,7 @@ export function CustomerListScreen({
               mobile={c.mobile}
               lat={c.lat}
               lng={c.lng}
-              footer={<span className="text-xs font-medium text-success-foreground">{c.lastOrderDate}</span>}
+              footer={<span className="text-xs font-medium text-success-foreground">{formatDate(c.lastOrderDate)}</span>}
               onOpen={() => onOpenCustomer(c.id)}
             />
           ))}

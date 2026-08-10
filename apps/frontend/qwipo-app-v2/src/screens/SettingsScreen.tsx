@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Moon } from 'lucide-react';
-import { Switch, useTheme } from '@mockups/ui';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Switch } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 
-/* Account · Settings — appearance (dark mode → theme), notification
-   preferences (toggles), and general (language). */
+/* Account · Settings — notification preferences (toggles) and general
+   (language). Dark mode lives on the My Account page. */
 
 const NOTIF_ROWS = [
   { key: 'orderUpdates', title: 'Order updates', sub: 'Dispatch, delivery, delays' },
@@ -24,7 +24,6 @@ export function SettingsScreen({
   onBack: () => void;
   onNavigate: (id: ScreenId) => void;
 }) {
-  const { isDark, toggleTheme } = useTheme();
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
     orderUpdates: true,
     promotions: true,
@@ -48,17 +47,6 @@ export function SettingsScreen({
       </header>
 
       <div className="no-scrollbar flex-1 space-y-5 overflow-y-auto bg-background-subtle p-4">
-        <Section title="Appearance">
-          <div className="rounded-lg border border-border bg-card shadow-sm">
-            <SettingRow
-              icon={<Moon className="h-5 w-5 text-foreground-secondary" />}
-              title="Dark mode"
-              sub="Switch the whole app theme"
-              control={<Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Dark mode" />}
-            />
-          </div>
-        </Section>
-
         <Section title="Notification preferences">
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
             {NOTIF_ROWS.map((r) => (

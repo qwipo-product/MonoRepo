@@ -1,15 +1,9 @@
 import { Button } from '@mockups/ui';
 
 /* Order Confirmation — success state after Place Order. Concentric success
-   badge (light ring + filled circle + white check), confirmation copy, a subtle
-   order reference, and the next actions. */
-export function OrderConfirmationScreen({
-  orderId = 'QW-4827',
-  onBackToHome,
-}: {
-  orderId?: string;
-  onBackToHome: () => void;
-}) {
+   badge (light ring + filled circle + white check), confirmation copy, and the
+   next actions. */
+export function OrderConfirmationScreen({ onBackToHome }: { onBackToHome: () => void }) {
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
@@ -36,9 +30,6 @@ export function OrderConfirmationScreen({
         <p className="mt-2 text-sm text-foreground-secondary">
           Your order has been placed successfully!
         </p>
-        <div className="mt-4 rounded-full bg-background-subtle px-3 py-1 text-xs font-medium text-foreground-secondary">
-          Order ID · #{orderId}
-        </div>
       </div>
 
       <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

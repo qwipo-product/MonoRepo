@@ -4,6 +4,7 @@ import { SegmentedControl, EmptyState, Button, cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { OrderListCard } from '../components/OrderListCard';
 import { statusFromLabel } from '../data/orders';
+import { formatDate } from '../date';
 import {
   PAYMENT_VENDORS,
   PAYMENT_ORDERS,
@@ -78,7 +79,7 @@ export function PaymentOrdersScreen({
                   orderId={o.orderNumber}
                   status={statusFromLabel(o.status)}
                   statusLabel={o.status}
-                  meta={`Placed ${o.orderDate}`}
+                  meta={`Placed ${formatDate(o.orderDate)}`}
                   total={o.outstandingAmount}
                   totalLabel="Outstanding"
                   rightLabel="Order amount"
@@ -139,7 +140,7 @@ function TxnRow({ txn }: { txn: PaymentTxn }) {
     <div className="flex items-center justify-between rounded-lg border border-border bg-card p-3 shadow-sm">
       <div className="min-w-0">
         <div className="truncate text-sm font-medium text-foreground">Ref: {txn.ref}</div>
-        <div className="mt-0.5 text-xs text-foreground-secondary">{txn.date}</div>
+        <div className="mt-0.5 text-xs text-foreground-secondary">{formatDate(txn.date)}</div>
       </div>
       <div className="text-right">
         <div className="text-sm font-semibold tabular-nums text-foreground">

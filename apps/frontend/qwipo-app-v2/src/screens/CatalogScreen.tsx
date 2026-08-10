@@ -7,23 +7,7 @@ import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
-import { deliveryFor, dayLabel } from '../data/delivery';
-
-// Delivery day(s) + MOV per distributor — one row per option; MOV omitted when
-// the distributor has none (Omkar).
-function deliveryFooter(seller: string) {
-  const d = deliveryFor(seller);
-  return (
-    <div className="flex w-full flex-col gap-1">
-      {d.options.map((o, i) => (
-        <div key={i} className="flex items-center justify-between">
-          <span>{dayLabel(o)}</span>
-          {o.mov != null && <span>MOV {formatInr(o.mov)}</span>}
-        </div>
-      ))}
-    </div>
-  );
-}
+import { deliveryFooter } from '../components/DeliveryFooter';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];

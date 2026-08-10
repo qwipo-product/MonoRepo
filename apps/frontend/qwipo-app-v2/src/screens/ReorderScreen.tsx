@@ -4,6 +4,8 @@ import { EmptyState } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS } from '../data/reorder';
 import { FiltersSheet } from '../sheets/FiltersSheet';
+import { DiscountsSheet } from '../sheets/DiscountsSheet';
+import { deliveryFooter } from '../components/DeliveryFooter';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
 
 /* Reorder — the distributor Product List pattern applied to purchase history.
@@ -28,6 +30,7 @@ export function ReorderScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [discountsOpen, setDiscountsOpen] = useState(false);
 
   const items = applyFilters(REORDER_ITEMS, filters, {
     id: (r) => r.product.id,
@@ -72,8 +75,12 @@ export function ReorderScreen({
           />
         ) : (
           items.map((r) => (
-            <ProductCard
-              key={r.product.id}
+            <div key={r.product.id} className="space-y-1.5">
+              <div className="flex items-center justify-between px-1 text-xs text-foreground-secondary">
+                <span>Last ordered {r.lastOrdered}</span>
+                <span>{r.timesOrdered}× before</span>
+              </div>
+              <ProductCard
               name={r.product.name}
               caseLabel={r.product.caseLabel}
               image={r.product.image}
@@ -81,20 +88,19 @@ export function ReorderScreen({
               selectedVariant={variant[r.product.id] ?? r.product.variants[0].id}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [r.product.id]: id }))}
               seller={r.product.seller}
-              source={r.product.source}
+              delivery={r.product.delivery}
               margin={r.product.margin}
               price={r.product.price}
               mrp={r.product.mrp}
               qty={qty[r.product.id] ?? 0}
               onQty={(n) => onSetQty(r.product.id, n)}
               onAdd={() => onOpenSheet(r.product.id)}
-              footer={
-                <>
-                  <span>Last ordered {r.lastOrdered}</span>
-                  <span>{r.timesOrdered}× before</span>
-                </>
-              }
-            />
+              onDiscounts={() => setDiscountsOpen(true)}
+              subtotal={r.product.price * (qty[r.product.id] ?? 0)}
+              subtotalLabel={`Total (${qty[r.product.id] ?? 0} pcs)`}
+              footer={deliveryFooter(r.product.seller)}
+              />
+            </div>
           ))
         )}
       </div>
@@ -106,6 +112,8 @@ export function ReorderScreen({
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />
+
+      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
     </div>
   );
 }

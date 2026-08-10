@@ -3,6 +3,7 @@ import { ChevronLeft, MapPin, Copy, Check } from 'lucide-react';
 import { StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
 import type { Order } from '../data/orders';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
+import { formatDate } from '../date';
 
 /* Order Details — seller + status, the order summary bill, the item list, and
    the delivery address. Read-only. */
@@ -50,8 +51,8 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
         <Section title="Order Summary">
           <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
             <SumRow label="Order ID" value={<CopyValue value={order.orderId} />} />
-            <SumRow label="Order date" value={order.placedAt} />
-            <SumRow label="Expected delivery" value={order.eta} />
+            <SumRow label="Order date" value={formatDate(order.placedAt)} />
+            <SumRow label="Expected delivery" value={formatDate(order.eta)} />
             <SumRow label="Order status" value={order.statusLabel} />
             <SumRow label="Items total" value={formatInrExact(itemsTotal)} />
             <SumRow label="Delivery fee" value={formatInrExact(order.deliveryFee)} />
