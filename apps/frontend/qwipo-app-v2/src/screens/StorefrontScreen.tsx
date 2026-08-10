@@ -5,6 +5,7 @@ import type { Navigate } from '../nav';
 import type { AppliedFilter } from '../data/filters';
 import { BrandLogo } from '../components/BrandLogo';
 import { DIST_CATEGORIES, BRANDS, type Distributor } from '../data/home';
+import { PRODUCTS } from '../data/products';
 import { deliveryFor, dayLabel } from '../data/delivery';
 
 /* Authorised Distributor storefront — brand hero (MOV + delivery), shop-by-
@@ -22,6 +23,14 @@ export function StorefrontScreen({
   onNavigate: Navigate;
 }) {
   const dist = deliveryFor(distributor.name);
+  // Only show categories + brands this distributor actually stocks, so every
+  // tap (which scopes the list to distributor + category/brand) returns products
+  // instead of an empty "No products here".
+  const myProducts = PRODUCTS.filter((p) => p.source === 'distributor' && p.seller === distributor.name);
+  const myCategories = DIST_CATEGORIES.filter((c) => myProducts.some((p) => p.category === c.name));
+  const myBrands = BRANDS.filter((b) =>
+    myProducts.some((p) => p.shortName.toLowerCase().startsWith(b.name.toLowerCase()))
+  );
   // Every product-list link from the storefront is scoped to this distributor.
   const openList = (extra?: AppliedFilter) =>
     onNavigate('listing', {
@@ -92,17 +101,18 @@ export function StorefrontScreen({
             <ArrowRight className="h-4 w-4" />
           </Button>
 
-          {/* shop by category — horizontal rail, matches Homepage */}
+          {/* shop by category — only this distributor's categories */}
+          {myCategories.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">Shop by category</h2>
             <div className="no-scrollbar flex gap-3 overflow-x-auto">
-              {DIST_CATEGORIES.map((c) => (
+              {myCategories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => openList({ type: 'category', value: c.name })}
-                  className="flex w-20 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
+                  className="flex w-28 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
-                  <span className="grid h-20 w-20 place-items-center overflow-hidden rounded-lg bg-muted">
+                  <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
                     <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
                   </span>
                   <span className="w-full truncate text-center text-xs text-foreground">{c.name}</span>
@@ -110,12 +120,14 @@ export function StorefrontScreen({
               ))}
             </div>
           </section>
+          )}
 
-          {/* top brands — vertical 4-column grid, matches Homepage */}
+          {/* top brands — only this distributor's brands */}
+          {myBrands.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">Top brands</h2>
             <div className="grid grid-cols-4 gap-3">
-              {BRANDS.map((b) => (
+              {myBrands.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => openList({ type: 'brand', value: b.name })}
@@ -127,6 +139,7 @@ export function StorefrontScreen({
               ))}
             </div>
           </section>
+          )}
         </div>
       </div>
     </div>

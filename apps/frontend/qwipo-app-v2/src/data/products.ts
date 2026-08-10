@@ -190,6 +190,16 @@ export const PRODUCTS: Product[] = [
     seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '16% Margin',
     price: 120, mrp: 140, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
+  {
+    // Distributor-source Beverages + Red Label brand (p10 is wholesaler-source,
+    // which the distributor listing filters out — so the distributor flow needs
+    // its own).
+    id: 'p21', name: 'Red Label Tea - 250 g Pack X 40 Nos', shortName: 'Red Label Tea',
+    category: 'Beverages', caseLabel: 'Case: 40 pc', caseSize: 40, image: '🍵',
+    variants: [{ id: '250g', label: '250 g' }, { id: '500g', label: '500 g' }],
+    seller: 'Vijaya Traders', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 135, mrp: 150, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);
