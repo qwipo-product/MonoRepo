@@ -210,17 +210,17 @@ function SellerCard({
           )}
         </div>
 
-        {/* delivery window — hidden while blocked below MOV or MOW */}
-        {!seller.blocked && (
-          <div className="mt-3">
-            <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
-            <SegmentedControl
-              options={seller.windows.map((w) => ({ value: w, label: w }))}
-              value={win}
-              onChange={setWin}
-            />
-          </div>
-        )}
+        {/* delivery window — always shown (beat day + tomorrow options), even
+            while below MOV/MOW; the minimum only blocks checkout, not the
+            delivery-day choice. */}
+        <div className="mt-3">
+          <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
+          <SegmentedControl
+            options={seller.windows.map((w) => ({ value: w, label: w }))}
+            value={win}
+            onChange={setWin}
+          />
+        </div>
 
         {/* actions — same two slots on every card (View items · Add more).
             Only the below-minimum Add-more takes colour emphasis, in its fixed
