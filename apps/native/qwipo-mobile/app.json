@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Qwipo Mockup",
+    "slug": "qwipo-mockup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": false },
+    "android": {}
+  }
+}
