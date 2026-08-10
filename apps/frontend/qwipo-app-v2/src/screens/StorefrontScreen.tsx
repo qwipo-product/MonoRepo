@@ -81,36 +81,36 @@ export function StorefrontScreen({ onBack, onNavigate }: { onBack: () => void; o
             <ArrowRight className="h-4 w-4" />
           </Button>
 
-          {/* shop by category */}
+          {/* shop by category — horizontal rail, matches Homepage */}
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">Shop by category</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="no-scrollbar flex gap-3 overflow-x-auto">
               {DIST_CATEGORIES.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => openList({ type: 'category', value: c.name })}
-                  className="flex flex-col gap-2 text-left active:scale-[0.99]"
+                  className="flex w-20 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
-                  <span className="aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
-                    <img src={encodeURI(c.image)} alt="" className="h-full w-full object-cover" />
+                  <span className="grid h-20 w-20 place-items-center overflow-hidden rounded-lg bg-muted">
+                    <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
                   </span>
-                  <span className="truncate px-0.5 text-sm font-semibold text-foreground">{c.name}</span>
+                  <span className="w-full truncate text-center text-xs text-foreground">{c.name}</span>
                 </button>
               ))}
             </div>
           </section>
 
-          {/* top brands */}
+          {/* top brands — vertical 4-column grid, matches Homepage */}
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">Top brands</h2>
-            <div className="no-scrollbar flex gap-4 overflow-x-auto">
+            <div className="grid grid-cols-4 gap-3">
               {BRANDS.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => openList({ type: 'brand', value: b.name })}
-                  className="flex w-16 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
+                  className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
-                  <BrandLogo src={b.logo} alt={b.name} className="h-16 w-16 rounded-full border border-border shadow-sm" />
+                  <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
                   <span className="w-full truncate text-center text-xs text-foreground">{b.name}</span>
                 </button>
               ))}
