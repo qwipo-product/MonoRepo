@@ -1,0 +1,46 @@
+# Release pipeline — qwipo-app-v2.
+#
+# Registered in Azure DevOps as:  \Mockups Lab\App V2 - Deploy
+#
+# Takes the image built by "App V2 - Build", rewrites the digest in the
+# GitOps repo (k8s) at bms-chart/<env>/mockups-qwipo-app-v2.yaml, then syncs
+# the ArgoCD app `<env>-mockups-qwipo-app-v2-argo-app`.
+#
+# `source:` below is the *display name* of the build pipeline, not the service
+# name — Azure resolves it by name across folders. Rename that pipeline and you
+# must change this string in the same commit or the release stops binding.
+#
+# The k8s ApplicationSet generates the ArgoCD app from the presence of the
+# manifest file, so adding bms-chart/<env>/mockups-qwipo-app-v2.yaml is the
+# only GitOps prerequisite. The release template exits 1 if it's missing.
+# See "Deploying a mockup" in the README.
+
+trigger: none
+
+parameters:
+    - name: environment
+      displayName: Select Environment To Deploy
+      type: string
+      default: dev
+      values:
+          - dev
+          - testing
+          - staging
+          - production
+
+resources:
+    repositories:
+        - repository: k8s
+          type: git
+          name: 'Qwipo B2B/k8s'
+          ref: 'refs/heads/main'
+    pipelines:
+        - pipeline: buildPipeline
+          source: 'App V2 - Build'
+          trigger: none
+
+extends:
+    template: azure-cicd/templates/base-release-template.yaml@k8s
+    parameters:
+        environment: ${{ parameters.environment }}
+        service_name_override: 'mockups-qwipo-app-v2'
