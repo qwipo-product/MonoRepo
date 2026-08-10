@@ -36,5 +36,5 @@ resources:
 extends:
     template: azure-cicd/templates/base-docker-template.yaml@k8s
     parameters:
-        service_name_override: mockups-qwipo-app-v2
+        service_name_override: mockups-qwipo-buyer-app
         dockerfile: apps/frontend/qwipo-app-v2/Dockerfile
