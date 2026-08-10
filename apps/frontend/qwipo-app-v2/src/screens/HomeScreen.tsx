@@ -75,11 +75,11 @@ export function HomeScreen({
           </div>
         </div>
 
-        <div className="px-4 pb-2 pt-2">
+        <div className="px-4 pb-1 pt-1">
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
-            className="flex w-full items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-2.5 text-sm active:scale-[0.98]"
+            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1.5 text-sm active:scale-[0.98]"
           >
             <MapPin className="h-4 w-4 shrink-0 text-primary" />
             <span className="shrink-0 text-primary">Deliver to</span>

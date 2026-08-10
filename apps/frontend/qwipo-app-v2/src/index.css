@@ -18,3 +18,63 @@ body,
 body {
   margin: 0;
 }
+
+/* Splash color-morph — ported from the New-Buyer-App reference. Lavender
+   background holds, the white brand mark scales in, then the background fades
+   to white while the mark cross-fades into the colored primary. #bc77ff is the
+   Qwipo brand lavender (splash-only, not a DS token). */
+.splash-screen-v2 {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #bc77ff;
+  animation: splash-bg 2700ms ease-in-out forwards;
+}
+.splash-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -100.5px;
+  margin-left: -75px;
+  width: 150px;
+  height: 201px;
+}
+.splash-logo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.splash-logo-white {
+  opacity: 0;
+  animation: splash-white 2700ms ease-out forwards;
+}
+.splash-logo-primary {
+  opacity: 0;
+  animation: splash-primary 2700ms ease-out forwards;
+}
+@keyframes splash-bg {
+  0%, 50%   { background: #bc77ff; }
+  76%, 100% { background: #ffffff; }
+}
+@keyframes splash-white {
+  0%        { opacity: 0; transform: scale(1.25); }
+  18%       { opacity: 1; transform: scale(1.02); }
+  27%, 53%  { opacity: 1; transform: scale(1); }
+  73%, 100% { opacity: 0; transform: scale(1); }
+}
+@keyframes splash-primary {
+  0%, 53%   { opacity: 0; transform: scale(1); }
+  73%, 100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen-v2,
+  .splash-logo-white,
+  .splash-logo-primary {
+    animation-duration: 600ms;
+  }
+}

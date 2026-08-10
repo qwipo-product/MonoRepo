@@ -6,6 +6,14 @@ export type ScreenId = string;
 
 export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: string }[] }[] = [
   {
+    title: 'Paytm',
+    items: [
+      { id: 'paytm-launcher', label: 'Paytm Launcher' },
+      { id: 'paytm-search', label: 'Paytm Search' },
+      { id: 'paytm-welcome', label: 'Qwipo Welcome' },
+    ],
+  },
+  {
     title: 'Auth',
     items: [
       { id: 'splash', label: 'Splash' },

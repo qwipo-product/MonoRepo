@@ -5,6 +5,9 @@ import { type ScreenId } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { ShellChrome } from './shells/ShellChrome';
+import { PaytmWelcomeScreen } from './screens/PaytmWelcomeScreen';
+import { PaytmLauncherScreen } from './screens/PaytmLauncherScreen';
+import { PaytmSearchScreen } from './screens/PaytmSearchScreen';
 import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './screens/HomeScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
@@ -60,6 +63,7 @@ import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/address
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
+  'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
@@ -82,8 +86,10 @@ const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'whol
 const AUTH_SCREENS = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
 
 function readInitialScreen(): ScreenId {
-  const s = new URLSearchParams(window.location.search).get('screen');
-  if (!s) return 'listing';
+  const params = new URLSearchParams(window.location.search);
+  const s = params.get('screen');
+  // Paytm mini boots into the Paytm launcher (→ search → welcome → home).
+  if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
   if (s === 'cart-alerts') return 'cart'; // = the alerts sheet over Cart Summary
@@ -216,6 +222,12 @@ export default function App() {
 
   const phoneScreen = (() => {
     switch (screen) {
+      case 'paytm-launcher':
+        return <PaytmLauncherScreen onSearch={() => go('paytm-search')} onOpenQwipo={() => go('paytm-welcome')} />;
+      case 'paytm-search':
+        return <PaytmSearchScreen onBack={() => go('paytm-launcher')} onOpenQwipo={() => go('paytm-welcome')} />;
+      case 'paytm-welcome':
+        return <PaytmWelcomeScreen onProceed={() => go('home')} />;
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
       case 'login':
@@ -500,6 +512,7 @@ export default function App() {
         <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
           <ShellChrome
             shell={shell}
+            paytmHeader={screen !== 'paytm-launcher' && screen !== 'paytm-search'}
             bottomNav={
               ROOT_SCREENS.has(screen) ? (
                 <BottomNav active={screen} cartCount={cartCount} onNavigate={go} />

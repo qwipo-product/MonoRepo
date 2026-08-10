@@ -84,6 +84,7 @@ export default function FlowIndex({
       <div className="mt-5 space-y-5">
         {SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
           .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
+          .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
           .map((group) => (
           <div key={group.title}>
             <div className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary">

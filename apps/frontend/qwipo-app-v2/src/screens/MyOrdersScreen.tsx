@@ -143,7 +143,7 @@ function OrderCard({
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button variant="secondary" fullWidth onClick={onCancel}>
+            <Button variant="secondary" fullWidth onClick={onCancel} className="border border-destructive text-destructive">
               Cancel
             </Button>
             <Button fullWidth onClick={onTrack}>

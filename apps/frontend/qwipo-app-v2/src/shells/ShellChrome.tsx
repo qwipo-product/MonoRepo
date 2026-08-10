@@ -9,17 +9,20 @@ import type { Shell } from '../review/ShellSwitcher';
 export function ShellChrome({
   shell,
   bottomNav,
+  paytmHeader = true,
   children,
 }: {
   shell: Shell;
   bottomNav?: ReactNode;
+  /** Hide the "« Paytm" mini-app bar on Paytm-native surfaces (launcher/search). */
+  paytmHeader?: boolean;
   children: ReactNode;
 }) {
   return (
     <>
       <StatusBar />
 
-      {shell === 'paytm' && (
+      {shell === 'paytm' && paytmHeader && (
         <>
           <div className="flex h-12 flex-shrink-0 items-center justify-between bg-card px-4">
             <button className="flex items-center gap-2 text-foreground active:opacity-70" aria-label="Back to Paytm">
