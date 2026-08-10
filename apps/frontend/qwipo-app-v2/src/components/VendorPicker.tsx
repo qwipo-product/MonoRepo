@@ -41,16 +41,16 @@ export function VendorPicker({
               {vn.id === cheapestId && (
                 <span
                   className={cn(
-                    'absolute right-2 top-2 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                    'absolute right-2 top-2 rounded-full px-1.5 py-0.5 type-micro',
                     on ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-success-subtle text-success-foreground'
                   )}
                 >
                   Best
                 </span>
               )}
-              <div className="text-base font-bold tabular-nums">{formatInr(vn.price)}</div>
-              <div className="truncate text-xs font-medium">{vn.name}</div>
-              <div className={cn('text-xs', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
+              <div className="type-caption font-bold tabular-nums">{formatInr(vn.price)}</div>
+              <div className="truncate type-caption font-medium">{vn.name}</div>
+              <div className={cn('type-caption', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
                 Fee: {vn.fee}
               </div>
             </button>
