@@ -21,6 +21,7 @@ export function CartScreen({
   onAddMore: (sellerId: string) => void;
 }) {
   const { sellers, grandTotal, totalItems, anyBelow } = useMemo(() => buildCart(), []);
+  const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
 
   return (
     <div className="flex h-full flex-col">
@@ -76,6 +77,9 @@ export function CartScreen({
                   Total Cart Value
                 </div>
                 <div className="text-lg font-bold tabular-nums">{formatInr(grandTotal)}</div>
+                <div className={deliveryFee > 0 ? 'text-xs text-foreground-secondary' : 'text-xs text-success-foreground'}>
+                  {deliveryFee > 0 ? `+ ${formatInr(deliveryFee)} delivery fee` : 'Free delivery'}
+                </div>
               </div>
               <Button className="px-8" onClick={onCheckout}>
                 Checkout

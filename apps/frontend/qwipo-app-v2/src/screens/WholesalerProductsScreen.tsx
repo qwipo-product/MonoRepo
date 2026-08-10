@@ -134,6 +134,9 @@ export function WholesalerProductsScreen({
               {cartCount} {cartCount === 1 ? 'item' : 'items'}
             </div>
             <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
+            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
+              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
+            </div>
           </div>
           <Button className="px-8" onClick={onGoToCart}>
             Go to cart
@@ -178,10 +181,24 @@ function VendorProductCard({
   return (
     <Card className="p-3">
       <div className="flex gap-3">
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-muted text-2xl">{product.image}</div>
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label={`Open selling units for ${product.name}`}
+          className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-muted text-2xl active:scale-[0.98]"
+        >
+          {product.image}
+        </button>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-foreground">{product.name}</div>
-          <div className="text-xs text-foreground-secondary">{product.caseLabel}</div>
+          <button
+            type="button"
+            onClick={onAdd}
+            aria-label={`Open selling units for ${product.name}`}
+            className="block text-left"
+          >
+            <div className="text-sm font-semibold text-foreground">{product.name}</div>
+            <div className="text-xs text-foreground-secondary">{product.caseLabel}</div>
+          </button>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {product.variants.map((v) => (
               <Chip key={v.id} selected={v.id === variant} onClick={() => setVariant(v.id)} className="px-2.5 py-1">

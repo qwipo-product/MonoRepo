@@ -79,14 +79,30 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
-      {/* title + thumb */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
-          {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
-        </div>
-        <Thumb image={image} name={name} />
-      </div>
+      {/* title + thumb — tap to (re)open the selling-units sheet */}
+      {(() => {
+        const titleRow = (
+          <>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+              {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+            </div>
+            <Thumb image={image} name={name} />
+          </>
+        );
+        return onAdd ? (
+          <button
+            type="button"
+            onClick={onAdd}
+            aria-label={`Open selling units for ${name}`}
+            className="flex w-full items-start justify-between gap-3 text-left active:scale-[0.99]"
+          >
+            {titleRow}
+          </button>
+        ) : (
+          <div className="flex items-start justify-between gap-3">{titleRow}</div>
+        );
+      })()}
 
       {/* pack pills */}
       {variants && variants.length > 0 && (

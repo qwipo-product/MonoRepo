@@ -126,6 +126,9 @@ export function CatalogScreen({
               {cartCount} {cartCount === 1 ? 'item' : 'items'}
             </div>
             <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
+            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
+              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
+            </div>
           </div>
           <Button className="px-8" onClick={onGoToCart}>
             Go to cart

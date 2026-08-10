@@ -29,6 +29,9 @@ export interface SheetProps {
   subtitle?: React.ReactNode;
   /** Small icon chip shown left of the title. */
   icon?: React.ReactNode;
+  /** Override the icon chip tint (default `bg-primary-soft`); e.g. a semantic
+   *  warning/error badge on an alerts sheet. */
+  iconClassName?: string;
   /** Sticky footer (e.g. a primary Button). Safe-area inset is handled here. */
   footer?: React.ReactNode;
   /** 'auto' grows to content up to 90%; 'tall' pins to 90%. */
@@ -44,6 +47,7 @@ export function Sheet({
   title,
   subtitle,
   icon,
+  iconClassName,
   footer,
   size = 'auto',
   showHandle = true,
@@ -72,7 +76,12 @@ export function Sheet({
         {(title || icon) && (
           <div className="flex items-center gap-3 border-b border-border p-4">
             {icon && (
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+              <div
+                className={cn(
+                  'grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary-soft-foreground',
+                  iconClassName
+                )}
+              >
                 {icon}
               </div>
             )}
