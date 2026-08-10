@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { type ScreenId } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
+import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
 import { ShellChrome } from './shells/ShellChrome';
 import { BottomNav } from './components/BottomNav';
 import { HomeScreen } from './screens/HomeScreen';
@@ -97,6 +98,13 @@ export default function App() {
   const [shell, setShell] = useState<Shell>(() =>
     new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
   );
+  // Device frame: which device + orientation the mockup renders in (review-only).
+  const [device, setDevice] = useState<Device>(() =>
+    deviceById(new URLSearchParams(window.location.search).get('device'))
+  );
+  const [orientation, setOrientation] = useState<Orientation>(() =>
+    new URLSearchParams(window.location.search).get('orient') === 'landscape' ? 'landscape' : 'portrait'
+  );
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
@@ -133,13 +141,33 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep the URL in sync so any screen + surface is a shareable link.
+  // Keep the URL in sync so any screen + surface + device is a shareable link.
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set('screen', screen);
     url.searchParams.set('shell', shell);
+    url.searchParams.set('device', device.id);
+    url.searchParams.set('orient', orientation);
     window.history.replaceState(null, '', url);
-  }, [screen, shell]);
+  }, [screen, shell, device, orientation]);
+
+  // Scale the device frame down to fit the viewport (never up) — big tablets
+  // would otherwise overflow the review page.
+  const frame = frameSize(device, orientation);
+  const stageRef = useRef<HTMLElement | null>(null);
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const r = entry.contentRect;
+      setStageSize({ w: r.width, h: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const frameScale =
+    stageSize.w > 0 ? Math.min(1, stageSize.w / frame.w, stageSize.h / frame.h) : 1;
 
   const setLineQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: Math.max(0, n) }));
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
@@ -471,7 +499,7 @@ export default function App() {
   })();
 
   return (
-    <div className="flex h-dvh items-center justify-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
+    <div className="flex h-dvh items-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
       <FlowIndex
         active={screen}
         built={BUILT}
@@ -483,13 +511,29 @@ export default function App() {
           setRole(r);
           if (r === 'customer' && screen.startsWith('sp:')) go('home');
         }}
+        device={device}
+        onDeviceChange={setDevice}
+        orientation={orientation}
+        onOrientationChange={setOrientation}
+        frameScale={frameScale}
         isDark={isDark}
         onToggleTheme={toggleTheme}
       />
 
-      <main className="shrink-0">
-        {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it */}
-        <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
+      <main ref={stageRef} className="grid h-full min-w-0 flex-1 place-items-center overflow-hidden">
+        {/* Scaled stage: the frame renders at true device size, then scales
+            down to fit — so media queries see the real device width. */}
+        <div style={{ width: frame.w * frameScale, height: frame.h * frameScale }}>
+        <div
+          className="relative flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-xl"
+          style={{
+            width: frame.w,
+            height: frame.h,
+            borderRadius: device.radius,
+            transform: `scale(${frameScale})`,
+            transformOrigin: 'top left',
+          }}
+        >
           <ShellChrome
             shell={shell}
             bottomNav={
@@ -525,6 +569,7 @@ export default function App() {
             seller={viewSeller}
             onClose={() => setOrderItemsOpen(false)}
           />
+        </div>
         </div>
       </main>
     </div>

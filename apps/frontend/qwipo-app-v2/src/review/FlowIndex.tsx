@@ -3,6 +3,7 @@ import { cn } from '@mockups/ui';
 import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
 import { RoleSwitcher, type Role } from './RoleSwitcher';
+import { DeviceSwitcher, type Device, type Orientation } from './DeviceSwitcher';
 
 /* Review-only navigator: switch mockup surface (Buyer App / Paytm Mini) at the
    top, then click any screen to jump to it. The URL tracks ?shell= & ?screen=
@@ -15,6 +16,11 @@ export default function FlowIndex({
   onShellChange,
   role,
   onRoleChange,
+  device,
+  onDeviceChange,
+  orientation,
+  onOrientationChange,
+  frameScale,
   isDark,
   onToggleTheme,
 }: {
@@ -25,6 +31,11 @@ export default function FlowIndex({
   onShellChange: (s: Shell) => void;
   role: Role;
   onRoleChange: (r: Role) => void;
+  device: Device;
+  onDeviceChange: (d: Device) => void;
+  orientation: Orientation;
+  onOrientationChange: (o: Orientation) => void;
+  frameScale: number;
   isDark: boolean;
   onToggleTheme: () => void;
 }) {
@@ -47,6 +58,17 @@ export default function FlowIndex({
       {/* persona: Customer vs Salesperson (unlocks the beat-day features) */}
       <div className="mt-2">
         <RoleSwitcher value={role} onChange={onRoleChange} />
+      </div>
+
+      {/* device: pick a frame size + rotate, to review phone & tablet layouts */}
+      <div className="mt-2">
+        <DeviceSwitcher
+          device={device}
+          orientation={orientation}
+          scale={frameScale}
+          onDeviceChange={onDeviceChange}
+          onOrientationChange={onOrientationChange}
+        />
       </div>
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
