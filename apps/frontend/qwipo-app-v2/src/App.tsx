@@ -24,6 +24,7 @@ import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
+import { CartAlertsSheet } from './sheets/CartAlertsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
@@ -49,7 +50,7 @@ const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
-  'view-items', 'cart-units', 'order-summary', 'coupons', 'order-confirmation', 'reorder',
+  'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'sub:payment', 'sub:credit', 'settings', 'sub:language', 'sub:help', 'sub:terms',
 ]);
@@ -65,6 +66,7 @@ function readInitialScreen(): ScreenId {
   if (!s) return 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
+  if (s === 'cart-alerts') return 'cart'; // = the alerts sheet over Cart Summary
   return s;
 }
 
@@ -78,6 +80,7 @@ export default function App() {
     new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
   );
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(ORDERS[0]?.id ?? null);
@@ -93,6 +96,7 @@ export default function App() {
     const s = new URLSearchParams(window.location.search).get('screen');
     if (s === 'distributor-units') setSheetId(PRODUCTS[0].id);
     if (s === 'cart-units') setSheetId(CART.sellers[0]?.items[0]?.product.id ?? null);
+    if (s === 'cart-alerts') setAlertsOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -114,6 +118,13 @@ export default function App() {
 
   const go = (id: ScreenId, opts?: NavOpts) => {
     setSheetId(null);
+    setAlertsOpen(false);
+    if (id === 'cart-alerts') {
+      // Not a page — the alerts sheet over Cart Summary.
+      setScreen('cart');
+      setAlertsOpen(true);
+      return;
+    }
     if (id === 'distributor-units') {
       setListApplied([]);
       setListBackTo('home');
@@ -229,7 +240,7 @@ export default function App() {
         return (
           <CartScreen
             onBack={() => go('home')}
-            onCheckout={() => go('order-summary')}
+            onCheckout={() => setAlertsOpen(true)}
             onViewItems={(sellerId) => {
               setSheetId(null);
               setViewSellerId(sellerId);
@@ -346,6 +357,15 @@ export default function App() {
               go('cart');
             }}
             onClose={() => setSheetId(null)}
+          />
+
+          <CartAlertsSheet
+            open={alertsOpen}
+            onClose={() => setAlertsOpen(false)}
+            onProceed={() => {
+              setAlertsOpen(false);
+              go('order-summary');
+            }}
           />
         </div>
       </main>
