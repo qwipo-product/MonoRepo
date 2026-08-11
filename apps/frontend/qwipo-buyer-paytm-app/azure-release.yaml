@@ -43,4 +43,4 @@ extends:
     template: azure-cicd/templates/base-release-template.yaml@k8s
     parameters:
         environment: ${{ parameters.environment }}
-        service_name_override: 'mockups-qwipo-buyer-app'
+        service_name_override: 'qwipo-buyer-paytm-app'
