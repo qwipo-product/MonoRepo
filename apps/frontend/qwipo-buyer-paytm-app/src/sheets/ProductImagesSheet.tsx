@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { Rotate3d } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Rotate3d } from 'lucide-react';
 import { Sheet, cn } from '@mockups/ui';
 import type { Product } from '../data/products';
 
@@ -72,31 +72,40 @@ export function ProductImagesSheet({
   product: Product | null;
   onClose: () => void;
 }) {
-  const [active, setActive] = useState(0);
+  const [idx, setIdx] = useState(0);
   const emoji = product?.image ?? '📦';
-  const idx = Math.min(active, ANGLES.length - 1);
+  const len = ANGLES.length;
+  const step = (d: number) => setIdx((p) => (p + d + len) % len);
 
   return (
     <Sheet open={!!product} onClose={onClose} title={product?.shortName ?? 'Product images'}>
-      <Preview emoji={emoji} angle={ANGLES[idx]} />
+      <div className="relative mx-auto w-full max-w-72">
+        <Preview emoji={emoji} angle={ANGLES[idx]} />
 
-      <div className="no-scrollbar mt-3 flex justify-center gap-2 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Previous image"
+          className="absolute left-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Next image"
+          className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm active:scale-95"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="mt-3 flex justify-center gap-1.5">
         {ANGLES.map((a, i) => (
-          <button
+          <span
             key={a.id}
-            type="button"
-            onClick={() => setActive(i)}
-            aria-label={`View ${a.id}`}
-            className={cn(
-              'relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted',
-              i === idx ? 'border-primary ring-2 ring-primary' : 'border-border'
-            )}
-          >
-            <span className="text-3xl leading-none" style={a.transform ? { transform: a.transform } : undefined} aria-hidden>
-              {emoji}
-            </span>
-            {a.spin && <Rotate3d className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-foreground-secondary" />}
-          </button>
+            className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-primary' : 'w-1.5 bg-foreground-secondary/30')}
+          />
         ))}
       </div>
     </Sheet>
