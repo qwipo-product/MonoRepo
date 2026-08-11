@@ -379,7 +379,7 @@ export default function App() {
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
-        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} />;
+        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} onBack={() => go('home')} />;
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go(shell === 'paytm' ? 'home' : 'login')} salesperson={isSalesperson} />;
       case 'notifications':

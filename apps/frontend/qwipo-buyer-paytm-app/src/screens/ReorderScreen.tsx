@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS } from '../data/reorder';
@@ -21,11 +21,13 @@ export function ReorderScreen({
   onOpenSheet,
   onSetQty,
   onSearch,
+  onBack,
 }: {
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onSetQty: (id: string, n: number) => void;
   onSearch?: () => void;
+  onBack?: () => void;
 }) {
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -42,9 +44,13 @@ export function ReorderScreen({
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary-soft text-primary" aria-hidden>
-          <RotateCcw size={18} />
-        </span>
+        <button
+          onClick={onBack}
+          aria-label="Back"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]"
+        >
+          <ChevronLeft size={18} />
+        </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-base font-semibold leading-tight">Reorder</h1>
           <p className="text-xs text-foreground-secondary">{items.length} items you buy often</p>
