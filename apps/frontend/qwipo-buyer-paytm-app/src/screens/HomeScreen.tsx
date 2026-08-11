@@ -39,7 +39,7 @@ export function HomeScreen({
   const effectiveTab = !distAvailable ? 'wholesalers' : !wholeAvailable ? 'distributors' : tab;
 
   return (
-    <div className="no-scrollbar flex h-full flex-col overflow-y-auto pb-6">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
       {/* sticky header */}
       <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
