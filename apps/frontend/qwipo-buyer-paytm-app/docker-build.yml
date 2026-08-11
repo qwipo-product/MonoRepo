@@ -1,7 +1,7 @@
 # Build pipeline — qwipo-buyer-paytm-app (static SPA behind nginx).
 #
-# Registered in Azure DevOps as:  \Mockups Lab\App V2 - Build
-# "App V2 - Deploy" binds to that exact display name via
+# Registered in Azure DevOps as:  \Mockups Lab\Buyer App - Build
+# "Buyer App - Deploy" binds to that exact display name via
 # `resources.pipelines.source`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #

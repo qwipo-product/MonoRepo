@@ -1,8 +1,8 @@
 # Release pipeline — qwipo-buyer-paytm-app.
 #
-# Registered in Azure DevOps as:  \Mockups Lab\App V2 - Deploy
+# Registered in Azure DevOps as:  \Mockups Lab\Buyer App - Deploy
 #
-# Takes the image built by "App V2 - Build", rewrites the digest in the
+# Takes the image built by "Buyer App - Build", rewrites the digest in the
 # GitOps repo (k8s) at bms-chart/<env>/mockups-qwipo-buyer-paytm-app.yaml, then syncs
 # the ArgoCD app `<env>-mockups-qwipo-buyer-paytm-app-argo-app`.
 #
@@ -36,7 +36,7 @@ resources:
           ref: 'refs/heads/main'
     pipelines:
         - pipeline: buildPipeline
-          source: 'App V2 - Build'
+          source: 'Buyer App - Build'
           trigger: none
 
 extends:
