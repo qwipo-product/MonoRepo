@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
@@ -336,16 +336,26 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
 }
 
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((p) => (p + 1) % banners.length), 3500);
-    return () => clearInterval(t);
-  }, [banners.length]);
+  // Manual swipe only — no auto-advance.
+  const onScroll = () => {
+    const el = ref.current;
+    if (el) setI(Math.round(el.scrollLeft / el.clientWidth));
+  };
   return (
     <div className="px-4">
-      <button onClick={onOpen} aria-label="Open offers" className="block w-full overflow-hidden rounded-lg">
-        <img src={encodeURI(banners[i])} alt="" className="h-40 w-full object-cover" />
-      </button>
+      <div
+        ref={ref}
+        onScroll={onScroll}
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg"
+      >
+        {banners.map((b, j) => (
+          <button key={j} onClick={onOpen} aria-label="Open offers" className="w-full shrink-0 snap-start">
+            <img src={encodeURI(b)} alt="" className="h-40 w-full object-cover" />
+          </button>
+        ))}
+      </div>
       <div className="mt-2 flex justify-center gap-1.5">
         {banners.map((_, j) => (
           <span
