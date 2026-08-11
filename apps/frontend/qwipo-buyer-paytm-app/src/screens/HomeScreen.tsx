@@ -307,7 +307,7 @@ function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className={cn('flex h-40 w-52 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
+      className={cn('flex h-30 w-30 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="text-base font-bold leading-tight">{offer.headline}</div>
