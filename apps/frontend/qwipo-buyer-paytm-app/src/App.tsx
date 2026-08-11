@@ -287,7 +287,7 @@ export default function App() {
           />
         );
       case 'global-search':
-        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} />;
+        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} onNavigate={go} />;
       case 'distributors-list':
         return (
           <SellerBrowseScreen

@@ -5,6 +5,7 @@ import { formatInr } from '@mockups/components';
 import { SearchField } from '../components/SearchField';
 import { PRODUCTS } from '../data/products';
 import { BRANDS, DIST_CATEGORIES, WHOLESALER_CATEGORIES, type HomeCategory } from '../data/home';
+import type { Navigate } from '../nav';
 
 /* Global Search. Typing collapses results into compact rows (not full product
    cards) to save vertical space. Matching BRANDS and CATEGORIES surface as
@@ -34,11 +35,18 @@ function Highlight({ text, q }: { text: string; q: string }) {
 export function GlobalSearchScreen({
   onBack,
   onOpenSheet,
+  onNavigate,
 }: {
   onBack: () => void;
   onOpenSheet: (id: string) => void;
+  onNavigate: Navigate;
 }) {
   const [query, setQuery] = useState('');
+  const [recent, setRecent] = useState(RECENT);
+
+  // Suggestion rows open the filtered product list (the "results page").
+  const openList = (applied: { type: 'brand' | 'category'; value: string }) =>
+    onNavigate('listing', { applied: [applied], backTo: 'global-search' });
 
   const q = query.trim().toLowerCase();
 
@@ -95,7 +103,9 @@ export function GlobalSearchScreen({
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle">
         {!q ? (
           <div className="space-y-6 p-4">
-            <ChipSection title="Recent searches" items={RECENT} icon={Clock} onPick={setQuery} />
+            {recent.length > 0 && (
+              <ChipSection title="Recent searches" items={recent} icon={Clock} onPick={setQuery} onClear={() => setRecent([])} />
+            )}
             <ChipSection title="Trending searches" items={TRENDING} icon={TrendingUp} onPick={setQuery} accent />
             <ChipSection title="Start with a category" items={CATEGORIES.map((c) => c.name)} onPick={setQuery} />
           </div>
@@ -109,7 +119,7 @@ export function GlobalSearchScreen({
                   {brandMatches.map((b) => (
                     <button
                       key={b.id}
-                      onClick={() => setQuery(b.name)}
+                      onClick={() => openList({ type: 'brand', value: b.name })}
                       className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
                     >
                       <Tag className="h-4 w-4 shrink-0 text-foreground-secondary" />
@@ -131,7 +141,7 @@ export function GlobalSearchScreen({
                   {categoryMatches.map((name) => (
                     <button
                       key={name}
-                      onClick={() => setQuery(name)}
+                      onClick={() => openList({ type: 'category', value: name })}
                       className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
                     >
                       <LayoutGrid className="h-4 w-4 shrink-0 text-foreground-secondary" />
@@ -212,16 +222,28 @@ function ChipSection({
   icon: Icon,
   accent,
   onPick,
+  onClear,
 }: {
   title: string;
   items: string[];
   icon?: typeof Clock;
   accent?: boolean;
   onPick: (v: string) => void;
+  onClear?: () => void;
 }) {
   return (
     <section className="space-y-2 text-left">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {onClear && (
+          <button
+            onClick={onClear}
+            className="text-xs font-medium text-primary active:scale-[0.98]"
+          >
+            Clear
+          </button>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2">
         {items.map((label) => (
           <button
