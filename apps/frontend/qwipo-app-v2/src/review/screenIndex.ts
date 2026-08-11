@@ -98,3 +98,18 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
 
 /** Flat list in display order — handy for prev/next and index lookups. */
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
+
+/** Screens visible for a surface — same group filter FlowIndex renders with
+    (Paytm group only in paytm; Auth hidden in paytm; Salesperson only for that role). */
+export function visibleScreens(shell: string, role: string) {
+  const effectiveRole = shell === 'paytm' ? 'customer' : role;
+  return SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
+    .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
+    .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
+    .flatMap((g) => g.items);
+}
+
+/** 1-based number as shown in the sidebar (0 if the screen isn't listed). */
+export function screenNumber(id: ScreenId, shell: string, role: string): number {
+  return visibleScreens(shell, role).findIndex((s) => s.id === id) + 1;
+}

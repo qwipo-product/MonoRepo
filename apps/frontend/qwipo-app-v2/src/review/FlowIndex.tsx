@@ -1,4 +1,4 @@
-import { Moon, Sun, UserRound } from 'lucide-react';
+import { Moon, Sun, UserRound, Camera } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
@@ -17,6 +17,7 @@ export default function FlowIndex({
   onRoleChange,
   isDark,
   onToggleTheme,
+  onCapture,
 }: {
   active: ScreenId;
   built: Set<ScreenId>;
@@ -27,6 +28,8 @@ export default function FlowIndex({
   onRoleChange: (r: Role) => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  /** Snapshot the phone bezel to a PNG download. */
+  onCapture: () => void;
 }) {
   let n = 0;
   // Paytm mini is customer-only — no salesperson persona there.
@@ -37,6 +40,14 @@ export default function FlowIndex({
         <div className="flex-1">
           <ShellSwitcher value={shell} onChange={onShellChange} />
         </div>
+        <button
+          onClick={onCapture}
+          aria-label="Download screenshot"
+          title="Screenshot the phone → Downloads"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-card text-foreground hover:bg-muted"
+        >
+          <Camera size={16} />
+        </button>
         <button
           onClick={onToggleTheme}
           aria-label="Toggle theme"

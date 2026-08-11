@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toPng } from 'html-to-image';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
-import { type ScreenId } from './review/screenIndex';
+import { type ScreenId, screenNumber } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { ShellChrome } from './shells/ShellChrome';
@@ -154,6 +155,18 @@ export default function App() {
   useEffect(() => {
     if (shell === 'paytm' && AUTH_SCREENS.has(screen)) setScreen('listing');
   }, [shell, screen]);
+
+  // Screenshot the phone bezel → PNG in Downloads.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const capture = async () => {
+    if (!frameRef.current) return;
+    const url = await toPng(frameRef.current, { pixelRatio: 3, cacheBust: true });
+    const num = String(screenNumber(screen, shell, role)).padStart(2, '0');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qwipo-${num}-${shell}-${screen.replace(/:/g, '-')}.png`;
+    a.click();
+  };
 
   const setLineQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: Math.max(0, n) }));
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
@@ -505,11 +518,12 @@ export default function App() {
         }}
         isDark={isDark}
         onToggleTheme={toggleTheme}
+        onCapture={capture}
       />
 
       <main className="shrink-0">
         {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it */}
-        <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
+        <div ref={frameRef} className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
           <ShellChrome
             shell={shell}
             paytmHeader={screen !== 'paytm-launcher' && screen !== 'paytm-search'}
