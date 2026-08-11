@@ -1,4 +1,4 @@
-// Auto-extracted from qwipo-app-v2 public/brand/qwipo-logo.svg (horizontal logo).
+// Auto-extracted from qwipo-buyer-paytm-app public/brand/qwipo-logo.svg (horizontal logo).
 export const LOGO_VIEWBOX="0 0 836.63 247.73";
 export const LOGO_CIRCLE={"fill":"#bc77ff","cx":123.86,"cy":123.86,"r":123.86};
 export const LOGO_PATHS=[

@@ -93,7 +93,7 @@ export function Button({
     >
       {loading && <ActivityIndicator size="small" color={SPINNER_COLOR[variant]} />}
       {typeof children === 'string' ? (
-        <Text className={cn('font-bold', BTN_TEXT_SIZE[size], off ? 'text-foreground-secondary' : BTN_TEXT[variant], textClassName)}>{children}</Text>
+        <Text className={cn('font-bold', BTN_TEXT_SIZE[size], off ? 'text-foreground-secondary' : textClassName ? undefined : BTN_TEXT[variant], textClassName)}>{children}</Text>
       ) : (
         children
       )}

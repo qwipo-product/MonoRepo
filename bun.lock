@@ -28,8 +28,8 @@
         "typescript": "catalog:",
       },
     },
-    "apps/frontend/qwipo-app-v2": {
-      "name": "@mockups/qwipo-app-v2",
+    "apps/frontend/qwipo-buyer-paytm-app": {
+      "name": "@mockups/qwipo-buyer-paytm-app",
       "version": "0.0.0",
       "dependencies": {
         "@mockups/components": "workspace:*",
@@ -362,7 +362,7 @@
 
     "@mockups/mock-data": ["@mockups/mock-data@workspace:packages/mock-data"],
 
-    "@mockups/qwipo-app-v2": ["@mockups/qwipo-app-v2@workspace:apps/frontend/qwipo-app-v2"],
+    "@mockups/qwipo-buyer-paytm-app": ["@mockups/qwipo-buyer-paytm-app@workspace:apps/frontend/qwipo-buyer-paytm-app"],
 
     "@mockups/storybook": ["@mockups/storybook@workspace:apps/frontend/storybook"],
 

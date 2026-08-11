@@ -1,10 +1,10 @@
-# @mockups/qwipo-app-v2
+# @mockups/qwipo-buyer-paytm-app
 
 Qwipo buyer app, rebuilt on the standardized design system. Replaces
 `qwipo-app` (which retires once this reaches screen parity).
 
 ```bash
-bun dev --filter=@mockups/qwipo-app-v2     # http://localhost:5175
+bun dev --filter=@mockups/qwipo-buyer-paytm-app     # http://localhost:5175
 ```
 
 ## What makes it "v2"

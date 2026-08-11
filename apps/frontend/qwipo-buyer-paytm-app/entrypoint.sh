@@ -28,11 +28,11 @@ case "${NODE_ENV:-development}" in
 esac
 
 if [ ! -f "$CONFIG_DIR/config.${ENV_NAME}.json" ]; then
-  echo "[qwipo-app-v2] no config for env=${ENV_NAME}; expected ${CONFIG_DIR}/config.${ENV_NAME}.json" >&2
+  echo "[qwipo-buyer-paytm-app] no config for env=${ENV_NAME}; expected ${CONFIG_DIR}/config.${ENV_NAME}.json" >&2
   exit 1
 fi
 
 cp -f "$CONFIG_DIR/config.${ENV_NAME}.json" "$CONFIG_DIR/config.json"
-echo "[qwipo-app-v2] config swapped for env=${ENV_NAME}"
+echo "[qwipo-buyer-paytm-app] config swapped for env=${ENV_NAME}"
 
 exec "$@"

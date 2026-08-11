@@ -1,5 +1,5 @@
 // Buyer + Auth screen ids (Paytm + Salesperson excluded from the RN port).
-// Mirrors qwipo-app-v2/src/review/screenIndex.ts ids so the flow matches.
+// Mirrors qwipo-buyer-paytm-app/src/review/screenIndex.ts ids so the flow matches.
 export type ScreenId =
   // Auth
   | 'splash'

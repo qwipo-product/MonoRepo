@@ -3,7 +3,7 @@
 // semantic tokens (bg-primary, bg-success, bg-error, bg-primary-soft).
 //
 // Old variant/size names (default, outline) are kept as aliases so the
-// retiring qwipo-app keeps rendering while qwipo-app-v2 is built.
+// retiring qwipo-app keeps rendering while qwipo-buyer-paytm-app is built.
 
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';

@@ -17,7 +17,7 @@ export function QwipoWordmark({ height = 22 }: { height?: number }) {
 }
 
 /* Qwipo brand mark (disc + Q + "Qwipo" wordmark) — the real logo geometry from
-   qwipo-app-v2's qwipo-primary.svg, rendered inline via react-native-svg.
+   qwipo-buyer-paytm-app's qwipo-primary.svg, rendered inline via react-native-svg.
    - primary: purple disc, white Q, dark wordmark (on light surfaces)
    - white:   white disc, purple Q + wordmark (on the lavender splash bg) */
 export function QwipoLogo({ width = 100, variant = 'primary' }: { width?: number; variant?: 'primary' | 'white' }) {
@@ -50,7 +50,7 @@ export function PoweredBy({ width = 300 }: { width?: number }) {
   );
 }
 
-/* Full auth lockup: mark + powered-by, matching qwipo-app-v2's AuthBrand. */
+/* Full auth lockup: mark + powered-by, matching qwipo-buyer-paytm-app's AuthBrand. */
 export function AuthBrand() {
   return (
     <View className="items-center gap-2">

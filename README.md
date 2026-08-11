@@ -44,7 +44,7 @@ one.
 | --- | --- |
 | `bun run ls` | Lists every mockup, its URL, and what it is |
 | `bun dev` | Runs everything at once |
-| `bun dev --filter=@mockups/qwipo-app-v2` | Runs just one |
+| `bun dev --filter=@mockups/qwipo-buyer-paytm-app` | Runs just one |
 | `bun run new <name>` | Scaffolds a brand-new mockup, wired up and ready |
 | `bun run check` | Lint + typecheck + build — run before you push |
 | `bun run build` | Production build of every app |
@@ -60,7 +60,7 @@ review that counts.
 ```
 apps/
   frontend/
-    qwipo-app-v2/         Buyer + salesperson app (Qwipo & Paytm shells)  →  localhost:5173
+    qwipo-buyer-paytm-app/         Buyer + salesperson app (Qwipo & Paytm shells)  →  localhost:5173
   backend/
     mock-api/             Fake API over the fixtures  →  localhost:8787
 packages/
@@ -159,7 +159,7 @@ than following the `docker-cd-*` / `argocd-*` convention the service repos use.
 
 | App | Service name | Build | Deploy |
 | --- | --- | --- | --- |
-| `qwipo-app-v2` | `mockups-qwipo-app-v2` | `Mockups Lab / App V2 - Build` | `Mockups Lab / App V2 - Deploy` |
+| `qwipo-buyer-paytm-app` | `mockups-qwipo-buyer-paytm-app` | `Mockups Lab / App V2 - Build` | `Mockups Lab / App V2 - Deploy` |
 | `mock-api` | `mockups-api` | `Mockups Lab / Mock API - Build` | `Mockups Lab / Mock API - Deploy` |
 
 Service names are prefixed `mockups-` so these images and ArgoCD apps can't be
@@ -173,11 +173,11 @@ Build → push to DOCR → deploy rewrites the image digest at
 
 ### To put a new mockup on this path
 
-1. Copy these five files from `apps/frontend/qwipo-app-v2/` into your app:
+1. Copy these five files from `apps/frontend/qwipo-buyer-paytm-app/` into your app:
    `Dockerfile`, `nginx.conf`, `entrypoint.sh`, `docker-build.yml`,
    `azure-release.yaml`.
-2. In them, change `qwipo-app-v2` → your app folder and
-   `mockups-qwipo-app-v2` → `mockups-<your-app>`. That's every occurrence;
+2. In them, change `qwipo-buyer-paytm-app` → your app folder and
+   `mockups-qwipo-buyer-paytm-app` → `mockups-<your-app>`. That's every occurrence;
    nothing else varies.
 3. Copy `public/configs/config.*.json` too, and set `mockApiBaseUrl` per env.
 4. Add a deployment manifest at `bms-chart/<env>/mockups-<your-app>.yaml` in the

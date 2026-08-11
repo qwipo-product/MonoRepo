@@ -1,4 +1,4 @@
-# Build pipeline — qwipo-app-v2 (static SPA behind nginx).
+# Build pipeline — qwipo-buyer-paytm-app (static SPA behind nginx).
 #
 # Registered in Azure DevOps as:  \Mockups Lab\App V2 - Build
 # "App V2 - Deploy" binds to that exact display name via
@@ -18,7 +18,7 @@
 #             - dev
 #     paths:
 #         include:
-#             - 'apps/frontend/qwipo-app-v2/**'
+#             - 'apps/frontend/qwipo-buyer-paytm-app/**'
 #             - 'packages/**'
 #             - 'turbo.json'
 #             - 'package.json'
@@ -37,4 +37,4 @@ extends:
     template: azure-cicd/templates/base-docker-template.yaml@k8s
     parameters:
         service_name_override: mockups-qwipo-buyer-app
-        dockerfile: apps/frontend/qwipo-app-v2/Dockerfile
+        dockerfile: apps/frontend/qwipo-buyer-paytm-app/Dockerfile

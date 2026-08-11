@@ -1,4 +1,4 @@
-# qwipo-app-v2 — build notes & standards (read me before adding a screen)
+# qwipo-buyer-paytm-app — build notes & standards (read me before adding a screen)
 
 We are rebuilding the Qwipo buyer app screen-by-screen, **strictly matching the
 screenshots**, on the shared design system. Follow this every time.
@@ -8,7 +8,7 @@ screenshots**, on the shared design system. Follow this every time.
   file maps to a screen in the FlowIndex (`src/review/screenIndex.ts`). Build to
   the screenshot; when a bottom-sheet/popup has its own reference (e.g.
   `BusinessTypes_bottom_popup.png`, `kyc_section_2.png`) match that too.
-- **Assets:** copied from `qwipo-app/public/` into `qwipo-app-v2/public/`
+- **Assets:** copied from `qwipo-app/public/` into `qwipo-buyer-paytm-app/public/`
   (brand SVGs, banners, category images, brand logos, illustrations). Reference
   by `/path` (Vite serves `public/`). If a screen needs an asset, it's there.
 - **Original code:** `qwipo-app/src/**` is the functional reference — reproduce

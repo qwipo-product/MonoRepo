@@ -1,5 +1,5 @@
 // Wholesaler products — same product offered by MULTIPLE vendors at different
-// prices + delivery fees. Ported verbatim from qwipo-app-v2/src/data/wholesaler.ts.
+// prices + delivery fees. Ported verbatim from qwipo-buyer-paytm-app/src/data/wholesaler.ts.
 export interface WholesalerVendor {
   id: string;
   name: string;

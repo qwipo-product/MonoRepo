@@ -1,7 +1,7 @@
 # qwipo-buyer-app (React Native / Expo)
 
 Native mockup of the Qwipo **buyer** app — the buyer flow only (no Paytm mini
-shell). Mirrors `qwipo-app-v2` (web) using the same design tokens, ported into
+shell). Mirrors `qwipo-buyer-paytm-app` (web) using the same design tokens, ported into
 NativeWind.
 
 ## This slice (phase 1)

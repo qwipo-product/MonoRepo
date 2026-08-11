@@ -4,7 +4,7 @@ import { QwipoLogo } from '../components/BrandMark';
 
 /* Color-morph splash — lavender bg + white brand mark scales in, then bg fades
    to white while the mark cross-fades to the colored primary. Auto-advances at
-   2.7s; tap to skip. Mirrors qwipo-app-v2's splash. */
+   2.7s; tap to skip. Mirrors qwipo-buyer-paytm-app's splash. */
 const TOTAL_MS = 2700;
 
 export function SplashScreen({ onContinue }: { onContinue: () => void }) {

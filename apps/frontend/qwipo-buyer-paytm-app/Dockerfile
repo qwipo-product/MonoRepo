@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1.7
 #
-# qwipo-app-v2 — Vite/React SPA, served by nginx.
+# qwipo-buyer-paytm-app — Vite/React SPA, served by nginx.
 #
 # Build context: WORKSPACE ROOT. The base-docker-template runs
 # `docker buildx build --file $DOCKERFILE_PATH ... .` from the repo root, so
 # the builder sees bun.lock, every member package.json, and the packages/*
 # sources this app links via `workspace:*`. Locally:
 #
-#   docker build -f apps/frontend/qwipo-app-v2/Dockerfile \
-#     -t mockups-qwipo-app-v2:local .
+#   docker build -f apps/frontend/qwipo-buyer-paytm-app/Dockerfile \
+#     -t mockups-qwipo-buyer-paytm-app:local .
 #
 # Two stages:
 #   1. builder — bun-alpine, frozen install, `turbo run build --filter=<app>`.
@@ -17,8 +17,8 @@
 
 ARG BUN_VERSION=1.3.13
 ARG NGINX_VERSION=1.29.0-alpine3.22
-ARG APP_PATH=apps/frontend/qwipo-app-v2
-ARG APP_NAME=@mockups/qwipo-app-v2
+ARG APP_PATH=apps/frontend/qwipo-buyer-paytm-app
+ARG APP_NAME=@mockups/qwipo-buyer-paytm-app
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 1 — builder

@@ -1,4 +1,4 @@
-// Auto-extracted from qwipo-app-v2 public/brand/qwipo-primary.svg (viewBox 735.55x985.52).
+// Auto-extracted from qwipo-buyer-paytm-app public/brand/qwipo-primary.svg (viewBox 735.55x985.52).
 // circle = brand mark disc, Q = inner glyph, WORDMARK = the "Qwipo" letters.
 export const QWIPO_VIEWBOX = '0 0 735.55 985.52';
 export const QWIPO_CIRCLE = { cx: 367.66, cy: 367.66, r: 367.66 };
