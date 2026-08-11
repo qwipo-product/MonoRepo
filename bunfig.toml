@@ -10,6 +10,12 @@
 # Combined with the catalog, upgrades are always a deliberate, reviewable diff.
 exact = true
 
+# Flat node_modules. React Native / Metro resolve Babel presets and their
+# transitive plugins (babel-preset-expo -> @babel/plugin-transform-*) by walking
+# up node_modules; the default isolated store hides those, so Metro bundling
+# fails with "Cannot find module". Hoisted is the layout RN tooling expects.
+linker = "hoisted"
+
 [run]
 # Run bin scripts (vite, eslint, tsc, turbo) under Bun rather than honouring
 # their `#!/usr/bin/env node` shebang. Means the Nix devshell doesn't strictly
