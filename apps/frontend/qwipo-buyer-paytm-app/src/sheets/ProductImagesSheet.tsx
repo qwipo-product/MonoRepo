@@ -4,28 +4,25 @@ import { Sheet, cn } from '@mockups/ui';
 import type { Product } from '../data/products';
 
 /* Product images sheet — opened by tapping a product card's thumbnail. Shows a
-   large preview + an angle strip (Front / Left / Right) and, when the product
-   has a spin asset, a 360° view. No real photo assets in this mockup, so the
-   angles are simulated from the product emoji (flipped/rotated) — swap in real
-   photos by adding `images` (and `spin360`) to the product data. */
+   large preview + an angle strip (front / left / right / 3D). No real photo
+   assets in this mockup, so the angles are simulated from the product emoji
+   (flipped/rotated); the 3D tile is drag-to-rotate. Swap in real photos later. */
 
 interface Angle {
-  label: string;
-  /** CSS transform applied to the emoji to fake the camera angle. */
+  id: string;
   transform?: string;
   spin?: boolean;
 }
 
 const ANGLES: Angle[] = [
-  { label: 'Front' },
-  { label: 'Left', transform: 'scaleX(-1)' },
-  { label: 'Right', transform: 'rotateY(24deg)' },
-  { label: '3D View', spin: true },
+  { id: 'front' },
+  { id: 'left', transform: 'scaleX(-1)' },
+  { id: 'right', transform: 'rotateY(24deg)' },
+  { id: '3d', spin: true },
 ];
 
 function Preview({ emoji, angle }: { emoji: string; angle: Angle }) {
-  // 3D view: drag to rotate by hand (no auto-spin). Horizontal drag turns
-  // left/right (Y axis), vertical drag tilts to top/bottom (X axis).
+  // 3D tile: drag to rotate — horizontal turns (Y axis), vertical tilts (X axis).
   const [rot, setRot] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; baseX: number; baseY: number } | null>(null);
 
@@ -37,8 +34,8 @@ function Preview({ emoji, angle }: { emoji: string; angle: Angle }) {
   const onMove = (e: ReactPointerEvent) => {
     if (!drag.current) return;
     setRot({
-      x: drag.current.baseX - (e.clientY - drag.current.y), // drag down → tilt to top
-      y: drag.current.baseY + (e.clientX - drag.current.x), // 1px ≈ 1°
+      x: drag.current.baseX - (e.clientY - drag.current.y),
+      y: drag.current.baseY + (e.clientX - drag.current.x),
     });
   };
   const onUp = () => {
@@ -54,21 +51,15 @@ function Preview({ emoji, angle }: { emoji: string; angle: Angle }) {
       onPointerUp={onUp}
       onPointerCancel={onUp}
       className={cn(
-        'relative mx-auto grid aspect-square w-52 select-none place-items-center overflow-hidden rounded-xl border border-border bg-muted [perspective:600px]',
+        'relative mx-auto grid aspect-square w-56 select-none place-items-center overflow-hidden rounded-xl border border-border bg-muted [perspective:600px]',
         angle.spin && 'cursor-grab touch-none active:cursor-grabbing'
       )}
     >
-      <span
-        className="text-8xl leading-none"
-        style={transform ? { transform } : undefined}
-        aria-hidden
-      >
+      <span className="text-8xl leading-none" style={transform ? { transform } : undefined} aria-hidden>
         {emoji}
       </span>
       {angle.spin && (
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-foreground/80 px-2 py-1 text-xs font-medium text-background">
-          <Rotate3d className="h-3.5 w-3.5" /> Drag to rotate
-        </span>
+        <Rotate3d className="absolute bottom-2 right-2 h-5 w-5 text-foreground-secondary" />
       )}
     </div>
   );
@@ -86,41 +77,28 @@ export function ProductImagesSheet({
   const idx = Math.min(active, ANGLES.length - 1);
 
   return (
-    <Sheet
-      open={!!product}
-      onClose={onClose}
-      title={product?.shortName ?? 'Product images'}
-      subtitle="Front, left, right and a 3D view"
-    >
+    <Sheet open={!!product} onClose={onClose} title={product?.shortName ?? 'Product images'}>
       <Preview emoji={emoji} angle={ANGLES[idx]} />
 
-      <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+      <div className="no-scrollbar mt-3 flex justify-center gap-2 overflow-x-auto">
         {ANGLES.map((a, i) => (
           <button
-            key={a.label}
+            key={a.id}
             type="button"
             onClick={() => setActive(i)}
-            aria-label={`View ${a.label}`}
+            aria-label={`View ${a.id}`}
             className={cn(
               'relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted',
               i === idx ? 'border-primary ring-2 ring-primary' : 'border-border'
             )}
           >
-            <span
-              className="text-3xl leading-none"
-              style={a.transform ? { transform: a.transform } : undefined}
-              aria-hidden
-            >
+            <span className="text-3xl leading-none" style={a.transform ? { transform: a.transform } : undefined} aria-hidden>
               {emoji}
             </span>
-            {a.spin && (
-              <Rotate3d className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-foreground-secondary" />
-            )}
+            {a.spin && <Rotate3d className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 text-foreground-secondary" />}
           </button>
         ))}
       </div>
-
-      <p className="mt-3 text-center text-xs text-foreground-secondary">{ANGLES[idx].label} view</p>
     </Sheet>
   );
 }
