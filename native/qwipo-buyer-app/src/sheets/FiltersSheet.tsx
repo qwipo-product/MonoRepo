@@ -54,11 +54,11 @@ export function FiltersSheet({
       size="tall"
       footer={
         <View className="flex-row gap-3">
-          <Button variant="secondary" fullWidth onPress={() => setF(DEFAULT_FILTERS)}>
+          <Button variant="secondary" className="flex-1" onPress={() => setF(DEFAULT_FILTERS)}>
             Reset
           </Button>
           <Button
-            fullWidth
+            className="flex-1"
             onPress={() => {
               onApply(f);
               onClose();

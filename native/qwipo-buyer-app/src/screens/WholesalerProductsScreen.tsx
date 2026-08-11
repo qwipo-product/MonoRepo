@@ -114,7 +114,7 @@ export function WholesalerProductsScreen({
               {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
             </Text>
           </View>
-          <Button className="px-8" onPress={onGoToCart}>
+          <Button className="shrink-0 px-8" onPress={onGoToCart}>
             Go to cart
           </Button>
         </View>

@@ -72,7 +72,7 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
         ) : (
           <Text className="flex-1 text-sm text-foreground-secondary">Select a coupon to apply</Text>
         )}
-        <Button className="px-8" disabled={!canApply} onPress={onApply}>
+        <Button className="shrink-0 px-8" disabled={!canApply} onPress={onApply}>
           Apply
         </Button>
       </View>

@@ -37,11 +37,11 @@ export function AddToCartSheet({
       subtitle="Please select the quantity to add to your cart"
       footer={
         <View className="flex-row items-center justify-between gap-3">
-          <View>
+          <View className="min-w-0 flex-1">
             <Text className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">Total cart value</Text>
             <Text className="text-lg font-bold text-foreground">{formatInr(cartTotal)}</Text>
           </View>
-          <Button className="px-8" onPress={onContinue}>
+          <Button className="shrink-0 px-8" onPress={onContinue}>
             Continue
           </Button>
         </View>

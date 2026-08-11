@@ -48,10 +48,10 @@ export function MyOrdersScreen({ onBack, onOpenDetails }: { onBack: () => void; 
         subtitle={tracking?.orderId}
         footer={
           <View className="flex-row gap-3">
-            <Button variant="secondary" fullWidth onPress={() => { const id = tracking?.id; setTracking(null); if (id) onOpenDetails(id); }}>
+            <Button variant="secondary" className="flex-1" onPress={() => { const id = tracking?.id; setTracking(null); if (id) onOpenDetails(id); }}>
               Order details
             </Button>
-            <Button fullWidth onPress={() => setTracking(null)}>
+            <Button className="flex-1" onPress={() => setTracking(null)}>
               Track order
             </Button>
           </View>
@@ -67,10 +67,10 @@ export function MyOrdersScreen({ onBack, onOpenDetails }: { onBack: () => void; 
         subtitle={cancelTarget?.orderId}
         footer={
           <View className="flex-row gap-3">
-            <Button variant="secondary" fullWidth onPress={() => setCancelTarget(null)}>
+            <Button variant="secondary" className="flex-1" onPress={() => setCancelTarget(null)}>
               Keep order
             </Button>
-            <Button variant="destructive" fullWidth onPress={confirmCancel}>
+            <Button variant="destructive" className="flex-1" onPress={confirmCancel}>
               Cancel order
             </Button>
           </View>
@@ -108,10 +108,10 @@ function OrderCard({ order, onOpen, onTrack, onCancel }: { order: Order; onOpen:
           </Button>
         ) : (
           <View className="flex-row gap-2">
-            <Button variant="secondary" fullWidth className="flex-1 border border-destructive" textClassName="text-destructive" onPress={onCancel}>
+            <Button variant="secondary" className="flex-1 border border-destructive" textClassName="text-destructive" onPress={onCancel}>
               Cancel
             </Button>
-            <Button fullWidth className="flex-1" onPress={onTrack}>
+            <Button className="flex-1" onPress={onTrack}>
               Track order
             </Button>
           </View>

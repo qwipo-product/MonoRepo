@@ -81,7 +81,7 @@ export function OrderSummaryScreen({
             <Text className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</Text>
             <Text className="text-lg font-bold text-foreground">{formatInr(toPay)}</Text>
           </View>
-          <Button className="px-8" onPress={onPlaceOrder}>
+          <Button className="shrink-0 px-8" onPress={onPlaceOrder}>
             Place order
           </Button>
         </View>

@@ -60,7 +60,7 @@ export function CartScreen({
                   {deliveryFee > 0 ? `+ ${formatInr(deliveryFee)} delivery fee` : 'Free delivery'}
                 </Text>
               </View>
-              <Button className="px-8" onPress={onCheckout}>
+              <Button className="shrink-0 px-8" onPress={onCheckout}>
                 Checkout
               </Button>
             </View>
@@ -164,7 +164,7 @@ function SellerCard({ seller, onViewItems, onAddMore }: { seller: CartSeller; on
       </View>
 
       <View className="mt-3 flex-row gap-2">
-        <Button fullWidth className="flex-1" onPress={onViewItems}>
+        <Button className="flex-1" onPress={onViewItems}>
           View items
         </Button>
         <Button variant={seller.blocked ? 'warning' : 'secondary'} className="flex-1" onPress={onAddMore}>
