@@ -30,9 +30,12 @@ export function Sheet({
 }) {
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
-  // Cap the panel to a pixel height (percentage would resolve against the
-  // content-sized keyboard wrapper, i.e. be ignored → tall sheets overflow).
   const maxH = Math.round((winH - insets.top) * (size === 'tall' ? 0.9 : 0.85));
+  // The Modal is NOT translucent (below), so its window already ends above the
+  // Android nav bar / iOS home indicator — a small fixed pad is enough (adding
+  // insets here would double-count and leave a large empty gap).
+  const bottomPad = 16;
+
   const y = useRef(new Animated.Value(40)).current;
   const fade = useRef(new Animated.Value(0)).current;
 
@@ -48,14 +51,11 @@ export function Sheet({
   }, [open, y, fade]);
 
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Animated.View style={{ flex: 1, backgroundColor: colors.overlay, opacity: fade, justifyContent: 'flex-end' }}>
         <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityLabel="Close" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <Animated.View
-            style={[{ transform: [{ translateY: y }], maxHeight: maxH }, shadows.xl]}
-            className="overflow-hidden rounded-t-xl bg-card"
-          >
+          <Animated.View style={[{ transform: [{ translateY: y }], maxHeight: maxH }, shadows.xl]} className="overflow-hidden rounded-t-xl bg-card">
             {showHandle && <View className="mx-auto mt-2 h-1 w-9 rounded-full bg-muted" />}
 
             {(title || icon) && (
@@ -73,14 +73,14 @@ export function Sheet({
 
             <ScrollView
               style={{ flexShrink: 1 }}
-              contentContainerStyle={{ padding: 16, paddingBottom: footer ? 16 : Math.max(16, insets.bottom + 8) }}
+              contentContainerStyle={{ padding: 16, paddingBottom: footer ? 16 : bottomPad + 8 }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
               {children}
             </ScrollView>
 
-            {footer && <View className="border-t border-border p-4" style={{ paddingBottom: Math.max(16, insets.bottom) }}>{footer}</View>}
+            {footer && <View className="border-t border-border px-4 pt-4" style={{ paddingBottom: bottomPad }}>{footer}</View>}
           </Animated.View>
         </KeyboardAvoidingView>
       </Animated.View>

@@ -5,7 +5,7 @@ import { cn } from '../lib/format';
 import { colors } from '../lib/theme';
 import { img } from '../lib/images';
 import { QwipoWordmark } from '../components/BrandMark';
-import { Bell, User, MapPin, ChevronDown, Search, ArrowRight } from '../lib/icons';
+import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from '../lib/icons';
 import {
   DISTRIBUTORS,
   DIST_CATEGORIES,
@@ -39,6 +39,7 @@ export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
   availability = 'both',
   onNavigate,
+  salesperson = false,
 }: {
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
@@ -57,8 +58,14 @@ export function HomeScreen({
         <View className="flex-row items-center gap-3 px-4 pt-3">
           <QwipoWordmark height={24} />
           <View className="flex-1 items-center">
-            <Image source={require('../../assets/brand/digidukaan.png')} style={{ width: 150, height: 150 / 7.6 }} resizeMode="contain" />
+            <Image source={require('../../assets/brand/digidukaan.png')} style={{ width: 240, height: 240 / 7.6 }} resizeMode="contain" />
           </View>
+          {salesperson && (
+            <Pressable onPress={() => onNavigate('sp:tasks', { backTo: 'home' })} className="h-10 w-10 items-center justify-center rounded-lg border border-border" accessibilityLabel="My tasks">
+              <ClipboardList size={20} color={colors.foreground} />
+              <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" />
+            </Pressable>
+          )}
           <Pressable onPress={() => onNavigate('notifications', { backTo: 'home' })} className="h-10 w-10 items-center justify-center rounded-lg border border-border" accessibilityLabel="Notifications">
             <Bell size={20} color={colors.foreground} />
             <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-error" />

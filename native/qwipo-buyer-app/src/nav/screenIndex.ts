@@ -38,10 +38,21 @@ export type ScreenId =
   | 'sub:credit'
   | 'sub:language'
   | 'sub:help'
-  | 'sub:terms';
+  | 'sub:terms'
+  // Salesperson (beat-day)
+  | 'sp:attendance'
+  | 'sp:tasks'
+  | 'sp:task-details'
+  | 'sp:create-interaction'
+  | 'sp:performance'
+  | 'sp:orders'
+  | 'sp:switch-customer'
+  | 'sp:customers'
+  | 'sp:customer-details';
 
-// Root screens show the bottom nav; everything else is a pushed screen with a back button.
-export const ROOT_SCREENS: ScreenId[] = ['home', 'reorder', 'cart', 'profile'];
+// Root screens show the bottom nav; everything else is a pushed screen with a
+// back button. Cart is excluded — it has its own Checkout bar, so no bottom nav.
+export const ROOT_SCREENS: ScreenId[] = ['home', 'reorder', 'profile'];
 
 // Screens that gate app entry (no bottom nav, full-bleed).
 export const AUTH_SCREENS: ScreenId[] = ['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success'];

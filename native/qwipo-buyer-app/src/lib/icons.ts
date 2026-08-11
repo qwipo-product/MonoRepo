@@ -64,4 +64,12 @@ export {
   Mail,
   Receipt,
   AlertCircle,
+  CalendarClock,
+  CalendarDays,
+  CalendarCheck,
+  LogIn,
+  MessageSquarePlus,
+  Camera,
+  Navigation,
+  Repeat,
 } from 'lucide-react-native';
