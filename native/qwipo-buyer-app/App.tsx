@@ -397,6 +397,7 @@ export default function App() {
             onOpenSheet={(id) => setSheetId(id)}
             onSetQty={setQtyFor}
             onSearch={() => go('global-search', { backTo: 'reorder' })}
+            onBack={back}
           />
         );
       case 'my-orders':
