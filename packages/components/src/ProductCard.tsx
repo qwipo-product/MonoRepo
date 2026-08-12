@@ -4,7 +4,7 @@
 // wholesaler, in-cart vs not, discounts — all props, not separate cards.
 
 import * as React from 'react';
-import { Badge, Button, Card, Chip, QtyStepper, cn } from '@mockups/ui';
+import { Badge, Button, Card, Chip, cn } from '@mockups/ui';
 import { PriceLabel, formatInr } from './PriceLabel';
 
 export interface PackPill {
@@ -153,9 +153,19 @@ export function ProductCard({
         )}
         <div className={onDiscounts ? 'w-28 shrink-0' : 'flex-1'}>
           {qty > 0 ? (
-            // Tapping − / + reopens the selling-units sheet (the qty editor)
-            // rather than stepping inline — reuses the QtyStepper primitive.
-            <QtyStepper value={qty} onChange={() => onAdd?.()} tone="soft" className="w-full" />
+            // Whole control opens the selling-units sheet (the qty editor) —
+            // tapping anywhere (− , value, +) triggers it, so it's one button,
+            // not an inline stepper.
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-label="Edit quantity"
+              className="flex h-9 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
+            >
+              <span className="text-lg font-medium leading-none">−</span>
+              <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
+              <span className="text-lg font-medium leading-none">+</span>
+            </button>
           ) : (
             <Button className="w-full" onClick={onAdd}>
               + Add

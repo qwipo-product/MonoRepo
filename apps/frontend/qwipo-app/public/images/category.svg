@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Category">
-  <rect width="200" height="200" rx="20" fill="#DBEAFE"/>
-  <rect x="44" y="44" width="48" height="48" rx="8" fill="#3B82F6"/>
-  <rect x="108" y="44" width="48" height="48" rx="8" fill="#60A5FA"/>
-  <rect x="44" y="108" width="48" height="48" rx="8" fill="#60A5FA"/>
-  <rect x="108" y="108" width="48" height="48" rx="8" fill="#3B82F6"/>
-  <text x="100" y="188" font-family="system-ui,Arial" font-size="18" font-weight="600" fill="#1E40AF" text-anchor="middle">Category</text>
-</svg>

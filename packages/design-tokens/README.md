@@ -21,7 +21,7 @@ theme.css       Web / Paytm-WebView binding — Tailwind v4 @theme, light + `.da
 
 ## Consuming it
 
-**Web / Paytm WebView** (`@mockups/ui`, `apps/frontend/qwipo-app-v2`):
+**Web / Paytm WebView** (`@mockups/ui`, `apps/frontend/qwipo-buyer-paytm-app`):
 
 ```css
 /* app index.css */
