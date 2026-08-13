@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ChevronLeft, Bell } from 'lucide-react';
+import { ChevronLeft, Bell, BellOff } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { NOTIFICATIONS, type AppNotification } from '../data/notifications';
+import { useEmptyable } from '../review/demoState';
 
 /* Notifications — a single feed. Each card can be marked read on tap, or all at
    once from the header. */
 export function NotificationsScreen({ onBack }: { onBack: () => void }) {
-  const [notifs, setNotifs] = useState<AppNotification[]>(NOTIFICATIONS);
+  const source = useEmptyable(NOTIFICATIONS);
+  const [notifs, setNotifs] = useState<AppNotification[]>(source);
 
   const unread = notifs.filter((n) => n.unread).length;
 
@@ -39,7 +41,11 @@ export function NotificationsScreen({ onBack }: { onBack: () => void }) {
 
       <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto bg-background-subtle p-3">
         {notifs.length === 0 ? (
-          <EmptyState icon="🔕" title="All caught up" description="You have no notifications." />
+          <EmptyState
+            icon={<BellOff strokeWidth={1.75} />}
+            title="All caught up"
+            description="You have no notifications right now."
+          />
         ) : (
           notifs.map((n) => (
             <button

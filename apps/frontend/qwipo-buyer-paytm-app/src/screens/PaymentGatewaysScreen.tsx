@@ -3,6 +3,7 @@ import { ChevronLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { SelectableCard, EmptyState, Button, Input, Sheet } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { GATEWAYS_BY_VENDOR, PAYMENT_VENDORS, type GatewayOption } from '../data/payments';
+import { useEmptyable } from '../review/demoState';
 
 /* Account · Payments · Pay — enter the amount and pick a gateway. UPI has no
    limit; BNPL (Rupifi / ePay Later) validates against the available limit and a
@@ -19,7 +20,7 @@ export function PaymentGatewaysScreen({
   onDone: () => void;
 }) {
   const vendor = PAYMENT_VENDORS.find((v) => v.id === vendorId) ?? PAYMENT_VENDORS[0];
-  const gateways = GATEWAYS_BY_VENDOR[vendor.id] ?? [];
+  const gateways = useEmptyable(GATEWAYS_BY_VENDOR[vendor.id] ?? []);
   const [amountStr, setAmountStr] = useState(String(amount));
   const [selected, setSelected] = useState<string>(gateways[0]?.id ?? '');
   const [warning, setWarning] = useState<string | null>(null);
@@ -53,9 +54,9 @@ export function PaymentGatewaysScreen({
       {gateways.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<AlertCircle className="h-7 w-7 text-foreground-secondary" />}
-            title="No Payment Options Found"
-            description="You have no payment gateways available at this time."
+            icon={<AlertCircle strokeWidth={1.75} />}
+            title="No payment options available"
+            description="This seller hasn’t enabled online payment yet. Pay on delivery instead."
           />
         </div>
       ) : (

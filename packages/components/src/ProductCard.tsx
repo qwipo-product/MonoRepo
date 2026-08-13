@@ -82,38 +82,32 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
-      {/* title (opens selling-units sheet) + thumb (opens image gallery, or
-          falls back to the sheet). Two separate buttons — never nested. */}
-      <div className="flex w-full items-start justify-between gap-3">
-        {onAdd ? (
+      {/* thumb + title — tap to (re)open the selling-units sheet. Image leads on
+          the left, matching the wholesaler card: one scan line down the list. */}
+      {(() => {
+        const titleRow = (
+          <>
+            <Thumb image={image} name={name} />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+              {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+            </div>
+          </>
+        );
+        return onAdd ? (
           <button
             type="button"
             onClick={onAdd}
             aria-label={`Open selling units for ${name}`}
-            className="min-w-0 flex-1 text-left active:scale-[0.99]"
+            className="flex w-full items-start gap-3 text-left active:scale-[0.99]"
           >
             <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
             {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
           </button>
         ) : (
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
-            {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
-          </div>
-        )}
-        {onImageClick || onAdd ? (
-          <button
-            type="button"
-            onClick={onImageClick ?? onAdd}
-            aria-label={onImageClick ? `View images of ${name}` : `Open selling units for ${name}`}
-            className="shrink-0 rounded-lg active:scale-[0.98]"
-          >
-            <Thumb image={image} name={name} />
-          </button>
-        ) : (
-          <Thumb image={image} name={name} />
-        )}
-      </div>
+          <div className="flex items-start gap-3">{titleRow}</div>
+        );
+      })()}
 
       {/* pack pills */}
       {variants && variants.length > 0 && (

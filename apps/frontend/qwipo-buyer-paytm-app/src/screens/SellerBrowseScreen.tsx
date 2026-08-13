@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, BadgeCheck } from 'lucide-react';
-import { SegmentedControl } from '@mockups/ui';
+import { ChevronLeft, ChevronRight, BadgeCheck, SearchX } from 'lucide-react';
+import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import { SearchField } from '../components/SearchField';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
+import { useEmptyable } from '../review/demoState';
 
 /* SellerBrowseScreen — one browse surface reused by Distributors (Categories /
    Brands / Sellers) and Wholesalers (Categories / Brands). Tabs, copy and data
@@ -61,7 +62,9 @@ export function SellerBrowseScreen({
   const brandList = useMemo(() => (q ? brands.filter((b) => b.name.toLowerCase().includes(q)) : brands), [q, brands]);
   const sellerList = useMemo(() => (q ? sellers.filter((d) => d.name.toLowerCase().includes(q)) : sellers), [q, sellers]);
 
-  const active = tab === 'categories' ? catList : tab === 'brands' ? brandList : sellerList;
+  const active = useEmptyable<HomeCategory | HomeBrand | Distributor>(
+    tab === 'categories' ? catList : tab === 'brands' ? brandList : sellerList
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -95,9 +98,15 @@ export function SellerBrowseScreen({
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
         {active.length === 0 ? (
-          <p className="py-12 text-center text-sm text-foreground-secondary">
-            No {tab} match “{query}”.
-          </p>
+          <EmptyState
+            icon={<SearchX strokeWidth={1.75} />}
+            title={query ? <>No {tab} match “{query}”</> : `No ${tab} yet`}
+            description={
+              query
+                ? 'Check the spelling, or try a shorter search.'
+                : "We're onboarding sellers in your area. Check back soon."
+            }
+          />
         ) : tab === 'categories' ? (
           <div className="grid grid-cols-2 gap-3">
             {catList.map((c) => (

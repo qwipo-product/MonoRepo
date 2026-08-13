@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
 import { Badge, Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
 import { PriceLabel, formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
@@ -9,6 +9,7 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
+import { useEmptyable } from '../review/demoState';
 
 const minPrice = (p: WholesalerProduct) => Math.min(...p.vendors.map((v) => v.price));
 const brandOf = (name: string) => name.split(' ')[0];
@@ -48,11 +49,11 @@ export function WholesalerProductsScreen({
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
   const base = applied.length ? WHOLESALER_PRODUCTS.filter((p) => applied.every((a) => matchesApplied(p, a))) : WHOLESALER_PRODUCTS;
-  const products = applyFilters(base, filters, {
+  const products = useEmptyable(applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.name),
     price: minPrice,
-  });
+  }));
   const activeFilters = countActiveFilters(filters);
 
   const vendorFor = (p: WholesalerProduct) => {
@@ -96,7 +97,11 @@ export function WholesalerProductsScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {products.length === 0 ? (
-          <EmptyState icon="🔍" title="No products here" description="No vendors match this selection yet." />
+          <EmptyState
+            icon={<PackageOpen strokeWidth={1.75} />}
+            title="No products here"
+            description="No vendors match this selection yet."
+          />
         ) : (
           products.map((p) => (
             <VendorProductCard
