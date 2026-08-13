@@ -44,6 +44,7 @@ import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { UpdateSheet } from './sheets/UpdateSheet';
+import { ProductImagesSheet } from './sheets/ProductImagesSheet';
 import { CartAlertsSheet } from './sheets/CartAlertsSheet';
 import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
@@ -142,6 +143,7 @@ export default function App() {
     new URLSearchParams(window.location.search).get('orient') === 'landscape' ? 'landscape' : 'portrait'
   );
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [galleryId, setGalleryId] = useState<string | null>(null);
   const [alertsOpen, setAlertsOpen] = useState(false);
   // Review-only: force every list empty so the zero-data designs are reachable.
   const [emptyDemo, setEmptyDemo] = useState(false);
@@ -234,6 +236,7 @@ export default function App() {
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
   const cartTotal = PRODUCTS.reduce((s, p) => s + p.price * (qty[p.id] ?? 0), 0);
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
+  const galleryProduct = galleryId ? productById(galleryId) ?? null : null;
   // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
   const isSalesperson = role === 'salesperson' && shell === 'buyer';
 
@@ -425,6 +428,7 @@ export default function App() {
             onSearch={() => go('global-search')}
             qty={qty}
             onOpenSheet={setSheetId}
+            onOpenGallery={setGalleryId}
             onSetQty={setLineQty}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
@@ -672,6 +676,8 @@ export default function App() {
             onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}
           />
+
+          <ProductImagesSheet product={galleryProduct} onClose={() => setGalleryId(null)} />
 
           <CartAlertsSheet
             open={alertsOpen}

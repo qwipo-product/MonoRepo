@@ -31,6 +31,8 @@ export interface ProductCardProps {
   qty?: number;
   onQty?: (n: number) => void;
   onAdd?: () => void;
+  /** Tap the thumbnail to open an image gallery. Falls back to onAdd if unset. */
+  onImageClick?: () => void;
   onDiscounts?: () => void;
   /** Line total (selling price × selected qty). Shows a Total row when > 0. */
   subtotal?: number;
@@ -71,6 +73,7 @@ export function ProductCard({
   qty = 0,
   onQty,
   onAdd,
+  onImageClick,
   onDiscounts,
   subtotal,
   subtotalLabel = 'Total',
@@ -79,31 +82,40 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
-      {/* thumb + title — tap to (re)open the selling-units sheet. Image leads on
-          the left, matching the wholesaler card: one scan line down the list. */}
-      {(() => {
-        const titleRow = (
-          <>
+      {/* thumb + title. Image leads on the left, matching the wholesaler card:
+          one scan line down the list. Two separate buttons, never nested — the
+          thumb opens the image gallery (falling back to the selling-units
+          sheet), the title always opens the sheet. */}
+      <div className="flex w-full items-start gap-3">
+        {onImageClick || onAdd ? (
+          <button
+            type="button"
+            onClick={onImageClick ?? onAdd}
+            aria-label={onImageClick ? `View images of ${name}` : `Open selling units for ${name}`}
+            className="shrink-0 rounded-lg active:scale-[0.98]"
+          >
             <Thumb image={image} name={name} />
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
-              {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
-            </div>
-          </>
-        );
-        return onAdd ? (
+          </button>
+        ) : (
+          <Thumb image={image} name={name} />
+        )}
+        {onAdd ? (
           <button
             type="button"
             onClick={onAdd}
             aria-label={`Open selling units for ${name}`}
-            className="flex w-full items-start gap-3 text-left active:scale-[0.99]"
+            className="min-w-0 flex-1 text-left active:scale-[0.99]"
           >
-            {titleRow}
+            <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+            {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
           </button>
         ) : (
-          <div className="flex items-start gap-3">{titleRow}</div>
-        );
-      })()}
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+            {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+          </div>
+        )}
+      </div>
 
       {/* pack pills */}
       {variants && variants.length > 0 && (

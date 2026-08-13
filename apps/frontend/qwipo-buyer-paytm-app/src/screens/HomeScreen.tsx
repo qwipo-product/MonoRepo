@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
@@ -43,7 +43,7 @@ export function HomeScreen({
   const effectiveTab = !distAvailable ? 'wholesalers' : !wholeAvailable ? 'distributors' : tab;
 
   return (
-    <div className="no-scrollbar flex h-full flex-col overflow-y-auto pb-6">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
       {/* sticky header */}
       <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
@@ -83,12 +83,12 @@ export function HomeScreen({
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
-            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1.5 text-sm active:scale-[0.98]"
+            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1 text-xs active:scale-[0.98]"
           >
-            <MapPin className="h-4 w-4 shrink-0 text-primary" />
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="shrink-0 text-primary">Deliver to</span>
             <span className="min-w-0 flex-1 truncate text-left font-medium text-foreground">{deliveryLabel}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
           </button>
         </div>
 
@@ -311,7 +311,7 @@ function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className={cn('flex h-40 w-52 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
+      className={cn('flex h-30 w-30 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="text-base font-bold leading-tight">{offer.headline}</div>
@@ -340,16 +340,26 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
 }
 
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((p) => (p + 1) % banners.length), 3500);
-    return () => clearInterval(t);
-  }, [banners.length]);
+  // Manual swipe only — no auto-advance.
+  const onScroll = () => {
+    const el = ref.current;
+    if (el) setI(Math.round(el.scrollLeft / el.clientWidth));
+  };
   return (
     <div className="px-4">
-      <button onClick={onOpen} aria-label="Open offers" className="block w-full overflow-hidden rounded-lg">
-        <img src={encodeURI(banners[i])} alt="" className="h-40 w-full object-cover" />
-      </button>
+      <div
+        ref={ref}
+        onScroll={onScroll}
+        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg"
+      >
+        {banners.map((b, j) => (
+          <button key={j} onClick={onOpen} aria-label="Open offers" className="w-full shrink-0 snap-start">
+            <img src={encodeURI(b)} alt="" className="h-40 w-full object-cover" />
+          </button>
+        ))}
+      </div>
       <div className="mt-2 flex justify-center gap-1.5">
         {banners.map((_, j) => (
           <span

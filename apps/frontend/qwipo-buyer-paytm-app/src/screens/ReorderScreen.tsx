@@ -95,6 +95,7 @@ export function ReorderScreen({
               selectedVariant={variant[r.product.id] ?? r.product.variants[0].id}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [r.product.id]: id }))}
               seller={r.product.seller}
+              source={r.product.source}
               delivery={r.product.delivery}
               margin={r.product.margin}
               price={r.product.price}
