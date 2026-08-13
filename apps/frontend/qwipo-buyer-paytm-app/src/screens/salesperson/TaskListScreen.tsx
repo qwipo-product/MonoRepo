@@ -3,6 +3,7 @@ import { ChevronLeft, Search, ClipboardList } from 'lucide-react';
 import { EmptyState, cn } from '@mockups/ui';
 import { ShopCard } from './ShopCard';
 import { TASKS, TASK_STATUS_LABEL, type TaskStatus } from '../../data/salesperson';
+import { useEmptyable } from '../../review/demoState';
 
 /* Salesperson · Tasks — the day's assigned shops sorted by stop number. Search
    by business name or mobile; each card taps into Task Details. Shares the
@@ -24,12 +25,14 @@ export function TaskListScreen({
 }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
-  const tasks = query
-    ? TASKS.filter(
-        (t) =>
-          t.customer.businessName.toLowerCase().includes(query) || t.customer.mobile.includes(query)
-      )
-    : TASKS;
+  const tasks = useEmptyable(
+    query
+      ? TASKS.filter(
+          (t) =>
+            t.customer.businessName.toLowerCase().includes(query) || t.customer.mobile.includes(query)
+        )
+      : TASKS
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -42,7 +45,7 @@ export function TaskListScreen({
           <ChevronLeft size={18} />
         </button>
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight">Tasks</h1>
-        <span className="shrink-0 text-xs text-foreground-secondary">{TASKS.length} shops</span>
+        <span className="shrink-0 text-xs text-foreground-secondary">{tasks.length} shops</span>
       </header>
 
       <div className="border-b border-border bg-card px-3 py-2.5">
@@ -60,9 +63,9 @@ export function TaskListScreen({
       {tasks.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<ClipboardList className="h-7 w-7 text-foreground-secondary" />}
-            title="No Shops Found"
-            description="No assigned shop matches your search."
+            icon={<ClipboardList strokeWidth={1.75} />}
+            title="No tasks today"
+            description="Shops assigned for your beat day will appear here."
           />
         </div>
       ) : (

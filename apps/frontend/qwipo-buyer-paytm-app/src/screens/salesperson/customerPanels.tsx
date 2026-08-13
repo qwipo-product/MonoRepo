@@ -19,7 +19,7 @@ export function OrdersPanel({
   onOpenOrder: (order: Order) => void;
 }) {
   const orders = CUSTOMER_ORDERS[customerId] ?? [];
-  if (orders.length === 0) return <PanelEmpty title="No Orders Found" />;
+  if (orders.length === 0) return <PanelEmpty title="No orders yet" />;
   return (
     <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
       {orders.map((o) => (
@@ -78,7 +78,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
 function PanelEmpty({ title, description }: { title: string; description?: string }) {
   return (
     <div className="grid flex-1 place-items-center bg-background-subtle">
-      <EmptyState icon={<CheckCircle2 className="h-7 w-7 text-foreground-secondary" />} title={title} description={description} />
+      <EmptyState icon={<CheckCircle2 strokeWidth={1.75} />} title={title} description={description} />
     </div>
   );
 }

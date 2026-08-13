@@ -1,4 +1,4 @@
-import { Moon, Sun, UserRound, Camera } from 'lucide-react';
+import { Moon, Sun, UserRound, Camera, PackageOpen } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
@@ -24,6 +24,8 @@ export default function FlowIndex({
   isDark,
   onToggleTheme,
   onCapture,
+  emptyDemo,
+  onEmptyDemoChange,
 }: {
   active: ScreenId;
   built: Set<ScreenId>;
@@ -41,6 +43,9 @@ export default function FlowIndex({
   onToggleTheme: () => void;
   /** Snapshot the phone bezel to a PNG download. */
   onCapture: () => void;
+  /** Force every list empty, to review the zero-data designs. */
+  emptyDemo: boolean;
+  onEmptyDemoChange: (v: boolean) => void;
 }) {
   let n = 0;
   // Paytm mini is customer-only — no salesperson persona there.
@@ -60,6 +65,18 @@ export default function FlowIndex({
           <Camera size={16} />
         </button>
         <button
+          onClick={() => onEmptyDemoChange(!emptyDemo)}
+          aria-label="Toggle empty states"
+          aria-pressed={emptyDemo}
+          title="Show every screen with no data"
+          className={cn(
+            'grid h-9 w-9 shrink-0 place-items-center rounded-md border text-foreground hover:bg-muted',
+            emptyDemo ? 'border-primary bg-primary-soft text-primary' : 'border-border bg-card'
+          )}
+        >
+          <PackageOpen size={16} />
+        </button>
+        <button
           onClick={onToggleTheme}
           aria-label="Toggle theme"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-card text-foreground hover:bg-muted"
@@ -67,6 +84,12 @@ export default function FlowIndex({
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
+
+      {emptyDemo && (
+        <p className="mt-2 rounded-md border border-primary-soft bg-primary-soft px-2.5 py-1.5 text-xs text-primary">
+          Empty-state mode: every list renders with no data.
+        </p>
+      )}
 
       {/* persona: Customer vs Salesperson (Qwipo app only — Paytm is customer-only) */}
       {shell !== 'paytm' && (

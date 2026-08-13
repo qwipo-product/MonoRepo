@@ -5,6 +5,7 @@ import { OrderListCard } from '../../components/OrderListCard';
 import { buildOrder, type Order } from '../../data/orders';
 import { SP_ORDERS, SP_ORDER_SUMMARY, type SpOrder } from '../../data/salesperson';
 import { formatDate } from '../../date';
+import { useEmptyable } from '../../review/demoState';
 
 /* Salesperson · Customer Orders — the salesperson's order book for today: a
    revenue summary (task vs unassigned) then the day's orders, each a My-Orders
@@ -17,6 +18,7 @@ export function CustomerOrdersScreen({
   onOpenOrder: (order: Order) => void;
 }) {
   const s = SP_ORDER_SUMMARY;
+  const spOrders = useEmptyable(SP_ORDERS);
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -30,9 +32,13 @@ export function CustomerOrdersScreen({
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight">Customer Orders</h1>
       </header>
 
-      {SP_ORDERS.length === 0 ? (
+      {spOrders.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
-          <EmptyState icon={<ShoppingBag className="h-7 w-7 text-foreground-secondary" />} title="No Orders Found" />
+          <EmptyState
+            icon={<ShoppingBag strokeWidth={1.75} />}
+            title="No orders yet"
+            description="Orders this customer places will appear here."
+          />
         </div>
       ) : (
         <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
@@ -48,7 +54,7 @@ export function CustomerOrdersScreen({
             </div>
           </div>
 
-          {SP_ORDERS.map((o) => (
+          {spOrders.map((o) => (
             <OrderListCard
               key={o.id}
               title={o.business}

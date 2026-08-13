@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
 import { PRODUCTS, type Product } from '../data/products';
@@ -8,6 +8,7 @@ import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { useEmptyable } from '../review/demoState';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
@@ -52,11 +53,11 @@ export function CatalogScreen({
   // their own catalog + WholesalerProductsScreen — no channel cross-over).
   const distProducts = PRODUCTS.filter((p) => p.source === 'distributor');
   const base = applied.length ? distProducts.filter((p) => applied.every((a) => matchesApplied(p, a))) : distProducts;
-  const items = applyFilters(base, filters, {
+  const items = useEmptyable(applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.shortName),
     price: (p) => p.price,
-  });
+  }));
   const activeFilters = countActiveFilters(filters);
 
   return (
@@ -90,7 +91,22 @@ export function CatalogScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {items.length === 0 ? (
-          <EmptyState icon="🔍" title="No products here" description="New products are on the way." />
+          <EmptyState
+            icon={<PackageOpen strokeWidth={1.75} />}
+            title="No products here"
+            description={
+              activeFilters > 0
+                ? 'No product matches these filters. Try clearing one.'
+                : 'New products are on the way.'
+            }
+            action={
+              activeFilters > 0 ? (
+                <Button variant="outline" onClick={() => setFilters(DEFAULT_FILTERS)}>
+                  Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           items.map((p) => (
             <ProductCard

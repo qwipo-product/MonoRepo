@@ -79,15 +79,16 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
-      {/* title + thumb — tap to (re)open the selling-units sheet */}
+      {/* thumb + title — tap to (re)open the selling-units sheet. Image leads on
+          the left, matching the wholesaler card: one scan line down the list. */}
       {(() => {
         const titleRow = (
           <>
-            <div className="min-w-0">
+            <Thumb image={image} name={name} />
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
               {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
             </div>
-            <Thumb image={image} name={name} />
           </>
         );
         return onAdd ? (
@@ -95,12 +96,12 @@ export function ProductCard({
             type="button"
             onClick={onAdd}
             aria-label={`Open selling units for ${name}`}
-            className="flex w-full items-start justify-between gap-3 text-left active:scale-[0.99]"
+            className="flex w-full items-start gap-3 text-left active:scale-[0.99]"
           >
             {titleRow}
           </button>
         ) : (
-          <div className="flex items-start justify-between gap-3">{titleRow}</div>
+          <div className="flex items-start gap-3">{titleRow}</div>
         );
       })()}
 

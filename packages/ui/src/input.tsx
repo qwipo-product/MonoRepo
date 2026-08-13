@@ -20,7 +20,9 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
           // non-editable states read gray
           'read-only:bg-input read-only:text-foreground-secondary ' +
-          'disabled:bg-input disabled:text-foreground-secondary disabled:cursor-not-allowed',
+          'disabled:bg-input disabled:text-foreground-secondary disabled:cursor-not-allowed ' +
+          // invalid reads red — pair with <FieldError> for the message
+          'aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error',
         className
       )}
       {...props}

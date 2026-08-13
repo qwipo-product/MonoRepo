@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, SlidersHorizontal, ChevronLeft } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, History } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS } from '../data/reorder';
@@ -7,6 +7,7 @@ import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
+import { useEmptyable } from '../review/demoState';
 
 /* Reorder — the distributor Product List pattern applied to purchase history.
    Distributor- and wholesaler-sourced items live in ONE list; each card shows
@@ -34,11 +35,11 @@ export function ReorderScreen({
   const [filterOpen, setFilterOpen] = useState(false);
   const [discountsOpen, setDiscountsOpen] = useState(false);
 
-  const items = applyFilters(REORDER_ITEMS, filters, {
+  const items = useEmptyable(applyFilters(REORDER_ITEMS, filters, {
     id: (r) => r.product.id,
     brand: (r) => brandOf(r.product.shortName),
     price: (r) => r.product.price,
-  });
+  }));
   const activeFilters = countActiveFilters(filters);
 
   return (
@@ -75,7 +76,7 @@ export function ReorderScreen({
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {items.length === 0 ? (
           <EmptyState
-            icon="📋"
+            icon={<History strokeWidth={1.75} />}
             title="No previous orders"
             description="Items you've ordered before will appear here to reorder in one tap."
           />

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ChevronLeft, Plus, Truck, X } from 'lucide-react';
+import { ChevronLeft, Plus, Truck, X, ShoppingCart } from 'lucide-react';
 import { Button, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { itemWeight, type CartSeller } from '../data/cart';
+import { PriceChangeBanner, PriceChangeTag } from '../components/PriceChange';
+import { useEmptyable } from '../review/demoState';
 
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 
@@ -21,7 +23,9 @@ export function ViewItemsScreen({
   onAddMore: () => void;
   onItemTap: (productId: string) => void;
 }) {
-  const [items, setItems] = useState(seller.items);
+  const [rawItems, setItems] = useState(seller.items);
+  // Totals derive from this too, so the empty demo zeroes them out as well.
+  const items = useEmptyable(rawItems);
 
   const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
   const savings = items.reduce(
@@ -34,6 +38,16 @@ export function ViewItemsScreen({
   const weight = items.reduce((s, i) => s + itemWeight(i), 0);
   const weightMet = seller.mow === 0 || weight >= seller.mow;
   const weightRemaining = Math.max(0, seller.mow - weight);
+
+  // Same summary the Cart Summary shows, scoped to this seller's lines — so
+  // the per-product deltas and the net effect sit on one screen.
+  const moved = items.filter((i) => !!i.priceDelta);
+  const priceChanges = {
+    changed: moved.length,
+    up: moved.filter((i) => (i.priceDelta ?? 0) > 0).length,
+    down: moved.filter((i) => (i.priceDelta ?? 0) < 0).length,
+    net: moved.reduce((n, i) => n + (i.lineDelta ?? 0), 0),
+  };
 
   const remove = (index: number) => setItems((list) => list.filter((_, i) => i !== index));
 
@@ -94,11 +108,13 @@ export function ViewItemsScreen({
 
       {/* item list */}
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+        <PriceChangeBanner summary={priceChanges} />
         {items.length === 0 ? (
           <EmptyState
-            icon="🛒"
-            title="No items left"
-            description="Everything from this seller has been removed."
+            icon={<ShoppingCart strokeWidth={1.75} />}
+            title="No items from this seller"
+            description="Everything you added from this seller has been removed."
+            action={<Button onClick={onAddMore}>Add more items</Button>}
           />
         ) : (
           items.map((item, idx) => (
@@ -148,6 +164,12 @@ export function ViewItemsScreen({
                     </>
                   )}
                 </div>
+                {/* what this line's unit price did since it was added */}
+                <PriceChangeTag
+                  className="mt-1"
+                  priceWhenAdded={item.priceWhenAdded}
+                  delta={item.priceDelta}
+                />
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
                     Qty ×{item.quantity}

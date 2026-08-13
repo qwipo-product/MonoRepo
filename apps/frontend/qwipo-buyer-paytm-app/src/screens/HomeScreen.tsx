@@ -33,9 +33,13 @@ export function HomeScreen({
 
   // Availability at the selected address decides which tabs are open. The
   // unavailable one shows "Coming Soon"; the active tab always resolves to an
-  // available one.
-  const distAvailable = availability !== 'wholesalers';
-  const wholeAvailable = availability !== 'distributors';
+  // available one. No vendors of a kind is the same situation as an address that kind doesn't
+  // serve: block the tab and mark it Coming Soon, rather than opening it onto an
+  // empty page. The other tab becomes the active one.
+  const distributors = DISTRIBUTORS;
+  const wholesalerL1 = WHOLESALER_L1;
+  const distAvailable = availability !== 'wholesalers' && distributors.length > 0;
+  const wholeAvailable = availability !== 'distributors' && wholesalerL1.length > 0;
   const effectiveTab = !distAvailable ? 'wholesalers' : !wholeAvailable ? 'distributors' : tab;
 
   return (
@@ -125,7 +129,7 @@ export function HomeScreen({
             <section className="space-y-3">
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
-                {DISTRIBUTORS.map((d) => (
+                {distributors.map((d) => (
                   <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
                     <BrandLogo src={d.logo} alt={d.title} className="h-28 w-28 rounded-lg border border-border shadow-sm" />
                     <div className="truncate text-sm font-medium">{d.title}</div>
@@ -170,7 +174,7 @@ export function HomeScreen({
             <section className="space-y-3">
               <SectionHeader title="Categories" />
               <div className="grid grid-cols-2 gap-3 px-4">
-                {WHOLESALER_L1.map((c) => (
+                {wholesalerL1.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
