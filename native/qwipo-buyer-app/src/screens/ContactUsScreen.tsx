@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ScreenHeader } from '../components/ui';
+import { QwipoWordmark } from '../components/BrandMark';
 import { colors, shadows } from '../lib/theme';
 import { Clock, Mail, Phone, MapPin } from '../lib/icons';
 
@@ -17,7 +18,9 @@ export function ContactUsScreen({ onBack }: { onBack: () => void }) {
       <ScrollView className="flex-1 bg-background-subtle" contentContainerStyle={{ padding: 16, gap: 16 }}>
         <View className="items-center">
           <Text className="text-center text-sm text-foreground-secondary">If you have any query or need any further help</Text>
-          <Text className="mt-3 text-lg font-extrabold text-primary">qwipo</Text>
+          <View className="mt-3">
+            <QwipoWordmark height={28} />
+          </View>
         </View>
 
         <View className="overflow-hidden rounded-lg border border-border bg-card" style={shadows.sm}>

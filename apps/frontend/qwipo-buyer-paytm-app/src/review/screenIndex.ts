@@ -81,6 +81,37 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
+    title: 'Empty States',
+    items: [
+      { id: 'empty:home-distributors', label: 'Home \u00b7 No Distributors' },
+      { id: 'empty:home-wholesalers', label: 'Home \u00b7 No Wholesalers' },
+      { id: 'empty:distributors-list', label: 'Distributors \u00b7 None' },
+      { id: 'empty:listing', label: 'Product List \u00b7 No Products' },
+      { id: 'empty:wholesaler-products', label: 'Wholesaler List \u00b7 No Products' },
+      { id: 'empty:global-search', label: 'Search \u00b7 No Results' },
+      { id: 'empty:cart', label: 'Cart \u00b7 Empty' },
+      { id: 'empty:view-items', label: 'Cart Items \u00b7 Empty' },
+      { id: 'empty:reorder', label: 'Reorder \u00b7 Empty' },
+      { id: 'empty:my-orders', label: 'My Orders \u00b7 Empty' },
+      { id: 'empty:notifications', label: 'Notifications \u00b7 Empty' },
+      { id: 'empty:sub:payment', label: 'Payments \u00b7 None' },
+      { id: 'empty:sub:payment-orders', label: 'Payment Orders \u00b7 None' },
+      { id: 'empty:sub:payment-gateways', label: 'Payment Options \u00b7 None' },
+      { id: 'empty:sub:credit', label: 'Credit Partners \u00b7 None' },
+    ],
+  },
+  {
+    title: 'States & Messages',
+    items: [
+      { id: 'app-update', label: 'What\u2019s New / Update' },
+      { id: 'app-update-required', label: 'Update Required (force)' },
+      { id: 'message-styles', label: 'Message Styles (reference)' },
+      { id: 'login-error', label: 'Login \u00b7 Errors' },
+      { id: 'otp-error', label: 'OTP \u00b7 Errors' },
+      { id: 'cart-price-changes', label: 'Cart \u00b7 Price Changes' },
+    ],
+  },
+  {
     title: 'Salesperson',
     items: [
       { id: 'sp:attendance', label: 'Salesperson · Attendance' },
@@ -92,6 +123,10 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'sp:switch-customer', label: 'Salesperson · Switch Customer' },
       { id: 'sp:customers', label: 'Salesperson · Customers' },
       { id: 'sp:customer-details', label: 'Salesperson · Customer Details' },
+      { id: 'empty:sp:tasks', label: 'Salesperson \u00b7 Tasks \u00b7 None' },
+      { id: 'empty:sp:customers', label: 'Salesperson \u00b7 Customers \u00b7 None' },
+      { id: 'empty:sp:orders', label: 'Salesperson \u00b7 Orders \u00b7 None' },
+      { id: 'empty:sp:task-details', label: 'Salesperson \u00b7 Interactions \u00b7 None' },
     ],
   },
 ];

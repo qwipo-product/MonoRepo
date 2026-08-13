@@ -37,6 +37,9 @@ export {
 } from './segmented-control';
 export { Chip, chipVariants, type ChipProps } from './chip';
 export { EmptyState, type EmptyStateProps } from './empty-state';
+export { InlineMessage, inlineMessageVariants, type InlineMessageProps } from './inline-message';
+export { Toast, toastVariants, type ToastProps } from './toast';
+export { FieldError, type FieldErrorProps } from './field-error';
 export { QtyStepper, type QtyStepperProps } from './qty-stepper';
 export { SelectableCard, type SelectableCardProps } from './selectable-card';
 export { Switch, type SwitchProps } from './switch';

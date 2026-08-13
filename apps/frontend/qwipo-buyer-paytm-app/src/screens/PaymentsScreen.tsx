@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, CreditCard } from 'lucide-react';
 import { EmptyState, Sheet, Button } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { PAYMENT_VENDORS, GATEWAY_LABEL, type PaymentVendor } from '../data/payments';
+import { useEmptyable } from '../review/demoState';
 
 /* Account · Payments — vendors with an outstanding balance. Tap a vendor to
    see its orders + transactions; vendors with no gateway show a warning. */
@@ -14,6 +15,7 @@ export function PaymentsScreen({
   onOpenVendor: (vendorId: string) => void;
 }) {
   const [noGateway, setNoGateway] = useState<PaymentVendor | null>(null);
+  const vendors = useEmptyable(PAYMENT_VENDORS);
 
   const open = (v: PaymentVendor) => {
     if (v.gateways.length === 0) {
@@ -36,17 +38,17 @@ export function PaymentsScreen({
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight">Payments</h1>
       </header>
 
-      {PAYMENT_VENDORS.length === 0 ? (
+      {vendors.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<CreditCard className="h-7 w-7 text-foreground-secondary" />}
-            title="No Payments Found"
-            description="You have no payment gateways available at this time."
+            icon={<CreditCard strokeWidth={1.75} />}
+            title="No payments due"
+            description="Outstanding payments to your sellers will appear here."
           />
         </div>
       ) : (
         <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-          {PAYMENT_VENDORS.map((v) => (
+          {vendors.map((v) => (
             <button
               key={v.id}
               onClick={() => open(v)}

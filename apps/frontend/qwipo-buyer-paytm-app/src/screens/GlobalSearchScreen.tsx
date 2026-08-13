@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid } from 'lucide-react';
-import { cn } from '@mockups/ui';
+import { EmptyState, cn } from '@mockups/ui';
+import { useEmptyDemo } from '../review/demoState';
 import { formatInr } from '@mockups/components';
 import { SearchField } from '../components/SearchField';
 import { PRODUCTS } from '../data/products';
 import { BRANDS, DIST_CATEGORIES, WHOLESALER_CATEGORIES, type HomeCategory } from '../data/home';
+import type { Navigate } from '../nav';
 
 /* Global Search. Typing collapses results into compact rows (not full product
    cards) to save vertical space. Matching BRANDS and CATEGORIES surface as
@@ -34,11 +36,18 @@ function Highlight({ text, q }: { text: string; q: string }) {
 export function GlobalSearchScreen({
   onBack,
   onOpenSheet,
+  onNavigate,
 }: {
   onBack: () => void;
   onOpenSheet: (id: string) => void;
+  onNavigate: Navigate;
 }) {
   const [query, setQuery] = useState('');
+  const [recent, setRecent] = useState(RECENT);
+
+  // Suggestion rows open the filtered product list (the "results page").
+  const openList = (applied: { type: 'brand' | 'category'; value: string }) =>
+    onNavigate('listing', { applied: [applied], backTo: 'global-search' });
 
   const q = query.trim().toLowerCase();
 
@@ -70,7 +79,10 @@ export function GlobalSearchScreen({
   }, [q, productMatches]);
 
   const term = query.trim();
-  const hasAnyMatch = brandMatches.length + categoryMatches.length + productMatches.length > 0;
+  // Empty demo forces the zero-results branch regardless of the query.
+  const emptyDemo = useEmptyDemo();
+  const hasAnyMatch =
+    !emptyDemo && brandMatches.length + categoryMatches.length + productMatches.length > 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -93,9 +105,11 @@ export function GlobalSearchScreen({
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle">
-        {!q ? (
+        {!q && !emptyDemo ? (
           <div className="space-y-6 p-4">
-            <ChipSection title="Recent searches" items={RECENT} icon={Clock} onPick={setQuery} />
+            {recent.length > 0 && (
+              <ChipSection title="Recent searches" items={recent} icon={Clock} onPick={setQuery} onClear={() => setRecent([])} />
+            )}
             <ChipSection title="Trending searches" items={TRENDING} icon={TrendingUp} onPick={setQuery} accent />
             <ChipSection title="Start with a category" items={CATEGORIES.map((c) => c.name)} onPick={setQuery} />
           </div>
@@ -109,7 +123,7 @@ export function GlobalSearchScreen({
                   {brandMatches.map((b) => (
                     <button
                       key={b.id}
-                      onClick={() => setQuery(b.name)}
+                      onClick={() => openList({ type: 'brand', value: b.name })}
                       className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
                     >
                       <Tag className="h-4 w-4 shrink-0 text-foreground-secondary" />
@@ -131,7 +145,7 @@ export function GlobalSearchScreen({
                   {categoryMatches.map((name) => (
                     <button
                       key={name}
-                      onClick={() => setQuery(name)}
+                      onClick={() => openList({ type: 'category', value: name })}
                       className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-1.5 text-left last:border-0 active:scale-[0.99]"
                     >
                       <LayoutGrid className="h-4 w-4 shrink-0 text-foreground-secondary" />
@@ -181,13 +195,16 @@ export function GlobalSearchScreen({
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center px-6 pt-12 text-center">
-            <PackageOpen className="h-14 w-14 text-foreground-tertiary" />
-            <div className="mt-3 text-base font-semibold text-foreground">No results for “{query}”</div>
-            <div className="mt-1 text-sm text-foreground-secondary">
-              Check the spelling, or try a brand or category name.
-            </div>
-            <div className="mt-6 w-full">
+          /* Empty state + the "try one of these" chips are centred as one
+             group, so this reads the same as every other empty screen. */
+          <div className="flex h-full flex-col items-center justify-center">
+            <EmptyState
+              icon={<PackageOpen strokeWidth={1.75} />}
+              title={term ? <>No results for “{term}”</> : 'No matching products'}
+              description="Check the spelling, or try a brand or category name."
+              className="h-auto py-0"
+            />
+            <div className="mt-8 w-full px-6">
               <ChipSection title="Try one of these" items={TRENDING} icon={TrendingUp} onPick={setQuery} accent />
             </div>
           </div>
@@ -212,16 +229,28 @@ function ChipSection({
   icon: Icon,
   accent,
   onPick,
+  onClear,
 }: {
   title: string;
   items: string[];
   icon?: typeof Clock;
   accent?: boolean;
   onPick: (v: string) => void;
+  onClear?: () => void;
 }) {
   return (
     <section className="space-y-2 text-left">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {onClear && (
+          <button
+            onClick={onClear}
+            className="text-xs font-medium text-primary active:scale-[0.98]"
+          >
+            Clear
+          </button>
+        )}
+      </div>
       <div className="flex flex-wrap gap-2">
         {items.map((label) => (
           <button

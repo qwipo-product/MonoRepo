@@ -11,6 +11,7 @@ import {
   PAYMENT_TXNS,
   type PaymentTxn,
 } from '../data/payments';
+import { useEmptyable } from '../review/demoState';
 
 type Tab = 'payments' | 'transactions';
 
@@ -28,8 +29,8 @@ export function PaymentOrdersScreen({
 }) {
   const [tab, setTab] = useState<Tab>('payments');
   const vendor = PAYMENT_VENDORS.find((v) => v.id === vendorId) ?? PAYMENT_VENDORS[0];
-  const orders = PAYMENT_ORDERS[vendor.id] ?? [];
-  const txns = PAYMENT_TXNS[vendor.id] ?? [];
+  const orders = useEmptyable(PAYMENT_ORDERS[vendor.id] ?? []);
+  const txns = useEmptyable(PAYMENT_TXNS[vendor.id] ?? []);
   const isQwipo = vendor.fulfilment === 'qwipo';
   const total = orders.reduce((s, o) => s + o.outstandingAmount, 0);
 
@@ -63,8 +64,9 @@ export function PaymentOrdersScreen({
         orders.length === 0 ? (
           <div className="grid flex-1 place-items-center bg-background-subtle">
             <EmptyState
-              icon={<Receipt className="h-7 w-7 text-foreground-secondary" />}
-              title="No Orders Found"
+              icon={<Receipt strokeWidth={1.75} />}
+              title="No orders to pay for"
+              description="Orders awaiting payment for this seller will appear here."
             />
           </div>
         ) : (
@@ -113,8 +115,9 @@ export function PaymentOrdersScreen({
       ) : txns.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<Receipt className="h-7 w-7 text-foreground-secondary" />}
-            title="No Transactions Found"
+            icon={<Receipt strokeWidth={1.75} />}
+            title="No transactions yet"
+            description="Payments you make to this seller will appear here."
           />
         </div>
       ) : (

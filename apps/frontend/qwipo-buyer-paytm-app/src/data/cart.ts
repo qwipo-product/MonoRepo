@@ -57,11 +57,27 @@ export const CART_LINES: CartLine[] = [
   { productId: 'p5', quantity: 3 }, // Mysore Soap      — Karnataka (distributor) → BELOW MINIMUM
 ];
 
+/* Price the buyer saw when the item went into the cart, for the lines that have
+   since moved. Sellers re-rate stock daily, so a cart left overnight is the
+   normal case, not an edge case — the buyer has to see it before checkout.
+   Only lines listed here changed; everything else held its price. */
+const PRICE_WHEN_ADDED: Record<string, number> = {
+  p1: 158, // Freedom Sunflower Oil — went UP
+  p9: 96, // Dabur Red             — went UP
+  p10: 245, // Red Label Tea       — came DOWN
+};
+
 export interface CartItem {
   product: Product;
   quantity: number;
   lineTotal: number;
   free: boolean;
+  /** Unit price when the item was added — absent when it hasn't moved. */
+  priceWhenAdded?: number;
+  /** Per-unit delta: + dearer, − cheaper. 0/undefined when unchanged. */
+  priceDelta?: number;
+  /** Delta across this whole line (priceDelta × quantity). */
+  lineDelta?: number;
 }
 
 export interface CartSeller {
@@ -95,11 +111,23 @@ export interface CartSeller {
   blocked: boolean;
 }
 
+/** Cart-wide summary of what re-rating did to this order. */
+export interface PriceChangeSummary {
+  /** Lines whose unit price moved since they were added. */
+  changed: number;
+  /** How many went up / came down. */
+  up: number;
+  down: number;
+  /** Net rupee effect on the order total: + dearer, − cheaper. */
+  net: number;
+}
+
 export function buildCart(): {
   sellers: CartSeller[];
   grandTotal: number;
   totalItems: number;
   anyBelow: boolean;
+  priceChanges: PriceChangeSummary;
 } {
   const bySeller = new Map<string, CartItem[]>();
 
@@ -107,7 +135,17 @@ export function buildCart(): {
     const product = PRODUCTS.find((p) => p.id === line.productId);
     if (!product) continue;
     const lineTotal = line.free ? 0 : product.price * line.quantity;
-    const item: CartItem = { product, quantity: line.quantity, lineTotal, free: !!line.free };
+    const was = line.free ? undefined : PRICE_WHEN_ADDED[product.id];
+    const priceDelta = was != null ? product.price - was : undefined;
+    const item: CartItem = {
+      product,
+      quantity: line.quantity,
+      lineTotal,
+      free: !!line.free,
+      priceWhenAdded: was,
+      priceDelta,
+      lineDelta: priceDelta != null ? priceDelta * line.quantity : undefined,
+    };
     const arr = bySeller.get(product.seller) ?? [];
     arr.push(item);
     bySeller.set(product.seller, arr);
@@ -162,5 +200,14 @@ export function buildCart(): {
   const grandTotal = sellers.reduce((s, x) => s + x.subtotal, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.length, 0);
   const anyBelow = sellers.some((s) => s.blocked);
-  return { sellers, grandTotal, totalItems, anyBelow };
+
+  const moved = sellers.flatMap((s) => s.items).filter((i) => !!i.priceDelta);
+  const priceChanges: PriceChangeSummary = {
+    changed: moved.length,
+    up: moved.filter((i) => (i.priceDelta ?? 0) > 0).length,
+    down: moved.filter((i) => (i.priceDelta ?? 0) < 0).length,
+    net: moved.reduce((n, i) => n + (i.lineDelta ?? 0), 0),
+  };
+
+  return { sellers, grandTotal, totalItems, anyBelow, priceChanges };
 }

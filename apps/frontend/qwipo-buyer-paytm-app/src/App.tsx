@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { type ScreenId, screenNumber } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
+import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
+import { DemoStateProvider } from './review/demoState';
+import { MessageStylesScreen } from './screens/MessageStylesScreen';
 import { ShellChrome } from './shells/ShellChrome';
 import { PaytmWelcomeScreen } from './screens/PaytmWelcomeScreen';
 import { PaytmLauncherScreen } from './screens/PaytmLauncherScreen';
@@ -40,6 +43,8 @@ import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
+import { ProductImagesSheet } from './sheets/ProductImagesSheet';
+import { UpdateSheet } from './sheets/UpdateSheet';
 import { CartAlertsSheet } from './sheets/CartAlertsSheet';
 import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
@@ -70,11 +75,32 @@ const BUILT = new Set<ScreenId>([
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
+  'app-update', 'app-update-required', 'message-styles',
+  'login-error', 'otp-error', 'cart-price-changes',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
   'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
 ]);
+
+/* Empty-state screens. `empty:<id>` renders the real screen <id> with its data
+   forced empty, so every zero-data design is its own entry in the sidebar and
+   its own shareable ?screen= link — rather than a mode you have to remember to
+   switch on. The sidebar highlight tracks the empty: id; everything that
+   branches on "which screen is this" uses the resolved base id below. */
+const EMPTY_PREFIX = 'empty:';
+const isEmptyScreen = (id: ScreenId) => id.startsWith(EMPTY_PREFIX);
+const baseScreenOf = (id: ScreenId): ScreenId => {
+  if (!isEmptyScreen(id)) return id;
+  const rest = id.slice(EMPTY_PREFIX.length);
+  // Home's "no vendors" cases aren't an empty page — they block the tab that
+  // has no sellers and show Coming Soon, exactly like an unserved address.
+  if (rest === 'home-distributors' || rest === 'home-wholesalers') return 'home';
+  return rest;
+};
+
+// Sidebar "soon" tags: an empty: entry is as built as the screen it renders.
+for (const id of [...BUILT]) BUILT.add(EMPTY_PREFIX + id);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
 const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefront']);
@@ -93,7 +119,9 @@ function readInitialScreen(): ScreenId {
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
+  if (s === 'cart-price-changes') return 'view-items'; // = View Items, price-change lines
   if (s === 'cart-alerts') return 'cart'; // = the alerts sheet over Cart Summary
+  if (s === 'app-update' || s === 'app-update-required') return 'home'; // = update sheet over Home
   if (s === 'order-items') return 'order-summary'; // = the items sheet over Order Summary
   return s;
 }
@@ -107,8 +135,20 @@ export default function App() {
   const [shell, setShell] = useState<Shell>(() =>
     new URLSearchParams(window.location.search).get('shell') === 'paytm' ? 'paytm' : 'buyer'
   );
+  // Device frame: which device + orientation the mockup renders in (review-only).
+  const [device, setDevice] = useState<Device>(() =>
+    deviceById(new URLSearchParams(window.location.search).get('device'))
+  );
+  const [orientation, setOrientation] = useState<Orientation>(() =>
+    new URLSearchParams(window.location.search).get('orient') === 'landscape' ? 'landscape' : 'portrait'
+  );
   const [sheetId, setSheetId] = useState<string | null>(null);
+  const [galleryId, setGalleryId] = useState<string | null>(null);
   const [alertsOpen, setAlertsOpen] = useState(false);
+  // Review-only: force every list empty so the zero-data designs are reachable.
+  const [emptyDemo, setEmptyDemo] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [updateRequired, setUpdateRequired] = useState(false);
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
@@ -139,21 +179,45 @@ export default function App() {
     if (s === 'distributor-units') setSheetId(PRODUCTS[0].id);
     if (s === 'cart-units') setSheetId(CART.sellers[0]?.items[0]?.product.id ?? null);
     if (s === 'cart-alerts') setAlertsOpen(true);
+    if (s === 'app-update' || s === 'app-update-required') {
+      setUpdateRequired(s === 'app-update-required');
+      setUpdateOpen(true);
+    }
     if (s === 'order-items') setOrderItemsOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep the URL in sync so any screen + surface is a shareable link.
+  // Keep the URL in sync so any screen + surface + device is a shareable link.
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set('screen', screen);
     url.searchParams.set('shell', shell);
+    url.searchParams.set('device', device.id);
+    url.searchParams.set('orient', orientation);
     window.history.replaceState(null, '', url);
-  }, [screen, shell]);
+  }, [screen, shell, device, orientation]);
+
+  // Scale the device frame down to fit the viewport (never up) — big tablets
+  // would otherwise overflow the review page.
+  const frame = frameSize(device, orientation);
+  const stageRef = useRef<HTMLElement | null>(null);
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const r = entry.contentRect;
+      setStageSize({ w: r.width, h: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const frameScale =
+    stageSize.w > 0 ? Math.min(1, stageSize.w / frame.w, stageSize.h / frame.h) : 1;
 
   // Paytm mini is pre-authenticated — never sit on an auth screen there.
   useEffect(() => {
-    if (shell === 'paytm' && AUTH_SCREENS.has(screen)) setScreen('listing');
+    if (shell === 'paytm' && AUTH_SCREENS.has(baseScreenOf(screen))) setScreen('listing');
   }, [shell, screen]);
 
   // Screenshot the phone bezel → PNG in Downloads.
@@ -172,6 +236,7 @@ export default function App() {
   const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
   const cartTotal = PRODUCTS.reduce((s, p) => s + p.price * (qty[p.id] ?? 0), 0);
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
+  const galleryProduct = galleryId ? productById(galleryId) ?? null : null;
   // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
   const isSalesperson = role === 'salesperson' && shell === 'buyer';
 
@@ -182,6 +247,14 @@ export default function App() {
     setSheetId(null);
     setAlertsOpen(false);
     setOrderItemsOpen(false);
+    setUpdateOpen(false);
+    if (id === 'app-update' || id === 'app-update-required') {
+      // Not pages — the What's New sheet over Home.
+      setUpdateRequired(id === 'app-update-required');
+      setScreen('home');
+      setUpdateOpen(true);
+      return;
+    }
     if (id === 'cart-alerts') {
       // Not a page — the alerts sheet over Cart Summary.
       setScreen('cart');
@@ -203,6 +276,15 @@ export default function App() {
       setSheetId(PRODUCTS[0].id);
       return;
     }
+    if (id === 'cart-price-changes') {
+      // Not a page — View Items for the seller whose prices actually moved, so
+      // the per-line deltas and the net total are visible together.
+      const seller =
+        CART.sellers.find((x) => x.items.some((i) => !!i.priceDelta)) ?? CART.sellers[0];
+      setViewSellerId(seller?.id ?? null);
+      setScreen('view-items');
+      return;
+    }
     if (id === 'cart-units') {
       // Not a page — the selling-units sheet over View Items.
       const seller = CART.sellers[0];
@@ -212,7 +294,7 @@ export default function App() {
       return;
     }
     // Capture context for the destination (resets when navigated without opts).
-    if (PRODUCT_LISTS.has(id)) {
+    if (PRODUCT_LISTS.has(baseScreenOf(id))) {
       setListApplied(opts?.applied ?? []);
       setListBackTo(opts?.backTo ?? 'home');
     }
@@ -233,8 +315,12 @@ export default function App() {
     go('order-details');
   };
 
+  // The screen actually rendered — `empty:cart` renders Cart, with no data.
+  const view = baseScreenOf(screen);
+  const emptyView = isEmptyScreen(screen);
+
   const phoneScreen = (() => {
-    switch (screen) {
+    switch (view) {
       case 'paytm-launcher':
         return <PaytmLauncherScreen onSearch={() => go('paytm-search')} onOpenQwipo={() => go('paytm-welcome')} />;
       case 'paytm-search':
@@ -243,6 +329,10 @@ export default function App() {
         return <PaytmWelcomeScreen onProceed={() => go('home')} />;
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
+      case 'login-error':
+        return <LoginScreen demoError onNext={() => go('otp')} />;
+      case 'otp-error':
+        return <OtpScreen demoError onBack={() => go('login')} onVerify={() => go('onboarding')} />;
       case 'login':
         return (
           <LoginScreen
@@ -273,7 +363,13 @@ export default function App() {
         return (
           <HomeScreen
             onNavigate={go}
-            availability={availabilityFor(deliveryAddressId)}
+            availability={
+              screen === 'empty:home-distributors'
+                ? 'wholesalers'
+                : screen === 'empty:home-wholesalers'
+                  ? 'distributors'
+                  : availabilityFor(deliveryAddressId)
+            }
             deliveryLabel={addressById(deliveryAddressId)?.title}
             salesperson={isSalesperson}
           />
@@ -287,7 +383,7 @@ export default function App() {
           />
         );
       case 'global-search':
-        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} />;
+        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} onNavigate={go} />;
       case 'distributors-list':
         return (
           <SellerBrowseScreen
@@ -332,6 +428,7 @@ export default function App() {
             onSearch={() => go('global-search')}
             qty={qty}
             onOpenSheet={setSheetId}
+            onOpenGallery={setGalleryId}
             onSetQty={setLineQty}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
@@ -442,6 +539,7 @@ export default function App() {
       case 'sp:task-details':
         return (
           <TaskDetailsScreen
+            initialTab={emptyView ? 'interaction' : 'info'}
             taskId={taskId}
             onBack={() => go('sp:tasks')}
             onCreateInteraction={(id) => {
@@ -480,10 +578,13 @@ export default function App() {
           />
         );
 
+      case 'message-styles':
+        return <MessageStylesScreen onBack={() => go('home')} />;
       case 'my-orders':
         return (
           <MyOrdersScreen
             onBack={() => go('home')}
+            onStartShopping={() => go('listing')}
             onOpenDetails={(id) => {
               const o = ORDERS.find((x) => x.id === id) ?? ORDERS[0];
               openOrder(o, 'my-orders');
@@ -504,7 +605,7 @@ export default function App() {
   })();
 
   return (
-    <div className="flex h-dvh items-center justify-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
+    <div className="flex h-dvh items-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
       <FlowIndex
         active={screen}
         built={BUILT}
@@ -516,25 +617,55 @@ export default function App() {
           setRole(r);
           if (r === 'customer' && screen.startsWith('sp:')) go('home');
         }}
+        device={device}
+        onDeviceChange={setDevice}
+        orientation={orientation}
+        onOrientationChange={setOrientation}
+        frameScale={frameScale}
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onCapture={capture}
+        emptyDemo={emptyDemo}
+        onEmptyDemoChange={setEmptyDemo}
       />
 
-      <main className="shrink-0">
-        {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it */}
-        <div ref={frameRef} className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[38px] border border-border bg-background text-foreground shadow-xl">
+      <main ref={stageRef} className="grid h-full min-w-0 flex-1 place-items-center overflow-hidden">
+        {/* Scaled stage: the frame renders at true device size, then scales
+            down to fit — so media queries see the real device width. */}
+        <div style={{ width: frame.w * frameScale, height: frame.h * frameScale }}>
+        {/* phone frame — `relative` so the Sheet (absolute inset-0) fills it.
+            `frameRef` is what the PNG capture snapshots. */}
+        <div
+          ref={frameRef}
+          className="relative flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-xl"
+          style={{
+            width: frame.w,
+            height: frame.h,
+            borderRadius: device.radius,
+            transform: `scale(${frameScale})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <DemoStateProvider empty={emptyDemo || emptyView}>
           <ShellChrome
             shell={shell}
-            paytmHeader={screen !== 'paytm-launcher' && screen !== 'paytm-search'}
+            paytmHeader={view !== 'paytm-launcher' && view !== 'paytm-search'}
             bottomNav={
-              ROOT_SCREENS.has(screen) ? (
+              ROOT_SCREENS.has(view) ? (
                 <BottomNav active={screen} cartCount={cartCount} onNavigate={go} />
               ) : undefined
             }
           >
             {phoneScreen}
           </ShellChrome>
+          </DemoStateProvider>
+
+          <UpdateSheet
+            open={updateOpen}
+            required={updateRequired}
+            onClose={() => setUpdateOpen(false)}
+            onUpdate={() => setUpdateOpen(false)}
+          />
 
           <AddToCartSheet
             product={sheetProduct}
@@ -545,6 +676,8 @@ export default function App() {
             onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}
           />
+
+          <ProductImagesSheet product={galleryProduct} onClose={() => setGalleryId(null)} />
 
           <CartAlertsSheet
             open={alertsOpen}
@@ -560,6 +693,7 @@ export default function App() {
             seller={viewSeller}
             onClose={() => setOrderItemsOpen(false)}
           />
+        </div>
         </div>
       </main>
     </div>

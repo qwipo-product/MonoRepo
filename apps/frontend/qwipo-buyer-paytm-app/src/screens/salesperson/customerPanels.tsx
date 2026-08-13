@@ -5,6 +5,7 @@ import { OrderListCard } from '../../components/OrderListCard';
 import { buildOrder, statusFromLabel, type Order } from '../../data/orders';
 import { CUSTOMER_ORDERS, RECOMMENDATIONS } from '../../data/salesperson';
 import { formatDate } from '../../date';
+import { useEmptyDemo, useEmptyable } from '../../review/demoState';
 
 /* Shared read-only panels for a customer — reused by Task Details and Customer
    Details so the Orders / Recommendation tabs never drift between the two. */
@@ -18,8 +19,9 @@ export function OrdersPanel({
   businessName: string;
   onOpenOrder: (order: Order) => void;
 }) {
-  const orders = CUSTOMER_ORDERS[customerId] ?? [];
-  if (orders.length === 0) return <PanelEmpty title="No Orders Found" />;
+  const orders = useEmptyable(CUSTOMER_ORDERS[customerId] ?? []);
+  if (orders.length === 0)
+    return <PanelEmpty title="No orders yet" description="Orders this customer places will appear here." />;
   return (
     <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
       {orders.map((o) => (
@@ -43,8 +45,15 @@ export function OrdersPanel({
 }
 
 export function RecoPanel({ customerId }: { customerId: string }) {
-  const reco = RECOMMENDATIONS[customerId];
-  if (!reco) return <PanelEmpty title="No Recommendations" description="No recent order to reorder from." />;
+  const emptyDemo = useEmptyDemo();
+  const reco = emptyDemo ? undefined : RECOMMENDATIONS[customerId];
+  if (!reco)
+    return (
+      <PanelEmpty
+        title="No recommendations yet"
+        description="Once this customer places an order, suggested reorders appear here."
+      />
+    );
   return (
     <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-3">
       <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -78,7 +87,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
 function PanelEmpty({ title, description }: { title: string; description?: string }) {
   return (
     <div className="grid flex-1 place-items-center bg-background-subtle">
-      <EmptyState icon={<CheckCircle2 className="h-7 w-7 text-foreground-secondary" />} title={title} description={description} />
+      <EmptyState icon={<CheckCircle2 strokeWidth={1.75} />} title={title} description={description} />
     </div>
   );
 }

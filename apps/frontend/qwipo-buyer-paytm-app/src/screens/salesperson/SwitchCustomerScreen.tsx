@@ -76,7 +76,7 @@ export function SwitchCustomerScreen({ onBack, onSwitch }: { onBack: () => void;
         {!selected && nearby.length === 0 && mobile.length < 10 && (
           <div className="pt-6">
             <EmptyState
-              icon={<Store className="h-7 w-7 text-foreground-secondary" />}
+              icon={<Store strokeWidth={1.75} />}
               title="Find a retailer"
               description="Search a mobile number or locate shops nearby to switch."
             />

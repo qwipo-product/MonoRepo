@@ -1,5 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import { ScreenHeader } from '../components/ui';
+import { QwipoWordmark } from '../components/BrandMark';
 import { colors, shadows } from '../lib/theme';
 import { Phone } from '../lib/icons';
 
@@ -17,7 +18,7 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
     <View className="flex-1 bg-background">
       <ScreenHeader title="Terms & Conditions" onBack={onBack} />
       <ScrollView className="flex-1 bg-background-subtle" contentContainerStyle={{ padding: 16, gap: 12 }}>
-        <Text className="text-lg font-extrabold text-primary">qwipo</Text>
+        <QwipoWordmark height={28} />
         {TERMS.map((t) => (
           <View key={t.title} className="rounded-lg border border-border bg-card p-4" style={shadows.sm}>
             <Text className="text-sm font-semibold text-foreground">{t.title}</Text>

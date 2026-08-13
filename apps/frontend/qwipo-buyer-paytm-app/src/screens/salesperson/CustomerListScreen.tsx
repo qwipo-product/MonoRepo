@@ -4,6 +4,7 @@ import { EmptyState } from '@mockups/ui';
 import { ShopCard } from './ShopCard';
 import { CUSTOMERS } from '../../data/salesperson';
 import { formatDate } from '../../date';
+import { useEmptyable } from '../../review/demoState';
 
 /* Salesperson · Customers — every retailer assigned to the salesperson (broader
    than today's tasks). Search by business name or mobile; each card opens the
@@ -17,9 +18,11 @@ export function CustomerListScreen({
 }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
-  const list = query
-    ? CUSTOMERS.filter((c) => c.businessName.toLowerCase().includes(query) || c.mobile.includes(query))
-    : CUSTOMERS;
+  const list = useEmptyable(
+    query
+      ? CUSTOMERS.filter((c) => c.businessName.toLowerCase().includes(query) || c.mobile.includes(query))
+      : CUSTOMERS
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -49,9 +52,13 @@ export function CustomerListScreen({
       {list.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<Users className="h-7 w-7 text-foreground-secondary" />}
-            title="No Customers Found"
-            description={query ? 'No customer matches your search.' : 'Please contact your manager.'}
+            icon={<Users strokeWidth={1.75} />}
+            title="No customers found"
+            description={
+              query
+                ? 'Check the spelling, or try a shorter search.'
+                : 'Customers assigned to you will appear here.'
+            }
           />
         </div>
       ) : (

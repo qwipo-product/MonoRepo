@@ -7,8 +7,17 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "backgroundColor": "#ffffff",
+    "icon": "./assets/icon.png",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qwipo.buyer"
+    },
+    "android": {
+      "package": "com.qwipo.buyer",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro"

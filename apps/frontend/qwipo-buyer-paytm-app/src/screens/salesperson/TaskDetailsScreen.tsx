@@ -12,6 +12,7 @@ import {
   type TaskStatus,
   type Interaction,
 } from '../../data/salesperson';
+import { useEmptyable } from '../../review/demoState';
 
 /* Salesperson · Task Details — one shop, four tabs. Info drives the visit
    lifecycle (check-in → interaction → check-out). Orders / Recommendation are
@@ -24,14 +25,17 @@ export function TaskDetailsScreen({
   onBack,
   onCreateInteraction,
   onOpenOrder,
+  initialTab = 'info',
 }: {
   taskId: string;
   onBack: () => void;
   onCreateInteraction: (taskId: string) => void;
   onOpenOrder: (order: Order) => void;
+  /** Tab to open on — the review gallery uses this to land on Visits. */
+  initialTab?: Tab;
 }) {
   const task = TASKS.find((t) => t.id === taskId) ?? TASKS[0];
-  const [tab, setTab] = useState<Tab>('info');
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [status, setStatus] = useState<TaskStatus>(task.status);
 
   return (
@@ -133,13 +137,17 @@ function InfoTab({
 
 function InteractionTab({ customerId, onCreate }: { customerId: string; onCreate: () => void }) {
   const [detail, setDetail] = useState<Interaction | null>(null);
-  const list = INTERACTIONS[customerId] ?? [];
+  const list = useEmptyable(INTERACTIONS[customerId] ?? []);
   return (
     <>
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {list.length === 0 ? (
           <div className="grid flex-1 place-items-center py-10">
-            <EmptyState icon={<MessageSquarePlus className="h-7 w-7 text-foreground-secondary" />} title="No Interactions Found" />
+            <EmptyState
+              icon={<MessageSquarePlus strokeWidth={1.75} />}
+              title="No interactions logged"
+              description="Visits and conversations you record at this shop will appear here."
+            />
           </div>
         ) : (
           list.map((i) => (

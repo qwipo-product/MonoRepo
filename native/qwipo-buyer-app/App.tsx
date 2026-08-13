@@ -60,6 +60,15 @@ import { ContactUsScreen } from './src/screens/ContactUsScreen';
 import { TermsScreen } from './src/screens/TermsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { SellerBrowseScreen, type BrowseTab } from './src/screens/SellerBrowseScreen';
+import { AttendanceScreen } from './src/screens/salesperson/AttendanceScreen';
+import { TaskListScreen } from './src/screens/salesperson/TaskListScreen';
+import { TaskDetailsScreen } from './src/screens/salesperson/TaskDetailsScreen';
+import { CreateInteractionScreen } from './src/screens/salesperson/CreateInteractionScreen';
+import { PerformanceScreen } from './src/screens/salesperson/PerformanceScreen';
+import { CustomerOrdersScreen } from './src/screens/salesperson/CustomerOrdersScreen';
+import { SwitchCustomerScreen } from './src/screens/salesperson/SwitchCustomerScreen';
+import { CustomerListScreen } from './src/screens/salesperson/CustomerListScreen';
+import { CustomerDetailsScreen } from './src/screens/salesperson/CustomerDetailsScreen';
 import { DIST_CATEGORIES, BRANDS, DISTRIBUTORS, WHOLESALER_CATEGORIES } from './src/data/home';
 import { DEFAULT_ADDRESS_ID, addressById, availabilityFor } from './src/data/addresses';
 import { AddToCartSheet } from './src/sheets/AddToCartSheet';
@@ -68,7 +77,7 @@ import { OrderItemsSheet } from './src/sheets/OrderItemsSheet';
 import { PRODUCTS } from './src/data/products';
 import { buildCart } from './src/data/cart';
 
-const SALESPERSON_PHONE = '9876543210';
+const SALESPERSON_PHONE = '9000000001';
 type Role = 'customer' | 'salesperson';
 
 export default function App() {
@@ -125,6 +134,10 @@ export default function App() {
   const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
   const [payAmount, setPayAmount] = useState<number>(0);
 
+  // Salesperson drill-downs: selected task + customer.
+  const [spTaskId, setSpTaskId] = useState<string>('tk1');
+  const [spCustomerId, setSpCustomerId] = useState<string>('c1');
+
   // Navigation history (back stack). go() pushes, back() pops, reset() clears.
   const [history, setHistory] = useState<ScreenId[]>([]);
   const closeSheets = () => {
@@ -145,7 +158,15 @@ export default function App() {
   // Pop one screen. Returns false when the stack is empty (let the OS handle it).
   const back = (): boolean => {
     closeSheets();
-    if (history.length === 0) return false;
+    if (history.length === 0) {
+      // Empty stack: fall back to Home so a screen is never a dead end (lets the
+      // OS exit only when already on Home).
+      if (screen !== 'home') {
+        setScreen('home');
+        return true;
+      }
+      return false;
+    }
     setScreen(history[history.length - 1]);
     setHistory(history.slice(0, -1));
     return true;
@@ -205,7 +226,32 @@ export default function App() {
           />
         );
       case 'profile':
-        return <MyAccountScreen onNavigate={go} onSignOut={() => reset('login')} />;
+        return <MyAccountScreen onNavigate={go} onSignOut={() => reset('login')} salesperson={role === 'salesperson'} />;
+      case 'sp:attendance':
+        return <AttendanceScreen onBack={back} />;
+      case 'sp:tasks':
+        return <TaskListScreen onBack={back} onOpenTask={(id) => { setSpTaskId(id); go('sp:task-details'); }} />;
+      case 'sp:task-details':
+        return (
+          <TaskDetailsScreen
+            taskId={spTaskId}
+            onBack={back}
+            onCreateInteraction={() => go('sp:create-interaction')}
+            onOpenOrder={(o) => openOrder(o, 'sp:task-details')}
+          />
+        );
+      case 'sp:create-interaction':
+        return <CreateInteractionScreen onBack={back} onDone={back} />;
+      case 'sp:performance':
+        return <PerformanceScreen onBack={back} />;
+      case 'sp:orders':
+        return <CustomerOrdersScreen onBack={back} onOpenOrder={(o) => openOrder(o, 'sp:orders')} />;
+      case 'sp:switch-customer':
+        return <SwitchCustomerScreen onBack={back} onSwitch={() => reset('home')} />;
+      case 'sp:customers':
+        return <CustomerListScreen onBack={back} onOpenCustomer={(id) => { setSpCustomerId(id); go('sp:customer-details'); }} />;
+      case 'sp:customer-details':
+        return <CustomerDetailsScreen customerId={spCustomerId} onBack={back} onOpenOrder={(o) => openOrder(o, 'sp:customer-details')} />;
       case 'notifications':
         return <NotificationsScreen onBack={back} />;
       case 'sub:business-details':
@@ -351,6 +397,7 @@ export default function App() {
             onOpenSheet={(id) => setSheetId(id)}
             onSetQty={setQtyFor}
             onSearch={() => go('global-search', { backTo: 'reorder' })}
+            onBack={back}
           />
         );
       case 'my-orders':
@@ -383,7 +430,7 @@ export default function App() {
       <StatusBar style="dark" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
         <View style={{ flex: 1 }}>{body}</View>
-        {isRoot && <BottomNav active={screen} cartCount={cartCount} onNavigate={reset} />}
+        {isRoot && <BottomNav active={screen} cartCount={cartCount} onNavigate={(id) => (ROOT_SCREENS.includes(id) ? reset(id) : go(id))} />}
       </SafeAreaView>
 
       <AddToCartSheet

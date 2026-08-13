@@ -1,29 +1,33 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, FileText, Check } from 'lucide-react';
-import { Button, Sheet, cn } from '@mockups/ui';
+import { ChevronLeft, FileText, Check, Package } from 'lucide-react';
+import { Button, EmptyState, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
 import { formatDate } from '../date';
+import { useEmptyable } from '../review/demoState';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
 
 export function MyOrdersScreen({
   onBack,
   onOpenDetails,
+  onStartShopping,
 }: {
   onBack: () => void;
   onOpenDetails: (orderId: string) => void;
+  onStartShopping: () => void;
 }) {
   const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
   const [tracking, setTracking] = useState<Order | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
 
+  const source = useEmptyable(ORDERS);
   const orders = useMemo(
     () =>
-      ORDERS.map((o) =>
+      source.map((o) =>
         cancelledIds.has(o.id) ? { ...o, status: 'cancelled' as OrderStatus, statusLabel: 'Cancelled' } : o
       ),
-    [cancelledIds]
+    [cancelledIds, source]
   );
 
   const confirmCancel = () => {
@@ -45,15 +49,24 @@ export function MyOrdersScreen({
       </header>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-        {orders.map((o) => (
-          <OrderCard
-            key={o.id}
-            order={o}
-            onOpen={() => onOpenDetails(o.id)}
-            onTrack={() => setTracking(o)}
-            onCancel={() => setCancelTarget(o)}
+        {orders.length === 0 ? (
+          <EmptyState
+            icon={<Package strokeWidth={1.75} />}
+            title="No orders yet"
+            description="Orders you place will show up here, with live tracking until they're delivered."
+            action={<Button onClick={onStartShopping}>Start shopping</Button>}
           />
-        ))}
+        ) : (
+          orders.map((o) => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              onOpen={() => onOpenDetails(o.id)}
+              onTrack={() => setTracking(o)}
+              onCancel={() => setCancelTarget(o)}
+            />
+          ))
+        )}
       </div>
 
       {/* tracking timeline */}

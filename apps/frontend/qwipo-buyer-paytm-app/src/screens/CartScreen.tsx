@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Plus, Truck } from 'lucide-react';
+import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
+import { PriceChangeBanner } from '../components/PriceChange';
+import { useEmptyable } from '../review/demoState';
 
 /** kg with at most 2 decimals + unit (e.g. "0.45 kg", "25 kg"). */
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
@@ -23,7 +25,9 @@ export function CartScreen({
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
 }) {
-  const { sellers, grandTotal, totalItems, anyBelow } = useMemo(() => buildCart(), []);
+  const cart = useMemo(() => buildCart(), []);
+  const { grandTotal, totalItems, anyBelow, priceChanges } = cart;
+  const sellers = useEmptyable(cart.sellers);
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
 
   return (
@@ -49,11 +53,17 @@ export function CartScreen({
 
       {sellers.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
-          <EmptyState icon="🛒" title="Your cart is empty" description="Add products to see them here." />
+          <EmptyState
+            icon={<ShoppingCart strokeWidth={1.75} />}
+            title="Your cart is empty"
+            description="Add products from a distributor or wholesaler to see them here."
+            action={<Button onClick={() => onAddMore('')}>Browse products</Button>}
+          />
         </div>
       ) : (
         <>
           <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+            <PriceChangeBanner summary={priceChanges} />
             {sellers.map((s) => (
               <SellerCard
                 key={s.id}

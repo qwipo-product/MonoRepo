@@ -2,10 +2,12 @@ import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { CREDIT_PARTNERS, type CreditPartner } from '../data/payments';
+import { useEmptyable } from '../review/demoState';
 
 /* Account · Credit Partners — Rupifi / ePay Later statements: limit usage,
    upcoming due, and a Pay Now link to the partner's repayment page. */
 export function CreditPartnersScreen({ onBack }: { onBack: () => void }) {
+  const partners = useEmptyable(CREDIT_PARTNERS);
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -19,17 +21,17 @@ export function CreditPartnersScreen({ onBack }: { onBack: () => void }) {
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight">Credit Partners</h1>
       </header>
 
-      {CREDIT_PARTNERS.length === 0 ? (
+      {partners.length === 0 ? (
         <div className="grid flex-1 place-items-center bg-background-subtle">
           <EmptyState
-            icon={<Users className="h-7 w-7 text-foreground-secondary" />}
-            title="No Credit Partners Found"
-            description="You don't have any credit partners available at this time."
+            icon={<Users strokeWidth={1.75} />}
+            title="No credit partners yet"
+            description="Credit partners you’re approved with will appear here."
           />
         </div>
       ) : (
         <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-          {CREDIT_PARTNERS.map((p) => (
+          {partners.map((p) => (
             <PartnerCard key={p.id} partner={p} />
           ))}
         </div>

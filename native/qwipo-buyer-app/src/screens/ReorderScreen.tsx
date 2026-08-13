@@ -8,7 +8,7 @@ import { deliveryFooter } from '../components/DeliveryFooter';
 import { REORDER_ITEMS } from '../data/reorder';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
 import { colors, shadows } from '../lib/theme';
-import { Search, SlidersHorizontal, RotateCcw } from '../lib/icons';
+import { Search, SlidersHorizontal, ChevronLeft } from '../lib/icons';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(REORDER_ITEMS.map((r) => brandOf(r.product.shortName)))];
@@ -18,11 +18,13 @@ export function ReorderScreen({
   onOpenSheet,
   onSetQty,
   onSearch,
+  onBack,
 }: {
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onSetQty: (id: string, n: number) => void;
   onSearch?: () => void;
+  onBack?: () => void;
 }) {
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -39,9 +41,9 @@ export function ReorderScreen({
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center gap-3 border-b border-border bg-card px-4 py-3" style={shadows.sm}>
-        <View className="h-9 w-9 items-center justify-center rounded-md bg-primary-soft">
-          <RotateCcw size={18} color={colors.primary} />
-        </View>
+        <Pressable onPress={onBack} className="h-9 w-9 items-center justify-center rounded-md bg-muted active:opacity-70">
+          <ChevronLeft size={18} color={colors.foreground} />
+        </Pressable>
         <View className="min-w-0 flex-1">
           <Text className="text-base font-semibold text-foreground">Reorder</Text>
           <Text className="text-xs text-foreground-secondary">{items.length} items you buy often</Text>
