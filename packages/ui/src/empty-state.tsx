@@ -38,14 +38,19 @@ export function EmptyState({ icon, title, description, action, className }: Empt
         className
       )}
     >
+      {/* Illustration — same geometry as the KYC success tick: an 80px circle
+          with a 40px glyph. Tinted with the app's icon-chip colours rather than
+          `bg-muted`, which sits too close to the surface behind it to read as a
+          shape at all. Soft rather than solid: an empty state is neutral
+          information, not a success moment. */}
       {icon != null && (
-        <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-muted text-foreground-secondary [&>svg]:h-7 [&>svg]:w-7">
+        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary-soft text-primary [&>svg]:h-10 [&>svg]:w-10">
           {icon}
         </div>
       )}
-      <div className="text-base font-semibold text-foreground">{title}</div>
+      <div className="mt-5 text-lg font-semibold text-foreground">{title}</div>
       {description && (
-        <div className="mt-1.5 max-w-[15rem] text-sm leading-snug text-foreground-secondary">
+        <div className="mt-2 max-w-[16rem] text-sm leading-relaxed text-foreground-secondary">
           {description}
         </div>
       )}
