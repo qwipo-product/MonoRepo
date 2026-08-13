@@ -1,7 +1,11 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { ChevronLeft, ChevronRight, Rotate3d } from 'lucide-react';
 import { Sheet, cn } from '@mockups/ui';
-import type { Product } from '../data/products';
+/** Minimal shape both distributor Products and WholesalerProducts satisfy. */
+export interface GalleryProduct {
+  image?: string;
+  name?: string;
+}
 
 /* Product images sheet — opened by tapping a product card's thumbnail. Shows a
    large preview + an angle strip (front / left / right / 3D). No real photo
@@ -69,7 +73,7 @@ export function ProductImagesSheet({
   product,
   onClose,
 }: {
-  product: Product | null;
+  product: GalleryProduct | null;
   onClose: () => void;
 }) {
   const [idx, setIdx] = useState(0);
@@ -78,7 +82,7 @@ export function ProductImagesSheet({
   const step = (d: number) => setIdx((p) => (p + d + len) % len);
 
   return (
-    <Sheet open={!!product} onClose={onClose} title={product?.shortName ?? 'Product images'}>
+    <Sheet open={!!product} onClose={onClose} title={product?.name ?? 'Product images'}>
       <div className="relative mx-auto w-full max-w-72">
         <Preview emoji={emoji} angle={ANGLES[idx]} />
 
