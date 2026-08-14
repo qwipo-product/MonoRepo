@@ -4,6 +4,7 @@ import { Badge, Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
 import { PriceLabel, formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
+import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorPicker } from '../components/VendorPicker';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
@@ -42,6 +43,7 @@ export function WholesalerProductsScreen({
   const [qty, setQty] = useState<Record<string, number>>({});
   const [vendorSel, setVendorSel] = useState<Record<string, string>>({});
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
+  const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [discountsOpen, setDiscountsOpen] = useState(false);
@@ -112,6 +114,7 @@ export function WholesalerProductsScreen({
               qty={qty[p.id] ?? 0}
               onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
               onAdd={() => setSheetId(p.id)}
+              onImageClick={() => setGalleryId(p.id)}
               onDiscounts={() => setDiscountsOpen(true)}
             />
           ))
@@ -127,6 +130,11 @@ export function WholesalerProductsScreen({
         }}
         onContinue={() => setSheetId(null)}
         onClose={() => setSheetId(null)}
+      />
+
+      <ProductImagesSheet
+        product={galleryId ? WHOLESALER_PRODUCTS.find((p) => p.id === galleryId) ?? null : null}
+        onClose={() => setGalleryId(null)}
       />
 
       {cartCount > 0 && (
@@ -166,6 +174,7 @@ function VendorProductCard({
   qty,
   onQty,
   onAdd,
+  onImageClick,
   onDiscounts,
 }: {
   product: WholesalerProduct;
@@ -174,6 +183,7 @@ function VendorProductCard({
   qty: number;
   onQty: (n: number) => void;
   onAdd: () => void;
+  onImageClick: () => void;
   onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
@@ -182,12 +192,14 @@ function VendorProductCard({
 
   return (
     <Card className="p-3">
-      <div className="flex gap-3">
+      {/* image (left) + info (right); square image sized to the info column's
+          height — same layout as the distributor card. Image opens the gallery. */}
+      <div className="flex items-start gap-3">
         <button
           type="button"
-          onClick={onAdd}
-          aria-label={`Open selling units for ${product.name}`}
-          className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-muted text-2xl active:scale-[0.98]"
+          onClick={onImageClick}
+          aria-label={`View images of ${product.name}`}
+          className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-muted text-4xl active:scale-[0.98]"
         >
           {product.image}
         </button>
@@ -196,12 +208,12 @@ function VendorProductCard({
             type="button"
             onClick={onAdd}
             aria-label={`Open selling units for ${product.name}`}
-            className="block text-left"
+            className="block w-full text-left active:scale-[0.99]"
           >
-            <div className="text-sm font-semibold text-foreground">{product.name}</div>
-            <div className="text-xs text-foreground-secondary">{product.caseLabel}</div>
+            <div className="text-sm font-semibold leading-snug text-foreground">{product.name}</div>
+            <div className="mt-0.5 text-xs text-foreground-secondary">{product.caseLabel}</div>
           </button>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-2">
             {product.variants.map((v) => (
               <Chip key={v.id} selected={v.id === variant} onClick={() => setVariant(v.id)} className="px-2.5 py-1">
                 {v.label}

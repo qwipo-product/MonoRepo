@@ -45,8 +45,9 @@ export interface ProductCardProps {
 
 function Thumb({ image, name }: { image?: string; name: string }) {
   const isUrl = !!image && /^https?:\/\//.test(image);
+  // Fixed square — equal width and height.
   return (
-    <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-2xl">
+    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-4xl">
       {isUrl ? (
         <img src={image} alt={name} className="h-full w-full object-contain" />
       ) : (
@@ -82,11 +83,11 @@ export function ProductCard({
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
-      {/* thumb + title. Image leads on the left, matching the wholesaler card:
-          one scan line down the list. Two separate buttons, never nested — the
-          thumb opens the image gallery (falling back to the selling-units
-          sheet), the title always opens the sheet. */}
-      <div className="flex w-full items-start gap-3">
+      {/* image (left) + info (right). items-stretch + aspect-square makes the
+          image a square sized to the info column's height (name/case/pills).
+          Image opens the gallery; the title opens the selling-units sheet —
+          separate tap targets, never nested. */}
+      <div className="flex items-start gap-3">
         {onImageClick || onAdd ? (
           <button
             type="button"
@@ -97,41 +98,45 @@ export function ProductCard({
             <Thumb image={image} name={name} />
           </button>
         ) : (
-          <Thumb image={image} name={name} />
-        )}
-        {onAdd ? (
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label={`Open selling units for ${name}`}
-            className="min-w-0 flex-1 text-left active:scale-[0.99]"
-          >
-            <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
-            {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
-          </button>
-        ) : (
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
-            {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+          <div className="shrink-0">
+            <Thumb image={image} name={name} />
           </div>
         )}
-      </div>
-
-      {/* pack pills */}
-      {variants && variants.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {variants.map((v) => (
-            <Chip
-              key={v.id}
-              selected={v.id === selectedVariant}
-              onClick={() => onSelectVariant?.(v.id)}
-              className="px-2.5 py-1"
+        <div className="min-w-0 flex-1">
+          {onAdd ? (
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-label={`Open selling units for ${name}`}
+              className="block w-full text-left active:scale-[0.99]"
             >
-              {v.label}
-            </Chip>
-          ))}
+              <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+              {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+            </button>
+          ) : (
+            <>
+              <div className="text-sm font-semibold leading-snug text-foreground">{name}</div>
+              {caseLabel && <div className="mt-0.5 text-xs text-foreground-secondary">{caseLabel}</div>}
+            </>
+          )}
+
+          {/* pack pills */}
+          {variants && variants.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {variants.map((v) => (
+                <Chip
+                  key={v.id}
+                  selected={v.id === selectedVariant}
+                  onClick={() => onSelectVariant?.(v.id)}
+                  className="px-2.5 py-1"
+                >
+                  {v.label}
+                </Chip>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* seller line (+ optional source badge), then delivery line */}
       {(seller || delivery || source) && (
