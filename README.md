@@ -44,10 +44,16 @@ one.
 | --- | --- |
 | `bun run ls` | Lists every mockup, its URL, and what it is |
 | `bun dev` | Runs everything at once |
-| `bun dev --filter=@mockups/qwipo-buyer-paytm-app` | Runs just one |
+| `bun dev --filter=@mockups/seller-store` | Runs just one |
 | `bun run new <name>` | Scaffolds a brand-new mockup, wired up and ready |
 | `bun run check` | Lint + typecheck + build — run before you push |
 | `bun run build` | Production build of every app |
+
+> **Heads up:** `bun run check` currently fails on one pre-existing issue in
+> `qwipo-buyer-paytm-app` — a stale `eslint-disable` for `jsx-a11y/no-autofocus`,
+> a plugin this repo doesn't install. Unrelated to anything else; scope your run
+> with `bunx turbo run lint typecheck build --filter=@mockups/<app>` until it's
+> resolved.
 
 Dev servers listen on your LAN, so Vite prints a **Network:** URL alongside the
 local one. Open that on your phone — for a mobile mockup, that's the only
@@ -60,9 +66,16 @@ review that counts.
 ```
 apps/
   frontend/
-    qwipo-buyer-paytm-app/         Buyer + salesperson app (Qwipo & Paytm shells)  →  localhost:5173
+    qwipo-buyer-paytm-app/  Buyer + salesperson app (Qwipo & Paytm shells)  →  :5175
+    seller-store/           Distributor + super-admin console               →  :5174
+    rirn/                   Retailer Identity & Relationship Network        →  :5173
+    storybook/              Catalog for the mobile kit                      →  :6006
+    storybook-web/          Catalog for the web kit                         →  :6007
   backend/
-    mock-api/             Fake API over the fixtures  →  localhost:8787
+    mock-api/               Fake API over the fixtures                      →  :8787
+native/
+  qwipo-buyer-app/          React Native / Expo — outside the Bun workspace,
+                            has its own bun.lock and toolchain
 packages/
   ui/                     Mobile-first primitives: buttons, cards, tabs, cn(), theme provider
   design-tokens/          Mobile token layer — platform-neutral + theme.css + React Native theme.ts
@@ -101,6 +114,46 @@ Two levels under `apps/` (`frontend/`, `backend/`) is deliberate — it matches
 `seller-platform`, so the CI pipelines and Dockerfiles translate across repos
 without anyone re-learning the layout.
 
+### The Seller Store
+
+The biggest app here — 51 pages across 59 routes, ported in from the
+standalone Seller Store repo and rebuilt on `@mockups/web-ui` +
+`@mockups/web-tokens`.
+
+```bash
+bun dev --filter=@mockups/seller-store
+```
+
+It opens on a login with five demo personas. **OTP is `1234` for all of them.**
+
+| Persona | Mobile | Lands on |
+| --- | --- | --- |
+| Seller | `9900000002` | Seller dashboard |
+| Seller (Empty) | `8888888888` | Inception-day empty states |
+| Super Admin | `9900000001` | `/admin` |
+| Super Admin (Empty) | `9999999999` | Admin empty states |
+| Design System | `7777777777` | `/design` |
+
+The "Empty" personas wipe the mock master data on login so every screen shows
+its empty state — that's how you demo day-one onboarding without deleting
+anything.
+
+Two things about its shape that look wrong until you know why: source sits
+under `src/app/` with assets under `src/imports/`, mirroring the original
+repo's depth so ~40 relative asset paths survived the port untouched; and it
+keeps its own persona-driven `root-layout.tsx` rather than using `AppShell`,
+which doesn't model admin/seller/empty-mode sidebars. New web mockups should
+use `AppShell`.
+
+Its pages use raw Tailwind utilities (`bg-white`, `text-gray-900`) rather than
+semantic tokens, and go dark-aware anyway because `web-tokens/theme.css`
+carries a `.dark` rebinding layer for exactly those classes. That layer is why
+40k lines didn't need rewriting.
+
+`/design` is a 4,600-line in-app handbook inherited from the original repo. It
+duplicates `storybook-web` and will drift — prefer Storybook, and expect the
+page to be retired.
+
 ### Adding a mockup
 
 ```bash
@@ -126,11 +179,20 @@ generator adds it for you):
 
 Miss it and the shared components render unstyled.
 
-### Design tokens live in the app, not the package
+### Design tokens never live in a `ui` package
 
-`packages/ui` components use classes like `bg-primary` and `text-foreground`.
-What those *mean* is the `@theme` block in each app's `src/index.css`. Same
-components, different brand per mockup. Change colours there.
+Components in `packages/ui` and `packages/web-ui` use classes like
+`bg-primary` and `text-foreground`. What those *mean* is decided outside the
+component — which is what lets the same components carry a different brand per
+mockup. Where that decision lives differs by kit:
+
+- **Mobile** — the `@theme` block in each app's `src/index.css`. Change colours
+  there, per mockup.
+- **Web** — `@mockups/web-tokens/theme.css`, imported whole. A web app needs no
+  `@theme` block; change the token in the package and every web mockup moves.
+
+Either way: never hard-code a hex in a component, and never move tokens into a
+`ui` package.
 
 ---
 

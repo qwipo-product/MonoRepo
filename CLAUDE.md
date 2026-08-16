@@ -35,7 +35,24 @@ bun run new <name>                # scaffold a new mockup
 apps/frontend/<mockup>/     one app per mockup
 apps/backend/<service>/     Bun services (currently just mock-api)
 packages/<shared>/          shared code — see below
+native/qwipo-buyer-app/     React Native / Expo — NOT in the Bun workspace
+                            (own bun.lock + toolchain); `bun run check` skips it
 ```
+
+What exists today:
+
+| App | Port | Kit | What it is |
+| --- | --- | --- | --- |
+| `qwipo-buyer-paytm-app` | 5175 | mobile | Buyer app in a Paytm WebView frame |
+| `seller-store` | 5174 | web | Distributor + super-admin console (see below) |
+| `rirn` | 5173 | web | Retailer Identity & Relationship Network — scaffold only |
+| `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
+| `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
+
+`apps/frontend/` also contains `qwipo-app`, `qwipo-app-v2` and
+`qwipo-buyer-app` — these are **stale leftovers** with no `package.json`, just
+an orphaned `node_modules`. Turbo and Bun ignore them. Don't treat them as
+apps; they're safe to delete once someone confirms nothing is being salvaged.
 
 ## Reach for these before writing your own
 
@@ -76,6 +93,45 @@ overlays need. Importing it is what makes dialogs and sheets animate.
 Deep imports work where the package declares them:
 `import { IMG } from '@mockups/mock-data/imageBank'`.
 
+### The Seller Store app
+
+`apps/frontend/seller-store` is a port of the standalone Seller Store repo —
+51 pages, 59 routes, the biggest thing here. Two conventions that look odd
+until you know why:
+
+- **Source lives under `src/app/`, assets under `src/imports/`.** That mirrors
+  the original repo's depth exactly, which is what let ~40 relative asset
+  paths (`../../imports/categories/*.png`) survive the port untouched. Don't
+  flatten it.
+- **It has its own `root-layout.tsx`**, not `AppShell` from `@mockups/web-ui`.
+  The sidebar is persona-driven (admin vs seller vs empty-mode), which the
+  generic shell doesn't model. `AppShell` is for new web mockups.
+
+It ships five demo personas behind a login. OTP is `1234` for all of them:
+
+| Persona | Mobile | Lands on |
+| --- | --- | --- |
+| Seller | `9900000002` | Seller dashboard |
+| Seller (Empty) | `8888888888` | Inception-day empty states |
+| Super Admin | `9900000001` | `/admin` |
+| Super Admin (Empty) | `9999999999` | Admin empty states |
+| Design System | `7777777777` | `/design` |
+
+The empty-mode personas exist so reviewers can see every screen's empty state
+without deleting data. If you add a list screen, give it an empty state and
+check it under those logins.
+
+Its pages are written with **raw Tailwind utilities** (`bg-white`,
+`text-gray-900`), not semantic tokens. They still go dark-aware because
+`web-tokens/theme.css` carries a `.dark` rebinding layer for those utilities.
+That layer is the only reason 40k lines didn't need rewriting — don't delete
+it, and don't "fix" the pages to use semantic classes unless you're doing it
+wholesale.
+
+`/design` is a 4,600-line in-app design system handbook inherited from the
+original repo. It duplicates `storybook-web` and will drift. Prefer
+`storybook-web`; propose retiring the page rather than updating both.
+
 ### When to promote code into a package
 
 Only when a **second app** actually needs it. Until then it lives in the app.
@@ -106,6 +162,16 @@ no build step, and adding one would break hot reload for everyone.
   exact version, then reference `catalog:` from the package that needs it.
 - **New app dev ports must be unique** so `bun dev` can run several at once.
   `bun run new` handles this; if you hand-roll an app, check the others first.
+- **`verbatimModuleSyntax` is on.** A type imported as a value is a hard error
+  (`TS1484`). Write `import type { Foo }`, or `import { bar, type Foo }` when
+  mixing. This bites hardest when porting code in from another repo — expect a
+  batch of them and fix them from the compiler's own output rather than by
+  hand.
+- **Don't copy a component into an app when the package already has it.** The
+  Seller Store port arrived with its own `EmptyState`, `ErrorState`,
+  `ThemeToggle` and `CopyOnHover`; all four already existed in
+  `@mockups/web-ui`. Duplicates are exactly what the shared package prevents —
+  delete them and repoint the imports.
 - **Both lockfiles are committed.** Never delete or regenerate `bun.lock` or
   `flake.lock` to work around an install problem — fix the actual cause.
 
@@ -123,6 +189,19 @@ Same for `any` and `console.log`: both fine here.
 Run `bun run check`. If you changed a screen, also confirm the dev server
 compiles it — a Tailwind `@source` miss or a bad import passes typecheck and
 still renders a broken page.
+
+**Known pre-existing failure:** `@mockups/qwipo-buyer-paytm-app#lint` fails on
+`src/components/SearchField.tsx` — a stale `eslint-disable` comment for
+`jsx-a11y/no-autofocus`, a plugin this repo doesn't install. ESLint 10 errors
+on unknown rules in disable comments. It is unrelated to whatever you're
+doing; don't chase it, and don't assume you broke it. Fix is either installing
+the plugin or dropping the comment — ask first, it's someone else's app.
+
+Until that's resolved, verify your own work with a filtered run:
+
+```bash
+bunx turbo run lint typecheck build --filter=@mockups/<your-app>
+```
 
 State plainly what you verified and what you didn't.
 
