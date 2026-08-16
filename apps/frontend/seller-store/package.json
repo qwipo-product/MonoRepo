@@ -1,0 +1,45 @@
+{
+  "name": "@mockups/seller-store",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Qwipo Seller Store mockup — the distributor + super-admin console, ported onto @mockups/web-ui.",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --port 6174",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@mockups/mock-data": "workspace:*",
+    "@mockups/types": "workspace:*",
+    "@mockups/web-tokens": "workspace:*",
+    "@mockups/web-ui": "workspace:*",
+    "exceljs": "catalog:",
+    "leaflet": "catalog:",
+    "lucide-react": "catalog:",
+    "next-themes": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-leaflet": "catalog:",
+    "react-leaflet-cluster": "catalog:",
+    "react-router": "catalog:",
+    "recharts": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@tailwindcss/vite": "catalog:",
+    "@types/leaflet": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "eslint": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

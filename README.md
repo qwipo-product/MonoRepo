@@ -64,13 +64,38 @@ apps/
   backend/
     mock-api/             Fake API over the fixtures  →  localhost:8787
 packages/
-  ui/                     Buttons, cards, tabs, cn(), theme provider
+  ui/                     Mobile-first primitives: buttons, cards, tabs, cn(), theme provider
+  design-tokens/          Mobile token layer — platform-neutral + theme.css + React Native theme.ts
+  web-ui/                 Desktop/admin primitives: shadcn + Radix, data tables, dialogs, AppShell
+  web-tokens/             Desktop token layer — theme.css for dense admin surfaces
+  components/             Cross-platform product components (ProductCard, StatusBadge…)
   i18n/                   useI18n() + en / hi / te / ta dictionaries
   types/                  Product, Order, Seller… the domain shapes
   mock-data/              The fake catalogue every mockup shares
   tsconfig/               TS presets — apps extend these
   eslint-config/          Lint presets — apps extend these
 ```
+
+### Two design systems, on purpose
+
+A phone mockup and a desktop admin console are not the same product wearing
+different colours, so they don't share one kit:
+
+| | Mobile | Web / admin |
+| --- | --- | --- |
+| Primitives | `@mockups/ui` | `@mockups/web-ui` |
+| Tokens | `@mockups/design-tokens` + the app's `@theme` block | `@mockups/web-tokens` (complete `theme.css`, no `@theme` needed) |
+| Controls | 44px tap targets | 36px |
+| Radii | 12px cards | 8px cards, 2px table pills |
+| Catalog | `bun dev --filter=@mockups/storybook` → :6006 | `bun dev --filter=@mockups/storybook-web` → :6007 |
+
+`bun run new <name> --web` wires the web set; without `--web` you get the
+mobile set. **Never import both token layers into one app** — whichever CSS
+import comes last wins every shared custom property.
+
+Brand colour is not duplicated between them: `web-tokens` re-exports
+`colorLight` / `colorDark` from `design-tokens`, so the blue and the status
+quads have one definition, not two that happen to agree today.
 
 Two levels under `apps/` (`frontend/`, `backend/`) is deliberate — it matches
 `seller-platform`, so the CI pipelines and Dockerfiles translate across repos

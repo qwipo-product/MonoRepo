@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Tailwind never scans node_modules, and the shared packages are symlinked
+   there — point it at their real sources (and this app's stories), or the
+   token-bound utilities (bg-primary, text-muted-foreground, …) are never
+   generated. Mirrors each app's index.css. */
+@source "../../../../packages/web-ui/src";
+@source "../src";
+
+/* Web/desktop design tokens — light + `.dark`, @theme, the Radix animation
+   utilities, and the dark-mode utility rebinding layer. Note this is
+   web-tokens, NOT design-tokens: importing both would leave whichever came
+   last winning every shared custom property. */
+@import "../../../../packages/web-tokens/theme.css";

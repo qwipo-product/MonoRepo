@@ -68,6 +68,56 @@ const shell = isWeb
   ? `      <div className="min-h-dvh bg-background text-foreground">\n        {/* Your web mockup starts here. */}\n        <Home />\n      </div>`
   : `      <div className="min-h-dvh bg-shell grid place-items-center p-4">\n        {/* 390×844 ≈ iPhone 15. Design inside this frame. */}\n        <div className="w-[390px] h-[844px] overflow-y-auto rounded-[2rem] bg-background text-foreground shadow-xl">\n          <Home />\n        </div>\n      </div>`;
 
+/* ── which design system the new app rides ───────────────────────────────────
+ *
+ * Mobile mockups get the mobile-first kit: @mockups/ui primitives, with the
+ * app declaring its own tokens in an `@theme` block.
+ *
+ * Web mockups get the desktop/admin kit: @mockups/web-ui (shadcn + Radix —
+ * data tables, dialogs, the app shell) on @mockups/web-tokens, which ships a
+ * complete theme.css so the app needs no `@theme` block of its own.
+ *
+ * These are deliberately two design languages, not two skins: 44px tap
+ * targets and 12px radii on mobile, 36px controls and 8px radii on a dense
+ * admin screen. Don't import both token layers into one app — the later
+ * import would win every shared custom property.
+ */
+const deps = isWeb
+  ? {
+      '@mockups/mock-data': 'workspace:*',
+      '@mockups/types': 'workspace:*',
+      '@mockups/web-tokens': 'workspace:*',
+      '@mockups/web-ui': 'workspace:*',
+      'lucide-react': 'catalog:',
+      'next-themes': 'catalog:',
+      react: 'catalog:',
+      'react-dom': 'catalog:',
+      'react-router': 'catalog:',
+    }
+  : {
+      '@mockups/i18n': 'workspace:*',
+      '@mockups/mock-data': 'workspace:*',
+      '@mockups/types': 'workspace:*',
+      '@mockups/ui': 'workspace:*',
+      'lucide-react': 'catalog:',
+      react: 'catalog:',
+      'react-dom': 'catalog:',
+    };
+
+// next-themes drives the `.dark` class the web token layer keys off; the
+// mobile kit has its own ThemeProvider + I18nProvider pair.
+const mainTsx = isWeb
+  ? `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from 'next-themes';\nimport { BrowserRouter } from 'react-router';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    {/* attribute="class" is the contract @mockups/web-tokens keys its dark\n        variant off — every dark rule is scoped under \`.dark\`. */}\n    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>\n      <BrowserRouter>\n        <App />\n      </BrowserRouter>\n    </ThemeProvider>\n  </StrictMode>\n);\n`
+  : `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { I18nProvider } from '@mockups/i18n';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <I18nProvider>\n        <App />\n      </I18nProvider>\n    </ThemeProvider>\n  </StrictMode>\n);\n`;
+
+const indexCss = isWeb
+  ? `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/web-ui renders\n   unstyled and nothing errors. */\n@source "../../../../packages/web-ui/src";\n\n/* Desktop/admin tokens: light + \`.dark\`, @theme, Radix animations, and the\n   dark-mode utility rebinding layer. This app needs no @theme block of its\n   own — change a token in packages/web-tokens, not here. */\n@import "../../../../packages/web-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`
+  : `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared sources or @mockups/ui renders unstyled. */\n@source "../../../../packages/ui/src";\n\n/* Design tokens for this mockup. Change these, not the component internals.\n   Copy the block from apps/frontend/qwipo-buyer-paytm-app/src/index.css if you want\n   the full Qwipo palette. */\n@theme {\n  --color-primary: #2563eb;\n  --color-primary-foreground: #ffffff;\n  --color-background: #ffffff;\n  --color-foreground: #252525;\n  --color-card: #ffffff;\n  --color-muted: #ececf0;\n  --color-muted-foreground: #717182;\n  --color-shell: #f7f7f9;\n  --color-destructive: #d4183d;\n  --color-destructive-foreground: #ffffff;\n\n  --radius-lg: 8px;\n  --radius-xl: 12px;\n\n  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n}\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n  font-family: var(--font-sans);\n  -webkit-font-smoothing: antialiased;\n}\n`;
+
+const homeTsx = isWeb
+  ? `import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@mockups/web-ui';\n\nexport default function Home() {\n  return (\n    <div className="p-6 space-y-6">\n      <div>\n        <h1 className="text-2xl font-semibold">${title}</h1>\n        <p className="mt-1 text-sm text-muted-foreground">\n          Delete this screen and build the real thing. The desktop kit is already wired up.\n        </p>\n      </div>\n\n      <Card className="max-w-lg">\n        <CardHeader>\n          <CardTitle className="text-base font-semibold">The web kit is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-3">\n          <p className="text-sm">\n            Tables, dialogs, sheets, comboboxes, charts and AppShell all come from\n            @mockups/web-ui. Browse them in storybook-web.\n          </p>\n          <div className="flex items-center gap-2">\n            <StatusBadge tone="success">Verified</StatusBadge>\n            <StatusBadge tone="warning">Pending</StatusBadge>\n            <StatusBadge tone="danger">Rejected</StatusBadge>\n          </div>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`
+  : `import { Button, Card, CardContent, CardHeader, CardTitle } from '@mockups/ui';\nimport { products } from '@mockups/mock-data';\n\nexport default function Home() {\n  return (\n    <div className="p-4 space-y-4">\n      <h1 className="text-xl font-semibold">${title}</h1>\n      <p className="text-sm text-muted-foreground">\n        Delete this screen and build the real thing. The shared kit is already wired up.\n      </p>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>Mock data is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-2">\n          <p className="text-sm">{products.length} products available from @mockups/mock-data.</p>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
+
 const files: Record<string, string> = {
   'package.json': `${JSON.stringify(
     {
@@ -85,15 +135,7 @@ const files: Record<string, string> = {
         lint: 'eslint .',
         clean: 'rm -rf dist .turbo .vite *.tsbuildinfo',
       },
-      dependencies: {
-        '@mockups/i18n': 'workspace:*',
-        '@mockups/mock-data': 'workspace:*',
-        '@mockups/types': 'workspace:*',
-        '@mockups/ui': 'workspace:*',
-        'lucide-react': 'catalog:',
-        react: 'catalog:',
-        'react-dom': 'catalog:',
-      },
+      dependencies: deps,
       devDependencies: {
         '@mockups/eslint-config': 'workspace:*',
         '@mockups/tsconfig': 'workspace:*',
@@ -119,13 +161,13 @@ const files: Record<string, string> = {
 
   'index.html': `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title} — mockup</title>\n  </head>\n  <body>\n    <div id="root"></div>\n    <script type="module" src="/src/main.tsx"></script>\n  </body>\n</html>\n`,
 
-  'src/main.tsx': `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { I18nProvider } from '@mockups/i18n';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <I18nProvider>\n        <App />\n      </I18nProvider>\n    </ThemeProvider>\n  </StrictMode>\n);\n`,
+  'src/main.tsx': mainTsx,
 
   'src/App.tsx': `import Home from './screens/Home';\n\nexport default function App() {\n  return (\n${shell}\n  );\n}\n`,
 
-  'src/screens/Home.tsx': `import { Button, Card, CardContent, CardHeader, CardTitle } from '@mockups/ui';\nimport { products } from '@mockups/mock-data';\n\nexport default function Home() {\n  return (\n    <div className="p-4 space-y-4">\n      <h1 className="text-xl font-semibold">${title}</h1>\n      <p className="text-sm text-muted-foreground">\n        Delete this screen and build the real thing. The shared kit is already wired up.\n      </p>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>Mock data is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-2">\n          <p className="text-sm">{products.length} products available from @mockups/mock-data.</p>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`,
+  'src/screens/Home.tsx': homeTsx,
 
-  'src/index.css': `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared sources or @mockups/ui renders unstyled. */\n@source "../../../../packages/ui/src";\n\n/* Design tokens for this mockup. Change these, not the component internals.\n   Copy the block from apps/frontend/qwipo-buyer-paytm-app/src/index.css if you want\n   the full Qwipo palette. */\n@theme {\n  --color-primary: #2563eb;\n  --color-primary-foreground: #ffffff;\n  --color-background: #ffffff;\n  --color-foreground: #252525;\n  --color-card: #ffffff;\n  --color-muted: #ececf0;\n  --color-muted-foreground: #717182;\n  --color-shell: #f7f7f9;\n  --color-destructive: #d4183d;\n  --color-destructive-foreground: #ffffff;\n\n  --radius-lg: 8px;\n  --radius-xl: 12px;\n\n  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n}\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n  font-family: var(--font-sans);\n  -webkit-font-smoothing: antialiased;\n}\n`,
+  'src/index.css': indexCss,
 
   'src/vite-env.d.ts': `/// <reference types="vite/client" />\n`,
 };

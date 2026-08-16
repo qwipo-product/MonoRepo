@@ -39,13 +39,39 @@ packages/<shared>/          shared code — see below
 
 ## Reach for these before writing your own
 
+**Check which kit the app you're in uses before you import anything** — see
+"Two design systems" below.
+
 | Need | Import from | Notes |
 | --- | --- | --- |
-| Button, Card, Badge, Input, Tabs | `@mockups/ui` | Also `cn()`, `ThemeProvider`, `useTheme()` |
+| Button, Card, Badge, Input, Tabs (mobile) | `@mockups/ui` | Also `cn()`, `ThemeProvider`, `useTheme()` |
+| Tables, dialogs, sheets, combobox, charts, AppShell (web) | `@mockups/web-ui` | shadcn + Radix. Also `cn()`, `StatusBadge`, `EmptyState` |
+| Token values in TS (chart colours, sizes) | `@mockups/design-tokens` (mobile), `@mockups/web-tokens` (web) | Values only — components use semantic classes |
 | Translated strings | `@mockups/i18n` | `useI18n()` → `t('cart.title')`. en / hi / te / ta |
 | Product, Order, Seller, Cart types | `@mockups/types` | Framework-agnostic |
 | Products, sellers, orders, banners | `@mockups/mock-data` | Don't invent new fixtures — extend these |
 | TS / ESLint presets | `@mockups/tsconfig`, `@mockups/eslint-config` | Apps just `extends` them |
+
+### Two design systems
+
+Mobile and desktop-admin are different design languages, not two skins, so
+they have separate kits. Don't mix them in one app.
+
+| | Mobile | Web / admin |
+| --- | --- | --- |
+| Primitives | `@mockups/ui` | `@mockups/web-ui` |
+| Tokens | `@mockups/design-tokens` + app `@theme` block | `@mockups/web-tokens` — ships a complete `theme.css`, so a web app needs **no** `@theme` block |
+| Controls / radii | 44px targets, 12px cards | 36px controls, 8px cards, 2px table pills |
+| Storybook | `@mockups/storybook` :6006 | `@mockups/storybook-web` :6007 |
+| Scaffold | `bun run new <name>` | `bun run new <name> --web` |
+
+Brand colour has one definition: `web-tokens` re-exports `colorLight` /
+`colorDark` from `design-tokens`. Change a brand value in `design-tokens` and
+both layers move. Change a *density* value (radius, control height) in
+whichever layer it belongs to — those differ on purpose.
+
+`web-tokens/theme.css` also carries `tw-animate-css`, which the Radix
+overlays need. Importing it is what makes dialogs and sheets animate.
 
 Deep imports work where the package declares them:
 `import { IMG } from '@mockups/mock-data/imageBank'`.
@@ -62,11 +88,19 @@ no build step, and adding one would break hot reload for everyone.
 
 - **Tailwind + shared packages.** Tailwind never scans `node_modules`. An app
   using classes from a shared package needs an `@source` line in its
-  `src/index.css` pointing at that package's `src`. Without it the component
-  renders unstyled and nothing errors — you'll waste an hour.
-- **Design tokens belong to the app.** `packages/ui` components reference
-  `bg-primary` / `text-foreground`; each app's `@theme` block defines them.
-  Never hard-code a hex value in a component. Never move tokens into `ui`.
+  `src/index.css` pointing at that package's `src` — `packages/ui/src` for
+  mobile, `packages/web-ui/src` for web. Without it the component renders
+  unstyled and nothing errors — you'll waste an hour. The same applies to a
+  class you build by interpolation (`` `shadow-${name}` ``): Tailwind only
+  sees complete strings in the source, so write them out.
+- **Design tokens belong to the app or the token package, never to `ui`.**
+  `packages/ui` and `packages/web-ui` components reference `bg-primary` /
+  `text-foreground`. On mobile, each app's `@theme` block defines them; on
+  web, `@mockups/web-tokens/theme.css` does. Never hard-code a hex value in a
+  component, and never move tokens into either `ui` package.
+- **One token layer per app.** `design-tokens` and `web-tokens` both define
+  `--primary`, `--background`, `--radius`… Import both and whichever CSS
+  import lands last silently wins. Pick the one that matches the app.
 - **Dependency versions go in the root `catalog`.** Packages write
   `"react": "catalog:"`. Adding a dep means: add it to the catalog with an
   exact version, then reference `catalog:` from the package that needs it.
