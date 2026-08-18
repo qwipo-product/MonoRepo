@@ -1,6 +1,6 @@
 import { Moon, Sun, UserRound, Camera, PackageOpen } from 'lucide-react';
 import { cn } from '@mockups/ui';
-import { SCREEN_GROUPS, type ScreenId } from './screenIndex';
+import { visibleGroups, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
 import { RoleSwitcher, type Role } from './RoleSwitcher';
 import { DeviceSwitcher, type Device, type Orientation } from './DeviceSwitcher';
@@ -138,9 +138,7 @@ export default function FlowIndex({
       )}
 
       <div className="mt-5 space-y-5">
-        {SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
-          .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
-          .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
+        {visibleGroups(shell, effectiveRole)
           .map((group) => (
           <div key={group.title}>
             <div className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground-secondary">

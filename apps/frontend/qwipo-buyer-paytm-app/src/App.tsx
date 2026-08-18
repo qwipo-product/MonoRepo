@@ -108,14 +108,16 @@ const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefron
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
 
-// Auth flow — Qwipo app only. The Paytm mini surface is already authenticated,
-// so these screens are never shown there.
-const AUTH_SCREENS = new Set<ScreenId>(['splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success']);
+// Sign-in — Qwipo app only. The Paytm mini surface arrives already
+// authenticated, so splash / phone / OTP never appear there. Onboarding and KYC
+// are NOT in this set: Paytm skips the login, not the account setup.
+const SIGN_IN_SCREENS = new Set<ScreenId>(['splash', 'login', 'otp', 'login-error', 'otp-error']);
 
 function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
   const s = params.get('screen');
-  // Paytm mini boots into the Paytm launcher (→ search → welcome → home).
+  // Paytm mini boots into the Paytm launcher (→ search → welcome → onboarding
+  // → home). Sign-in is skipped there, account setup is not.
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
@@ -217,7 +219,7 @@ export default function App() {
 
   // Paytm mini is pre-authenticated — never sit on an auth screen there.
   useEffect(() => {
-    if (shell === 'paytm' && AUTH_SCREENS.has(baseScreenOf(screen))) setScreen('listing');
+    if (shell === 'paytm' && SIGN_IN_SCREENS.has(baseScreenOf(screen))) setScreen('listing');
   }, [shell, screen]);
 
   // Screenshot the phone bezel → PNG in Downloads.
@@ -326,7 +328,7 @@ export default function App() {
       case 'paytm-search':
         return <PaytmSearchScreen onBack={() => go('paytm-launcher')} onOpenQwipo={() => go('paytm-welcome')} />;
       case 'paytm-welcome':
-        return <PaytmWelcomeScreen onProceed={() => go('home')} />;
+        return <PaytmWelcomeScreen onProceed={() => go('onboarding')} />;
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
       case 'login-error':
@@ -354,11 +356,22 @@ export default function App() {
           />
         );
       case 'onboarding':
-        return <OnboardingScreen onBack={() => go('otp')} onProceed={() => go('kyc-complete')} />;
+        return (
+          <OnboardingScreen
+            // Paytm has no OTP to go back to, and lands on Home once onboarded.
+            onBack={() => go(shell === 'paytm' ? 'paytm-welcome' : 'otp')}
+            onProceed={() => go(shell === 'paytm' ? 'home' : 'kyc-complete')}
+          />
+        );
       case 'kyc-complete':
-        return <CompleteKycScreen onCancel={() => go('listing')} onRegister={() => go('kyc-success')} />;
+        return (
+          <CompleteKycScreen
+            onCancel={() => go(shell === 'paytm' ? 'home' : 'listing')}
+            onRegister={() => go('kyc-success')}
+          />
+        );
       case 'kyc-success':
-        return <KycSuccessScreen onPlaceOrder={() => go('listing')} />;
+        return <KycSuccessScreen onPlaceOrder={() => go(shell === 'paytm' ? 'home' : 'listing')} />;
       case 'home':
         return (
           <HomeScreen

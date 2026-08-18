@@ -14,11 +14,20 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
+    // Qwipo-app only: the Paytm mini is already signed in, so there is no
+    // splash / phone / OTP there.
     title: 'Auth',
     items: [
       { id: 'splash', label: 'Splash' },
       { id: 'login', label: 'Login' },
       { id: 'otp', label: 'OTP Verification' },
+    ],
+  },
+  {
+    // Shown on BOTH surfaces. Paytm skips sign-in but still needs the buyer to
+    // onboard and complete KYC before they can order.
+    title: 'Onboarding & KYC',
+    items: [
       { id: 'onboarding', label: 'Onboarding' },
       { id: 'kyc-complete', label: 'Complete KYC' },
       { id: 'kyc-success', label: 'KYC Success' },
@@ -134,14 +143,29 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
 /** Flat list in display order — handy for prev/next and index lookups. */
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
 
-/** Screens visible for a surface — same group filter FlowIndex renders with
-    (Paytm group only in paytm; Auth hidden in paytm; Salesperson only for that role). */
-export function visibleScreens(shell: string, role: string) {
+/* Individual screens hidden on the Paytm mini even though their group is
+   shown — the sign-in error states, which belong to a flow Paytm doesn't have. */
+const PAYTM_HIDDEN = new Set<ScreenId>(['login-error', 'otp-error']);
+
+/** Groups + items visible for a surface. FlowIndex renders from this, and
+    screenNumber counts from it, so the sidebar and the numbering can't drift.
+    (Paytm group only in paytm; Auth hidden in paytm; Salesperson only for that
+    role; Onboarding & KYC shown on both surfaces.) */
+export function visibleGroups(shell: string, role: string) {
   const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
     .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
     .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
-    .flatMap((g) => g.items);
+    .map((g) => ({
+      ...g,
+      items: shell === 'paytm' ? g.items.filter((i) => !PAYTM_HIDDEN.has(i.id)) : g.items,
+    }))
+    .filter((g) => g.items.length > 0);
+}
+
+/** Flat list of the screens visible for a surface. */
+export function visibleScreens(shell: string, role: string) {
+  return visibleGroups(shell, role).flatMap((g) => g.items);
 }
 
 /** 1-based number as shown in the sidebar (0 if the screen isn't listed). */
