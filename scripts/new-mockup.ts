@@ -66,7 +66,7 @@ const title = name
 // A phone-sized frame for mobile mockups; full-bleed for web ones.
 const shell = isWeb
   ? `      <div className="min-h-dvh bg-background text-foreground">\n        {/* Your web mockup starts here. */}\n        <Home />\n      </div>`
-  : `      <div className="min-h-dvh bg-shell grid place-items-center p-4">\n        {/* 390×844 ≈ iPhone 15. Design inside this frame. */}\n        <div className="w-[390px] h-[844px] overflow-y-auto rounded-[2rem] bg-background text-foreground shadow-xl">\n          <Home />\n        </div>\n      </div>`;
+  : `      <div className="min-h-dvh bg-shell grid place-items-center p-4">\n        {/* 390×844 ≈ iPhone 15. Design inside this frame.\n\n            \`relative\` is load-bearing: @mockups/ui's Sheet renders\n            \`absolute inset-0\` and fills its nearest positioned ancestor.\n            Drop it and every bottom sheet escapes the phone and covers the\n            whole browser window. */}\n        <div className="relative w-[390px] h-[844px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">\n          <div className="h-full overflow-y-auto">\n            <Home />\n          </div>\n        </div>\n      </div>`;
 
 /* ── which design system the new app rides ───────────────────────────────────
  *

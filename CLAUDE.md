@@ -45,7 +45,8 @@ What exists today:
 | --- | --- | --- | --- |
 | `qwipo-buyer-paytm-app` | 5175 | mobile | Buyer app in a Paytm WebView frame |
 | `seller-store` | 5174 | web | Distributor + super-admin console (see below) |
-| `rirn` | 5173 | web | Retailer Identity & Relationship Network — scaffold only |
+| `rirn` | 5173 | web | Retailer identity network — company discovery console |
+| `rirn-retailer` | 5176 | **mobile** | Retailer-facing RIRN pages for a buyer-app WebView |
 | `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
 | `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
 

@@ -1,14 +1,16 @@
 # @mockups/rirn
 
 **Retailer Identity & Relationship Network** — a trusted identity layer for
-B2B commerce. Scaffold only so far: wired to the web design system and
-building, with no screens designed yet.
+B2B commerce.
+
+Built so far: the **company discovery console** — the vertical slice that
+demonstrates the whole thesis.
 
 ```bash
 bun dev --filter=@mockups/rirn
 ```
 
-http://localhost:5173
+http://localhost:5173 · sign in as ITC, HUL or Britannia.
 
 ## The problem it mocks
 
@@ -46,16 +48,110 @@ Identity (retailers, mappings, resolution queue) · Participants (companies,
 distributors, buyer & seller apps) · Relationships · Authorization · Consent ·
 Audit · Settings.
 
-## Building here
+## What's built: the company console
 
-Right now this is the untouched `bun run new --web` scaffold: a single
-placeholder `src/screens/Home.tsx`, wired to `@mockups/web-ui` and
-`@mockups/web-tokens` and building. Delete that screen and start.
+Search a locality or PIN code, see who's there, decide who to map. Shaped like
+a property search — search bar, map, result rail — because that pattern is
+well understood. **The disclosure runs the opposite way**, and that inversion
+is the point.
 
-For the chrome, reach for `AppShell` from `@mockups/web-ui` — navigation is a
-`NavItem[]`, where items carry `subItems` for collapsible groups and
-`disabled` to grey out screens that aren't built yet. That last one is a good
-way to show the whole intended IA while filling it in one screen at a time.
+### The contribution economy
+
+The retailer base is Qwipo's asset. A company that browses it and maps nothing
+is extracting value and returning none, so:
+
+- Unlocking a retailer **costs 1** from a daily allowance of **20**
+- A DMS-confirmed mapping **earns 5 back**
+
+Browse-only runs dry; contribute and you keep going. That's PRD §15
+anti-harvesting expressed as an economy rather than a wall, and the meter sits
+in the top bar precisely so it can be felt. Both numbers are in
+`src/lib/company-session.ts` and are the first thing to tune after a demo.
+
+### Three levels of disclosure
+
+| State | What's shown |
+|---|---|
+| **Locked** | Business name, category, locality, verification badge — plus the withheld fields, listed by name with their values obscured |
+| **Unlocked** | GSTIN, address, proprietor, and the signals below |
+| **Mapped** | Their DMS ID attached and confirmed |
+
+Clicking a pin opens a card on the map. Before an unlock it names the fields
+it is holding back — Address, GSTIN, Contact number — with the values blurred,
+so the withholding is legible rather than looking like missing data.
+
+Those blurred rows render a **decoy** string, never the real value. A CSS blur
+is a visual effect, not a security boundary; blurring the true address would
+still ship it in the DOM for anyone who opened devtools, quietly undoing the
+model this mockup exists to argue for. Contact number has no real value to
+leak — it isn't on the `Retailer` type at all.
+
+The unlocked view **leads on what a company can't get from its own DMS** —
+duplicate detection ("this matches your record RET-8891"), verification
+provenance, distributor coverage, purchase band. Contact detail is almost an
+afterthought, deliberately: if an unlock only returned an address, the company
+would feel taxed rather than served, and the trade would collapse.
+
+**Phone number is never shown, at any state.** §15.4 marks it "Controlled"
+even for companies. It isn't even on the `Retailer` type.
+
+### Approximate location until you earn precision
+
+§16 puts approximate location at Level 1 (public) and the exact address at
+Level 2 (consent). So an unmapped retailer renders as a **soft dashed disc,
+offset up to ~400m from its true position** — you can see that a pocket of
+Kondapur has fourteen kirana stores, but you can't drive to one. Map it and the
+pin snaps to the real coordinates and turns blue.
+
+The offset is deterministic per NRID. A fuzz that reshuffled every render would
+look broken *and* average out to the true position for anyone patient enough to
+watch.
+
+### No total count
+
+The rail says "Showing 12", never "158 results". §32: exposing a total for a
+searchable query hands over an enumeration oracle — you can binary-search the
+base without ever unlocking anything.
+
+Search matches locality, PIN code or city, but **not business name**. Name
+search would turn the base into a lookup service for a list you already have,
+which is the harvesting path the design is trying to close.
+
+### DMS verification
+
+Nothing commits on the company's say-so — the ID round-trips to their DMS
+first. `src/lib/dms.ts` fakes that, deterministically so demos can be
+rehearsed:
+
+| Input | Outcome |
+|---|---|
+| `RET-1000`–`RET-8999` | Confirmed, mapping commits, +5 unlocks |
+| `RET-9000`+ | Not found in your DMS |
+| An ID already mapped | Already bound, names the NRID holding it |
+| `RET-4242`, `RET-5150` | GSTIN mismatch — refuses, suggests a dispute |
+| Anything else | Bad format |
+
+The GSTIN-mismatch branch is the interesting one: the ID is real, the retailer
+is real, and they still shouldn't be linked without a human looking.
+
+## Layout
+
+```
+src/lib/retailer-base.ts     the Qwipo-seeded base — 48 Hyderabad retailers
+src/lib/company-session.ts   quota, unlocks, mappings (the economy)
+src/lib/dms.ts               fake DMS round-trip incl. failure branches
+src/components/retailer-map.tsx           leaflet + the fuzzing rule
+src/components/retailer-detail-sheet.tsx  locked / unlocked / mapped
+src/pages/discover.tsx       map + rail
+```
+
+## Not built yet
+
+Distributor console, buyer-app retailer self-service, and the Qwipo Admin
+screens (companies grid, retailer base map, identity-resolution queue, abuse
+panel). Each is a variation on the same shell — `AppShell` from
+`@mockups/web-ui` takes a `NavItem[]`, where `disabled` greys out screens that
+don't exist yet.
 
 Browse the available components at `bun dev --filter=@mockups/storybook-web`
 (:6007) before writing your own.

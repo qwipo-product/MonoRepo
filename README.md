@@ -68,7 +68,8 @@ apps/
   frontend/
     qwipo-buyer-paytm-app/  Buyer + salesperson app (Qwipo & Paytm shells)  →  :5175
     seller-store/           Distributor + super-admin console               →  :5174
-    rirn/                   Retailer Identity & Relationship Network        →  :5173
+    rirn/                   Retailer identity network — company console     →  :5173
+    rirn-retailer/          Retailer-facing RIRN pages (phone/WebView)      →  :5176
     storybook/              Catalog for the mobile kit                      →  :6006
     storybook-web/          Catalog for the web kit                         →  :6007
   backend/

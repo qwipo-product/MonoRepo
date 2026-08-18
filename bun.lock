@@ -62,11 +62,40 @@
         "@mockups/types": "workspace:*",
         "@mockups/web-tokens": "workspace:*",
         "@mockups/web-ui": "workspace:*",
+        "leaflet": "catalog:",
         "lucide-react": "catalog:",
         "next-themes": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
+        "react-leaflet": "catalog:",
+        "react-leaflet-cluster": "catalog:",
         "react-router": "catalog:",
+      },
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@tailwindcss/vite": "catalog:",
+        "@types/leaflet": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "eslint": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
+    "apps/frontend/rirn-retailer": {
+      "name": "@mockups/rirn-retailer",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/i18n": "workspace:*",
+        "@mockups/mock-data": "workspace:*",
+        "@mockups/types": "workspace:*",
+        "@mockups/ui": "workspace:*",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
       },
       "devDependencies": {
         "@mockups/eslint-config": "workspace:*",
@@ -592,6 +621,8 @@
     "@mockups/qwipo-buyer-paytm-app": ["@mockups/qwipo-buyer-paytm-app@workspace:apps/frontend/qwipo-buyer-paytm-app"],
 
     "@mockups/rirn": ["@mockups/rirn@workspace:apps/frontend/rirn"],
+
+    "@mockups/rirn-retailer": ["@mockups/rirn-retailer@workspace:apps/frontend/rirn-retailer"],
 
     "@mockups/seller-store": ["@mockups/seller-store@workspace:apps/frontend/seller-store"],
 

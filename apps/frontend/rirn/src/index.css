@@ -19,3 +19,23 @@ body,
 body {
   margin: 0;
 }
+
+/* ---- Map popup card ----
+   Leaflet's default popup wraps content in padding and a 12px font. The
+   retailer card brings its own layout, so strip the chrome and let it fill
+   the bubble edge to edge. */
+.rirn-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
+}
+.rirn-popup .leaflet-popup-content {
+  margin: 0;
+  width: 300px !important;
+  font: inherit;
+  line-height: inherit;
+}
+.rirn-popup .leaflet-popup-tip {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
+}
