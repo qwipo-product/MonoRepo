@@ -397,9 +397,16 @@ deployments:
     image: "${service}"
     version: "dev-0000000"
     port: 80
+    # The CPU request is deliberately far below the house norm — most web
+    # services here ask 50m. Requests are what count against the cluster's
+    # schedulable capacity, and there will be a lot of mockups; an nginx
+    # serving pre-built static files idles near zero, so asking 50m apiece
+    # would reserve capacity nothing uses and eventually block new mockups
+    # from scheduling at all. The limit is left at the house value: it caps a
+    # burst, it doesn't reserve anything.
     resources:
       requests:
-        cpu: "50m"
+        cpu: "10m"
         memory: "20Mi"
       limits:
         cpu: "180m"
