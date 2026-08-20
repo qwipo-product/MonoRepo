@@ -27,6 +27,7 @@ direnv activates it. Never suggest `npm` or `yarn` — `bun` only.
 bun dev --filter=@mockups/<app>   # run one app
 bun run check                     # lint + typecheck + build, run before finishing
 bun run new <name>                # scaffold a new mockup
+bun run deploy:add <app>          # generate an app deploy fileset + pipelines
 ```
 
 ## Layout
@@ -209,20 +210,52 @@ State plainly what you verified and what you didn't.
 ## Deployment
 
 Azure DevOps, via templates in the shared `Qwipo B2B/k8s` repo — same pattern
-as `seller-platform`. Each deployable app carries five files: `Dockerfile`,
-`nginx.conf` + `entrypoint.sh` (frontends only), `docker-build.yml`,
-`azure-release.yaml`.
+as `seller-platform`. Each deployable app carries four files: `Dockerfile`,
+`nginx.conf` (frontends only), `docker-build.yml`, `azure-release.yaml`.
+
+Don't hand-write or hand-copy that set — generate it:
+
+```bash
+bun run deploy:add seller-store
+bun run deploy:add rirn --service mockups-rirn-company --label "RIRN Company"
+bun run deploy:add storybook --force   # overwrite an existing fileset
+```
+
+`scripts/add-deploy.ts` reads the build output directory out of the app's own
+`build` script and derives the Azure pipeline display name from the service
+name, which are the two things copying files by hand kept getting wrong. It
+prints the two prerequisites it can't satisfy from here: the k8s GitOps
+manifest and the `az pipelines create` registration.
 
 Things to get right if you touch them:
 
+- **No runtime config, on purpose.** There is no `entrypoint.sh` and no
+  `public/configs/config.*.json`. Every mockup bundles `@mockups/mock-data` at
+  build time and talks to no backend, so nothing differs between dev and
+  production — the image is a pure static artefact, nginx plus a directory of
+  files. A config-swapping entrypoint with nothing to swap isn't neutral: it
+  `exit 1`s the container on a `NODE_ENV` it doesn't recognise, a live failure
+  mode bought for zero benefit. If one mockup ever genuinely needs a backend,
+  add the entrypoint back to that app alone and say why in its Dockerfile.
 - **Build context is the workspace root**, never the app folder. Dockerfiles
   `COPY . .` and rely on the root `.dockerignore`. Paths inside are
   repo-relative (`apps/frontend/<app>/dist/`).
-- **Service names are prefixed `mockups-`** so mockup images can't be confused
-  with real services in the shared registry.
-- **The release pipeline binds to its build by name**, via
-  `resources.pipelines.source: 'docker-cd-<service>'`. Renaming one without the
-  other silently breaks the release.
+- **The two Storybook catalogs build to `storybook-static/`, not `dist/`.**
+  `turbo.json`'s `build.outputs` lists both and the root `.dockerignore` strips
+  both. Point a Dockerfile at the wrong one and nginx serves an empty root — a
+  404 page, with nothing failing at build time.
+- **Service names are `mockups-<what-it-is>`** — the prefix so mockup images
+  can't be confused with real services in the shared registry, and nothing
+  more. No `qwipo-` (the registry is already the Qwipo registry and the domain
+  already says so) and no `-app` suffix. The demo URL follows from it:
+  `https://<service>.dev.bms.qwipo.com`.
+- **The release pipeline binds to its build by display name**, via
+  `resources.pipelines.source: '<Label> - Build'`. Renaming one without the
+  other silently breaks the release. `SERVICE_NAME` also reaches the deploy
+  through the build's artefact, so renaming a service needs a fresh **build**
+  run before any deploy can bind — `mockups-qwipo-buyer-paytm-app` →
+  `mockups-buyer-app` is the live example, and it needs a matching
+  `bms-chart/<env>/mockups-buyer-app.yaml` manifest too.
 - **The release template exits 1** if the GitOps manifest
   `<TARGET_PATH_PREFIX>/<env>/<service>.yaml` doesn't exist. That's a DevOps
   prerequisite, not something you can fix from this repo — say so rather than

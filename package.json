@@ -87,6 +87,7 @@
     "check": "turbo run lint typecheck build",
     "clean": "turbo run clean",
     "new": "bun run scripts/new-mockup.ts",
+    "deploy:add": "bun run scripts/add-deploy.ts",
     "ls": "bun run scripts/list-apps.ts",
     "ci:install": "bun install --frozen-lockfile"
   },

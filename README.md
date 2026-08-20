@@ -47,6 +47,7 @@ one.
 | `bun dev --filter=@mockups/seller-store` | Runs just one |
 | `bun run new <name>` | Scaffolds a brand-new mockup, wired up and ready |
 | `bun run check` | Lint + typecheck + build — run before you push |
+| `bun run deploy:add <app>` | Generates a mockup's Dockerfile + Azure pipelines |
 | `bun run build` | Production build of every app |
 
 > **Heads up:** `bun run check` currently fails on one pre-existing issue in
@@ -245,62 +246,114 @@ that `extends:` shared templates in the **`Qwipo B2B/k8s`** repo. The pipelines
 live in Azure DevOps under the **`Mockups Lab`** folder, named for humans rather
 than following the `docker-cd-*` / `argocd-*` convention the service repos use.
 
-| App | Service name | Build | Deploy |
-| --- | --- | --- | --- |
-| `qwipo-buyer-paytm-app` | `mockups-qwipo-buyer-paytm-app` | `Mockups Lab / App V2 - Build` | `Mockups Lab / App V2 - Deploy` |
-| `mock-api` | `mockups-api` | `Mockups Lab / Mock API - Build` | `Mockups Lab / Mock API - Deploy` |
+| App folder | Service name | Demo host | Build pipeline | Deploy pipeline |
+| --- | --- | --- | --- | --- |
+| `seller-store` | `mockups-seller-store` | mockups-seller-store.dev.bms.qwipo.com | Seller Store - Build | Seller Store - Deploy |
+| `rirn` | `mockups-rirn-company` | mockups-rirn-company.dev.bms.qwipo.com | RIRN Company - Build | RIRN Company - Deploy |
+| `rirn-retailer` | `mockups-rirn-retailer` | mockups-rirn-retailer.dev.bms.qwipo.com | RIRN Retailer - Build | RIRN Retailer - Deploy |
+| `storybook-web` | `mockups-storybook-web` | mockups-storybook-web.dev.bms.qwipo.com | Storybook Web - Build | Storybook Web - Deploy |
+| `storybook` | `mockups-storybook` | mockups-storybook.dev.bms.qwipo.com | Storybook - Build | Storybook - Deploy |
+| `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
+| `mock-api` (backend) | `mockups-api` | internal | Mock API - Build | Mock API - Deploy |
 
-Service names are prefixed `mockups-` so these images and ArgoCD apps can't be
-confused with real services in the shared registry. The **build pipeline's
-display name is load-bearing** — each release YAML binds to it via
-`resources.pipelines.source`. Rename one, change the other in the same commit.
+Service names are `mockups-<what-it-is>`. The prefix is there so these images
+and ArgoCD apps can't be confused with real services in the shared registry, and
+that is all it's for — no `qwipo-` on top of it (the registry is already the
+Qwipo registry and the domain already says it) and no `-app` suffix, which
+distinguishes nothing. The demo URL falls straight out of the name:
+`https://<service>.dev.bms.qwipo.com`.
+
+Two hosts are reserved for mockups that don't exist yet —
+`mockups-rirn-distributor.dev.bms.qwipo.com` and
+`mockups-rirn-admin.dev.bms.qwipo.com`. There is nothing to build for either;
+they're DNS and manifest reservations in the k8s repo, held so the URL is ready
+when someone starts the app.
+
+The **build pipeline's display name is load-bearing** — each release YAML binds
+to it via `resources.pipelines.source`. Rename one, change the other in the same
+commit.
 
 Build → push to DOCR → deploy rewrites the image digest at
 `bms-chart/<env>/<service>.yaml` in the k8s repo → ArgoCD syncs. Both are
 `trigger: none`; you run them by hand and pick the environment.
 
+> **The buyer app was renamed** — `mockups-qwipo-buyer-paytm-app` is now
+> `mockups-buyer-app`, which moves the image and the ArgoCD app and nothing
+> else: the demo URL was already `mockups-buyer-app.dev.bms.qwipo.com` and the
+> pipelines were already **Buyer App - Build** / **Buyer App - Deploy**, so the
+> live link keeps working and neither pipeline is renamed. `SERVICE_NAME` still
+> reaches the deploy through the build's artefact, not through the release
+> YAML, so it needs a fresh **Buyer App - Build** run before any deploy can
+> bind; deploying against the old artefact still carries the old name. The k8s
+> manifest also has to be renamed to `bms-chart/<env>/mockups-buyer-app.yaml`
+> and the old `mockups-qwipo-buyer-paytm-app.yaml` removed — leave both and
+> ArgoCD keeps both apps alive.
+
 ### To put a new mockup on this path
 
-1. Copy these five files from `apps/frontend/qwipo-buyer-paytm-app/` into your app:
-   `Dockerfile`, `nginx.conf`, `entrypoint.sh`, `docker-build.yml`,
-   `azure-release.yaml`.
-2. In them, change `qwipo-buyer-paytm-app` → your app folder and
-   `mockups-qwipo-buyer-paytm-app` → `mockups-<your-app>`. That's every occurrence;
-   nothing else varies.
-3. Copy `public/configs/config.*.json` too, and set `mockApiBaseUrl` per env.
-4. Add a deployment manifest at `bms-chart/<env>/mockups-<your-app>.yaml` in the
-   **k8s** repo. Copy `bms-chart/dev/seller-portal.yaml` — it's the closest
-   reference (nginx SPA on port 80). The `dev` ApplicationSet is a git-file
-   generator over `bms-chart/dev/*.yaml`, so the file's *existence* is what
-   creates the ArgoCD app `dev-mockups-<your-app>-argo-app`. Nobody has to
-   register it. Keep the `version: "..."` line — the release pipeline `sed`s it.
-5. Register both YAMLs in Azure DevOps under the `Mockups Lab` folder:
+```bash
+bun run deploy:add seller-store
+```
+
+That writes all four files into `apps/frontend/<app>/` — `Dockerfile`,
+`nginx.conf`, `docker-build.yml`, `azure-release.yaml` — and derives the two
+things people kept getting wrong when they hand-copied them. The build output
+directory comes from the app's own `build` script, and the Azure pipeline
+display name comes from the service name, so the release YAML's `source:` can't
+drift from the build pipeline it binds to.
+
+Override either when the derived value isn't the one you want, and pass
+`--force` to overwrite a fileset that already exists:
+
+```bash
+bun run deploy:add rirn --service mockups-rirn-company --label "RIRN Company"
+bun run deploy:add storybook --force
+```
+
+Deriving the output directory matters because the two Storybook catalogs build
+to `storybook-static/`, not `dist/`. `turbo.json`'s `build.outputs` lists both,
+so a cache hit restores the right one, and the root `.dockerignore` strips both,
+so a stale local build can't be copied into an image. Point a Dockerfile at the
+wrong directory and nginx serves an empty root — a 404 page, with nothing
+failing at build time to tell you why.
+
+Two prerequisites it can't satisfy from inside this repo. It prints both when it
+finishes:
+
+1. **The GitOps manifest**, at `bms-chart/<env>/<service>.yaml` in the **k8s**
+   repo. Copy `bms-chart/dev/seller-portal.yaml` — it's the closest reference
+   (nginx SPA on port 80) — and set the ingress host to
+   `<service>.dev.bms.qwipo.com`, which is the rule that owns the demo URL. The
+   `dev` ApplicationSet is a git-file generator over `bms-chart/dev/*.yaml`, so
+   the file's *existence* is what creates the ArgoCD app
+   `dev-<service>-argo-app`. Nobody has to register it. Keep the
+   `version: "..."` line — the release pipeline `sed`s it.
+2. **Registering both YAMLs** in Azure DevOps under the `Mockups Lab` folder:
 
    ```bash
    az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \
-     --name "<App> - Build" --folder-path "Mockups Lab" \
+     --name "<Label> - Build" --folder-path "Mockups Lab" \
      --repository mockups-lab --repository-type tfsgit --branch main \
-     --yml-path apps/frontend/<your-app>/docker-build.yml --skip-first-run true
+     --yml-path apps/frontend/<app>/docker-build.yml --skip-first-run true
    ```
 
-   Then the same for `- Deploy` with `azure-release.yaml`, and make sure that
-   YAML's `source:` matches the build pipeline's name exactly.
+   Then the same for `- Deploy` with `azure-release.yaml`. Use the `<Label>` the
+   generator printed — that exact string is already sitting in the release
+   YAML's `source:`.
 
-### Runtime config
+### No runtime config
 
-Images are environment-agnostic — the same one promotes from dev to production.
-`entrypoint.sh` copies `configs/config.<NODE_ENV>.json` over
-`configs/config.json` at container start (`dev`/`prod`/`main` are normalised to
-`development`/`production`), and nginx serves that file uncached. Read it at
-runtime:
+There is no `entrypoint.sh` and no `public/configs/config.*.json`, on purpose.
+These are mockups: every one bundles `@mockups/mock-data` at build time and
+talks to no backend, so there is no API base URL, no feature flag, nothing that
+differs between dev and production. The image is a pure static artefact — nginx
+plus a directory of files, correct in every environment.
 
-```ts
-const cfg = await fetch('/configs/config.json').then((r) => r.json());
-```
-
-An unknown `NODE_ENV` makes the container exit rather than serve a stale
-config — you'll see it immediately instead of debugging a mockup pointed at the
-wrong API.
+That's a deliberate simplification of the pattern `seller-platform` uses. A
+config-swapping entrypoint with nothing to swap isn't neutral: it `exit 1`s the
+container on a `NODE_ENV` it doesn't recognise, a live failure mode bought for
+zero benefit. If a mockup ever genuinely does need a backend, add the entrypoint
+back to that one app and say why in its Dockerfile.
 
 ---
 

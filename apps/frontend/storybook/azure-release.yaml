@@ -1,0 +1,49 @@
+# Release pipeline — storybook.
+#
+# Registered in Azure DevOps as:  \Mockups Lab\Storybook - Deploy
+# Demo URL:  https://mockups-storybook.dev.bms.qwipo.com
+#
+# Takes the image built by "Storybook - Build", rewrites the digest in the
+# GitOps repo (k8s) at bms-chart/<env>/mockups-storybook.yaml, then syncs the ArgoCD
+# app `<env>-mockups-storybook-argo-app`.
+#
+# `source:` below is the *display name* of the build pipeline, not the service
+# name — Azure resolves it by name across folders. Rename that pipeline and you
+# must change this string in the same commit or the release stops binding.
+#
+# SERVICE_NAME reaches the deploy through the build's artefact, so changing
+# `service_name_override` needs a fresh BUILD run before any deploy can bind.
+#
+# The k8s ApplicationSet generates the ArgoCD app from the presence of the
+# manifest file, so adding bms-chart/<env>/mockups-storybook.yaml is the only GitOps
+# prerequisite. The release template exits 1 if it is missing.
+
+trigger: none
+
+parameters:
+    - name: environment
+      displayName: Select Environment To Deploy
+      type: string
+      default: dev
+      values:
+          - dev
+          - testing
+          - staging
+          - production
+
+resources:
+    repositories:
+        - repository: k8s
+          type: git
+          name: 'Qwipo B2B/k8s'
+          ref: 'refs/heads/main'
+    pipelines:
+        - pipeline: buildPipeline
+          source: 'Storybook - Build'
+          trigger: none
+
+extends:
+    template: azure-cicd/templates/base-release-template.yaml@k8s
+    parameters:
+        environment: ${{ parameters.environment }}
+        service_name_override: 'mockups-storybook'

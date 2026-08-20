@@ -1,4 +1,0 @@
-{
-  "env": "development",
-  "mockApiBaseUrl": "http://localhost:8787"
-}

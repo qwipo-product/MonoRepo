@@ -12,7 +12,10 @@
     // without anyone having to remember to wire the ordering up.
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      // dist/** for the Vite apps, storybook-static/** for the two catalogs.
+      // Miss the second and a cache hit restores nothing, so the Docker build
+      // COPYs an empty directory and nginx serves a 404 page with no error.
+      "outputs": ["dist/**", "storybook-static/**"]
     },
     // `tsc --noEmit` produces nothing on disk — the cached artefact is the
     // pass/fail itself, so `outputs` is empty on purpose.

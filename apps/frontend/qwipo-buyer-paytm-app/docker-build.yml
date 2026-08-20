@@ -1,15 +1,14 @@
-# Build pipeline — qwipo-buyer-paytm-app (static SPA behind nginx).
+# Build pipeline — qwipo-buyer-paytm-app (Vite/React SPA behind nginx).
 #
 # Registered in Azure DevOps as:  \Mockups Lab\Buyer App - Build
 # "Buyer App - Deploy" binds to that exact display name via
 # `resources.pipelines.source`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #
-# Left on manual trigger, matching seller-platform. Uncomment the block below
-# once someone actually wants a push to dev/main to rebuild automatically —
-# note `packages/**` is in the path filter because a change to
-# @mockups/design-tokens, @mockups/ui or @mockups/components changes this app's
-# output.
+# Left on manual trigger — these are demo environments, not services. Uncomment
+# the block below only if someone actually wants a push to rebuild
+# automatically. `packages/**` is in the path filter because a change to a
+# shared package changes this app's output.
 
 # trigger:
 #     branches:
@@ -36,5 +35,5 @@ resources:
 extends:
     template: azure-cicd/templates/base-docker-template.yaml@k8s
     parameters:
-        service_name_override: 'mockups-qwipo-buyer-paytm-app'
+        service_name_override: 'mockups-buyer-app'
         dockerfile: apps/frontend/qwipo-buyer-paytm-app/Dockerfile

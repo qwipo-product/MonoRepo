@@ -1,19 +1,22 @@
 # Release pipeline — qwipo-buyer-paytm-app.
 #
 # Registered in Azure DevOps as:  \Mockups Lab\Buyer App - Deploy
+# Demo URL:  https://mockups-buyer-app.dev.bms.qwipo.com
 #
 # Takes the image built by "Buyer App - Build", rewrites the digest in the
-# GitOps repo (k8s) at bms-chart/<env>/mockups-qwipo-buyer-paytm-app.yaml, then syncs
-# the ArgoCD app `<env>-mockups-qwipo-buyer-paytm-app-argo-app`.
+# GitOps repo (k8s) at bms-chart/<env>/mockups-buyer-app.yaml, then syncs the ArgoCD
+# app `<env>-mockups-buyer-app-argo-app`.
 #
 # `source:` below is the *display name* of the build pipeline, not the service
 # name — Azure resolves it by name across folders. Rename that pipeline and you
 # must change this string in the same commit or the release stops binding.
 #
+# SERVICE_NAME reaches the deploy through the build's artefact, so changing
+# `service_name_override` needs a fresh BUILD run before any deploy can bind.
+#
 # The k8s ApplicationSet generates the ArgoCD app from the presence of the
-# manifest file, so adding bms-chart/<env>/mockups-qwipo-buyer-paytm-app.yaml is the
-# only GitOps prerequisite. The release template exits 1 if it's missing.
-# See "Deploying a mockup" in the README.
+# manifest file, so adding bms-chart/<env>/mockups-buyer-app.yaml is the only GitOps
+# prerequisite. The release template exits 1 if it is missing.
 
 trigger: none
 
@@ -43,4 +46,4 @@ extends:
     template: azure-cicd/templates/base-release-template.yaml@k8s
     parameters:
         environment: ${{ parameters.environment }}
-        service_name_override: 'mockups-qwipo-buyer-paytm-app'
+        service_name_override: 'mockups-buyer-app'
