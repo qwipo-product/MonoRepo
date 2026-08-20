@@ -40,6 +40,7 @@
  *                         display name and nothing validates it.
  */
 
+import { $ } from 'bun';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -57,7 +58,7 @@ function flag(name: string): string | undefined {
   return i === -1 ? undefined : argv[i + 1];
 }
 
-const flagValues = new Set([flag('service'), flag('label'), flag('short')].filter(Boolean) as string[]);
+const flagValues = new Set([flag('service'), flag('label'), flag('short'), flag('branch')].filter(Boolean) as string[]);
 const app = argv.find((a) => !a.startsWith('--') && !flagValues.has(a));
 
 if (!app) {
@@ -107,6 +108,13 @@ const label =
     .split('-')
     .map((w) => (w === 'rirn' ? 'RIRN' : w[0].toUpperCase() + w.slice(1)))
     .join(' ');
+
+// The branch the pipeline should build from. Defaults to whatever branch you
+// are on, because `az pipelines create` resolves --yml-path against that
+// branch in the remote — point it at a branch where the file doesn't exist and
+// the pipeline registers fine and fails the first time anyone runs it. The
+// mockups have historically lived on a feature branch rather than main.
+const branch = flag('branch') ?? (await $`git rev-parse --abbrev-ref HEAD`.cwd(ROOT).quiet().text()).trim();
 
 const host = `${service}.dev.bms.qwipo.com`;
 const appPath = `apps/frontend/${app}`;
@@ -461,12 +469,12 @@ ${manifest
   2. Register both YAMLs under the "Mockups Lab" folder:
        az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \\
          --name "${label} - Build" --folder-path "Mockups Lab" \\
-         --repository mockups-lab --repository-type tfsgit --branch main \\
+         --repository mockups-lab --repository-type tfsgit --branch ${branch} \\
          --yml-path ${appPath}/docker-build.yml --skip-first-run true
 
        az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \\
          --name "${label} - Deploy" --folder-path "Mockups Lab" \\
-         --repository mockups-lab --repository-type tfsgit --branch main \\
+         --repository mockups-lab --repository-type tfsgit --branch ${branch} \\
          --yml-path ${appPath}/azure-release.yaml --skip-first-run true
 
   Verify the image locally before handing it over:

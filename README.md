@@ -333,13 +333,19 @@ finishes:
    ```bash
    az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \
      --name "<Label> - Build" --folder-path "Mockups Lab" \
-     --repository mockups-lab --repository-type tfsgit --branch main \
+     --repository mockups-lab --repository-type tfsgit --branch web-base \
      --yml-path apps/frontend/<app>/docker-build.yml --skip-first-run true
    ```
 
    Then the same for `- Deploy` with `azure-release.yaml`. Use the `<Label>` the
    generator printed — that exact string is already sitting in the release
    YAML's `source:`.
+
+   **The branch matters.** `az` resolves `--yml-path` against that branch in the
+   remote, so pointing at one where the file doesn't exist registers a pipeline
+   that looks fine and fails the first time anyone runs it. All fourteen mockup
+   pipelines build from `web-base`; `main` doesn't contain these apps at all.
+   The generator prints whichever branch you're on, and `--branch` overrides it.
 
 ### No runtime config
 
