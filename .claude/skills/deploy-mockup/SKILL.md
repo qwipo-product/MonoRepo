@@ -41,7 +41,6 @@ Current allocations, and two hostnames reserved for apps that don't exist yet:
 | `storybook-web` | `mockups-storybook-web` | live |
 | `storybook` | `mockups-storybook` | live |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | live |
-| `mock-api` (backend) | `mockups-api` | live |
 | — | `mockups-rirn-distributor` | **reserved, no app yet** |
 | — | `mockups-rirn-admin` | **reserved, no app yet** |
 

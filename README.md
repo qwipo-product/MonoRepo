@@ -254,7 +254,13 @@ than following the `docker-cd-*` / `argocd-*` convention the service repos use.
 | `storybook-web` | `mockups-storybook-web` | mockups-storybook-web.dev.bms.qwipo.com | Storybook Web - Build | Storybook Web - Deploy |
 | `storybook` | `mockups-storybook` | mockups-storybook.dev.bms.qwipo.com | Storybook - Build | Storybook - Deploy |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
-| `mock-api` (backend) | `mockups-api` | internal | Mock API - Build | Mock API - Deploy |
+
+`mock-api` is **not** on this path, deliberately. Nothing calls it — every
+mockup bundles `@mockups/mock-data` at build time — so it was never built and
+never deployed, and its pipelines and manifest have been removed. It still runs
+locally with `bun dev --filter=@mockups/mock-api`. If a mockup ever genuinely
+needs it, `bun run deploy:add` doesn't cover backends; copy the pattern by hand
+and give it a real reason.
 
 Service names are `mockups-<what-it-is>`. The prefix is there so these images
 and ArgoCD apps can't be confused with real services in the shared registry, and
