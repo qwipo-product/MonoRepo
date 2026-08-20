@@ -333,7 +333,7 @@ finishes:
    ```bash
    az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \
      --name "<Label> - Build" --folder-path "Mockups Lab" \
-     --repository mockups-lab --repository-type tfsgit --branch web-base \
+     --repository mockups-lab --repository-type tfsgit --branch dev \
      --yml-path apps/frontend/<app>/docker-build.yml --skip-first-run true
    ```
 
@@ -344,8 +344,13 @@ finishes:
    **The branch matters.** `az` resolves `--yml-path` against that branch in the
    remote, so pointing at one where the file doesn't exist registers a pipeline
    that looks fine and fails the first time anyone runs it. All fourteen mockup
-   pipelines build from `web-base`; `main` doesn't contain these apps at all.
-   The generator prints whichever branch you're on, and `--branch` overrides it.
+   pipelines build from `dev`; `main` doesn't contain these apps at all. The
+   generator prints whichever branch you're on, and `--branch` overrides it.
+
+   This has already bitten once: the first two pipelines stayed bound to
+   `feature/mobile-prototype` long after that branch was deleted, so both were
+   silently broken — a pipeline pointed at a dead branch looks perfectly healthy
+   in the UI until someone runs it.
 
 ### No runtime config
 
