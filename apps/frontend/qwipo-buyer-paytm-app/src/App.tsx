@@ -7,7 +7,6 @@ import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
 import { DemoStateProvider } from './review/demoState';
-import { MessageStylesScreen } from './screens/MessageStylesScreen';
 import { ShellChrome } from './shells/ShellChrome';
 import { PaytmWelcomeScreen } from './screens/PaytmWelcomeScreen';
 import { PaytmLauncherScreen } from './screens/PaytmLauncherScreen';
@@ -75,7 +74,7 @@ const BUILT = new Set<ScreenId>([
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'app-update', 'app-update-required', 'message-styles',
+  'app-update', 'app-update-required',
   'login-error', 'otp-error', 'cart-price-changes',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
@@ -108,16 +107,16 @@ const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefron
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
 
-// Sign-in — Qwipo app only. The Paytm mini surface arrives already
-// authenticated, so splash / phone / OTP never appear there. Onboarding and KYC
-// are NOT in this set: Paytm skips the login, not the account setup.
-const SIGN_IN_SCREENS = new Set<ScreenId>(['splash', 'login', 'otp', 'login-error', 'otp-error']);
+// Qwipo-app-only screens. The Paytm mini runs the same sign-in (phone → OTP)
+// and the same onboarding + KYC; the only thing it never shows is the app
+// splash, because it launches from inside Paytm rather than cold-starting.
+const QWIPO_ONLY_SCREENS = new Set<ScreenId>(['splash']);
 
 function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
   const s = params.get('screen');
-  // Paytm mini boots into the Paytm launcher (→ search → welcome → onboarding
-  // → home). Sign-in is skipped there, account setup is not.
+  // Paytm mini boots into the Paytm launcher
+  // (→ search → welcome/consent → login → OTP → onboarding → home).
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
@@ -219,7 +218,7 @@ export default function App() {
 
   // Paytm mini is pre-authenticated — never sit on an auth screen there.
   useEffect(() => {
-    if (shell === 'paytm' && SIGN_IN_SCREENS.has(baseScreenOf(screen))) setScreen('listing');
+    if (shell === 'paytm' && QWIPO_ONLY_SCREENS.has(baseScreenOf(screen))) setScreen('listing');
   }, [shell, screen]);
 
   // Screenshot the phone bezel → PNG in Downloads.
@@ -328,7 +327,7 @@ export default function App() {
       case 'paytm-search':
         return <PaytmSearchScreen onBack={() => go('paytm-launcher')} onOpenQwipo={() => go('paytm-welcome')} />;
       case 'paytm-welcome':
-        return <PaytmWelcomeScreen onProceed={() => go('onboarding')} />;
+        return <PaytmWelcomeScreen onProceed={() => go('login')} />;
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
       case 'login-error':
@@ -358,8 +357,8 @@ export default function App() {
       case 'onboarding':
         return (
           <OnboardingScreen
-            // Paytm has no OTP to go back to, and lands on Home once onboarded.
-            onBack={() => go(shell === 'paytm' ? 'paytm-welcome' : 'otp')}
+            onBack={() => go('otp')}
+            // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
             onProceed={() => go(shell === 'paytm' ? 'home' : 'kyc-complete')}
           />
         );
@@ -591,8 +590,6 @@ export default function App() {
           />
         );
 
-      case 'message-styles':
-        return <MessageStylesScreen onBack={() => go('home')} />;
       case 'my-orders':
         return (
           <MyOrdersScreen

@@ -118,24 +118,24 @@ export default function FlowIndex({
           : 'Click any screen to jump to it.'}
       </p>
 
-      {shell !== 'paytm' && (
-        <button
-          onClick={() => onPick('login')}
-          className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
-        >
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary-soft text-primary">
-            <UserRound size={15} />
+      {/* Demo credentials — jumps straight to the sign-in screen. Shown on
+          both surfaces now that the Paytm mini signs in too. */}
+      <button
+        onClick={() => onPick('login')}
+        className="mt-3 flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
+      >
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary-soft text-primary">
+          <UserRound size={15} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+            {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
           </span>
-          <span className="min-w-0">
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
-              {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
-            </span>
-            <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
-              {effectiveRole === 'salesperson' ? '9000000001' : '9876543210'}
-            </span>
+          <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
+            {effectiveRole === 'salesperson' ? '9000000001' : '9876543210'}
           </span>
-        </button>
-      )}
+        </span>
+      </button>
 
       <div className="mt-5 space-y-5">
         {visibleGroups(shell, effectiveRole)

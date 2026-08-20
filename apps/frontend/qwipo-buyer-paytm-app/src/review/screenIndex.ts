@@ -14,8 +14,9 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
-    // Qwipo-app only: the Paytm mini is already signed in, so there is no
-    // splash / phone / OTP there.
+    // Shown on BOTH surfaces. Paytm runs the same phone + OTP sign-in as the
+    // Qwipo app; only the app splash is Qwipo-only, since the mini launches
+    // inside Paytm rather than cold-starting.
     title: 'Auth',
     items: [
       { id: 'splash', label: 'Splash' },
@@ -114,7 +115,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'app-update', label: 'What\u2019s New / Update' },
       { id: 'app-update-required', label: 'Update Required (force)' },
-      { id: 'message-styles', label: 'Message Styles (reference)' },
       { id: 'login-error', label: 'Login \u00b7 Errors' },
       { id: 'otp-error', label: 'OTP \u00b7 Errors' },
       { id: 'cart-price-changes', label: 'Cart \u00b7 Price Changes' },
@@ -144,17 +144,16 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
 
 /* Individual screens hidden on the Paytm mini even though their group is
-   shown — the sign-in error states, which belong to a flow Paytm doesn't have. */
-const PAYTM_HIDDEN = new Set<ScreenId>(['login-error', 'otp-error']);
+   shown. The mini launches from inside Paytm, so it never shows an app splash. */
+const PAYTM_HIDDEN = new Set<ScreenId>(['splash']);
 
 /** Groups + items visible for a surface. FlowIndex renders from this, and
     screenNumber counts from it, so the sidebar and the numbering can't drift.
-    (Paytm group only in paytm; Auth hidden in paytm; Salesperson only for that
-    role; Onboarding & KYC shown on both surfaces.) */
+    (Paytm group only in paytm; Salesperson only for that role; Auth and
+    Onboarding & KYC on both surfaces, minus the per-item PAYTM_HIDDEN list.) */
 export function visibleGroups(shell: string, role: string) {
   const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
-    .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
     .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
     .map((g) => ({
       ...g,
