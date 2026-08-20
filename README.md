@@ -280,8 +280,35 @@ to it via `resources.pipelines.source`. Rename one, change the other in the same
 commit.
 
 Build → push to DOCR → deploy rewrites the image digest at
-`bms-chart/<env>/<service>.yaml` in the k8s repo → ArgoCD syncs. Both are
-`trigger: none`; you run them by hand and pick the environment.
+`bms-chart/<env>/<service>.yaml` in the k8s repo → ArgoCD syncs.
+
+### Push a branch, get a deploy
+
+You should never have to open a pipeline to ship a mockup. Builds auto-trigger
+on four branches, and the branch you pushed decides where it lands:
+
+| Branch | Environment | URL |
+| --- | --- | --- |
+| `dev` | dev | `mockups-<app>.dev.bms.qwipo.com` |
+| `testing` | testing | `mockups-<app>.test.bms.qwipo.com` |
+| `staging` | staging | `mockups-<app>.staging.bms.qwipo.com` |
+| `main` | production | `mockups-<app>.bms.qwipo.com` |
+
+Anything else — a feature branch — doesn't trigger at all.
+
+**Production waits for a human.** It carries an Azure DevOps approval check, so
+a merge to `main` queues the deploy and holds until one of the approvers okays
+it. dev, testing and staging go straight through.
+
+The `environment` parameter on a manual run overrides the mapping; leaving it
+on `auto` is what applies the branch rule. Use that to push a `dev` branch to
+staging for a demo without merging anything.
+
+Two consequences worth knowing. `packages/**` is in every path filter, so one
+commit to a shared package rebuilds **every** mockup — correct, since a token
+change really does change all of them. And because `main` now reaches
+production, a new mockup needs its manifest in all four `bms-chart/<env>/`
+folders before anyone merges; the release exits 1 on a missing one.
 
 > **The buyer app was renamed** — `mockups-qwipo-buyer-paytm-app` is now
 > `mockups-buyer-app`, which moves the image and the ArgoCD app and nothing

@@ -260,8 +260,14 @@ Things to get right if you touch them:
   `<TARGET_PATH_PREFIX>/<env>/<service>.yaml` doesn't exist. That's a DevOps
   prerequisite, not something you can fix from this repo — say so rather than
   editing pipelines to work around it.
-- **Path filters are commented out on purpose** (`trigger: none`). Don't enable
-  automatic builds without asking — these are demo environments, not services.
+- **Builds auto-trigger, and the branch picks the environment**: `dev` → dev,
+  `testing` → testing, `staging` → staging, `main` → production. The product
+  team drives this repo and shouldn't need to open a pipeline to ship a
+  mockup, so don't reintroduce `trigger: none`. A manual run can override the
+  target with the `environment` parameter; leaving it on `auto` uses the
+  branch. Because `main` reaches production, a new mockup needs its manifest
+  in **all four** `bms-chart/<env>/` folders before anyone merges — the
+  release template exits 1 on a missing one.
 
 Full checklist for putting a new mockup on this path is in the README under
 "Deploying a mockup".

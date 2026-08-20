@@ -5,25 +5,28 @@
 # `resources.pipelines.source`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #
-# Left on manual trigger — these are demo environments, not services. Uncomment
-# the block below only if someone actually wants a push to rebuild
-# automatically. `packages/**` is in the path filter because a change to a
-# shared package changes this app's output.
+# Auto-triggered. The product team pushes a branch and the mockup redeploys;
+# nobody should have to know a pipeline exists. The branch decides the
+# environment — see azure-release.yaml for the mapping.
+#
+# `packages/**` is in the path filter because a change to a shared package
+# changes this app's output. That means one commit to packages/ rebuilds every
+# mockup, which is correct and is why these builds are kept cheap.
 
-# trigger:
-#     branches:
-#         include:
-#             - main
-#             - dev
-#     paths:
-#         include:
-#             - 'apps/frontend/qwipo-buyer-paytm-app/**'
-#             - 'packages/**'
-#             - 'turbo.json'
-#             - 'package.json'
-#             - 'bun.lock'
-
-trigger: none
+trigger:
+    branches:
+        include:
+            - main
+            - dev
+            - testing
+            - staging
+    paths:
+        include:
+            - 'apps/frontend/qwipo-buyer-paytm-app/**'
+            - 'packages/**'
+            - 'turbo.json'
+            - 'package.json'
+            - 'bun.lock'
 
 resources:
     repositories:

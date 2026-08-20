@@ -277,25 +277,28 @@ const dockerBuild = `# Build pipeline — ${app} (${what} behind nginx).
 # \`resources.pipelines.source\`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #
-# Left on manual trigger — these are demo environments, not services. Uncomment
-# the block below only if someone actually wants a push to rebuild
-# automatically. \`packages/**\` is in the path filter because a change to a
-# shared package changes this app's output.
+# Auto-triggered. The product team pushes a branch and the mockup redeploys;
+# nobody should have to know a pipeline exists. The branch decides the
+# environment — see azure-release.yaml for the mapping.
+#
+# \`packages/**\` is in the path filter because a change to a shared package
+# changes this app's output. That means one commit to packages/ rebuilds every
+# mockup, which is correct and is why these builds are kept cheap.
 
-# trigger:
-#     branches:
-#         include:
-#             - main
-#             - dev
-#     paths:
-#         include:
-#             - '${appPath}/**'
-#             - 'packages/**'
-#             - 'turbo.json'
-#             - 'package.json'
-#             - 'bun.lock'
-
-trigger: none
+trigger:
+    branches:
+        include:
+            - main
+            - dev
+            - testing
+            - staging
+    paths:
+        include:
+            - '${appPath}/**'
+            - 'packages/**'
+            - 'turbo.json'
+            - 'package.json'
+            - 'bun.lock'
 
 resources:
     repositories:
@@ -328,17 +331,44 @@ const azureRelease = `# Release pipeline — ${app}.
 # \`service_name_override\` needs a fresh BUILD run before any deploy can bind.
 #
 # The k8s ApplicationSet generates the ArgoCD app from the presence of the
-# manifest file, so adding bms-chart/<env>/${service}.yaml is the only GitOps
-# prerequisite. The release template exits 1 if it is missing.
+# manifest file, so bms-chart/<env>/${service}.yaml must exist for EVERY env
+# this can deploy to. The release template exits 1 if it is missing.
+#
+# ── Branch → environment ────────────────────────────────────────────────────
+#
+# This auto-triggers off the build, and the branch that built decides where it
+# lands. Pushing is the whole interface: the product team should never open a
+# pipeline to ship a mockup.
+#
+#     dev      → dev         testing  → testing
+#     staging  → staging     main     → production
+#
+# \`environment: auto\` (the default) is what applies that mapping. Picking any
+# other value on a manual run overrides it, which is the escape hatch for
+# deploying a branch somewhere it wouldn't normally go.
+#
+# Two things about this that are easy to get wrong:
+#
+#   - The \`branches:\` filter below is read from the copy of THIS FILE on the
+#     release pipeline's default branch — not from the branch that just built.
+#     Adding a branch here does nothing until that edit reaches the default
+#     branch too.
+#   - The mapping expression is compile-time (\`\${{ }}\`), evaluated against the
+#     triggering build's branch. That works only because the build and release
+#     YAMLs live in the same repo as the app.
+#
+# production carries an Azure DevOps approval check, so a merge to main queues
+# a deploy and waits for a human. dev, testing and staging do not.
 
 trigger: none
 
 parameters:
     - name: environment
-      displayName: Select Environment To Deploy
+      displayName: Environment (auto = decided by branch)
       type: string
-      default: dev
+      default: auto
       values:
+          - auto
           - dev
           - testing
           - staging
@@ -353,12 +383,27 @@ resources:
     pipelines:
         - pipeline: buildPipeline
           source: '${label} - Build'
-          trigger: none
+          trigger:
+              branches:
+                  include:
+                      - main
+                      - dev
+                      - testing
+                      - staging
 
 extends:
     template: azure-cicd/templates/base-release-template.yaml@k8s
     parameters:
-        environment: \${{ parameters.environment }}
+        \${{ if ne(parameters.environment, 'auto') }}:
+            environment: \${{ parameters.environment }}
+        \${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+            environment: production
+        \${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/testing') }}:
+            environment: testing
+        \${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/staging') }}:
+            environment: staging
+        \${{ else }}:
+            environment: dev
         service_name_override: '${service}'
 `;
 

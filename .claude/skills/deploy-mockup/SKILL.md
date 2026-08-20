@@ -177,9 +177,18 @@ placeholder tag doesn't exist in the registry yet. That's normal, not a fault.
 - **`.dockerignore` strips `**/*.md`** (except the root README). Fine today —
   nothing imports a `.md` into a story — but if someone adds Markdown docs to a
   Storybook catalog, the in-Docker build breaks while the local one passes.
-- **Path filters are commented out on purpose** (`trigger: none`). These are
-  demo environments, not services. Don't enable automatic builds without
-  asking.
+- **Builds are auto-triggered, and the branch decides the environment.** Push
+  to `dev`, `testing`, `staging` or `main` and that mockup rebuilds and
+  redeploys to dev / testing / staging / production respectively. The product
+  team drives this repo and should never have to open a pipeline to ship a
+  mockup, so don't reintroduce `trigger: none`.
+- **A manifest must exist in every env a branch can reach.** The release
+  template exits 1 on a missing `bms-chart/<env>/<service>.yaml`. Since `main`
+  now deploys to production, a new mockup needs its manifest in all four env
+  folders, not just `dev`, before anyone merges.
+- **`packages/**` is in every path filter**, so one commit to a shared package
+  rebuilds every mockup. That's correct — a token change does change all of
+  them — and it's part of why these builds are kept cheap.
 
 ## Reporting back
 
