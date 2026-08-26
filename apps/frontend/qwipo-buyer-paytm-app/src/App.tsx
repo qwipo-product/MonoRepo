@@ -53,6 +53,8 @@ import { OnboardingScreen } from './screens/auth/OnboardingScreen';
 import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
 import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
+import { LocationPickerScreen } from './screens/LocationPickerScreen';
+import { AddressDetailsScreen } from './screens/AddressDetailsScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
@@ -64,7 +66,8 @@ import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
-import { availabilityFor, addressById, DEFAULT_ADDRESS_ID } from './data/addresses';
+import { ADDRESSES, availabilityFor, addressById, DEFAULT_ADDRESS_ID, type Address } from './data/addresses';
+import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/places';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
@@ -74,7 +77,7 @@ const BUILT = new Set<ScreenId>([
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'app-update', 'app-update-required',
+  'app-update', 'app-update-required', 'location-picker', 'address-details',
   'login-error', 'otp-error', 'cart-price-changes',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
@@ -157,6 +160,16 @@ export default function App() {
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
   const [detailsBackTo, setDetailsBackTo] = useState<ScreenId>('my-orders');
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
+  // Saved addresses live here: adding one leaves Saved Addresses for the map.
+  const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
+  // Location flow: map → address details → back to whoever started it.
+  const [pickedPlace, setPickedPlace] = useState<Place>(() => placeById(CURRENT_PLACE_ID));
+  const [pickerStartId, setPickerStartId] = useState<string | undefined>(undefined);
+  const [addressFlowFrom, setAddressFlowFrom] = useState<ScreenId>('sub:addresses');
+  // Onboarding form — held here so picking a location doesn't wipe the rest.
+  const [obLocation, setObLocation] = useState('');
+  const [obBusinessName, setObBusinessName] = useState('');
+  const [obBusinessType, setObBusinessType] = useState('');
   // Payments flow context: selected vendor + amount carried into the pay screen.
   const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
   const [payAmount, setPayAmount] = useState<number>(0);
@@ -309,6 +322,15 @@ export default function App() {
     setScreen(id);
   };
 
+  /* Start the map → address-details flow. `from` is where Save returns to and
+     where Back unwinds to, so the same two screens serve onboarding and
+     Saved Addresses without either knowing about the other. */
+  const startLocationFlow = (from: ScreenId, useCurrent: boolean) => {
+    setAddressFlowFrom(from);
+    setPickerStartId(useCurrent ? CURRENT_PLACE_ID : undefined);
+    go('location-picker');
+  };
+
   // Open the shared Order Details for any order, remembering where to return.
   const openOrder = (order: Order, backTo: ScreenId) => {
     setDetailsOrder(order);
@@ -360,6 +382,12 @@ export default function App() {
             onBack={() => go('otp')}
             // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
             onProceed={() => go(shell === 'paytm' ? 'home' : 'kyc-complete')}
+            location={obLocation}
+            onPickLocation={(useCurrent) => startLocationFlow('onboarding', useCurrent)}
+            businessName={obBusinessName}
+            onBusinessName={setObBusinessName}
+            businessType={obBusinessType}
+            onBusinessType={setObBusinessType}
           />
         );
       case 'kyc-complete':
@@ -392,6 +420,8 @@ export default function App() {
             onBack={() => go('home')}
             selectedId={deliveryAddressId}
             onSelect={setDeliveryAddressId}
+            addresses={addresses}
+            onAddNew={() => startLocationFlow('sub:addresses', false)}
           />
         );
       case 'global-search':
@@ -590,6 +620,36 @@ export default function App() {
           />
         );
 
+      case 'location-picker':
+        return (
+          <LocationPickerScreen
+            initialPlaceId={pickerStartId}
+            onBack={() => go(addressFlowFrom)}
+            onConfirm={(place) => {
+              setPickedPlace(place);
+              go('address-details');
+            }}
+          />
+        );
+      case 'address-details':
+        return (
+          <AddressDetailsScreen
+            place={pickedPlace}
+            onBack={() => go('location-picker')}
+            onChangeLocation={() => go('location-picker')}
+            saveLabel={addressFlowFrom === 'onboarding' ? 'Confirm location' : 'Save address'}
+            onSave={(address) => {
+              if (addressFlowFrom === 'onboarding') {
+                // Onboarding shows the picked address in its Delivery Location field.
+                setObLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
+              } else {
+                setAddresses((list) => [address, ...list]);
+                setDeliveryAddressId(address.id);
+              }
+              go(addressFlowFrom);
+            }}
+          />
+        );
       case 'my-orders':
         return (
           <MyOrdersScreen

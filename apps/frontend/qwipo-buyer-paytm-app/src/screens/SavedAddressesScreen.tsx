@@ -1,29 +1,30 @@
-import { useState } from 'react';
+
 import { ChevronLeft, ChevronRight, Plus, MapPin, Truck } from 'lucide-react';
-import { Button, Input, Sheet, cn } from '@mockups/ui';
-import { ADDRESSES, type Address } from '../data/addresses';
+import { cn } from '@mockups/ui';
+import { type Address } from '../data/addresses';
 
 /* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
    add-new tile over the saved list; the delivering address is outlined and
-   carries a green "Delivering here" pill. Selection is lifted to App so the
-   Home tabs follow the chosen location. */
+   carries a green "Delivering here" pill.
+
+   "Add new address" opens the map rather than a blank form — same two-step
+   flow as onboarding (pin → address details), so a saved address always has
+   coordinates behind it. The list and the selection both live in App, since
+   adding one leaves this screen. */
 export function SavedAddressesScreen({
   onBack,
   selectedId,
   onSelect,
+  addresses,
+  onAddNew,
 }: {
   onBack: () => void;
   selectedId: string;
   onSelect: (id: string) => void;
+  addresses: Address[];
+  /** Opens the location picker. */
+  onAddNew: () => void;
 }) {
-  const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
-  const [adding, setAdding] = useState(false);
-
-  const addAddress = (a: Address) => {
-    setAddresses((list) => [a, ...list]);
-    onSelect(a.id);
-    setAdding(false);
-  };
 
   return (
     <div className="flex h-full flex-col">
@@ -46,7 +47,7 @@ export function SavedAddressesScreen({
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-4">
         {/* Add new address */}
         <button
-          onClick={() => setAdding(true)}
+          onClick={onAddNew}
           className="flex w-full items-center gap-3 rounded-lg border border-dashed border-primary bg-primary-soft px-4 py-3 text-left active:scale-[0.98]"
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
@@ -54,7 +55,7 @@ export function SavedAddressesScreen({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-foreground">Add new address</span>
-            <span className="block text-xs text-foreground-secondary">Save a new delivery location</span>
+            <span className="block text-xs text-foreground-secondary">Pick it on the map</span>
           </span>
           <ChevronRight size={18} className="shrink-0 text-foreground-secondary" />
         </button>
@@ -102,94 +103,6 @@ export function SavedAddressesScreen({
         })}
       </div>
 
-      <AddAddressSheet open={adding} onClose={() => setAdding(false)} onSave={addAddress} />
     </div>
-  );
-}
-
-/* Bottom sheet — collect a new delivery address. Save is disabled until the
-   required fields are filled (line 2 is optional, per the mockup). */
-function AddAddressSheet({
-  open,
-  onClose,
-  onSave,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSave: (a: Address) => void;
-}) {
-  const [line1, setLine1] = useState('');
-  const [line2, setLine2] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
-
-  // Enable (colour) Save as soon as the user starts typing in any field.
-  const touched = [line1, line2, city, state, pincode].some((v) => v.trim() !== '');
-
-  const save = () => {
-    const locality = [line2.trim(), city.trim(), state.trim()].filter(Boolean).join(', ');
-    onSave({
-      id: `addr-${line1.trim().toLowerCase().replace(/\s+/g, '-')}-${pincode.trim()}`,
-      emoji: '📍',
-      title: line1.trim(),
-      locality,
-      pincode: pincode.trim(),
-    });
-    setLine1('');
-    setLine2('');
-    setCity('');
-    setState('');
-    setPincode('');
-  };
-
-  return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      title="Add new address"
-      footer={
-        <Button fullWidth disabled={!touched} onClick={save}>
-          Save address
-        </Button>
-      }
-    >
-      <div className="space-y-3">
-        <Input
-          aria-label="Address line 1"
-          placeholder="Address line 1"
-          value={line1}
-          onChange={(e) => setLine1(e.target.value)}
-        />
-        <Input
-          aria-label="Address line 2 (optional)"
-          placeholder="Address line 2 (optional)"
-          value={line2}
-          onChange={(e) => setLine2(e.target.value)}
-        />
-        <div className="flex gap-3">
-          <Input
-            aria-label="City"
-            placeholder="City"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          />
-          <Input
-            aria-label="State"
-            placeholder="State"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-          />
-        </div>
-        <Input
-          aria-label="Pincode"
-          placeholder="Pincode"
-          inputMode="numeric"
-          maxLength={6}
-          value={pincode}
-          onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
-        />
-      </div>
-    </Sheet>
   );
 }

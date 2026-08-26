@@ -30,6 +30,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     title: 'Onboarding & KYC',
     items: [
       { id: 'onboarding', label: 'Onboarding' },
+      { id: 'location-picker', label: 'Select Location (map)' },
+      { id: 'address-details', label: 'Address Details' },
       { id: 'kyc-complete', label: 'Complete KYC' },
       { id: 'kyc-success', label: 'KYC Success' },
     ],
