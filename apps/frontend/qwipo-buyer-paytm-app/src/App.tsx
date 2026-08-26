@@ -431,6 +431,9 @@ export default function App() {
                   : availabilityFor(deliveryAddressId)
             }
             deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
+            deliveryPending={
+              !isDeliverable(addresses.find((a) => a.id === deliveryAddressId) ?? addresses[0])
+            }
             salesperson={isSalesperson}
           />
         );

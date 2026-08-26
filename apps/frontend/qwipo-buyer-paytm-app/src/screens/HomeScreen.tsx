@@ -19,11 +19,15 @@ const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit
 
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
+  deliveryPending = false,
   availability = 'both',
   onNavigate,
   salesperson = false,
 }: {
   deliveryLabel?: string;
+  /** Delivering to an address ops hasn't approved yet — browsing works,
+      ordering doesn't, so the bar has to say so. */
+  deliveryPending?: boolean;
   availability?: 'both' | 'distributors' | 'wholesalers';
   onNavigate: Navigate;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
@@ -83,12 +87,36 @@ export function HomeScreen({
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
-            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1 text-xs active:scale-[0.98]"
+            className={cn(
+              'flex w-[100%] items-center gap-1.5 rounded-lg px-3 py-1 text-xs active:scale-[0.98]',
+              deliveryPending ? 'bg-error-subtle' : 'bg-primary-soft'
+            )}
           >
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-            <span className="shrink-0 text-primary">Deliver to</span>
-            <span className="min-w-0 flex-1 truncate text-left font-medium text-foreground">{deliveryLabel}</span>
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
+            <MapPin
+              className={cn('h-3.5 w-3.5 shrink-0', deliveryPending ? 'text-error' : 'text-primary')}
+            />
+            <span className={cn('shrink-0', deliveryPending ? 'text-error-foreground' : 'text-primary')}>
+              Deliver to
+            </span>
+            <span
+              className={cn(
+                'min-w-0 flex-1 truncate text-left font-medium',
+                deliveryPending ? 'text-error-foreground' : 'text-foreground'
+              )}
+            >
+              {deliveryLabel}
+            </span>
+            {deliveryPending && (
+              <span className="shrink-0 rounded-full bg-error px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                Approval pending
+              </span>
+            )}
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 shrink-0',
+                deliveryPending ? 'text-error-foreground' : 'text-foreground-secondary'
+              )}
+            />
           </button>
         </div>
 

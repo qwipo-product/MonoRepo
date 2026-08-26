@@ -76,6 +76,15 @@ export function nearestPlace(x: number, y: number): Place {
   return best;
 }
 
+/* Street and area lines suggested by the pin. The map gets the buyer to the
+   right street; only they can add the shop number, so these are prefilled and
+   then edited. Split so the two lines don't repeat each other:
+   "Rai Durg, Hitech City" → line1 "Rai Durg", line2 "Hitech City". */
+export function suggestedLines(p: Place): { line1: string; line2: string } {
+  const [first, ...rest] = p.locality.split(',').map((v) => v.trim());
+  return { line1: first || p.name, line2: rest.join(', ') || p.city };
+}
+
 /** One-line address for a pin, e.g. "Rai Durg, Hitech City, Hyderabad, 500032". */
 export function formatPlace(p: Place): string {
   return `${p.locality}, ${p.city}, ${p.pincode}`;

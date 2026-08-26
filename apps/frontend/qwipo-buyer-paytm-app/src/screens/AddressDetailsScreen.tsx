@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button, FieldError, Input } from '@mockups/ui';
-import { Field } from '../components/formbits';
-import { formatPlace, type Place } from '../data/places';
-import type { Address } from '../data/addresses';
+import { Field, SelectField } from '../components/formbits';
+import { formatPlace, suggestedLines, type Place } from '../data/places';
+import { ADDRESS_TYPES, emojiForType, type Address } from '../data/addresses';
 
 /* Confirm address — step two of the location flow, after the map.
 
    City, state and pincode come from the pin and are read-only: they're what
    the map already resolved, and letting them be retyped is how an address ends
-   up not matching its own coordinates. Only the street lines are the buyer's
-   to write — line 1 required, line 2 optional. */
+   up not matching its own coordinates.
+
+   The street lines are prefilled from the pin too, but stay editable — the map
+   gets the buyer to the right street, only they can add the shop number.
+
+   Address type is asked first: a B2B delivery goes to a shop, godown or
+   warehouse as often as a home, and it changes what the driver looks for. */
 
 export function AddressDetailsScreen({
   place,
@@ -26,8 +31,12 @@ export function AddressDetailsScreen({
   onSave: (address: Address) => void;
   saveLabel?: string;
 }) {
-  const [line1, setLine1] = useState('');
-  const [line2, setLine2] = useState('');
+  const [type, setType] = useState<string>('Shop');
+  /* Seeded from the pin. Going back to the map unmounts this screen, so
+     re-picking always re-seeds from the new pin — which is what "prefilled
+     from the location you chose" should mean. Edits stick while you're here. */
+  const [line1, setLine1] = useState(() => suggestedLines(place).line1);
+  const [line2, setLine2] = useState(() => suggestedLines(place).line2);
   const [error, setError] = useState('');
 
   const save = () => {
@@ -37,9 +46,10 @@ export function AddressDetailsScreen({
     }
     onSave({
       id: `addr-${place.id}-${Date.now()}`,
-      emoji: '📍',
+      emoji: emojiForType(type),
+      type,
       title: line1.trim(),
-      locality: [line2.trim(), place.locality, place.city, place.state].filter(Boolean).join(', '),
+      locality: [line2.trim(), place.city, place.state].filter(Boolean).join(', '),
       pincode: place.pincode,
       // New addresses aren't live until ops verifies them.
       status: 'pending',
@@ -74,6 +84,15 @@ export function AddressDetailsScreen({
             Change
           </button>
         </div>
+
+        <SelectField
+          label="Address type"
+          required
+          placeholder="Select address type"
+          value={type}
+          options={[...ADDRESS_TYPES]}
+          onChange={setType}
+        />
 
         <Field label="Address line 1" required>
           <Input
@@ -117,7 +136,8 @@ export function AddressDetailsScreen({
         </Field>
 
         <p className="text-xs text-foreground-secondary">
-          City, state and pincode come from the location you picked on the map.
+          Address lines are filled in from the pin — edit them to add your shop or
+          building number. City, state and pincode come from the map and can't be changed.
         </p>
       </div>
 
