@@ -66,7 +66,13 @@ import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
-import { ADDRESSES, availabilityFor, addressById, DEFAULT_ADDRESS_ID, type Address } from './data/addresses';
+import {
+  ADDRESSES,
+  availabilityFor,
+  isDeliverable,
+  DEFAULT_ADDRESS_ID,
+  type Address,
+} from './data/addresses';
 import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/places';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
@@ -170,6 +176,10 @@ export default function App() {
   const [obLocation, setObLocation] = useState('');
   const [obBusinessName, setObBusinessName] = useState('');
   const [obBusinessType, setObBusinessType] = useState('');
+  /* KYC gate. The demo persona is already verified, so the existing flows work
+     as before; walking a fresh signup (onboarding) clears it, and KYC Success
+     sets it again. Ordering — not browsing — is what it blocks. */
+  const [kycComplete, setKycComplete] = useState(true);
   // Payments flow context: selected vendor + amount carried into the pay screen.
   const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
   const [payAmount, setPayAmount] = useState<number>(0);
@@ -381,7 +391,10 @@ export default function App() {
           <OnboardingScreen
             onBack={() => go('otp')}
             // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
-            onProceed={() => go(shell === 'paytm' ? 'home' : 'kyc-complete')}
+            onProceed={() => {
+              setKycComplete(false);
+              go(shell === 'paytm' ? 'home' : 'kyc-complete');
+            }}
             location={obLocation}
             onPickLocation={(useCurrent) => startLocationFlow('onboarding', useCurrent)}
             businessName={obBusinessName}
@@ -398,7 +411,14 @@ export default function App() {
           />
         );
       case 'kyc-success':
-        return <KycSuccessScreen onPlaceOrder={() => go(shell === 'paytm' ? 'home' : 'listing')} />;
+        return (
+          <KycSuccessScreen
+            onPlaceOrder={() => {
+              setKycComplete(true);
+              go(shell === 'paytm' ? 'home' : 'listing');
+            }}
+          />
+        );
       case 'home':
         return (
           <HomeScreen
@@ -410,7 +430,7 @@ export default function App() {
                   ? 'distributors'
                   : availabilityFor(deliveryAddressId)
             }
-            deliveryLabel={addressById(deliveryAddressId)?.title}
+            deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
             salesperson={isSalesperson}
           />
         );
@@ -506,6 +526,9 @@ export default function App() {
           <OrderSummaryScreen
             onBack={() => go('cart')}
             onPlaceOrder={() => go('order-confirmation')}
+            addressPending={!isDeliverable(addresses.find((a) => a.id === deliveryAddressId) ?? addresses[0])}
+            kycPending={!kycComplete}
+            onCompleteKyc={() => go('kyc-complete')}
             onOpenCoupons={() => go('coupons')}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
@@ -643,8 +666,9 @@ export default function App() {
                 // Onboarding shows the picked address in its Delivery Location field.
                 setObLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
               } else {
-                setAddresses((list) => [address, ...list]);
-                setDeliveryAddressId(address.id);
+                // Appended, not prepended: pending addresses belong at the
+                // bottom, and they don't take over delivery on their own.
+                setAddresses((list) => [...list, address]);
               }
               go(addressFlowFrom);
             }}

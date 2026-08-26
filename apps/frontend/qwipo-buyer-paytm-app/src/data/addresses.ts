@@ -7,6 +7,10 @@ export interface Address {
   title: string;
   locality: string;
   pincode: string;
+  /* Addresses the buyer adds don't deliver straight away — ops verifies the
+     location serves a beat before it can be picked. Pending ones sit at the
+     bottom of the list, disabled. */
+  status: 'approved' | 'pending';
 }
 
 // Order = Location 1 / 2 / 3 as shown in Saved Addresses:
@@ -20,6 +24,7 @@ export const ADDRESSES: Address[] = [
     title: 'Flat 502, Sigma Towers',
     locality: 'Gachibowli, Hyderabad, Telangana',
     pincode: '500032',
+    status: 'approved',
   },
   {
     id: 'plot-27',
@@ -27,6 +32,7 @@ export const ADDRESSES: Address[] = [
     title: 'Plot 27, Industrial Estate',
     locality: 'Madhapur, Hyderabad, Telangana',
     pincode: '500081',
+    status: 'approved',
   },
   {
     id: 'shop-14',
@@ -34,8 +40,20 @@ export const ADDRESSES: Address[] = [
     title: 'Shop 14, Lit Box Complex',
     locality: 'Rai Durg, Hitech City, Hyderabad, Telangana',
     pincode: '500032',
+    status: 'approved',
+  },
+  {
+    id: 'unit-9',
+    emoji: '📍',
+    title: 'Unit 9, Cyber Gateway',
+    locality: 'Kondapur, Serilingampally, Hyderabad, Telangana',
+    pincode: '500084',
+    status: 'pending',
   },
 ];
+
+/** Only approved addresses can deliver. */
+export const isDeliverable = (a: Address) => a.status === 'approved';
 
 /** Address delivering by default — Location 1 (Gachibowli, both channels). */
 export const DEFAULT_ADDRESS_ID = 'flat-502';

@@ -41,6 +41,8 @@ export function AddressDetailsScreen({
       title: line1.trim(),
       locality: [line2.trim(), place.locality, place.city, place.state].filter(Boolean).join(', '),
       pincode: place.pincode,
+      // New addresses aren't live until ops verifies them.
+      status: 'pending',
     });
   };
 

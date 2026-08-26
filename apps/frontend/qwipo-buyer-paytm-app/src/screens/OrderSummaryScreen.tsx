@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
-import { Button } from '@mockups/ui';
+import { Button, InlineMessage } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
@@ -16,11 +16,19 @@ export function OrderSummaryScreen({
   onPlaceOrder,
   onOpenCoupons,
   onViewItems,
+  addressPending = false,
+  kycPending = false,
+  onCompleteKyc,
 }: {
   onBack: () => void;
   onPlaceOrder: () => void;
   onOpenCoupons: () => void;
   onViewItems: (sellerId: string) => void;
+  /* Browsing is open on an unapproved address — the buyer can switch to it and
+     see what's serviceable. Only placing the order waits on verification. */
+  addressPending?: boolean;
+  kycPending?: boolean;
+  onCompleteKyc?: () => void;
 }) {
   const { sellers, grandTotal } = buildCart();
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
@@ -91,12 +99,31 @@ export function OrderSummaryScreen({
       </div>
 
       <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+        {(kycPending || addressPending) && (
+          <InlineMessage
+            className="mb-3"
+            variant="warning"
+            title={kycPending ? 'Complete KYC to place this order' : 'This address is awaiting approval'}
+            description={
+              kycPending
+                ? 'Your account needs to be verified before your first order.'
+                : "We're verifying this location. You can keep browsing, and order once it's approved."
+            }
+            action={
+              kycPending && onCompleteKyc ? (
+                <Button size="sm" variant="soft" onClick={onCompleteKyc}>
+                  Complete KYC
+                </Button>
+              ) : undefined
+            }
+          />
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
           </div>
-          <Button className="px-8" onClick={onPlaceOrder}>
+          <Button className="px-8" disabled={kycPending || addressPending} onClick={onPlaceOrder}>
             Place order
           </Button>
         </div>

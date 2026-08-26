@@ -1,7 +1,7 @@
 
-import { ChevronLeft, ChevronRight, Plus, MapPin, Truck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, MapPin, Truck, Clock } from 'lucide-react';
 import { cn } from '@mockups/ui';
-import { type Address } from '../data/addresses';
+import { isDeliverable, type Address } from '../data/addresses';
 
 /* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
    add-new tile over the saved list; the delivering address is outlined and
@@ -25,6 +25,12 @@ export function SavedAddressesScreen({
   /** Opens the location picker. */
   onAddNew: () => void;
 }) {
+  // Approved first, pending at the bottom. Pending ones are still selectable:
+  // the buyer can switch to an unapproved location and browse what's
+  // serviceable there — only placing the order waits on verification.
+  const approved = addresses.filter(isDeliverable);
+  const pending = addresses.filter((a) => !isDeliverable(a));
+  const ordered = [...approved, ...pending];
 
   return (
     <div className="flex h-full flex-col">
@@ -39,7 +45,8 @@ export function SavedAddressesScreen({
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold leading-tight">Saved addresses</h1>
           <p className="text-xs text-foreground-secondary">
-            {addresses.length} delivery {addresses.length === 1 ? 'location' : 'locations'}
+            {approved.length} delivery {approved.length === 1 ? 'location' : 'locations'}
+            {pending.length > 0 && ` · ${pending.length} pending approval`}
           </p>
         </div>
       </header>
@@ -60,7 +67,8 @@ export function SavedAddressesScreen({
           <ChevronRight size={18} className="shrink-0 text-foreground-secondary" />
         </button>
 
-        {addresses.map((a) => {
+        {ordered.map((a) => {
+          const awaiting = !isDeliverable(a);
           const selected = a.id === selectedId;
           return (
             <div
@@ -77,13 +85,24 @@ export function SavedAddressesScreen({
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-foreground">{a.title}</div>
                   <div className="mt-0.5 text-xs text-foreground-secondary">{a.locality}</div>
+                  {awaiting && (
+                    <div className="mt-1.5 text-xs text-warning-foreground">
+                      You can browse here now. Ordering opens once it's approved.
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center justify-between border-t border-border-subtle px-4 py-2.5">
-                <span className="flex items-center gap-1.5 text-xs text-foreground-secondary">
+              <div className="flex items-center justify-between gap-2 border-t border-border-subtle px-4 py-2.5">
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground-secondary">
                   <MapPin size={14} className="shrink-0" />
                   {a.pincode}
                 </span>
+                {awaiting && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-warning-subtle px-2.5 py-1 text-xs font-medium text-warning-foreground">
+                    <Clock size={14} className="shrink-0" />
+                    Approval pending
+                  </span>
+                )}
                 {selected ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
                     <Truck size={14} className="shrink-0" />
