@@ -69,7 +69,6 @@ import { ORDERS, type Order } from './data/orders';
 import {
   ADDRESSES,
   availabilityFor,
-  isDeliverable,
   DEFAULT_ADDRESS_ID,
   type Address,
 } from './data/addresses';
@@ -431,9 +430,6 @@ export default function App() {
                   : availabilityFor(deliveryAddressId)
             }
             deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
-            deliveryPending={
-              !isDeliverable(addresses.find((a) => a.id === deliveryAddressId) ?? addresses[0])
-            }
             salesperson={isSalesperson}
           />
         );
@@ -529,7 +525,6 @@ export default function App() {
           <OrderSummaryScreen
             onBack={() => go('cart')}
             onPlaceOrder={() => go('order-confirmation')}
-            addressPending={!isDeliverable(addresses.find((a) => a.id === deliveryAddressId) ?? addresses[0])}
             kycPending={!kycComplete}
             onCompleteKyc={() => go('kyc-complete')}
             onOpenCoupons={() => go('coupons')}

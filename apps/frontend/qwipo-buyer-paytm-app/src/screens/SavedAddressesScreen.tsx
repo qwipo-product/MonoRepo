@@ -1,6 +1,6 @@
 
 import { ChevronLeft, ChevronRight, Plus, MapPin, Truck, Clock } from 'lucide-react';
-import { Badge, cn } from '@mockups/ui';
+import { cn } from '@mockups/ui';
 import { isDeliverable, type Address } from '../data/addresses';
 
 /* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
@@ -25,9 +25,9 @@ export function SavedAddressesScreen({
   /** Opens the location picker. */
   onAddNew: () => void;
 }) {
-  // Approved first, pending at the bottom. Pending ones are still selectable:
-  // the buyer can switch to an unapproved location and browse what's
-  // serviceable there — only placing the order waits on verification.
+  // Approved first, pending at the bottom. A pending address can't be selected
+  // at all until ops verifies it — it sits in the list, disabled, so the buyer
+  // can see it's on its way without it becoming the delivery location.
   const approved = addresses.filter(isDeliverable);
   const pending = addresses.filter((a) => !isDeliverable(a));
   const ordered = [...approved, ...pending];
@@ -69,13 +69,15 @@ export function SavedAddressesScreen({
 
         {ordered.map((a) => {
           const awaiting = !isDeliverable(a);
-          const selected = a.id === selectedId;
+          const selected = !awaiting && a.id === selectedId;
           return (
             <div
               key={a.id}
               className={cn(
                 'rounded-lg border bg-card',
-                selected ? 'border-primary' : 'border-border'
+                selected ? 'border-primary' : 'border-border',
+                // Reads as present but not yet usable.
+                awaiting && 'opacity-60'
               )}
             >
               <div className="flex items-start gap-3 p-4">
@@ -83,20 +85,8 @@ export function SavedAddressesScreen({
                   {a.emoji}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-2">
-                    <div className="min-w-0 flex-1 text-sm font-semibold text-foreground">{a.title}</div>
-                    {a.type && (
-                      <Badge variant="neutral" className="mt-0.5 shrink-0">
-                        {a.type}
-                      </Badge>
-                    )}
-                  </div>
+                  <div className="text-sm font-semibold text-foreground">{a.title}</div>
                   <div className="mt-0.5 text-xs text-foreground-secondary">{a.locality}</div>
-                  {awaiting && (
-                    <div className="mt-1.5 text-xs text-warning-foreground">
-                      You can browse here now. Ordering opens once it's approved.
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="flex items-center justify-between gap-2 border-t border-border-subtle px-4 py-2.5">
@@ -104,13 +94,12 @@ export function SavedAddressesScreen({
                   <MapPin size={14} className="shrink-0" />
                   {a.pincode}
                 </span>
-                {awaiting && (
+                {awaiting ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-warning-subtle px-2.5 py-1 text-xs font-medium text-warning-foreground">
                     <Clock size={14} className="shrink-0" />
                     Approval pending
                   </span>
-                )}
-                {selected ? (
+                ) : selected ? (
                   <span className="flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
                     <Truck size={14} className="shrink-0" />
                     Delivering here

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button, FieldError, Input } from '@mockups/ui';
-import { Field, SelectField } from '../components/formbits';
+import { Field } from '../components/formbits';
 import { formatPlace, suggestedLines, type Place } from '../data/places';
-import { ADDRESS_TYPES, emojiForType, type Address } from '../data/addresses';
+import type { Address } from '../data/addresses';
 
 /* Confirm address — step two of the location flow, after the map.
 
@@ -14,8 +14,7 @@ import { ADDRESS_TYPES, emojiForType, type Address } from '../data/addresses';
    The street lines are prefilled from the pin too, but stay editable — the map
    gets the buyer to the right street, only they can add the shop number.
 
-   Address type is asked first: a B2B delivery goes to a shop, godown or
-   warehouse as often as a home, and it changes what the driver looks for. */
+   Address type isn't collected in this phase. */
 
 export function AddressDetailsScreen({
   place,
@@ -31,7 +30,6 @@ export function AddressDetailsScreen({
   onSave: (address: Address) => void;
   saveLabel?: string;
 }) {
-  const [type, setType] = useState<string>('Shop');
   /* Seeded from the pin. Going back to the map unmounts this screen, so
      re-picking always re-seeds from the new pin — which is what "prefilled
      from the location you chose" should mean. Edits stick while you're here. */
@@ -46,8 +44,7 @@ export function AddressDetailsScreen({
     }
     onSave({
       id: `addr-${place.id}-${Date.now()}`,
-      emoji: emojiForType(type),
-      type,
+      emoji: '📍',
       title: line1.trim(),
       locality: [line2.trim(), place.city, place.state].filter(Boolean).join(', '),
       pincode: place.pincode,
@@ -84,15 +81,6 @@ export function AddressDetailsScreen({
             Change
           </button>
         </div>
-
-        <SelectField
-          label="Address type"
-          required
-          placeholder="Select address type"
-          value={type}
-          options={[...ADDRESS_TYPES]}
-          onChange={setType}
-        />
 
         <Field label="Address line 1" required>
           <Input

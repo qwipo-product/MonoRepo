@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
-import { FieldError, cn } from '@mockups/ui';
+import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import {
@@ -19,15 +19,11 @@ const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit
 
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
-  deliveryPending = false,
   availability = 'both',
   onNavigate,
   salesperson = false,
 }: {
   deliveryLabel?: string;
-  /** Delivering to an address ops hasn't approved yet — browsing works,
-      ordering doesn't, so the bar has to say so. */
-  deliveryPending?: boolean;
   availability?: 'both' | 'distributors' | 'wholesalers';
   onNavigate: Navigate;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
@@ -84,9 +80,6 @@ export function HomeScreen({
         </div>
 
         <div className="px-4 pb-1 pt-1">
-          {/* The bar is identical whether or not the address is approved — the
-              pending state is said once, underneath, in the same shape as a
-              form field's error. */}
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
@@ -99,7 +92,6 @@ export function HomeScreen({
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
           </button>
-          {deliveryPending && <FieldError>Approval pending for this address</FieldError>}
         </div>
 
         <div className="px-4 pb-2">
