@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
-import { cn } from '@mockups/ui';
+import { FieldError, cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import {
@@ -84,40 +84,22 @@ export function HomeScreen({
         </div>
 
         <div className="px-4 pb-1 pt-1">
+          {/* The bar is identical whether or not the address is approved — the
+              pending state is said once, underneath, in the same shape as a
+              form field's error. */}
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
-            className={cn(
-              'flex w-[100%] items-center gap-1.5 rounded-lg px-3 py-1 text-xs active:scale-[0.98]',
-              deliveryPending ? 'bg-error-subtle' : 'bg-primary-soft'
-            )}
+            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1 text-xs active:scale-[0.98]"
           >
-            <MapPin
-              className={cn('h-3.5 w-3.5 shrink-0', deliveryPending ? 'text-error' : 'text-primary')}
-            />
-            <span className={cn('shrink-0', deliveryPending ? 'text-error-foreground' : 'text-primary')}>
-              Deliver to
-            </span>
-            <span
-              className={cn(
-                'min-w-0 flex-1 truncate text-left font-medium',
-                deliveryPending ? 'text-error-foreground' : 'text-foreground'
-              )}
-            >
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="shrink-0 text-primary">Deliver to</span>
+            <span className="min-w-0 flex-1 truncate text-left font-medium text-foreground">
               {deliveryLabel}
             </span>
-            {deliveryPending && (
-              <span className="shrink-0 rounded-full bg-error px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
-                Approval pending
-              </span>
-            )}
-            <ChevronDown
-              className={cn(
-                'h-3.5 w-3.5 shrink-0',
-                deliveryPending ? 'text-error-foreground' : 'text-foreground-secondary'
-              )}
-            />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
           </button>
+          {deliveryPending && <FieldError>Approval pending for this address</FieldError>}
         </div>
 
         <div className="px-4 pb-2">
