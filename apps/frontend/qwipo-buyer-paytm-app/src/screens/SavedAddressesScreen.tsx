@@ -1,6 +1,6 @@
 
 import { ChevronLeft, ChevronRight, Plus, MapPin, Truck, Clock } from 'lucide-react';
-import { cn } from '@mockups/ui';
+import { Badge, cn } from '@mockups/ui';
 import { isDeliverable, type Address } from '../data/addresses';
 
 /* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
@@ -83,7 +83,14 @@ export function SavedAddressesScreen({
                   {a.emoji}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-foreground">{a.title}</div>
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1 text-sm font-semibold text-foreground">{a.title}</div>
+                    {a.type && (
+                      <Badge variant="neutral" className="mt-0.5 shrink-0">
+                        {a.type}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="mt-0.5 text-xs text-foreground-secondary">{a.locality}</div>
                   {awaiting && (
                     <div className="mt-1.5 text-xs text-warning-foreground">
