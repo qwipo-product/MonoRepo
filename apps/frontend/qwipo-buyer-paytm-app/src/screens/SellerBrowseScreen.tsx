@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, BadgeCheck, SearchX } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
@@ -31,6 +31,7 @@ export function SellerBrowseScreen({
   productListId = 'listing',
   selfId,
   initialTab,
+  promo,
   onBack,
   onNavigate,
 }: {
@@ -46,6 +47,8 @@ export function SellerBrowseScreen({
   selfId: ScreenId;
   /** Tab to open on (from a "See all Brands/Categories/Sellers" link). */
   initialTab?: BrowseTab;
+  /** Optional card pinned above the list on every tab (DMS-registration entry). */
+  promo?: ReactNode;
   onBack: () => void;
   onNavigate: Navigate;
 }) {
@@ -97,6 +100,7 @@ export function SellerBrowseScreen({
       </div>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
+        {promo && <div className="mb-4">{promo}</div>}
         {active.length === 0 ? (
           <EmptyState
             icon={<SearchX strokeWidth={1.75} />}

@@ -56,6 +56,9 @@ import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
+import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
+import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
+import { DMS_PARTNERS, dmsPartnerById, type DmsStatus } from './data/dmsPartners';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
@@ -72,7 +75,7 @@ const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
+  'distributors-list', 'dms-partners', 'dms-register', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'app-update', 'app-update-required', 'message-styles',
@@ -172,6 +175,14 @@ export default function App() {
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
+  // DMS registrations: gated company distributors (Colgate, PepsiCo, …).
+  // Marico / HUL / ITC start mid-pipeline so every status is visible in the demo.
+  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({
+    marico: 'review',
+    hul: 'rejected',
+    itc: 'registered',
+  });
+  const [dmsPartnerId, setDmsPartnerId] = useState<string>(DMS_PARTNERS[0].id);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -395,10 +406,36 @@ export default function App() {
             sellers={DISTRIBUTORS}
             selfId="distributors-list"
             initialTab={browseTab}
+            promo={<DmsPromoCard onClick={() => go('dms-partners')} />}
             onBack={() => go('home')}
             onNavigate={go}
           />
         );
+      case 'dms-partners':
+        return (
+          <DmsPartnersScreen
+            statuses={dmsStatus}
+            onBack={() => go('distributors-list')}
+            onOpen={(id) => {
+              setDmsPartnerId(id);
+              go('dms-register');
+            }}
+          />
+        );
+      case 'dms-register': {
+        const partner = dmsPartnerById(dmsPartnerId) ?? DMS_PARTNERS[0];
+        return (
+          <DmsRegisterScreen
+            partner={partner}
+            status={dmsStatus[partner.id] ?? 'none'}
+            onBack={() => go('dms-partners')}
+            onComplete={(status) => {
+              setDmsStatus((s) => ({ ...s, [partner.id]: status }));
+              go('dms-partners');
+            }}
+          />
+        );
+      }
       case 'wholesaler-categories':
         return (
           <SellerBrowseScreen

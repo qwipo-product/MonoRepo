@@ -29,6 +29,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'home', label: 'Home Page' },
       { id: 'distributors-list', label: 'Distributors' },
+      { id: 'dms-partners', label: 'Distributors · Register to Order' },
+      { id: 'dms-register', label: 'Distributors · DMS Registration' },
       { id: 'wholesaler-categories', label: 'Wholesalers' },
       { id: 'global-search', label: 'Global Search' },
     ],
