@@ -21,7 +21,7 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'otp', label: 'OTP Verification' },
       { id: 'onboarding', label: 'Onboarding' },
       { id: 'kyc-complete', label: 'Complete KYC' },
-      { id: 'kyc-success', label: 'KYC Success' },
+      { id: 'kyc-success', label: 'KYC Submitted' },
     ],
   },
   {
