@@ -56,7 +56,7 @@ parameters:
           - major
 
 extends:
-    template: azure-cicd/templates/mockup-docker-template.yaml
+    template: /azure-cicd/templates/mockup-docker-template.yaml
     parameters:
         service_name: 'mockups-rirn-company'
         tag_prefix: 'rirn-company'

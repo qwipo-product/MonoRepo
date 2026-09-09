@@ -65,8 +65,8 @@ That writes exactly four files into the app folder:
 | --- | --- |
 | `Dockerfile` | two-stage: bun-alpine builds, nginx-alpine serves |
 | `nginx.conf` | port 80, SPA fallback, cache headers |
-| `docker-build.yml` | thin: `extends:` `azure-cicd/templates/mockup-docker-template.yaml` — version, build, tag, push |
-| `azure-release.yaml` | thin: `extends:` `azure-cicd/templates/mockup-release-template.yaml` — rewrite the GitOps digest, sync |
+| `docker-build.yml` | thin: `extends:` `/azure-cicd/templates/mockup-docker-template.yaml` — version, build, tag, push |
+| `azure-release.yaml` | thin: `extends:` `/azure-cicd/templates/mockup-release-template.yaml` — rewrite the GitOps digest, sync |
 
 The two YAMLs carry only what differs per app — service name, tag prefix,
 Dockerfile path, the branch → environment mapping. Everything else, including

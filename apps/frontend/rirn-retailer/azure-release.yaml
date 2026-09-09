@@ -80,7 +80,7 @@ resources:
                       - staging
 
 extends:
-    template: azure-cicd/templates/mockup-release-template.yaml
+    template: /azure-cicd/templates/mockup-release-template.yaml
     parameters:
         ${{ if ne(parameters.environment, 'auto') }}:
             environment: ${{ parameters.environment }}

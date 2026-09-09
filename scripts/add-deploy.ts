@@ -391,7 +391,7 @@ parameters:
           - major
 
 extends:
-    template: azure-cicd/templates/mockup-docker-template.yaml
+    template: /azure-cicd/templates/mockup-docker-template.yaml
     parameters:
         service_name: '${service}'
         tag_prefix: '${tagPrefix}'
@@ -481,7 +481,7 @@ resources:
                       - staging
 
 extends:
-    template: azure-cicd/templates/mockup-release-template.yaml
+    template: /azure-cicd/templates/mockup-release-template.yaml
     parameters:
         \${{ if ne(parameters.environment, 'auto') }}:
             environment: \${{ parameters.environment }}
