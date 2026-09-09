@@ -241,10 +241,13 @@ Most mockups never need this — `bun dev` and the Network URL cover the usual
 "show it to someone" case. Deploy when a mockup needs to live somewhere for a
 while (a client demo, a round of user testing, a link in a doc).
 
-The wiring matches `seller-platform`: thin pipeline YAMLs in the app folder
-that `extends:` shared templates in the **`Qwipo B2B/k8s`** repo. The pipelines
-live in Azure DevOps under the **`Mockups Lab`** folder, named for humans rather
-than following the `docker-cd-*` / `argocd-*` convention the service repos use.
+The wiring follows `seller-platform`'s shape: thin pipeline YAMLs in the app
+folder that `extends:` a template. The templates are this repo's own, in
+`azure-cicd/templates/`, rather than the shared ones in the **`Qwipo B2B/k8s`**
+repo — they are those plus the semver-tag versioning model `buyer-web-mini`
+uses (see "Versions, tags and the badge" below). The pipelines live in Azure
+DevOps under the **`Mockups Lab`** folder, named for humans rather than
+following the `docker-cd-*` / `argocd-*` convention the service repos use.
 
 | App folder | Service name | Demo host | Build pipeline | Deploy pipeline |
 | --- | --- | --- | --- | --- |
@@ -322,6 +325,51 @@ folders before anyone merges; the release exits 1 on a missing one.
 > and the old `mockups-qwipo-buyer-paytm-app.yaml` removed — leave both and
 > ArgoCD keeps both apps alive.
 
+### Versions, tags and the badge
+
+Every mockup shows the build it is running as a small pill in the bottom-right
+corner (bottom-left on the two Storybooks, where the addons toggle lives).
+Hover it for the commit. What it says depends on where the build came from:
+
+| Built from | Badge | Image tags | Git tag |
+| --- | --- | --- | --- |
+| `main` | `v1.2.3` | `1.2.3`, `<sha>` | `<app>-v1.2.3` |
+| `dev` / `testing` / `staging` | `dev-8abf53d` | `<sha>`, `dev`, `dev-<sha>` | none |
+| `bun dev`, a plain local build | `local` | — | — |
+
+**`main` builds are releases.** The build pipeline reads the latest
+`<app>-v*` tag (`seller-store-v*`, `rirn-company-v*`, …), bumps it — patch
+by default; run the build by hand and pick `bump: minor` or `major` for a
+bigger step — and pushes the new annotated tag *before* building the image, so
+a version number is reserved atomically even when two main builds race. The
+first release of an app is `1.0.0`. Branch builds push no tag.
+
+**The version is baked into the bundle.** The pipeline passes the image's own
+tag to `docker build` as `APP_VERSION`, the Dockerfile exports it as
+`VITE_APP_VERSION`, Vite inlines it, and `@mockups/version-badge` renders it.
+Nothing is injected at container start, so the badge can only ever name the
+image serving the page. `docker inspect` shows the same value as an OCI label.
+
+**To deploy or roll back a release**, run the app's Deploy pipeline by hand and
+pick an `<app>-v*` tag in the run dialog's branch/tag selector. Nothing is
+rebuilt — the pipeline checks the image exists in the registry and deploys it
+as-is. A tag defaults to production; pick another `environment` to put a
+release on staging.
+
+Tag prefixes are literals in the generated YAMLs, derived once from the service
+name. If a service is ever renamed, pass `--tag-prefix <old>` to
+`bun run deploy:add` so the lineage doesn't fork.
+
+**One-time permission.** Pushing the tag runs as the project Build Service
+identity, which needs *Contribute* and *Create tag* on this repo (Project
+settings → Repositories → mockups-lab → Security → "Qwipo B2B Build Service").
+Until that is granted, every `main` build fails at "push semver git tag" with
+a 403 — before anything reaches the registry. Branch builds are unaffected.
+
+Most mockups aren't on `main` yet, so they get their first semver the day they
+are merged there. Until then their demo URLs show `dev-<sha>`, which is the
+honest answer.
+
 ### To put a new mockup on this path
 
 ```bash
@@ -350,8 +398,8 @@ so a stale local build can't be copied into an image. Point a Dockerfile at the
 wrong directory and nginx serves an empty root — a 404 page, with nothing
 failing at build time to tell you why.
 
-Two prerequisites it can't satisfy from inside this repo. It prints both when it
-finishes:
+Three prerequisites it can't satisfy from inside this repo. It prints all three
+when it finishes:
 
 1. **The GitOps manifest**, at `bms-chart/<env>/<service>.yaml` in the **k8s**
    repo. Copy `bms-chart/dev/seller-portal.yaml` — it's the closest reference
@@ -384,6 +432,9 @@ finishes:
    `feature/mobile-prototype` long after that branch was deleted, so both were
    silently broken — a pipeline pointed at a dead branch looks perfectly healthy
    in the UI until someone runs it.
+3. **The tag-push permission**, once per repo rather than per app — see
+   "Versions, tags and the badge" above. Already done if any mockup has cut a
+   release.
 
 ### No runtime config
 
@@ -391,7 +442,8 @@ There is no `entrypoint.sh` and no `public/configs/config.*.json`, on purpose.
 These are mockups: every one bundles `@mockups/mock-data` at build time and
 talks to no backend, so there is no API base URL, no feature flag, nothing that
 differs between dev and production. The image is a pure static artefact — nginx
-plus a directory of files, correct in every environment.
+plus a directory of files, correct in every environment. The deployed version
+is no exception: it is inlined at build time, not injected at start.
 
 That's a deliberate simplification of the pattern `seller-platform` uses. A
 config-swapping entrypoint with nothing to swap isn't neutral: it `exit 1`s the

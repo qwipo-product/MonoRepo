@@ -15,6 +15,7 @@
     "clean": "rm -rf storybook-static .turbo .vite *.tsbuildinfo"
   },
   "dependencies": {
+    "@mockups/version-badge": "workspace:*",
     "@mockups/web-tokens": "workspace:*",
     "@mockups/web-ui": "workspace:*",
     "lucide-react": "catalog:",

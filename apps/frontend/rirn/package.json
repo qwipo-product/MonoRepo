@@ -16,6 +16,7 @@
   "dependencies": {
     "@mockups/mock-data": "workspace:*",
     "@mockups/types": "workspace:*",
+    "@mockups/version-badge": "workspace:*",
     "@mockups/web-tokens": "workspace:*",
     "@mockups/web-ui": "workspace:*",
     "leaflet": "catalog:",

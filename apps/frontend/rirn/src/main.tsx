@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter } from 'react-router';
+import { VersionBadge } from '@mockups/version-badge';
 import './index.css';
 import App from './App';
 
@@ -13,6 +14,8 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <App />
       </BrowserRouter>
+      {/* Deployed version — outside the router so it is on every screen. */}
+      <VersionBadge />
     </ThemeProvider>
   </StrictMode>
 );

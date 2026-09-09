@@ -86,6 +86,7 @@ const deps = isWeb
   ? {
       '@mockups/mock-data': 'workspace:*',
       '@mockups/types': 'workspace:*',
+      '@mockups/version-badge': 'workspace:*',
       '@mockups/web-tokens': 'workspace:*',
       '@mockups/web-ui': 'workspace:*',
       'lucide-react': 'catalog:',
@@ -99,6 +100,7 @@ const deps = isWeb
       '@mockups/mock-data': 'workspace:*',
       '@mockups/types': 'workspace:*',
       '@mockups/ui': 'workspace:*',
+      '@mockups/version-badge': 'workspace:*',
       'lucide-react': 'catalog:',
       react: 'catalog:',
       'react-dom': 'catalog:',
@@ -107,8 +109,8 @@ const deps = isWeb
 // next-themes drives the `.dark` class the web token layer keys off; the
 // mobile kit has its own ThemeProvider + I18nProvider pair.
 const mainTsx = isWeb
-  ? `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from 'next-themes';\nimport { BrowserRouter } from 'react-router';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    {/* attribute="class" is the contract @mockups/web-tokens keys its dark\n        variant off — every dark rule is scoped under \`.dark\`. */}\n    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>\n      <BrowserRouter>\n        <App />\n      </BrowserRouter>\n    </ThemeProvider>\n  </StrictMode>\n);\n`
-  : `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { I18nProvider } from '@mockups/i18n';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <I18nProvider>\n        <App />\n      </I18nProvider>\n    </ThemeProvider>\n  </StrictMode>\n);\n`;
+  ? `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from 'next-themes';\nimport { BrowserRouter } from 'react-router';\nimport { VersionBadge } from '@mockups/version-badge';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    {/* attribute="class" is the contract @mockups/web-tokens keys its dark\n        variant off — every dark rule is scoped under \`.dark\`. */}\n    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>\n      <BrowserRouter>\n        <App />\n      </BrowserRouter>\n      {/* Deployed version — outside the router so it is on every screen. */}\n      <VersionBadge />\n    </ThemeProvider>\n  </StrictMode>\n);\n`
+  : `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { I18nProvider } from '@mockups/i18n';\nimport { VersionBadge } from '@mockups/version-badge';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <I18nProvider>\n        <App />\n        {/* Deployed version — outside the phone frame, on every screen. */}\n        <VersionBadge />\n      </I18nProvider>\n    </ThemeProvider>\n  </StrictMode>\n);\n`;
 
 const indexCss = isWeb
   ? `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/web-ui renders\n   unstyled and nothing errors. */\n@source "../../../../packages/web-ui/src";\n\n/* Desktop/admin tokens: light + \`.dark\`, @theme, Radix animations, and the\n   dark-mode utility rebinding layer. This app needs no @theme block of its\n   own — change a token in packages/web-tokens, not here. */\n@import "../../../../packages/web-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`

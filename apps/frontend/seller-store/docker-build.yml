@@ -5,9 +5,26 @@
 # `resources.pipelines.source`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #
+# Thin on purpose: the build logic — and the versioning model — lives in
+# azure-cicd/templates/mockup-docker-template.yaml, shared by every mockup.
+# Read that file's header for how versions and tags work.
+#
 # Auto-triggered. The product team pushes a branch and the mockup redeploys;
 # nobody should have to know a pipeline exists. The branch decides the
 # environment — see azure-release.yaml for the mapping.
+#
+# ── Versions ─────────────────────────────────────────────────────────────────
+#
+#     main       → next semver from the `seller-store-v*` git tags; the tag
+#                  `seller-store-v<semver>` is pushed, the image is <semver>
+#     other      → <branch>-<sha>, no git tag
+#
+# `bump` only matters on main. An auto-triggered run always takes patch; run
+# the pipeline by hand and pick minor/major for a bigger step.
+#
+# The tag prefix below is a literal, on purpose. Regenerating with a different
+# --service changes it and forks the tag lineage — pass --tag-prefix to keep
+# the old one across a rename.
 #
 # `packages/**` is in the path filter because a change to a shared package
 # changes this app's output. That means one commit to packages/ rebuilds every
@@ -28,15 +45,20 @@ trigger:
             - 'package.json'
             - 'bun.lock'
 
-resources:
-    repositories:
-        - repository: k8s
-          type: git
-          name: 'Qwipo B2B/k8s'
-          ref: 'refs/heads/main'
+parameters:
+    - name: bump
+      displayName: Semver bump (main only; auto-triggered runs always patch)
+      type: string
+      default: patch
+      values:
+          - patch
+          - minor
+          - major
 
 extends:
-    template: azure-cicd/templates/base-docker-template.yaml@k8s
+    template: azure-cicd/templates/mockup-docker-template.yaml
     parameters:
-        service_name_override: 'mockups-seller-store'
+        service_name: 'mockups-seller-store'
+        tag_prefix: 'seller-store'
         dockerfile: apps/frontend/seller-store/Dockerfile
+        bump: ${{ parameters.bump }}

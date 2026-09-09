@@ -36,6 +36,7 @@
         "@mockups/design-tokens": "workspace:*",
         "@mockups/types": "workspace:*",
         "@mockups/ui": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "html-to-image": "1.11.13",
         "lucide-react": "catalog:",
         "react": "catalog:",
@@ -60,6 +61,7 @@
       "dependencies": {
         "@mockups/mock-data": "workspace:*",
         "@mockups/types": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "@mockups/web-tokens": "workspace:*",
         "@mockups/web-ui": "workspace:*",
         "leaflet": "catalog:",
@@ -93,6 +95,7 @@
         "@mockups/mock-data": "workspace:*",
         "@mockups/types": "workspace:*",
         "@mockups/ui": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "lucide-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -116,6 +119,7 @@
       "dependencies": {
         "@mockups/mock-data": "workspace:*",
         "@mockups/types": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "@mockups/web-tokens": "workspace:*",
         "@mockups/web-ui": "workspace:*",
         "exceljs": "catalog:",
@@ -151,6 +155,7 @@
         "@mockups/design-tokens": "workspace:*",
         "@mockups/types": "workspace:*",
         "@mockups/ui": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "lucide-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -174,6 +179,7 @@
       "name": "@mockups/storybook-web",
       "version": "0.0.0",
       "dependencies": {
+        "@mockups/version-badge": "workspace:*",
         "@mockups/web-tokens": "workspace:*",
         "@mockups/web-ui": "workspace:*",
         "lucide-react": "catalog:",
@@ -303,6 +309,21 @@
       "peerDependencies": {
         "react": "*",
         "react-dom": "*",
+      },
+    },
+    "packages/version-badge": {
+      "name": "@mockups/version-badge",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@types/react": "catalog:",
+        "eslint": "catalog:",
+        "react": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "*",
       },
     },
     "packages/web-tokens": {
@@ -635,6 +656,8 @@
     "@mockups/types": ["@mockups/types@workspace:packages/types"],
 
     "@mockups/ui": ["@mockups/ui@workspace:packages/ui"],
+
+    "@mockups/version-badge": ["@mockups/version-badge@workspace:packages/version-badge"],
 
     "@mockups/web-tokens": ["@mockups/web-tokens@workspace:packages/web-tokens"],
 

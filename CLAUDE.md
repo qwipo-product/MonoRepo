@@ -69,6 +69,7 @@ apps; they're safe to delete once someone confirms nothing is being salvaged.
 | Translated strings | `@mockups/i18n` | `useI18n()` → `t('cart.title')`. en / hi / te / ta |
 | Product, Order, Seller, Cart types | `@mockups/types` | Framework-agnostic |
 | Products, sellers, orders, banners | `@mockups/mock-data` | Don't invent new fixtures — extend these |
+| Deployed-version pill, `APP_VERSION` | `@mockups/version-badge` | Kit-neutral (inline styles, no `@source`). Mounted once in `main.tsx` |
 | TS / ESLint presets | `@mockups/tsconfig`, `@mockups/eslint-config` | Apps just `extends` them |
 
 ### Two design systems
@@ -205,13 +206,19 @@ Until that's resolved, verify your own work with a filtered run:
 bunx turbo run lint typecheck build --filter=@mockups/<your-app>
 ```
 
+Or run everything with `bunx turbo run lint typecheck build --continue`. Without
+`--continue`, Turbo cancels every task still queued when that lint fails, so
+unrelated builds show as "exited with code 1" for no reason of their own.
+
 State plainly what you verified and what you didn't.
 
 ## Deployment
 
-Azure DevOps, via templates in the shared `Qwipo B2B/k8s` repo — same pattern
-as `seller-platform`. Each deployable app carries four files: `Dockerfile`,
-`nginx.conf` (frontends only), `docker-build.yml`, `azure-release.yaml`.
+Azure DevOps. Each app's two thin YAMLs `extends:` the repo-local templates in
+`azure-cicd/templates/` — the shared `Qwipo B2B/k8s` ones plus the semver-tag
+versioning model `buyer-web-mini` uses. Each deployable app carries four
+files: `Dockerfile`, `nginx.conf` (frontends only), `docker-build.yml`,
+`azure-release.yaml`.
 
 Don't hand-write or hand-copy that set — generate it:
 
@@ -237,6 +244,25 @@ Things to get right if you touch them:
   `exit 1`s the container on a `NODE_ENV` it doesn't recognise, a live failure
   mode bought for zero benefit. If one mockup ever genuinely needs a backend,
   add the entrypoint back to that app alone and say why in its Dockerfile.
+- **Versions are cut on `main` only, and baked in at build time.** A `main`
+  build computes the next semver from the `<prefix>-v*` git tags, pushes the
+  tag, and builds the image as `<semver>`; every other branch builds
+  `<branch>-<sha>` and pushes no tag. The pipeline hands the image's own tag
+  to `docker build` as `APP_VERSION`, the Dockerfile exports it as
+  `VITE_APP_VERSION`, and `@mockups/version-badge` renders it. Two things
+  keep that chain alive: `turbo.json` declares both `VITE_APP_*` vars under
+  `build.env` (strict env mode drops undeclared ones — the badge would say
+  `local` in production with nothing failing), and every app mounts
+  `<VersionBadge />` once in `main.tsx` (the Storybooks via `managerHead`).
+  `bun run new` wires it into new apps.
+- **The tag prefix is a literal in both YAMLs.** Never derive it at build
+  time from the folder or package name — a rename would fork the tag lineage.
+  On a service rename, pass `--tag-prefix <old>` to `bun run deploy:add`.
+- **The tag push needs a one-time permission** (Build Service: Contribute +
+  Create tag on this repo). A `main` build failing at "push semver git tag"
+  with a 403 is that, not a pipeline bug — say so rather than editing YAML.
+- **Rollback is a tag deploy.** Run the Deploy pipeline on a `<prefix>-v*`
+  tag; it validates the image exists and deploys it without rebuilding.
 - **Build context is the workspace root**, never the app folder. Dockerfiles
   `COPY . .` and rely on the root `.dockerignore`. Paths inside are
   repo-relative (`apps/frontend/<app>/dist/`).

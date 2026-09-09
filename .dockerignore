@@ -66,3 +66,4 @@ flake.lock
 # Azure pipeline definitions — consumed by Azure DevOps, not the builder
 **/azure-release*.yaml
 **/docker-build*.yml
+azure-cicd

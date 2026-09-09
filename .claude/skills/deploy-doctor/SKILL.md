@@ -81,6 +81,53 @@ pipeline `sed`s it). The file's existence is what creates the ArgoCD app
 
 ---
 
+## "The badge in the corner says `local` on a deployed URL"
+
+The version never reached `vite build`. It travels build arg → Dockerfile
+`ENV VITE_APP_VERSION` → Turbo → Vite, and any link can drop it silently:
+
+```bash
+grep -A1 '"dependsOn": \["^build"\]' turbo.json          # must list VITE_APP_VERSION under env
+grep -n 'APP_VERSION' apps/frontend/<app>/Dockerfile        # ARG + ENV VITE_APP_VERSION
+grep -n 'build-arg' azure-cicd/templates/mockup-docker-template.yaml
+```
+
+Turbo runs tasks in strict env mode: an undeclared variable is not passed
+through, and the badge falls back to `local` with nothing failing. Reproduce
+locally with `VITE_APP_VERSION=9.9.9 bunx turbo run build --filter=@mockups/<app> --force`
+and grep `dist/` for the string. A Dockerfile that predates versioning has no
+`ARG APP_VERSION` — regenerate with `bun run deploy:add <app> --force`.
+
+If the badge is missing entirely, the app never mounted `<VersionBadge />` in
+`main.tsx` (or `managerHead` in `.storybook/main.ts` for a catalog).
+
+---
+
+## "The main build fails at 'push semver git tag'"
+
+Read the error line — the step tells the two causes apart:
+
+- **"already exists — a concurrent main build claimed …"**: two `main` builds
+  raced and this one lost. Nothing was pushed to the registry. Re-run; it
+  computes the next number.
+- **anything else (usually a 403)**: the project Build Service identity lacks
+  *Contribute* + *Create tag* on `mockups-lab`. One-time grant in Azure DevOps
+  → Project settings → Repositories → mockups-lab → Security. **Not fixable
+  from this repo** — say so; don't strip the tag step to get green.
+
+Branch builds never push a tag, so `dev`/`testing`/`staging` are unaffected.
+
+---
+
+## "A tag deploy fails with 'not found in the registry'"
+
+The tag was pushed but the build behind it died afterwards (tag before image is
+deliberate — it reserves the number). That version has no image and never
+will; the next `main` build takes the next number. Deploy the previous tag
+instead, or fix the build and let `main` cut a fresh one. Never retag.
+
+---
+
 ## "The deploy ran green but the site didn't change"
 
 Two causes, both about binding.
@@ -107,7 +154,7 @@ and its ArgoCD app linger until DevOps retires them.
 Check both YAMLs carry the same value:
 
 ```bash
-grep service_name_override apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
+grep -E 'service_name|tag_prefix' apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
 ```
 
 ---

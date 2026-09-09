@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from 'next-themes';
 import { RouterProvider } from 'react-router';
 import { Toaster } from '@mockups/web-ui';
+import { VersionBadge } from '@mockups/version-badge';
 import { router } from './app/routes';
 import { AuthProvider } from './app/lib/auth-context';
 import './index.css';
@@ -29,6 +30,8 @@ createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <RouterProvider router={router} />
       <Toaster />
+      {/* Deployed version — outside the router so it is on every screen. */}
+      <VersionBadge />
     </AuthProvider>
   </ThemeProvider>
 );

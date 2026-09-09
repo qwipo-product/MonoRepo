@@ -65,8 +65,13 @@ That writes exactly four files into the app folder:
 | --- | --- |
 | `Dockerfile` | two-stage: bun-alpine builds, nginx-alpine serves |
 | `nginx.conf` | port 80, SPA fallback, cache headers |
-| `docker-build.yml` | Azure build pipeline → pushes to DOCR |
-| `azure-release.yaml` | Azure release pipeline → rewrites the GitOps digest |
+| `docker-build.yml` | thin: `extends:` `azure-cicd/templates/mockup-docker-template.yaml` — version, build, tag, push |
+| `azure-release.yaml` | thin: `extends:` `azure-cicd/templates/mockup-release-template.yaml` — rewrite the GitOps digest, sync |
+
+The two YAMLs carry only what differs per app — service name, tag prefix,
+Dockerfile path, the branch → environment mapping. Everything else, including
+the semver-tag versioning model, lives in the two repo-local templates. Change
+behaviour there, not in six copies.
 
 **Four files, not five.** There is no `entrypoint.sh` and no
 `public/configs/config.*.json`. These are mockups: every one bundles
@@ -96,9 +101,19 @@ grep 'COPY --from=builder' apps/frontend/<app>/Dockerfile
 ls apps/frontend/<app>/dist/index.html            # …or storybook-static/
 
 # 3. the two YAMLs agree with each other
-grep service_name_override apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
+grep -E 'service_name|tag_prefix' apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
 grep -A1 'pipeline: buildPipeline' apps/frontend/<app>/azure-release.yaml
+
+# 4. the version badge is mounted, and the stamp reaches the bundle
+grep VersionBadge apps/frontend/<app>/src/main.tsx      # or managerHead in .storybook/main.ts
+VITE_APP_VERSION=9.9.9 VITE_APP_COMMIT=abc1234 bunx turbo run build --filter=@mockups/<app> --force
+grep -l '9.9.9' apps/frontend/<app>/dist/assets/*.js    # or storybook-static/index.html
 ```
+
+Check 4 is what the Docker build does with real values (`--build-arg
+APP_VERSION`). If the string is missing, `turbo.json` has lost the
+`build.env` declaration or the app skipped the badge — either way the deployed
+page would say `local` with nothing failing.
 
 Check 2 is the one that matters. **The Vite apps build to `dist/`; the two
 Storybook catalogs build to `storybook-static/`.** The generator reads this out
@@ -160,6 +175,13 @@ placeholder tag doesn't exist in the registry yet. That's normal, not a fault.
 `az pipelines create` commands with the right flags. They go in the
 `Mockups Lab` folder.
 
+**3. The tag-push permission** — once per repo, not per app. `main` builds
+push a `<prefix>-v<semver>` git tag as the project Build Service identity,
+which needs *Contribute* and *Create tag* on `mockups-lab` (Project settings →
+Repositories → Security). Already done if any mockup has cut a release. Until
+then the first `main` build fails at "push semver git tag" with a 403, before
+anything touches the registry; `dev`/`testing`/`staging` builds don't care.
+
 ## Rules that cause silent failures
 
 - **The build pipeline's display name is load-bearing.** The release YAML binds
@@ -189,6 +211,15 @@ placeholder tag doesn't exist in the registry yet. That's normal, not a fault.
 - **`packages/**` is in every path filter**, so one commit to a shared package
   rebuilds every mockup. That's correct — a token change does change all of
   them — and it's part of why these builds are kept cheap.
+- **Versions are cut on `main` only.** `main` → next semver from the
+  `<prefix>-v*` tags, tag pushed before the image is built, image tagged
+  `<semver>`; other branches → `<branch>-<sha>`, no tag. The badge in the
+  page shows whichever it was, because the value is baked in at build time —
+  never injected at start. To deploy or roll back a release, run the Deploy
+  pipeline on the tag; it checks the image exists and deploys without
+  rebuilding.
+- **The tag prefix is a literal, derived once from the service name.** A
+  rename with a bare regenerate forks the lineage; pass `--tag-prefix <old>`.
 
 ## Reporting back
 
