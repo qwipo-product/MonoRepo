@@ -9,6 +9,55 @@
 /* Design tokens — the single source of truth (light + `.dark`). */
 @import "../../../../packages/design-tokens/theme.css";
 
+/* Chart tokens for this app. The design system has no categorical or
+   sequential chart palette yet, so these live here (CLAUDE.md: tokens belong
+   to the app). Semantic status colours still come from the system.
+   Categorical: one hue per Contribution dimension. Sequential: order age. */
+:root {
+  --chart-distributor: #2563eb;
+  --chart-city: #0891b2;
+  --chart-company: #4f46e5;
+  --chart-category: #7c3aed;
+  --chart-brand: #0284c7;
+  --chart-sku: #0f766e;
+  --chart-open: #93c5fd;
+  --age-0: #bfdbfe;
+  --age-1: #93c5fd;
+  --age-2: #60a5fa;
+  --age-3: #3b82f6;
+}
+.dark {
+  --chart-distributor: #60a5fa;
+  --chart-city: #22d3ee;
+  --chart-company: #818cf8;
+  --chart-category: #a78bfa;
+  --chart-brand: #38bdf8;
+  --chart-sku: #2dd4bf;
+  --chart-open: #1e40af;
+  --age-0: #1e3a8a;
+  --age-1: #1d4ed8;
+  --age-2: #3b82f6;
+  --age-3: #93c5fd;
+}
+@theme inline {
+  --color-chart-distributor: var(--chart-distributor);
+  --color-chart-city: var(--chart-city);
+  --color-chart-company: var(--chart-company);
+  --color-chart-category: var(--chart-category);
+  --color-chart-brand: var(--chart-brand);
+  --color-chart-sku: var(--chart-sku);
+  --color-chart-open: var(--chart-open);
+  --color-age-0: var(--age-0);
+  --color-age-1: var(--age-1);
+  --color-age-2: var(--age-2);
+  --color-age-3: var(--age-3);
+}
+
+/* Declining rows in ranked bars: same hue, hatched. */
+.hatched {
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--card) 5px 8px);
+}
+
 html,
 body,
 #root {

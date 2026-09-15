@@ -1,5 +1,6 @@
-// Order value per day: current (primary), delivered (success, shaded), previous period (dashed).
-// Peaks and troughs on both lines are labelled so nobody reads a value off a bar.
+// Order value per day: current (primary), delivered (success, shaded), previous
+// period (dashed, border-strong). All colours are token classes so the chart
+// follows the theme. Peaks and troughs on both lines are labelled.
 
 const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380, SCALE = 105;
 
@@ -15,10 +16,10 @@ function extrema(vals: number[]) {
   return out;
 }
 const lakh = (v: number, d = 1) => `₹${v.toFixed(d)}L`;
+const poly = (a: readonly (readonly [number, number])[]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
 export function TrendChart({ current, previous, delivered }: { current: number[]; previous: number[]; delivered: number[] }) {
   const c = pts(current), p = pts(previous), d = pts(delivered);
-  const poly = (a: readonly (readonly [number, number])[]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const gridY = (v: number) => Y0 - v * SCALE;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img" aria-label="Order value per day with delivered value and previous period">
@@ -36,7 +37,7 @@ export function TrendChart({ current, previous, delivered }: { current: number[]
       {extrema(current).map(({ i, peak }) => (
         <g key={`c${i}`}>
           <circle cx={c[i][0]} cy={c[i][1]} r={3} className="fill-primary" />
-          <text x={c[i][0]} y={c[i][1] + (peak ? -9 : 18)} textAnchor="middle" className={peak ? 'fill-foreground text-[10.5px] font-medium' : 'fill-foreground-secondary text-[10.5px]'}>
+          <text x={c[i][0]} y={c[i][1] + (peak ? -9 : 18)} textAnchor="middle" className={cn(peak ? 'fill-foreground font-medium' : 'fill-foreground-secondary', 'text-[10px]')}>
             {lakh(current[i])}
           </text>
         </g>
@@ -44,7 +45,7 @@ export function TrendChart({ current, previous, delivered }: { current: number[]
       {extrema(delivered).map(({ i, peak }) => (
         <g key={`d${i}`}>
           <circle cx={d[i][0]} cy={d[i][1]} r={3} className="fill-success" />
-          <text x={d[i][0]} y={d[i][1] + (peak ? -9 : 18)} textAnchor="middle" className="fill-success-foreground text-[10.5px]">
+          <text x={d[i][0]} y={d[i][1] + (peak ? -9 : 18)} textAnchor="middle" className="fill-success-foreground text-[10px]">
             {lakh(delivered[i], 2)}
           </text>
         </g>
@@ -57,3 +58,5 @@ export function TrendChart({ current, previous, delivered }: { current: number[]
     </svg>
   );
 }
+
+function cn(...a: (string | false | undefined)[]) { return a.filter(Boolean).join(' '); }

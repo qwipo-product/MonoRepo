@@ -1,5 +1,5 @@
 import { ChevronDown, Lock } from 'lucide-react';
-import { Card } from '@mockups/ui';
+import { Button, Card } from '@mockups/ui';
 
 export interface ScopeChip { label: string; value: string; locked?: boolean }
 
@@ -8,17 +8,17 @@ export function ScopeBar({ chips, line, refreshed = 'Data refreshed 22 Aug, 06:1
     <Card className="px-4 py-3">
       <div className="flex flex-wrap items-center gap-2.5">
         {chips.map((c) => (
-          <div key={c.label} className="flex min-w-[150px] items-center justify-between gap-3 rounded-md border border-border bg-card px-2.5 py-1.5">
+          <Card key={c.label} variant="flat" className="flex min-w-[150px] items-center justify-between gap-3 rounded-md px-2.5 py-1.5">
             <div className="leading-tight">
-              <div className="text-[11px] text-foreground-secondary">{c.label}</div>
-              <div className="text-[13px] font-medium">{c.value}</div>
+              <div className="type-micro normal-case tracking-normal text-foreground-secondary">{c.label}</div>
+              <div className="type-label">{c.value}</div>
             </div>
             {c.locked ? <Lock size={13} className="text-foreground-tertiary" /> : <ChevronDown size={14} className="text-foreground-secondary" />}
-          </div>
+          </Card>
         ))}
-        <span className="ml-auto text-[13px] font-medium text-link">Reset</span>
+        <Button variant="ghost" size="sm" className="ml-auto text-link">Reset</Button>
       </div>
-      <div className="mt-2.5 flex flex-wrap justify-between gap-2 text-xs text-foreground-secondary">
+      <div className="type-caption mt-2.5 flex flex-wrap justify-between gap-2 text-foreground-secondary">
         <span>{line}</span>
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-success" />
