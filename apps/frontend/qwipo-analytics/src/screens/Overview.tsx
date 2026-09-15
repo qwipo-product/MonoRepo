@@ -93,8 +93,9 @@ export default function Overview({ go }: { go: (p: Page) => void }) {
               <Fragment key={r.stage}>
                 <div className="whitespace-nowrap">{r.stage}</div>
                 {r.counts.map((n, i) => (
-                  <div key={i} className={cn('grid h-7 place-items-center rounded-sm font-medium tabular-nums', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.15 + 0.85 * Math.min(n / 60, 1) }}>
-                    <span className={cn(n >= 25 ? 'text-primary-foreground' : 'text-foreground')}>{n}</span>
+                  <div key={i} className="relative grid h-7 place-items-center rounded-sm font-medium tabular-nums">
+                    <i className={cn('absolute inset-0 rounded-sm', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.12 + 0.88 * Math.min(n / 60, 1) }} />
+                    <span className={cn('relative', n >= 30 ? 'text-primary-foreground' : 'text-foreground')}>{n}</span>
                   </div>
                 ))}
                 <div className="text-right tabular-nums text-foreground-secondary">{sum(r.counts)}</div>
