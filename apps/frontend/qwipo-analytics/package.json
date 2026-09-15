@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Qwipo Analytics \u2014 DigiDukaan analytics pages and the Reports framework, desktop web. Dev port 5173.",
+  "description": "Qwipo Analytics \u2014 DigiDukaan analytics pages and the Reports framework, desktop web. Dev port 5176.",
   "scripts": {
-    "dev": "vite --port 5173",
+    "dev": "vite --port 5176",
     "build": "vite build",
-    "preview": "vite preview --port 6173",
+    "preview": "vite preview --port 6176",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
