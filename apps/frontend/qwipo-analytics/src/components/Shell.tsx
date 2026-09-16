@@ -64,7 +64,7 @@ export function Shell({ page, onNavigate, children }: Props) {
           <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />
         </div>
         <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-          <NavGroup icon={<LineChart size={18} />} label="DigiDukaan (ONDC eB2B)" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
+          <NavGroup icon={<LineChart size={18} />} label="DigiDukaan" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
           <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
           <div className="type-micro px-3 pt-2 text-foreground-tertiary">Reports</div>
           <NavGroup icon={<FileText size={18} />} label="Reports" active={!inDigi && !inOps} items={reportPages} page={page} onNavigate={onNavigate} />
