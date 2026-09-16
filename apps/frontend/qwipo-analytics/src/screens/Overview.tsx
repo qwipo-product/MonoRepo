@@ -13,9 +13,6 @@ import type { Page } from '../nav';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
-/** Top-edge accent per KPI: Orders, Order value, AOV, Active outlets, Delivered. */
-const kpiAccents = ['border-t-chart-blue', 'border-t-chart-indigo', 'border-t-chart-cyan', 'border-t-chart-violet', 'border-t-success'];
-
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const total = sum(statuses.map((s) => s.orders));
   const open = sum(statuses.filter((s) => ['created', 'accepted', 'packed', 'shipped'].includes(s.key)).map((s) => s.orders));
@@ -32,7 +29,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
       <section>
         <Question>Are we growing?</Question>
         <div className="grid grid-cols-5 gap-3">
-          {kpis.map((k, i) => <KpiCard key={k.label} {...k} accent={kpiAccents[i]} onOpen={() => go('sales')} />)}
+          {kpis.map((k) => <KpiCard key={k.label} {...k} onOpen={() => go('sales')} />)}
         </div>
       </section>
 

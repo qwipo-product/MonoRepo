@@ -46,20 +46,16 @@ export function Delta({ trend, inverse, children }: { trend: Trend; inverse?: bo
 }
 
 export function KpiCard({
-  label, value, change, trend, inverse, note, target, accent, onOpen,
+  label, value, change, trend, inverse, note, target, onOpen,
 }: {
   label: string; value: string; change: string; trend: Trend; inverse?: boolean; note: string;
-  target?: 'warning' | 'error'; /** top-edge token class, e.g. `border-t-chart-blue` */ accent?: string; onOpen?: () => void;
+  target?: 'warning' | 'error'; onOpen?: () => void;
 }) {
   return (
     <Card
       variant={onOpen ? 'interactive' : 'default'}
       onClick={onOpen}
-      className={cn(
-        'px-4 py-3.5',
-        accent && cn('border-t-[3px]', accent),
-        target === 'warning' && 'border-l-[3px] border-l-warning', target === 'error' && 'border-l-[3px] border-l-error',
-      )}
+      className={cn('px-4 py-3.5', target === 'warning' && 'border-l-[3px] border-l-warning', target === 'error' && 'border-l-[3px] border-l-error')}
     >
       <div className="type-caption text-foreground-secondary">{label}</div>
       <div className="type-display my-0.5 tabular-nums tracking-tight">{value}</div>
