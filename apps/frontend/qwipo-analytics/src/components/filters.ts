@@ -8,6 +8,7 @@ export interface Filters {
   cities: string[];
   distributors: string[];
   preset: 'Month to date' | 'Last month' | 'Last 7 days' | 'Last 30 days' | 'Custom';
+  /** ISO dates, so the panel can rehydrate its calendars from applied state. */
   from?: string;
   to?: string;
 }
@@ -31,10 +32,12 @@ export function countLabel(sel: string[], unit: string, total: number) {
   return `${sel.length} ${unit}`;
 }
 
+const fmtIso = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
 export function rangeLabel(f: Filters) {
   if (f.preset === 'Last month') return '1 – 31 Jul 2026 · last month';
   if (f.preset !== 'Custom') return f.preset === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : f.preset;
   if (!f.from) return 'Custom';
-  if (!f.to || f.from === f.to) return `${f.from} · single day`;
-  return `${f.from} – ${f.to}`;
+  if (!f.to || f.from === f.to) return `${fmtIso(f.from)} · single day`;
+  return `${fmtIso(f.from)} – ${fmtIso(f.to)}`;
 }

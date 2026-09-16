@@ -93,7 +93,9 @@ function MultiSection({
   selected: string[]; onChange: (next: string[]) => void; searchable?: boolean;
 }) {
   const [q, setQ] = useState('');
-  const shown = q ? options.filter((o) => o.toLowerCase().includes(q.toLowerCase())) : options;
+  // Selected options float to the top so an applied choice is never buried.
+  const ordered = [...options].sort((a, b) => Number(selected.includes(b)) - Number(selected.includes(a)));
+  const shown = q ? options.filter((o) => o.toLowerCase().includes(q.toLowerCase())) : ordered;
   const toggle = (o: string) =>
     onChange(selected.includes(o) ? selected.filter((s) => s !== o) : [...selected, o]);
   return (
@@ -129,14 +131,15 @@ export function FilterPanel({
   open: boolean; value: Filters; onClose: () => void; onApply: (f: Filters) => void;
 }) {
   const [draft, setDraft] = useState(value);
-  const [from, setFrom] = useState<Date | undefined>();
-  const [to, setTo] = useState<Date | undefined>();
+  // Rehydrate the calendars from the APPLIED custom range, so reopening shows it.
+  const [from, setFrom] = useState<Date | undefined>(value.from ? new Date(value.from) : undefined);
+  const [to, setTo] = useState<Date | undefined>(value.to ? new Date(value.to) : undefined);
   const [calOpen, setCalOpen] = useState<'from' | 'to' | null>(null);
   if (!open) return null;
 
   const apply = () => {
     onApply(draft.preset === 'Custom' && from
-      ? { ...draft, from: fmt(from), to: to ? fmt(to) : fmt(from) }
+      ? { ...draft, from: from.toISOString(), to: (to ?? from).toISOString() }
       : { ...draft, from: undefined, to: undefined });
     onClose();
   };
