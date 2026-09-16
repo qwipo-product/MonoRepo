@@ -16,6 +16,11 @@ import {
 } from '../data/sales';
 
 const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
+
+/** KPI top-edge accents: Orders, Value, AOV, Delivered, Cancelled, Repeat. */
+const salesAccents = ['border-t-chart-blue', 'border-t-chart-indigo', 'border-t-chart-cyan', 'border-t-success', 'border-t-error', 'border-t-chart-teal'];
+/** Drilled: Orders, Value, AOV, Oldest, Avg age, Outlets waiting. */
+const drillAccents = ['border-t-error', 'border-t-chart-indigo', 'border-t-chart-cyan', 'border-t-warning', 'border-t-warning', 'border-t-chart-violet'];
 import type { Page } from '../nav';
 
 export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?: boolean }) {
@@ -44,7 +49,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       <section>
         <Question>Summary · vs 1 – 22 Jul 2026</Question>
         <div className="grid grid-cols-6 gap-3">
-          {salesKpis.map((k) => <KpiCard key={k.label} {...k} />)}
+          {salesKpis.map((k, i) => <KpiCard key={k.label} {...k} accent={salesAccents[i]} />)}
         </div>
       </section>
 
@@ -144,7 +149,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
       <section>
         <Question>Summary · the 91 overdue open orders</Question>
         <div className="grid grid-cols-6 gap-3">
-          {drillKpis.map((k) => <KpiCard key={k.label} {...k} />)}
+          {drillKpis.map((k, i) => <KpiCard key={k.label} {...k} accent={drillAccents[i]} />)}
         </div>
       </section>
 
