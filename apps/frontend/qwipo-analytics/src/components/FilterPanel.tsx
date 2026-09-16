@@ -13,15 +13,16 @@ import {
 
 const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
-/** From/To field: shows its date, click opens a calendar popup for that field. */
+/** From/To field. Its calendar opens as its OWN popup floating to the left of
+ *  the drawer — never a popup nested inside the drawer's 360px. */
 function DateField({
-  label, date, open, onOpen, onClose, onPick, align, rangeStart, rangeEnd,
+  label, date, open, onOpen, onClose, onPick, rangeStart, rangeEnd,
 }: {
   label: string; date?: Date; open: boolean; onOpen: () => void; onClose: () => void;
-  onPick: (d: Date) => void; align: 'left' | 'right'; rangeStart?: Date; rangeEnd?: Date;
+  onPick: (d: Date) => void; rangeStart?: Date; rangeEnd?: Date;
 }) {
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
         onClick={open ? onClose : onOpen}
@@ -38,13 +39,19 @@ function DateField({
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-20" onClick={onClose} role="presentation" />
-          <div className={cn('absolute top-full z-30 mt-1 w-[296px] rounded-lg border border-border bg-card shadow-lg', align === 'left' ? 'left-0' : 'right-0')}>
+          <div className="fixed inset-0 z-40" onClick={onClose} role="presentation" />
+          <div className="fixed right-[376px] top-24 z-50 w-[324px] rounded-xl border border-border bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
+              <span className="type-label">Select {label.toLowerCase()} date</span>
+              <button type="button" onClick={onClose} aria-label="Close" className="grid h-7 w-7 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
+                <X size={15} />
+              </button>
+            </div>
             <Calendar selected={date} rangeStart={rangeStart} rangeEnd={rangeEnd} onPick={onPick} />
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
 
@@ -177,13 +184,13 @@ export function FilterPanel({
             {draft.preset === 'Custom' && (
               <div className="mt-1.5 grid grid-cols-2 gap-2">
                 <DateField
-                  label="From" date={from} align="left"
+                  label="From" date={from}
                   open={calOpen === 'from'} onOpen={() => setCalOpen('from')} onClose={() => setCalOpen(null)}
                   rangeStart={from} rangeEnd={to}
                   onPick={(d) => { setFrom(d); if (to && d > to) setTo(d); setCalOpen('to'); }}
                 />
                 <DateField
-                  label="To" date={to} align="right"
+                  label="To" date={to}
                   open={calOpen === 'to'} onOpen={() => setCalOpen('to')} onClose={() => setCalOpen(null)}
                   rangeStart={from} rangeEnd={to}
                   onPick={(d) => { if (from && d < from) { setTo(from); setFrom(d); } else setTo(d); setCalOpen(null); }}
