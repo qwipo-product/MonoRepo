@@ -40,7 +40,7 @@ function DateField({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={onClose} role="presentation" />
-          <div className="fixed right-[376px] top-24 z-50 w-[324px] rounded-xl border border-border bg-card shadow-xl">
+          <div className="fixed right-4 top-24 z-50 w-[328px] rounded-xl border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
               <span className="type-label">Select {label.toLowerCase()} date</span>
               <button type="button" onClick={onClose} aria-label="Close" className="grid h-7 w-7 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
