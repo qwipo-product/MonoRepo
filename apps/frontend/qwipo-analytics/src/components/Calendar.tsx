@@ -26,7 +26,7 @@ export function Calendar({
   };
 
   return (
-    <div className="rounded-lg border border-border p-3">
+    <div className="p-1">
       <div className="mb-2 flex items-center justify-between">
         <button type="button" aria-label="Previous month" onClick={() => setCursor(new Date(y, m - 1, 1))} className="grid h-7 w-7 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
           <ChevronLeft size={15} />
