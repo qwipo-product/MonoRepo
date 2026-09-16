@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Badge, Card, CardContent, CardHeader, CardTitle, CardDescription, cn } from '@mockups/ui';
+import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { RankedRow, Columns, Stat } from '@mockups/components';
@@ -34,7 +34,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-8" question="What changed?" title="Order value per day" subtitle="Current vs same days last month · delivered value shaded" onOpen={() => go('sales')}>
+        <Panel className="col-span-8" question="What changed?" title="Order value per day" subtitle="Delivered value shaded" onOpen={() => go('sales')}>
           <TrendChart current={dailyValue} previous={dailyPrev} delivered={dailyDelivered} />
           <div className="type-caption mt-2 flex gap-4 text-foreground-secondary">
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-primary" />Order value · ₹38.6L</span>
@@ -47,7 +47,6 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           <CardHeader className="pb-3">
             <Question>What needs me today?</Question>
             <CardTitle className="type-label">Attention</CardTitle>
-            <CardDescription>Rule-based · ordered by value at risk</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5">
             {attention.map((a) => (
@@ -141,11 +140,10 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           <CardHeader className="pb-3">
             <Question>Who drives, who drags?</Question>
             <CardTitle className="type-label">Contribution</CardTitle>
-            <CardDescription>Top entries in each dimension · scoped value · change vs 1 – 22 Jul</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <div>
-              <div className="type-caption mb-2 font-medium text-foreground-secondary">Biggest movers · the largest ₹ change in each dimension</div>
+              <div className="type-caption mb-2 font-medium text-foreground-secondary">Biggest movers</div>
               <div className="grid grid-cols-2 gap-x-10">
                 {(['up', 'down'] as const).map((dir) => (
                   <div key={dir}>

@@ -74,12 +74,11 @@ export function ScopeBar({
 
   const scopeLine = nCompanies > 0 ? (
     <>
-      <b className="text-foreground">Orders containing {nCompanies === 1 ? `${f.companies[0]} lines` : `lines of ${nCompanies} companies`}</b>
-      {' '}· ₹ figures = {nCompanies === 1 ? 'their lines' : 'those lines'} only
+      <b className="text-foreground">₹ = {nCompanies === 1 ? `${f.companies[0]} lines` : `${nCompanies} companies' lines`} only</b>
       {cityScoped && ' · 64 unresolved outlets excluded'} · Super Admin
     </>
   ) : cityScoped ? (
-    <>{f.cities.join(', ')} · <b className="text-foreground">64 unresolved outlets excluded</b> (no usable GPS) · Super Admin</>
+    <><b className="text-foreground">64 unresolved outlets excluded</b> · Super Admin</>
   ) : line;
 
   return (

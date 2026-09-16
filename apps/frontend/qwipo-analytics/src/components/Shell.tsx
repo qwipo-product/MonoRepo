@@ -1,4 +1,5 @@
-import { Bell, FileText, LineChart, Settings, Truck } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Truck } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
 import { digiPages, opsPages, reportPages, titles, type Page } from '../nav';
 
@@ -57,21 +58,55 @@ function NavGroup({
 export function Shell({ page, onNavigate, children }: Props) {
   const inDigi = digiPages.some((p) => p.key === page);
   const inOps = opsPages.some((p) => p.key === page);
+  const [collapsed, setCollapsed] = useState(false);
+  const rail = [
+    { icon: <LineChart size={18} />, label: 'DigiDukaan', active: inDigi },
+    { icon: <Truck size={18} />, label: 'Ops (Logistics)', active: inOps },
+    { icon: <FileText size={18} />, label: 'Reports', active: !inDigi && !inOps },
+    { icon: <Settings size={18} />, label: 'Settings', active: false },
+  ];
   return (
     <div className="flex h-dvh bg-background-subtle text-foreground">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card">
-        <div className="flex h-14 items-center border-b border-border px-4">
-          <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />
+      <aside className={cn('flex shrink-0 flex-col border-r border-border bg-card transition-all', collapsed ? 'w-14' : 'w-56')}>
+        <div className={cn('flex h-14 items-center border-b border-border', collapsed ? 'justify-center' : 'justify-between px-4')}>
+          {!collapsed && <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />}
+          <button
+            type="button"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setCollapsed((v) => !v)}
+            className="grid h-8 w-8 place-items-center rounded-md text-foreground-secondary hover:bg-muted"
+          >
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
-        <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-          <NavGroup icon={<LineChart size={18} />} label="DigiDukaan" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
-          <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
-          <div className="type-micro px-3 pt-2 text-foreground-tertiary">Reports</div>
-          <NavGroup icon={<FileText size={18} />} label="Reports" active={!inDigi && !inOps} items={reportPages} page={page} onNavigate={onNavigate} />
-          <div className="type-micro px-3 pt-2 text-foreground-tertiary">Administration</div>
-          <div className="type-body flex items-center gap-3 px-3 py-2"><Settings size={18} />Settings</div>
-        </nav>
-        <div className="type-caption border-t border-border px-4 py-3 text-foreground-secondary">Qwipo Analytics · mockup</div>
+        {collapsed ? (
+          <nav className="flex flex-1 flex-col items-center gap-1 overflow-y-auto p-2">
+            {rail.map((r) => (
+              <button
+                key={r.label}
+                type="button"
+                title={r.label}
+                onClick={() => setCollapsed(false)}
+                className={cn(
+                  'grid h-9 w-9 place-items-center rounded-md hover:bg-muted',
+                  r.active ? 'bg-primary-soft text-primary-soft-foreground' : 'text-foreground-secondary',
+                )}
+              >
+                {r.icon}
+              </button>
+            ))}
+          </nav>
+        ) : (
+          <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+            <NavGroup icon={<LineChart size={18} />} label="DigiDukaan" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
+            <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
+            <div className="type-micro px-3 pt-2 text-foreground-tertiary">Reports</div>
+            <NavGroup icon={<FileText size={18} />} label="Reports" active={!inDigi && !inOps} items={reportPages} page={page} onNavigate={onNavigate} />
+            <div className="type-micro px-3 pt-2 text-foreground-tertiary">Administration</div>
+            <div className="type-body flex items-center gap-3 px-3 py-2"><Settings size={18} />Settings</div>
+          </nav>
+        )}
+        {!collapsed && <div className="type-caption border-t border-border px-4 py-3 text-foreground-secondary">Qwipo Analytics · mockup</div>}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

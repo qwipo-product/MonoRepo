@@ -49,7 +49,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-12" question="Trend" title="Orders and value over time" subtitle="Current vs same days last month · delivered value shaded" onOpen={() => go('reports')}
+        <Panel className="col-span-12" question="Trend" title="Orders and value over time" subtitle="Delivered value shaded" onOpen={() => go('reports')}
           right={
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <SegmentedControl className="w-auto" value={metric} onChange={setMetric} options={[
@@ -68,7 +68,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           ]} />
         </Panel>
 
-        <Panel className="col-span-12" question="Trend · monthly" title="Month-wise sales" subtitle="All time within scope · delivered value inside each bar">
+        <Panel className="col-span-12" question="Trend · monthly" title="Month-wise sales" subtitle="Delivered value inside each bar">
           <MonthBars />
           <Legend items={[
             { bg: openBg, label: 'Order value' },
@@ -77,7 +77,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           ]} />
         </Panel>
 
-        <Panel className="col-span-5" question="Status" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L · same colours, two denominators`}>
+        <Panel className="col-span-5" question="Status" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L`}>
           <div className="type-caption mb-1.5 text-foreground-secondary"><b className="text-foreground">Orders</b> · share of {totalOrders.toLocaleString('en-IN')}</div>
           <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
           <div className="type-caption mb-1.5 mt-4 text-foreground-secondary"><b className="text-foreground">Value</b> · share of ₹{totalValue.toFixed(1)}L</div>
@@ -93,7 +93,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" question="Geography" title="Cities: size against cancellation" subtitle="Telangana · 6 cities · above the line is losing more than the network">
+        <Panel className="col-span-7" question="Geography" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
           <CityScatter />
           <p className="type-caption mt-1.5 text-foreground-secondary">
             Hyderabad and Secunderabad carry 62% of value and cancel below the network rate. Warangal is the one to act on: big enough
@@ -101,7 +101,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           </p>
         </Panel>
 
-        <Panel className="col-span-5" question="Cancellations" title="Cancellation reasons" subtitle="284 orders · ₹10.5L · sorted by count · target taxonomy, not current data" onOpen={() => go('reports')}>
+        <Panel className="col-span-5" question="Cancellations" title="Cancellation reasons" subtitle="284 orders · ₹10.5L" onOpen={() => go('reports')}>
           <HBars rows={toHBars(cancelReasons)} />
           <p className="type-caption mt-3 text-foreground-secondary">
             Stock-outs are 35% of cancellations and 90% of them sit with two distributors.{' '}
@@ -149,7 +149,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-5" question="Status" title="The 91 by stage" subtitle="Where each overdue order sits now">
+        <Panel className="col-span-5" question="Status" title="The 91 by stage">
           <Columns height={150} items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'shipped' ? 'bg-error' : stageBg[s.key] }))} />
           <p className="type-caption mt-3 text-foreground-secondary">
             <b className="text-foreground">60 are already Shipped.</b> The delay is in the last mile, not at acceptance. Packed orders (18)
@@ -157,12 +157,12 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
           </p>
         </Panel>
 
-        <Panel className="col-span-7" question="Who" title="The 91 by distributor" subtitle="Sorted by count · value at risk beside each" onOpen={() => go('distributors')}>
+        <Panel className="col-span-7" question="Who" title="The 91 by distributor" onOpen={() => go('distributors')}>
           <HBars rows={toHBars(drillDistributors)} wideLabel />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>
         </Panel>
 
-        <Panel className="col-span-12" question="Trend" title="Overdue count by day" subtitle="How many open orders were past D4 at the end of each day · current vs same days last month">
+        <Panel className="col-span-12" question="Trend" title="Overdue count by day">
           <OverdueChart />
           <Legend items={[
             { bg: 'bg-error', label: 'Overdue open orders · today 91' },
