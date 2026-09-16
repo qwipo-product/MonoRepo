@@ -4,11 +4,14 @@
 // Desktop counterpart to the ui Sheet; stays in this app until a second app
 // needs it.
 import { useState } from 'react';
-import { Check, Search, SlidersHorizontal, X } from 'lucide-react';
+import { CalendarDays, Check, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button, Input, cn } from '@mockups/ui';
+import { Calendar } from './Calendar';
 import {
   ALL, stateOptions, companyOptions, cityOptions, distributorOptions, totals, type Filters,
 } from './filters';
+
+const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
 function Section({ label, right, hint, children }: { label: string; right?: React.ReactNode; hint?: string; children: React.ReactNode }) {
   return (
@@ -84,7 +87,17 @@ export function FilterPanel({
   open: boolean; value: Filters; onClose: () => void; onApply: (f: Filters) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const [from, setFrom] = useState<Date | undefined>();
+  const [to, setTo] = useState<Date | undefined>();
+  const [calOpen, setCalOpen] = useState(false);
   if (!open) return null;
+
+  const apply = () => {
+    onApply(draft.preset === 'Custom' && from
+      ? { ...draft, from: fmt(from), to: to ? fmt(to) : fmt(from) }
+      : { ...draft, from: undefined, to: undefined });
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
@@ -109,6 +122,38 @@ export function FilterPanel({
         </header>
 
         <div className="flex-1 overflow-y-auto">
+          <Section label="Date range">
+            {(['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'] as const).map((r) => (
+              <Option key={r} selected={draft.preset === r} onClick={() => { setDraft({ ...draft, preset: r }); setCalOpen(r === 'Custom'); }}>
+                {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Last month' ? '1 – 31 Jul 2026 · last month' : r === 'Custom' ? 'Custom…' : r}
+              </Option>
+            ))}
+            {draft.preset === 'Custom' && (
+              <div className="relative mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCalOpen((v) => !v)}
+                  className="type-body flex h-9 w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-left hover:bg-muted"
+                >
+                  <CalendarDays size={14} className="text-foreground-tertiary" />
+                  {from ? (to && to.getTime() !== from.getTime() ? `${fmt(from)} – ${fmt(to)}` : `${fmt(from)} · single day`) : <span className="text-foreground-secondary">Pick dates</span>}
+                </button>
+                {calOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setCalOpen(false)} role="presentation" />
+                    <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-lg border border-border bg-card p-1 shadow-lg">
+                      <Calendar
+                        from={from}
+                        to={to}
+                        onSelect={(f, t) => { setFrom(f); setTo(t); if (t) setCalOpen(false); }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </Section>
+
           <MultiSection
             label="Company" unit="companies" total={totals.companies} searchable
             hint="Counts stay whole-order; ₹ becomes the selected companies' lines only"
@@ -139,8 +184,8 @@ export function FilterPanel({
         </div>
 
         <footer className="flex gap-2 border-t border-border p-4">
-          <Button fullWidth onClick={() => { onApply(draft); onClose(); }}>Apply filters</Button>
-          <Button variant="ghost" onClick={() => setDraft({ ...ALL, preset: draft.preset, from: draft.from, to: draft.to })}>Reset</Button>
+          <Button fullWidth onClick={apply}>Apply filters</Button>
+          <Button variant="ghost" onClick={() => { setDraft(ALL); setFrom(undefined); setTo(undefined); }}>Reset</Button>
         </footer>
       </aside>
     </div>

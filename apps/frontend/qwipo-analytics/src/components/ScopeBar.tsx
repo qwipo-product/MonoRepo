@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button, Card, cn } from '@mockups/ui';
 import { FilterPanel } from './FilterPanel';
-import { DateRangePopover } from './DateRangePopover';
 import { ALL, countLabel, rangeLabel, totals, type Filters } from './filters';
 
 /** Extra read-only chips (the Sales drill state). */
@@ -14,15 +13,14 @@ export function ScopeBar({
   chips?: ScopeChip[]; line: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [dateOpen, setDateOpen] = useState(false);
   const [f, setF] = useState<Filters>(ALL);
   const nCompanies = f.companies.length;
   const cityScoped = f.cities.length > 0;
 
-  // Order = dependency chain: whose goods → where → who serves it. The Date
-  // chip stands apart with its own popover. State stays out of the bar while
-  // only one state exists and none is picked.
+  // Order = dependency chain: when → whose goods → where → who serves it.
+  // State stays out of the bar while only one state exists and none is picked.
   const summary = [
+    { label: 'Date range', value: rangeLabel(f), active: f.preset !== 'Month to date' },
     { label: 'Company', value: countLabel(f.companies, 'companies', totals.companies), active: nCompanies > 0 },
     ...(f.states.length > 0 || totals.states > 1
       ? [{ label: 'State', value: countLabel(f.states, 'states', totals.states), active: f.states.length > 0 }]
@@ -51,15 +49,6 @@ export function ScopeBar({
   return (
     <Card className="px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="relative">
-          <button type="button" onClick={() => setDateOpen((v) => !v)} className={chipCls(f.preset !== 'Month to date')}>
-            <span className={cn('type-micro block normal-case tracking-normal', f.preset !== 'Month to date' ? 'text-primary-soft-foreground' : 'text-foreground-secondary')}>Date range</span>
-            <span className={cn('type-label block', f.preset !== 'Month to date' && 'text-primary-soft-foreground')}>{rangeLabel(f)}</span>
-          </button>
-          {dateOpen && (
-            <DateRangePopover value={f} onApply={(patch) => setF({ ...f, ...patch })} onClose={() => setDateOpen(false)} />
-          )}
-        </span>
         {summary.map((c) => (
           <button key={c.label} type="button" onClick={() => setOpen(true)} className={chipCls(c.active)}>
             <span className={cn('type-micro block normal-case tracking-normal', c.active ? 'text-primary-soft-foreground' : 'text-foreground-secondary')}>{c.label}</span>
