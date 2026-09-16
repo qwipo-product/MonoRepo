@@ -1,23 +1,37 @@
-// Filter model + option lists for the scope FilterPanel (mockup data).
+// Filter model + option lists for the scope FilterPanel.
+// Multi-select: an empty array means "all". Option lists here are the top few
+// by value — the real network has many more, hence search in the panel.
 
 export interface Filters {
-  company: string;
-  city: string;
-  distributor: string;
-  range: string;
+  companies: string[];
+  cities: string[];
+  distributors: string[];
+  preset: 'Month to date' | 'Last 7 days' | 'Last 30 days' | 'Custom';
+  from?: string;
+  to?: string;
 }
 
-export const ALL: Filters = {
-  company: 'All companies (5)',
-  city: 'All cities (6)',
-  distributor: 'All distributors (18)',
-  range: '1 – 22 Aug 2026 · month to date',
-};
+export const ALL: Filters = { companies: [], cities: [], distributors: [], preset: 'Month to date' };
 
-export const companies = ['All companies (5)', 'Fortune (AWL)', 'ITC', 'HUL', 'Parle', 'Britannia'];
-export const cities = ['All cities (6)', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Sangareddy'];
-export const distributors = [
-  'All distributors (18)', 'Sri Balaji Agencies', 'S R Enterprises', 'Vijaya Distributors',
+export const totals = { companies: 42, cities: 6, distributors: 18 };
+
+export const companyOptions = ['Fortune (AWL)', 'ITC', 'HUL', 'Parle', 'Britannia', 'Tata Consumer', 'Marico', 'Dabur'];
+export const cityOptions = ['Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Sangareddy'];
+export const distributorOptions = [
+  'Sri Balaji Agencies', 'S R Enterprises', 'Vijaya Distributors',
   'Annapurna Traders', 'Lakshmi Agencies', 'Sai Krishna Agencies',
 ];
-export const ranges = ['1 – 22 Aug 2026 · month to date', 'Last 7 days', 'Last 30 days', 'Custom…'];
+
+/** Chip label for a multi-select: all → "All companies (42)", one → the name, many → "3 companies". */
+export function countLabel(sel: string[], unit: string, total: number) {
+  if (sel.length === 0) return `All ${unit} (${total})`;
+  if (sel.length === 1) return sel[0];
+  return `${sel.length} ${unit}`;
+}
+
+export function rangeLabel(f: Filters) {
+  if (f.preset !== 'Custom') return f.preset === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : f.preset;
+  if (!f.from) return 'Custom';
+  if (!f.to || f.from === f.to) return `${f.from} · single day`;
+  return `${f.from} – ${f.to}`;
+}

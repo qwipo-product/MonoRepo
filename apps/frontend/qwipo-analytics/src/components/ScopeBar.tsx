@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button, Card, cn } from '@mockups/ui';
 import { FilterPanel } from './FilterPanel';
-import { ALL, type Filters } from './filters';
+import { ALL, countLabel, rangeLabel, totals, type Filters } from './filters';
 
 /** Extra read-only chips (the Sales drill state). */
 export interface ScopeChip { label: string; value: string; drill?: boolean }
@@ -13,27 +13,28 @@ export function ScopeBar({
   chips?: ScopeChip[]; line: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [filters, setFilters] = useState<Filters>(ALL);
-  const companyScoped = filters.company !== ALL.company;
-  const cityScoped = filters.city !== ALL.city;
+  const [f, setF] = useState<Filters>(ALL);
+  const nCompanies = f.companies.length;
+  const cityScoped = f.cities.length > 0;
 
   // Order = dependency chain: when → whose goods → where → who serves it.
-  const summary: { label: string; value: string; active: boolean }[] = [
-    { label: 'Date range', value: filters.range, active: filters.range !== ALL.range },
-    { label: 'Company', value: filters.company, active: companyScoped },
-    { label: 'City', value: filters.city, active: cityScoped },
-    { label: 'Distributor', value: filters.distributor, active: filters.distributor !== ALL.distributor },
+  const summary = [
+    { label: 'Date range', value: rangeLabel(f), active: f.preset !== 'Month to date' },
+    { label: 'Company', value: countLabel(f.companies, 'companies', totals.companies), active: nCompanies > 0 },
+    { label: 'City', value: countLabel(f.cities, 'cities', totals.cities), active: cityScoped },
+    { label: 'Distributor', value: countLabel(f.distributors, 'distributors', totals.distributors), active: f.distributors.length > 0 },
   ];
 
-  // Gap rules made visible: company selection rewrites the scope sentence to
+  // Gap rules made visible: a company selection rewrites the scope sentence to
   // the grain rule; a city selection names its exclusions.
-  const scopeLine = companyScoped ? (
+  const scopeLine = nCompanies > 0 ? (
     <>
-      <b className="text-foreground">Orders containing {filters.company} lines</b> · ₹ figures = {filters.company} lines only
+      <b className="text-foreground">Orders containing {nCompanies === 1 ? `${f.companies[0]} lines` : `lines of ${nCompanies} companies`}</b>
+      {' '}· ₹ figures = {nCompanies === 1 ? 'their lines' : 'those lines'} only
       {cityScoped && ' · 64 unresolved outlets excluded'} · Super Admin
     </>
   ) : cityScoped ? (
-    <>{filters.city} · <b className="text-foreground">64 unresolved outlets excluded</b> (no usable GPS) · Super Admin</>
+    <>{f.cities.join(', ')} · <b className="text-foreground">64 unresolved outlets excluded</b> (no usable GPS) · Super Admin</>
   ) : line;
 
   return (
@@ -77,7 +78,7 @@ export function ScopeBar({
         </span>
       </div>
 
-      <FilterPanel open={open} value={filters} onClose={() => setOpen(false)} onApply={setFilters} />
+      <FilterPanel open={open} value={f} onClose={() => setOpen(false)} onApply={setF} />
     </Card>
   );
 }
