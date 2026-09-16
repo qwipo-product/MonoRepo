@@ -2,8 +2,9 @@ import { Fragment } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, CardDescription, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
-import { Panel, Question, KpiCard, RankedRow, Columns, Stat } from '../components/dashboard';
-import { dimBg, dimBorder, ageBg, severityText } from '../components/chartClasses';
+import { RankedRow, Columns, Stat } from '@mockups/components';
+import { Panel, Question, KpiCard } from '../components/dashboard';
+import { dimBg, dimBorder, ageBg, severityText, openBg } from '../components/chartClasses';
 import {
   kpis, dailyValue, dailyPrev, dailyDelivered, attention, statuses, ageing, funnel, newOutletsByWeek,
   dimensions, movers, dimensionLabel,
@@ -72,7 +73,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
         <Panel className="col-span-5" question="Are we fulfilling?" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`} onOpen={() => go('sales')}>
           <Columns items={[
-            { label: 'Open', n: open, bg: 'bg-chart-open' },
+            { label: 'Open', n: open, bg: openBg },
             { label: 'Delivered', n: delivered, bg: 'bg-success' },
             { label: 'Cancelled', n: cancelled, bg: 'bg-error' },
             { label: 'Returned', n: returned, bg: 'bg-warning' },
@@ -131,7 +132,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             </div>
             <div>
               <p className="type-caption text-foreground-secondary"><b className="text-foreground">New outlets per week</b> · first-ever order · 62 total</p>
-              <Columns items={newOutletsByWeek.map((w) => ({ ...w, bg: 'bg-chart-company' }))} height={90} />
+              <Columns items={newOutletsByWeek.map((w) => ({ ...w, bg: dimBg.company }))} height={90} />
             </div>
             <Card variant="compact" className="grid grid-cols-[10px_1fr] gap-2.5 p-3">
               <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-error" />
@@ -188,7 +189,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                           <span className="ml-auto font-medium normal-case tracking-normal text-foreground-secondary">{d.total}</span>
                         </h4>
                         <div className="flex flex-col gap-2">
-                          {d.rows.map((r) => <RankedRow key={r.name} rank={r.other ? undefined : ++rank} name={r.name} value={r.value} max={max} change={r.change} dim={d.key} other={r.other} />)}
+                          {d.rows.map((r) => <RankedRow key={r.name} rank={r.other ? undefined : ++rank} name={r.name} value={r.value} max={max} change={r.change} barClass={dimBg[d.key]} other={r.other} />)}
                         </div>
                       </div>
                     );

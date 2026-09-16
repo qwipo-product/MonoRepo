@@ -156,6 +156,24 @@ export interface ColorScheme {
      * "Accent" semantic. Not a primary action (that's brand.primary blue). */
     accent: StatusColor;
   };
+  /** Data-visualisation palette (dashboards). Hue-named on purpose: apps map
+   * their domain onto hues (distributor → blue) so a domain never leaks into
+   * the system, and a hue never silently follows a semantic token. */
+  chart: {
+    categorical: {
+      blue: string;
+      cyan: string;
+      indigo: string;
+      violet: string;
+      sky: string;
+      teal: string;
+      gray: string;
+    };
+    /** Soft fill for open/pending bars and stacked remainders. */
+    blueSoft: string;
+    /** Sequential ageing ramp, young → old; overflow bucket uses status.error. */
+    age: [string, string, string, string];
+  };
 }
 
 export const colorLight: ColorScheme = {
@@ -198,6 +216,19 @@ export const colorLight: ColorScheme = {
     neutral: { solid: '#4b5563', fg: '#374151', bg: '#f9fafb', border: '#e5e7eb' },
     accent: { solid: '#9333ea', fg: '#7e22ce', bg: '#faf5ff', border: '#e9d5ff' },
   },
+  chart: {
+    categorical: {
+      blue: '#2563eb',
+      cyan: '#0891b2',
+      indigo: '#4f46e5',
+      violet: '#7c3aed',
+      sky: '#0284c7',
+      teal: '#0f766e',
+      gray: '#9ca3af',
+    },
+    blueSoft: '#93c5fd',
+    age: ['#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6'],
+  },
 };
 
 export const colorDark: ColorScheme = {
@@ -239,6 +270,19 @@ export const colorDark: ColorScheme = {
     info: { solid: '#60a5fa', fg: '#93c5fd', bg: '#0d1e3a', border: '#1e3a8a' },
     neutral: { solid: '#9ca3af', fg: '#d1d5db', bg: '#212124', border: '#374151' },
     accent: { solid: '#c084fc', fg: '#d8b4fe', bg: '#2a1039', border: '#6b21a8' },
+  },
+  chart: {
+    categorical: {
+      blue: '#60a5fa',
+      cyan: '#22d3ee',
+      indigo: '#818cf8',
+      violet: '#a78bfa',
+      sky: '#38bdf8',
+      teal: '#2dd4bf',
+      gray: '#6b7280',
+    },
+    blueSoft: '#1e40af',
+    age: ['#1e3a8a', '#1d4ed8', '#3b82f6', '#93c5fd'],
   },
 };
 

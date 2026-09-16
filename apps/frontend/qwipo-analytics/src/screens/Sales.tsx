@@ -6,13 +6,16 @@ import { useState } from 'react';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, SegmentedControl, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
-import { Panel, Question, KpiCard, Columns, Stat } from '../components/dashboard';
-import { stageBg, toneBg } from '../components/chartClasses';
+import { Columns, Stat, StackBar, HBars } from '@mockups/components';
+import { Panel, Question, KpiCard } from '../components/dashboard';
+import { stageBg, toneBg, openBg } from '../components/chartClasses';
 import { dailyValue, dailyPrev, dailyDelivered, statuses } from '../data/overview';
 import {
   salesKpis, monthly, cities, networkCancelRate, cancelReasons,
   drillKpis, drillStages, drillDistributors, overdueDaily, overduePrev, type BarRow,
 } from '../data/sales';
+
+const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
 import type { Page } from '../nav';
 
 export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?: boolean }) {
@@ -75,7 +78,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         <Panel className="col-span-12" question="Trend · monthly" title="Month-wise sales" subtitle="All time within scope · delivered value inside each bar">
           <MonthBars />
           <Legend items={[
-            { bg: 'bg-chart-open', label: 'Order value' },
+            { bg: openBg, label: 'Order value' },
             { bg: 'bg-success', label: 'Delivered value' },
             { bg: '', label: '* Aug = 22 days' },
           ]} />
@@ -83,9 +86,9 @@ function FullSales({ go }: { go: (p: Page) => void }) {
 
         <Panel className="col-span-5" question="Status" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L · same colours, two denominators`}>
           <div className="type-caption mb-1.5 text-foreground-secondary"><b className="text-foreground">Orders</b> · share of {totalOrders.toLocaleString('en-IN')}</div>
-          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders) }))} />
+          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
           <div className="type-caption mb-1.5 mt-4 text-foreground-secondary"><b className="text-foreground">Value</b> · share of ₹{totalValue.toFixed(1)}L</div>
-          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L` }))} />
+          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
           <Legend items={statuses.map((s) => ({ bg: stageBg[s.key], label: s.label }))} />
           <p className="type-caption mt-2 text-foreground-secondary">
             Cancelled is 24.9% of orders but 27.2% of value: bigger orders cancel more. Open stages hold ₹12.7L (33%) that has not landed yet.
@@ -106,7 +109,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-5" question="Cancellations" title="Cancellation reasons" subtitle="284 orders · ₹10.5L · sorted by count · target taxonomy, not current data" onOpen={() => go('reports')}>
-          <Bars rows={cancelReasons} />
+          <HBars rows={toHBars(cancelReasons)} />
           <p className="type-caption mt-3 text-foreground-secondary">
             Stock-outs are 35% of cancellations and 90% of them sit with two distributors.{' '}
             <span className="font-medium text-warning-foreground">Needs a reason taxonomy: cancellation_reason is free text today; cancelled_by (actor) is the only constrained field</span>
@@ -164,7 +167,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-7" question="Who" title="The 91 by distributor" subtitle="Sorted by count · value at risk beside each" onOpen={() => go('distributors')}>
-          <Bars rows={drillDistributors} wideLabel />
+          <HBars rows={toHBars(drillDistributors)} wideLabel />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>
         </Panel>
 
@@ -204,19 +207,6 @@ function Legend({ items }: { items: { bg: string; label: React.ReactNode }[] }) 
   );
 }
 
-/** 100% horizontal stacked bar; labels sit inside segments wide enough to hold them. */
-function StackBar({ parts }: { parts: { key: string; pct: number; label: string }[] }) {
-  return (
-    <div className="flex h-8 w-full overflow-hidden rounded-md">
-      {parts.map((p) => (
-        <div key={p.key} className={cn('grid place-items-center overflow-hidden', stageBg[p.key])} style={{ width: `${p.pct}%` }}>
-          {p.pct >= 5 && <span className="type-micro normal-case tracking-normal text-primary-foreground">{p.label}</span>}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /** Month columns with the delivered slice inside each bar. */
 function MonthBars() {
   const max = Math.max(...monthly.map((m) => m.value));
@@ -226,32 +216,12 @@ function MonthBars() {
         <div key={m.label} className="flex h-full w-full max-w-[110px] flex-col items-center justify-end gap-1">
           <b className="type-price-sm">₹{m.value}L</b>
           <div className="relative w-full" style={{ height: `${(m.value / max) * 82}%` }}>
-            <div className="absolute inset-0 rounded-t-sm bg-chart-open" />
+            <div className={cn('absolute inset-0 rounded-t-sm', openBg)} />
             <div className="absolute inset-x-0 bottom-0 grid place-items-center bg-success" style={{ height: `${(m.delivered / m.value) * 100}%` }}>
               <span className="type-caption font-medium text-primary-foreground">₹{m.delivered}L</span>
             </div>
           </div>
           <small className="type-caption text-foreground-secondary">{m.label}</small>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Label · track · count+value rows, coloured by tone. */
-function Bars({ rows, wideLabel }: { rows: BarRow[]; wideLabel?: boolean }) {
-  const max = Math.max(...rows.map((r) => r.n));
-  return (
-    <div className="flex flex-col gap-2">
-      {rows.map((r) => (
-        <div key={r.label} className={cn('type-caption grid items-center gap-2.5 text-foreground', wideLabel ? 'grid-cols-[210px_1fr_84px]' : 'grid-cols-[170px_1fr_84px]')}>
-          <span className="truncate">{r.label}</span>
-          <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
-            <div className={cn('h-full rounded-sm', toneBg[r.tone])} style={{ width: `${(r.n / max) * 100}%` }} />
-          </div>
-          <span className="text-right tabular-nums">
-            {r.n} <small className="text-foreground-tertiary">{r.value}</small>
-          </span>
         </div>
       ))}
     </div>
