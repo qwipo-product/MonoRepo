@@ -11,6 +11,15 @@
    src/components/chartClasses.ts. */
 @import "../../../../packages/design-tokens/theme.css";
 
+/* Right-side filter drawer (FilterPanel). */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.22s cubic-bezier(0, 0, 0.2, 1);
+}
+
 html,
 body,
 #root {

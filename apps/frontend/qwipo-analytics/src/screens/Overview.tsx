@@ -24,15 +24,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <ScopeBar
-        chips={[
-          { label: 'Company', value: 'All companies (5)' },
-          { label: 'City', value: 'All cities (6)' },
-          { label: 'Distributor', value: 'All distributors (18)' },
-          { label: 'Date range', value: '1 – 22 Aug 2026 · month to date' },
-        ]}
-        line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin"
-      />
+      <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
 
       <section>
         <Question>Are we growing?</Question>

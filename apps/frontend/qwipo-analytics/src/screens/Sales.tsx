@@ -24,13 +24,6 @@ export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?
 
 /* ---------------------------------- full page ---------------------------------- */
 
-const scopeChips = [
-  { label: 'Company', value: 'All companies (5)' },
-  { label: 'City', value: 'All cities (6)' },
-  { label: 'Distributor', value: 'All distributors (18)' },
-  { label: 'Date range', value: '1 – 22 Aug 2026 · month to date' },
-];
-
 function FullSales({ go }: { go: (p: Page) => void }) {
   const [metric, setMetric] = useState('value');
   const [grain, setGrain] = useState('daily');
@@ -38,7 +31,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
   const totalValue = statuses.reduce((s, x) => s + x.value, 0);
   return (
     <div className="flex flex-col gap-5">
-      <ScopeBar chips={scopeChips} line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
+      <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
 
       <div className="flex gap-1.5">
         {['Summary', 'Trend', 'Status', 'Geography', 'Cancellations'].map((a, i) => (
@@ -140,8 +133,6 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
 
       <ScopeBar
         chips={[
-          ...scopeChips.slice(0, 3),
-          { label: 'Date range', value: '1 – 22 Aug 2026' },
           { label: 'Drill · Status', value: 'Open', drill: true },
           { label: 'Drill · Age', value: 'D4+ overdue', drill: true },
         ]}
