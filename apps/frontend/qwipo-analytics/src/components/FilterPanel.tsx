@@ -13,6 +13,41 @@ import {
 
 const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
+/** From/To field: shows its date, click opens a calendar popup for that field. */
+function DateField({
+  label, date, open, onOpen, onClose, onPick, align, rangeStart, rangeEnd,
+}: {
+  label: string; date?: Date; open: boolean; onOpen: () => void; onClose: () => void;
+  onPick: (d: Date) => void; align: 'left' | 'right'; rangeStart?: Date; rangeEnd?: Date;
+}) {
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={open ? onClose : onOpen}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md border bg-card px-2.5 py-1.5 text-left hover:bg-muted',
+          open ? 'border-ring ring-2 ring-ring/30' : 'border-border',
+        )}
+      >
+        <CalendarDays size={14} className="shrink-0 text-foreground-tertiary" />
+        <span className="leading-tight">
+          <span className="type-micro block normal-case tracking-normal text-foreground-secondary">{label}</span>
+          <span className="type-label block">{date ? fmt(date) : <span className="text-foreground-secondary">Select</span>}</span>
+        </span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={onClose} role="presentation" />
+          <div className={cn('absolute top-full z-30 mt-1 w-[296px] rounded-lg border border-border bg-card shadow-lg', align === 'left' ? 'left-0' : 'right-0')}>
+            <Calendar selected={date} rangeStart={rangeStart} rangeEnd={rangeEnd} onPick={onPick} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Section({ label, right, hint, children }: { label: string; right?: React.ReactNode; hint?: string; children: React.ReactNode }) {
   return (
     <div className="border-b border-border-subtle px-5 py-4">
@@ -89,7 +124,7 @@ export function FilterPanel({
   const [draft, setDraft] = useState(value);
   const [from, setFrom] = useState<Date | undefined>();
   const [to, setTo] = useState<Date | undefined>();
-  const [calOpen, setCalOpen] = useState(false);
+  const [calOpen, setCalOpen] = useState<'from' | 'to' | null>(null);
   if (!open) return null;
 
   const apply = () => {
@@ -124,32 +159,35 @@ export function FilterPanel({
         <div className="flex-1 overflow-y-auto">
           <Section label="Date range">
             {(['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'] as const).map((r) => (
-              <Option key={r} selected={draft.preset === r} onClick={() => { setDraft({ ...draft, preset: r }); setCalOpen(r === 'Custom'); }}>
+              <Option
+                key={r}
+                selected={draft.preset === r}
+                onClick={() => {
+                  setDraft({ ...draft, preset: r });
+                  if (r === 'Custom') {
+                    // Prefill with the current period so the fields are never empty.
+                    if (!from) { setFrom(new Date(2026, 7, 1)); setTo(new Date(2026, 7, 22)); }
+                    setCalOpen('from');
+                  } else setCalOpen(null);
+                }}
+              >
                 {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Last month' ? '1 – 31 Jul 2026 · last month' : r === 'Custom' ? 'Custom…' : r}
               </Option>
             ))}
             {draft.preset === 'Custom' && (
-              <div className="relative mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setCalOpen((v) => !v)}
-                  className="type-body flex h-9 w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-left hover:bg-muted"
-                >
-                  <CalendarDays size={14} className="text-foreground-tertiary" />
-                  {from ? (to && to.getTime() !== from.getTime() ? `${fmt(from)} – ${fmt(to)}` : `${fmt(from)} · single day`) : <span className="text-foreground-secondary">Pick dates</span>}
-                </button>
-                {calOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setCalOpen(false)} role="presentation" />
-                    <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-                      <Calendar
-                        from={from}
-                        to={to}
-                        onSelect={(f, t) => { setFrom(f); setTo(t); if (t) setCalOpen(false); }}
-                      />
-                    </div>
-                  </>
-                )}
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                <DateField
+                  label="From" date={from} align="left"
+                  open={calOpen === 'from'} onOpen={() => setCalOpen('from')} onClose={() => setCalOpen(null)}
+                  rangeStart={from} rangeEnd={to}
+                  onPick={(d) => { setFrom(d); if (to && d > to) setTo(d); setCalOpen('to'); }}
+                />
+                <DateField
+                  label="To" date={to} align="right"
+                  open={calOpen === 'to'} onOpen={() => setCalOpen('to')} onClose={() => setCalOpen(null)}
+                  rangeStart={from} rangeEnd={to}
+                  onPick={(d) => { if (from && d < from) { setTo(from); setFrom(d); } else setTo(d); setCalOpen(null); }}
+                />
               </div>
             )}
           </Section>
