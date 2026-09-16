@@ -1,6 +1,6 @@
-import { Bell, FileText, LineChart, Settings } from 'lucide-react';
+import { Bell, FileText, LineChart, Settings, Truck } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
-import { analyticsPages, reportPages, titles, type Page } from '../nav';
+import { digiPages, opsPages, reportPages, titles, type Page } from '../nav';
 
 interface Props {
   page: Page;
@@ -55,7 +55,8 @@ function NavGroup({
 }
 
 export function Shell({ page, onNavigate, children }: Props) {
-  const inAnalytics = !['reports', 'history'].includes(page);
+  const inDigi = digiPages.some((p) => p.key === page);
+  const inOps = opsPages.some((p) => p.key === page);
   return (
     <div className="flex h-dvh bg-background-subtle text-foreground">
       <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-card">
@@ -63,14 +64,14 @@ export function Shell({ page, onNavigate, children }: Props) {
           <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />
         </div>
         <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-          <div className="type-micro px-3 pt-2 text-foreground-tertiary">Analytics</div>
-          <NavGroup icon={<LineChart size={18} />} label="Analytics" active={inAnalytics} items={analyticsPages} page={page} onNavigate={onNavigate} />
+          <NavGroup icon={<LineChart size={18} />} label="DigiDukaan (ONDC eB2B)" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
+          <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
           <div className="type-micro px-3 pt-2 text-foreground-tertiary">Reports</div>
-          <NavGroup icon={<FileText size={18} />} label="Reports" active={!inAnalytics} items={reportPages} page={page} onNavigate={onNavigate} />
+          <NavGroup icon={<FileText size={18} />} label="Reports" active={!inDigi && !inOps} items={reportPages} page={page} onNavigate={onNavigate} />
           <div className="type-micro px-3 pt-2 text-foreground-tertiary">Administration</div>
           <div className="type-body flex items-center gap-3 px-3 py-2"><Settings size={18} />Settings</div>
         </nav>
-        <div className="type-caption border-t border-border px-4 py-3 text-foreground-secondary">DigiDukaan Analytics · mockup</div>
+        <div className="type-caption border-t border-border px-4 py-3 text-foreground-secondary">Qwipo Analytics · mockup</div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
