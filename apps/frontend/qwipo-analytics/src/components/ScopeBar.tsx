@@ -18,9 +18,13 @@ export function ScopeBar({
   const cityScoped = f.cities.length > 0;
 
   // Order = dependency chain: when → whose goods → where → who serves it.
+  // State stays out of the bar while only one state exists and none is picked.
   const summary = [
     { label: 'Date range', value: rangeLabel(f), active: f.preset !== 'Month to date' },
     { label: 'Company', value: countLabel(f.companies, 'companies', totals.companies), active: nCompanies > 0 },
+    ...(f.states.length > 0 || totals.states > 1
+      ? [{ label: 'State', value: countLabel(f.states, 'states', totals.states), active: f.states.length > 0 }]
+      : []),
     { label: 'City', value: countLabel(f.cities, 'cities', totals.cities), active: cityScoped },
     { label: 'Distributor', value: countLabel(f.distributors, 'distributors', totals.distributors), active: f.distributors.length > 0 },
   ];

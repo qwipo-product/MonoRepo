@@ -7,7 +7,7 @@ import { Check, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button, Input, cn } from '@mockups/ui';
 import { Calendar } from './Calendar';
 import {
-  ALL, companyOptions, cityOptions, distributorOptions, totals, type Filters,
+  ALL, stateOptions, companyOptions, cityOptions, distributorOptions, totals, type Filters,
 } from './filters';
 
 const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -121,9 +121,9 @@ export function FilterPanel({
 
         <div className="flex-1 overflow-y-auto">
           <Section label="Date range">
-            {(['Month to date', 'Last 7 days', 'Last 30 days', 'Custom'] as const).map((r) => (
+            {(['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'] as const).map((r) => (
               <Option key={r} selected={draft.preset === r} onClick={() => setDraft({ ...draft, preset: r })}>
-                {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Custom' ? 'Custom…' : r}
+                {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Last month' ? '1 – 31 Jul 2026 · last month' : r === 'Custom' ? 'Custom…' : r}
               </Option>
             ))}
             {draft.preset === 'Custom' && (
@@ -141,10 +141,17 @@ export function FilterPanel({
           />
 
           <MultiSection
+            label="State" unit="states" total={totals.states}
+            hint="More states appear as they onboard · cities narrow to the selected states"
+            options={stateOptions} selected={draft.states}
+            onChange={(states) => setDraft({ ...draft, states, cities: [], distributors: [] })}
+          />
+
+          <MultiSection
             label="City" unit="cities" total={totals.cities}
-            hint="From outlet GPS · 64 unresolved outlets excluded on selection"
+            hint="From outlet GPS · 64 unresolved outlets excluded · changing city resets Distributor"
             options={cityOptions} selected={draft.cities}
-            onChange={(cities) => setDraft({ ...draft, cities })}
+            onChange={(cities) => setDraft({ ...draft, cities, distributors: [] })}
           />
 
           <MultiSection

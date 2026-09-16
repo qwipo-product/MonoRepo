@@ -3,18 +3,20 @@
 // by value — the real network has many more, hence search in the panel.
 
 export interface Filters {
+  states: string[];
   companies: string[];
   cities: string[];
   distributors: string[];
-  preset: 'Month to date' | 'Last 7 days' | 'Last 30 days' | 'Custom';
+  preset: 'Month to date' | 'Last month' | 'Last 7 days' | 'Last 30 days' | 'Custom';
   from?: string;
   to?: string;
 }
 
-export const ALL: Filters = { companies: [], cities: [], distributors: [], preset: 'Month to date' };
+export const ALL: Filters = { states: [], companies: [], cities: [], distributors: [], preset: 'Month to date' };
 
-export const totals = { companies: 42, cities: 6, distributors: 18 };
+export const totals = { states: 1, companies: 42, cities: 6, distributors: 18 };
 
+export const stateOptions = ['Telangana'];
 export const companyOptions = ['Fortune (AWL)', 'ITC', 'HUL', 'Parle', 'Britannia', 'Tata Consumer', 'Marico', 'Dabur'];
 export const cityOptions = ['Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Sangareddy'];
 export const distributorOptions = [
@@ -30,6 +32,7 @@ export function countLabel(sel: string[], unit: string, total: number) {
 }
 
 export function rangeLabel(f: Filters) {
+  if (f.preset === 'Last month') return '1 – 31 Jul 2026 · last month';
   if (f.preset !== 'Custom') return f.preset === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : f.preset;
   if (!f.from) return 'Custom';
   if (!f.to || f.from === f.to) return `${f.from} · single day`;
