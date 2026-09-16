@@ -78,7 +78,9 @@ export function ScopeBar({
         </span>
       </div>
 
-      <FilterPanel open={open} value={f} onClose={() => setOpen(false)} onApply={setF} />
+      {/* Mounted only while open so each opening starts from the APPLIED
+          filters, never from a draft abandoned with ✕ or a backdrop click. */}
+      {open && <FilterPanel open value={f} onClose={() => setOpen(false)} onApply={setF} />}
     </Card>
   );
 }
