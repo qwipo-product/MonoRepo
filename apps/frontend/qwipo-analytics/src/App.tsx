@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Shell } from './components/Shell';
 import Overview from './screens/Overview';
 import Sales from './screens/Sales';
+import { ALL, type Filters } from './components/filters';
+import { ScopeContext } from './scope';
 import type { Page } from './nav';
 
 // Hash holds the page and an optional drill segment, e.g. #sales/overdue —
@@ -13,6 +15,7 @@ const fromHash = () => {
 
 export default function App() {
   const [route, setRoute] = useState(fromHash);
+  const [scope, setScope] = useState<Filters>(ALL);
   useEffect(() => {
     const onHash = () => setRoute(fromHash());
     window.addEventListener('hashchange', onHash);
@@ -21,14 +24,16 @@ export default function App() {
   const go = (p: string) => { location.hash = p; };
 
   return (
-    <Shell page={route.page} onNavigate={go}>
-      {route.page === 'overview' ? (
-        <Overview go={go} />
-      ) : route.page === 'sales' ? (
-        <Sales go={go} drilled={route.drill === 'overdue'} />
-      ) : (
-        <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
-      )}
-    </Shell>
+    <ScopeContext.Provider value={{ f: scope, setF: setScope }}>
+      <Shell page={route.page} onNavigate={go}>
+        {route.page === 'overview' ? (
+          <Overview go={go} />
+        ) : route.page === 'sales' ? (
+          <Sales go={go} drilled={route.drill === 'overdue'} />
+        ) : (
+          <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
+        )}
+      </Shell>
+    </ScopeContext.Provider>
   );
 }

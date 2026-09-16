@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button, Card, cn } from '@mockups/ui';
 import { FilterPanel } from './FilterPanel';
-import { ALL, countLabel, rangeLabel, totals, type Filters } from './filters';
+import { countLabel, rangeLabel, totals } from './filters';
+import { useScope } from '../scope';
 
 /** Extra read-only chips (the Sales drill state). */
 export interface ScopeChip { label: string; value: string; drill?: boolean }
@@ -13,7 +14,7 @@ export function ScopeBar({
   chips?: ScopeChip[]; line: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState<Filters>(ALL);
+  const { f, setF } = useScope();
   const nCompanies = f.companies.length;
   const cityScoped = f.cities.length > 0;
 
