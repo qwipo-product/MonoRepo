@@ -70,23 +70,6 @@ export function FilterPanel({
         </header>
 
         <div className="flex-1 overflow-y-auto">
-          <Section label="Company" hint="Counts stay whole-order; ₹ becomes this company's lines only">
-            {companies.map((c) => <Option key={c} selected={draft.company === c} onClick={() => set('company')(c)}>{c}</Option>)}
-          </Section>
-
-          <Section label="City" hint="From outlet GPS · 64 unresolved outlets excluded on selection">
-            {cities.map((c) => <Option key={c} selected={draft.city === c} onClick={() => set('city')(c)}>{c}</Option>)}
-          </Section>
-
-          <Section label="Distributor">
-            <div className="relative mb-1.5">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search distributors" className="h-9 pl-8" />
-            </div>
-            {shown.map((d) => <Option key={d} selected={draft.distributor === d} onClick={() => set('distributor')(d)}>{d}</Option>)}
-            {!q && <div className="type-caption px-2.5 py-1 text-foreground-tertiary">+ 12 more — search to find</div>}
-          </Section>
-
           <Section label="Date range">
             {ranges.map((r) => <Option key={r} selected={draft.range === r} onClick={() => set('range')(r)}>{r}</Option>)}
             {draft.range === 'Custom…' && (
@@ -95,6 +78,23 @@ export function FilterPanel({
                 <Input defaultValue="22 Aug 2026" className="h-9" aria-label="To date" />
               </div>
             )}
+          </Section>
+
+          <Section label="Company" hint="Counts stay whole-order; ₹ becomes this company's lines only">
+            {companies.map((c) => <Option key={c} selected={draft.company === c} onClick={() => set('company')(c)}>{c}</Option>)}
+          </Section>
+
+          <Section label="City" hint="From outlet GPS · 64 unresolved outlets excluded on selection">
+            {cities.map((c) => <Option key={c} selected={draft.city === c} onClick={() => set('city')(c)}>{c}</Option>)}
+          </Section>
+
+          <Section label="Distributor" hint="Narrowed by the selected city">
+            <div className="relative mb-1.5">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search distributors" className="h-9 pl-8" />
+            </div>
+            {shown.map((d) => <Option key={d} selected={draft.distributor === d} onClick={() => set('distributor')(d)}>{d}</Option>)}
+            {!q && <div className="type-caption px-2.5 py-1 text-foreground-tertiary">+ 12 more — search to find</div>}
           </Section>
         </div>
 

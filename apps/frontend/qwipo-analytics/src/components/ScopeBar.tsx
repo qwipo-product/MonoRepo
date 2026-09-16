@@ -17,11 +17,12 @@ export function ScopeBar({
   const companyScoped = filters.company !== ALL.company;
   const cityScoped = filters.city !== ALL.city;
 
+  // Order = dependency chain: when → whose goods → where → who serves it.
   const summary: { label: string; value: string; active: boolean }[] = [
+    { label: 'Date range', value: filters.range, active: filters.range !== ALL.range },
     { label: 'Company', value: filters.company, active: companyScoped },
     { label: 'City', value: filters.city, active: cityScoped },
     { label: 'Distributor', value: filters.distributor, active: filters.distributor !== ALL.distributor },
-    { label: 'Date range', value: filters.range, active: filters.range !== ALL.range },
   ];
 
   // Gap rules made visible: company selection rewrites the scope sentence to
