@@ -7,7 +7,7 @@ const meta = {
   component: QtyStepper,
 } satisfies Meta<typeof QtyStepper>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Neutral: Story = {
   render: () => {
