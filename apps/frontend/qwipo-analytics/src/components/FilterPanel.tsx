@@ -3,7 +3,7 @@
 // Company / City / Distributor are multi-select (the network will have many of
 // each — search finds the rest); Date range has presets plus a real calendar.
 import { useState } from 'react';
-import { Check, Search, SlidersHorizontal, X } from 'lucide-react';
+import { CalendarDays, Check, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button, Input, cn } from '@mockups/ui';
 import { Calendar } from './Calendar';
 import {
@@ -88,6 +88,7 @@ export function FilterPanel({
   const [draft, setDraft] = useState(value);
   const [from, setFrom] = useState<Date | undefined>();
   const [to, setTo] = useState<Date | undefined>();
+  const [calOpen, setCalOpen] = useState(false);
   if (!open) return null;
 
   const apply = () => {
@@ -122,13 +123,33 @@ export function FilterPanel({
         <div className="flex-1 overflow-y-auto">
           <Section label="Date range">
             {(['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'] as const).map((r) => (
-              <Option key={r} selected={draft.preset === r} onClick={() => setDraft({ ...draft, preset: r })}>
+              <Option key={r} selected={draft.preset === r} onClick={() => { setDraft({ ...draft, preset: r }); setCalOpen(r === 'Custom'); }}>
                 {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Last month' ? '1 – 31 Jul 2026 · last month' : r === 'Custom' ? 'Custom…' : r}
               </Option>
             ))}
             {draft.preset === 'Custom' && (
-              <div className="mt-2">
-                <Calendar from={from} to={to} onSelect={(f, t) => { setFrom(f); setTo(t); }} />
+              <div className="relative mt-1.5">
+                {/* Field-style trigger; the calendar floats over the sections below instead of pushing them. */}
+                <button
+                  type="button"
+                  onClick={() => setCalOpen((v) => !v)}
+                  className="type-body flex h-9 w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-left hover:bg-muted"
+                >
+                  <CalendarDays size={14} className="text-foreground-tertiary" />
+                  {from ? (to && to.getTime() !== from.getTime() ? `${fmt(from)} – ${fmt(to)}` : `${fmt(from)} · single day`) : <span className="text-foreground-secondary">Pick dates</span>}
+                </button>
+                {calOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setCalOpen(false)} role="presentation" />
+                    <div className="absolute left-0 right-0 top-full z-30 mt-1 rounded-lg bg-card shadow-lg">
+                      <Calendar
+                        from={from}
+                        to={to}
+                        onSelect={(f, t) => { setFrom(f); setTo(t); if (t) setCalOpen(false); }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </Section>
