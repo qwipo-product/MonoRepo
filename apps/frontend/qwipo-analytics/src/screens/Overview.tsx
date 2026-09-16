@@ -12,7 +12,7 @@ import type { Page } from '../nav';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
-export default function Overview({ go }: { go: (p: Page) => void }) {
+export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const total = sum(statuses.map((s) => s.orders));
   const open = sum(statuses.filter((s) => ['created', 'accepted', 'packed', 'shipped'].includes(s.key)).map((s) => s.orders));
   const delivered = statuses.find((s) => s.key === 'delivered')!.orders;
@@ -58,7 +58,7 @@ export default function Overview({ go }: { go: (p: Page) => void }) {
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5">
             {attention.map((a) => (
-              <Card key={a.title} variant="interactive" onClick={() => go(a.goto)} className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5">
+              <Card key={a.title} variant="interactive" onClick={() => go(a.drill ? `${a.goto}/${a.drill}` : a.goto)} className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5">
                 <span className={cn('type-h1 text-right tabular-nums', severityText[a.severity])}>{a.count}</span>
                 <span>
                   <b className="type-label block leading-snug">{a.title}</b>

@@ -37,10 +37,12 @@ export interface Attention {
   detail: string;
   owner: string;
   goto: 'sales' | 'distributors' | 'customers' | 'brands';
+  /** extra hash segment: opens the deep page with drill chips applied */
+  drill?: string;
 }
 
 export const attention: Attention[] = [
-  { count: '91', severity: 'error', title: 'Open orders past 4 days', detail: '₹3.1L · 58 with two Hyderabad distributors', owner: 'Logistics', goto: 'sales' },
+  { count: '91', severity: 'error', title: 'Open orders past 4 days', detail: '₹3.1L · 58 with two Hyderabad distributors', owner: 'Logistics', goto: 'sales', drill: 'overdue' },
   { count: '2', severity: 'error', title: 'Distributors over 30% cancellation', detail: 'Vijaya 31.2% · Lakshmi 27.8% · stock-outs', owner: 'Ops', goto: 'distributors' },
   { count: '148', severity: 'warning', title: 'High-value outlets gone quiet', detail: 'No order 14+ days · ₹6.2L monthly value', owner: 'Sales', goto: 'customers' },
   { count: '3', severity: 'warning', title: 'Brands declining over 10%', detail: 'Britannia −14% · Red Label −11% · Parle-G −6%', owner: 'Companies', goto: 'brands' },
