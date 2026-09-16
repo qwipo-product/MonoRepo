@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button, Card, cn } from '@mockups/ui';
 import { FilterPanel } from './FilterPanel';
-import { countLabel, rangeLabel, totals } from './filters';
+import { ALL, countLabel, rangeLabel, totals } from './filters';
 import { useScope } from '../scope';
 
 /** Extra read-only chips (the Sales drill state). */
@@ -35,6 +35,17 @@ export function ScopeBar({
     active ? 'bg-primary-soft hover:bg-primary-soft' : 'bg-background-sunken',
   );
 
+  // Selected values as removable pills — the empty middle of the bar earns
+  // its keep, and any single selection is one click to drop.
+  const pills: { value: string; remove: () => void }[] = [
+    ...f.companies.map((v) => ({ value: v, remove: () => setF({ ...f, companies: f.companies.filter((x) => x !== v) }) })),
+    ...f.states.map((v) => ({ value: v, remove: () => setF({ ...f, states: f.states.filter((x) => x !== v), cities: [], distributors: [] }) })),
+    ...f.cities.map((v) => ({ value: v, remove: () => setF({ ...f, cities: f.cities.filter((x) => x !== v), distributors: [] }) })),
+    ...f.distributors.map((v) => ({ value: v, remove: () => setF({ ...f, distributors: f.distributors.filter((x) => x !== v) }) })),
+  ];
+  const anyActive = pills.length > 0 || f.preset !== 'Month to date';
+  const MAX_PILLS = 6;
+
   // Gap rules made visible: a company selection rewrites the scope sentence to
   // the grain rule; a city selection names its exclusions.
   const scopeLine = nCompanies > 0 ? (
@@ -65,7 +76,21 @@ export function ScopeBar({
             <X size={13} className="text-info-foreground" />
           </Card>
         ))}
+        {pills.slice(0, MAX_PILLS).map((p) => (
+          <span key={p.value} className="type-caption flex items-center gap-1 rounded-full bg-primary-soft py-1 pl-2.5 pr-1.5 font-medium text-primary-soft-foreground">
+            {p.value}
+            <button type="button" aria-label={`Remove ${p.value}`} onClick={p.remove} className="grid h-4 w-4 place-items-center rounded-full hover:bg-primary/15">
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        {pills.length > MAX_PILLS && (
+          <button type="button" onClick={() => setOpen(true)} className="type-caption rounded-full bg-background-sunken px-2.5 py-1 font-medium text-foreground-secondary hover:bg-muted">
+            +{pills.length - MAX_PILLS} more
+          </button>
+        )}
         <span className="ml-auto flex items-center gap-1.5">
+          {anyActive && <Button variant="ghost" size="sm" className="text-link" onClick={() => setF(ALL)}>Reset</Button>}
           {action && <Button variant="ghost" size="sm" className="text-link" onClick={onAction}>{action}</Button>}
           <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <SlidersHorizontal size={14} /> Filters
