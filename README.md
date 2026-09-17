@@ -99,7 +99,7 @@ different colours, so they don't share one kit:
 | | Mobile | Web / admin |
 | --- | --- | --- |
 | Primitives | `@mockups/ui` | `@mockups/web-ui` |
-| Tokens | `@mockups/design-tokens` + the app's `@theme` block | `@mockups/web-tokens` (complete `theme.css`, no `@theme` needed) |
+| Tokens | `@mockups/design-tokens` (`theme.css`, imported whole) | `@mockups/web-tokens` (`theme.css`, imported whole) |
 | Controls | 44px tap targets | 36px |
 | Radii | 12px cards | 8px cards, 2px table pills |
 | Catalog | `bun dev --filter=@mockups/storybook` → :6006 | `bun dev --filter=@mockups/storybook-web` → :6007 |
@@ -184,17 +184,21 @@ Miss it and the shared components render unstyled.
 ### Design tokens never live in a `ui` package
 
 Components in `packages/ui` and `packages/web-ui` use classes like
-`bg-primary` and `text-foreground`. What those *mean* is decided outside the
-component — which is what lets the same components carry a different brand per
-mockup. Where that decision lives differs by kit:
+`bg-primary` and `text-foreground`. What those *mean* is decided in the token
+package, not the component. Which package depends on the kit:
 
-- **Mobile** — the `@theme` block in each app's `src/index.css`. Change colours
-  there, per mockup.
-- **Web** — `@mockups/web-tokens/theme.css`, imported whole. A web app needs no
-  `@theme` block; change the token in the package and every web mockup moves.
+- **Mobile** — `@mockups/design-tokens/theme.css`, imported whole.
+- **Web** — `@mockups/web-tokens/theme.css`, imported whole.
 
-Either way: never hard-code a hex in a component, and never move tokens into a
-`ui` package.
+Either way the app has no `@theme` block of its own. One design language,
+shared the way the fixtures and the primitives are: change a token in the
+package and every mockup moves. Chart and map colours in JS read the same
+values from the package's TS export (`colorLight.brand.primary`), not a hex.
+A mockup imitating another brand's shell (the Paytm frame) names those
+colours once in its own CSS and uses the name.
+
+Never hard-code a hex in a component, and never move tokens into a `ui`
+package. `/design-language` audits all of this.
 
 ---
 
@@ -460,3 +464,12 @@ it can't infer — which shared package to reach for, where tokens live, what
 "done" means for a mockup. **Keep it current.** When you find yourself
 correcting Claude on the same thing twice, that correction belongs in
 `CLAUDE.md`, and the next person gets it for free.
+
+Every request goes through one of the skills in `.claude/skills/` — `CLAUDE.md`
+routes it, and each skill says what it needs from you and what it hands back.
+You can also call one directly: `/brief` before a new idea, `/new-mockup`,
+`/import-mockup` for code from another repo, `/build-screen`, `/start-work` and
+`/land-work` for branches and merges (`/review` tidies a branch before it
+lands), `/git-doctor` when git surprises you,
+`/share-mockup`, `/deploy-mockup`, `/verify`, `/handoff` when engineering takes
+over. Nothing is done until `verify` has run.
