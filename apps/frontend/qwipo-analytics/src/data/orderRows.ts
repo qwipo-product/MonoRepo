@@ -14,7 +14,7 @@ export interface OrderRow {
 }
 
 export const stageLabel: Record<Stage, string> = {
-  created: 'Created', accepted: 'Accepted', packed: 'Packed', shipped: 'Shipped',
+  created: 'Order placed', accepted: 'Accepted', packed: 'Packed', shipped: 'Shipped',
   delivered: 'Delivered', cancelled: 'Cancelled', returned: 'Returned',
 };
 

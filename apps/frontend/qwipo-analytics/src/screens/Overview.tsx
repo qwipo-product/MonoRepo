@@ -32,7 +32,7 @@ const statusQuick: QuickFilter[] = [
 /** Within open orders: by current stage. */
 const openQuick: QuickFilter[] = [
   { label: 'All placed', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
-  { label: 'Created', statuses: ['created'], count: 92 },
+  { label: 'Order placed', statuses: ['created'], count: 92 },
   { label: 'Accepted', statuses: ['accepted'], count: 114 },
   { label: 'Packed', statuses: ['packed'], count: 85 },
   { label: 'Shipped', statuses: ['shipped'], count: 101 },
@@ -169,7 +169,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                     className="relative grid h-7 cursor-pointer place-items-center rounded-sm font-medium tabular-nums hover:ring-2 hover:ring-ring"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDrill({ title: `${r.stage} · ${ageing.buckets[i]}`, total: `${n} orders`, statuses: [r.stage.toLowerCase() as Stage] });
+                      setDrill({ title: `${r.stage} · ${ageing.buckets[i]}`, total: `${n} orders`, statuses: [(r.stage === 'Order placed' ? 'created' : r.stage.toLowerCase()) as Stage] });
                     }}
                   >
                     <i className={cn('absolute inset-0 rounded-sm', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.12 + 0.88 * Math.min(n / 60, 1) }} />

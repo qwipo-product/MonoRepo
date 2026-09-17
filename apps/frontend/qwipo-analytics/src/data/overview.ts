@@ -49,7 +49,7 @@ export const attention: Attention[] = [
 ];
 
 export const statuses = [
-  { key: 'created', label: 'Created', orders: 92, value: 3.0 },
+  { key: 'created', label: 'Order placed', orders: 92, value: 3.0 },
   { key: 'accepted', label: 'Accepted', orders: 114, value: 3.7 },
   { key: 'packed', label: 'Packed', orders: 85, value: 2.8 },
   { key: 'shipped', label: 'Shipped', orders: 101, value: 3.2 },
@@ -62,7 +62,7 @@ export const statuses = [
 export const ageing = {
   buckets: ['D0', 'D1', 'D2', 'D3', 'D4+'],
   rows: [
-    { stage: 'Created', counts: [60, 20, 6, 3, 3] },
+    { stage: 'Order placed', counts: [60, 20, 6, 3, 3] },
     { stage: 'Accepted', counts: [40, 38, 18, 8, 10] },
     { stage: 'Packed', counts: [12, 24, 20, 11, 18] },
     { stage: 'Shipped', counts: [6, 12, 13, 10, 60] },
