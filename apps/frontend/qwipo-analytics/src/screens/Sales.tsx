@@ -3,7 +3,7 @@
 // screen with drill chips in the scope bar and panels reshaped to the subset.
 // Records never appear here — the last card hands the filters to a report.
 import { useState } from 'react';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, SegmentedControl, cn } from '@mockups/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { Columns, Stat, StackBar, HBars } from '@mockups/components';
@@ -77,11 +77,11 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-12" title="Orders and value over time" subtitle="Delivered value shaded"
           right={
-            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <SegmentedControl className="w-auto" value={metric} onChange={setMetric} options={[
-                { value: 'value', label: 'Value' }, { value: 'orders', label: 'Orders' }, { value: 'vs', label: 'Orders vs delivered' },
+            <div className="flex flex-wrap justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+              <Pills value={metric} onChange={setMetric} options={[
+                { value: 'value', label: 'Value' }, { value: 'orders', label: 'Orders' }, { value: 'vs', label: 'Vs delivered' },
               ]} />
-              <SegmentedControl className="w-auto" value={grain} onChange={setGrain} options={[
+              <Pills value={grain} onChange={setGrain} options={[
                 { value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' },
               ]} />
             </div>
@@ -234,6 +234,29 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
 }
 
 /* ---------------------------------- pieces ---------------------------------- */
+
+/** Compact pill toggle for panel headers — same chip language as the drawers. */
+function Pills({ options, value, onChange }: {
+  options: { value: string; label: string }[]; value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-0.5 rounded-full bg-background-sunken p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'type-caption whitespace-nowrap rounded-full px-2.5 py-1',
+            o.value === value ? 'bg-card font-medium shadow-sm' : 'text-foreground-secondary hover:text-foreground',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Legend({ items }: { items: { bg: string; label: React.ReactNode }[] }) {
   return (
