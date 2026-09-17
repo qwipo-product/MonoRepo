@@ -13,6 +13,7 @@ import {
   kpis, dailyValue, dailyPrev, dailyDelivered, attention, statuses, ageing, funnel, newOutletsByWeek,
   dimensions, movers, dimensionLabel,
 } from '../data/overview';
+import { useScope } from '../scope';
 import type { Page } from '../nav';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
@@ -51,6 +52,14 @@ const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
+  const { f, setF } = useScope();
+  // Contribution rows: distributor → its orders; city/company → becomes the scope filter.
+  const rowDrill = (dim: string, name: string, value: number): (() => void) | undefined => {
+    if (dim === 'distributor') return () => setDrill({ title: `Orders · ${name}`, total: `₹${value}L this period`, distributors: [name] });
+    if (dim === 'city') return () => setF({ ...f, cities: [name], distributors: [] });
+    if (dim === 'company') return () => setF({ ...f, companies: [name] });
+    return undefined; // category / brand / SKU drill with the Brands page
+  };
   const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number } | null>(null);
   // Funnel drill-down: outlets by stage, plus the silent list and weekly cohorts.
   const funnelQuick = [
@@ -234,7 +243,11 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                       {dir === 'up' ? 'Driving · +₹7.3L together' : 'Dragging · −₹2.1L together'}
                     </h4>
                     {movers[dir].map((m) => (
-                      <div key={m.name} className="type-caption grid grid-cols-[78px_1fr_1fr_70px] items-center gap-2.5 border-b border-border-subtle py-1.5 text-foreground">
+                      <div
+                        key={m.name}
+                        className={cn('type-caption grid grid-cols-[78px_1fr_1fr_70px] items-center gap-2.5 border-b border-border-subtle py-1.5 text-foreground', rowDrill(m.type, m.name, 0) && 'cursor-pointer hover:bg-muted')}
+                        onClick={rowDrill(m.type, m.name.replace(' (ITC)', ''), 0)}
+                      >
                         <Badge className={cn('justify-center normal-case tracking-normal text-primary-foreground', dimBg[m.type])}>{dimensionLabel[m.type]}</Badge>
                         <span>{m.name}<span className="block text-foreground-secondary">{m.sub}</span></span>
                         <div className="h-2 overflow-hidden rounded-sm bg-background-sunken"><div className={cn('h-full rounded-sm', dir === 'up' ? 'bg-success' : 'bg-error')} style={{ width: `${(Math.abs(m.change) / 21) * 100}%` }} /></div>
@@ -247,9 +260,9 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 ))}
               </div>
             </div>
-            {([['Who sells', ['distributor', 'city'], 'distributors'], ['What sells', ['company', 'category'], 'brands'], ['', ['brand', 'sku'], 'brands']] as const).map(([head, keys, target]) => (
+            {([['Who sells', ['distributor', 'city']], ['What sells', ['company', 'category']], ['', ['brand', 'sku']]] as const).map(([head, keys]) => (
               <div key={keys.join()}>
-                {head && <button type="button" onClick={() => go(target)} className="type-caption mb-2 font-medium text-foreground-secondary hover:text-link">{head}</button>}
+                {head && <div className="type-caption mb-2 font-medium text-foreground-secondary">{head}</div>}
                 <div className="grid grid-cols-2 gap-x-9 gap-y-5">
                   {keys.map((k) => {
                     const d = dimensions.find((x) => x.key === k)!;
@@ -262,7 +275,15 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                           <span className="ml-auto font-medium normal-case tracking-normal text-foreground-secondary">{d.total}</span>
                         </h4>
                         <div className="flex flex-col gap-2">
-                          {d.rows.map((r) => <RankedRow key={r.name} rank={r.other ? undefined : ++rank} name={r.name} value={r.value} max={max} change={r.change} barClass={dimBg[d.key]} other={r.other} />)}
+                          {d.rows.map((r) => (
+                            <RankedRow
+                              key={r.name}
+                              rank={r.other ? undefined : ++rank}
+                              name={r.name} value={r.value} max={max} change={r.change}
+                              barClass={dimBg[d.key]} other={r.other}
+                              onClick={r.other ? undefined : rowDrill(d.key, r.name, r.value)}
+                            />
+                          ))}
                         </div>
                       </div>
                     );

@@ -9,18 +9,23 @@ import { cn } from '@mockups/ui';
 
 /** Horizontal ranked bar: rank · name · bar · value · change. Decliners hatched. */
 export function RankedRow({
-  rank, name, value, max, change, barClass, other,
+  rank, name, value, max, change, barClass, other, onClick,
 }: {
   rank?: number; name: string; value: number; max: number; change: number;
   /** token class for the bar fill, e.g. `bg-chart-blue` */
   barClass: string;
   /** catch-all row ("12 others"): muted bar, no rank */
   other?: boolean;
+  /** drill-through for this row */
+  onClick?: () => void;
 }) {
   const pct = Math.min((value / max) * 100, 100);
   const down = change < 0;
   return (
-    <div className="type-caption grid grid-cols-[150px_1fr_108px] items-center gap-2.5 text-foreground">
+    <div
+      className={cn('type-caption grid grid-cols-[150px_1fr_108px] items-center gap-2.5 text-foreground', onClick && '-mx-1 cursor-pointer rounded-md px-1 hover:bg-muted')}
+      onClick={onClick && ((e: React.MouseEvent) => { e.stopPropagation(); onClick(); })}
+    >
       <span className={cn('flex gap-2 truncate', down && 'text-error-foreground')}>
         <i className="w-3.5 text-right not-italic tabular-nums text-foreground-tertiary">{other ? '' : rank}</i>
         {name}
