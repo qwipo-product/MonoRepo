@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
+import { Funnel } from '../components/Funnel';
 import { RecordsDrawer } from '../components/RecordsDrawer';
 import { EntityDrawer } from '../components/EntityDrawer';
 import { quietOutlets, decliningBrands, funnelOutlets, dimensionFullRows, type EntityRow } from '../data/entityRows';
@@ -216,28 +217,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
         <Panel className="col-span-12" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`}>
           <div className="grid grid-cols-[5fr_3fr_4fr] items-start gap-7">
-            <div className="flex flex-col gap-1">
-              {funnel.map((f, i) => {
-                const w = f.n / funnel[0].n; const nxt = i < funnel.length - 1 ? funnel[i + 1].n / funnel[0].n : w * 0.7;
-                const inset = ((w - nxt) / 2 / w) * 100;
-                return (
-                  <div
-                    key={f.label}
-                    className="type-caption grid cursor-pointer grid-cols-[90px_minmax(160px,1fr)_100px] items-center gap-2 rounded-md hover:bg-muted"
-                    onClick={(e) => { e.stopPropagation(); openFunnel(i, `Outlets · ${f.label}`); }}
-                  >
-                    <span className="text-right text-foreground">{f.label}</span>
-                    <div className="flex justify-center">
-                      <div className={cn('type-price-sm grid h-[34px] place-items-center text-primary-foreground', i === funnel.length - 1 ? 'bg-success' : 'bg-primary')}
-                        style={{ width: `${w * 100}%`, clipPath: `polygon(0 0,100% 0,${100 - inset}% 100%,${inset}% 100%)` }}>
-                        {f.n}
-                      </div>
-                    </div>
-                    <span className="whitespace-nowrap text-foreground-secondary">{i === 0 ? '—' : <><b className="text-foreground">{Math.round((f.n / funnel[i - 1].n) * 100)}%</b> of prev</>}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <Funnel stages={funnel} onStage={(i, label) => openFunnel(i, `Outlets · ${label}`)} />
             <div>
               <p className="type-caption text-foreground-secondary"><b className="text-foreground">New outlets per week</b> · 62</p>
               <Columns

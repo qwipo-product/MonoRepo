@@ -2,9 +2,10 @@
 // onboarding cohorts, frequency bands, gone-quiet and silent analysis. Same
 // grammar: no navigation, drawers only.
 import { useState } from 'react';
-import { cn } from '@mockups/ui';
 import { Columns, HBars } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
+import { Funnel } from '../components/Funnel';
+import { Handoff } from '../components/Handoff';
 import { Panel, KpiCard } from '../components/dashboard';
 import { EntityDrawer, type EntityQuickFilter } from '../components/EntityDrawer';
 import { funnelOutlets, quietOutlets, type EntityRow } from '../data/entityRows';
@@ -45,30 +46,7 @@ export default function Customers({ go }: { go: (p: Page) => void }) {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-7" title="Onboarding funnel" subtitle="Qualified = ≥2 orders, each > ₹300" onOpen={() => openFunnel(0)}>
-          <div className="flex flex-col gap-1.5 py-2">
-            {funnel.map((f, i) => {
-              const w = f.n / funnel[0].n; const nxt = i < funnel.length - 1 ? funnel[i + 1].n / funnel[0].n : w * 0.7;
-              const inset = ((w - nxt) / 2 / w) * 100;
-              return (
-                <div
-                  key={f.label}
-                  className="type-caption grid cursor-pointer grid-cols-[110px_minmax(200px,1fr)_110px] items-center gap-3 rounded-md hover:bg-muted"
-                  onClick={(e) => { e.stopPropagation(); openFunnel(i, `Outlets · ${f.label}`); }}
-                >
-                  <span className="text-right text-foreground">{f.label}</span>
-                  <div className="flex justify-center">
-                    <div
-                      className={cn('type-price-sm grid h-10 place-items-center text-primary-foreground', i === funnel.length - 1 ? 'bg-success' : 'bg-primary')}
-                      style={{ width: `${w * 100}%`, clipPath: `polygon(0 0,100% 0,${100 - inset}% 100%,${inset}% 100%)` }}
-                    >
-                      {f.n}
-                    </div>
-                  </div>
-                  <span className="whitespace-nowrap text-foreground-secondary">{i === 0 ? '—' : <><b className="text-foreground">{Math.round((f.n / funnel[i - 1].n) * 100)}%</b> of prev</>}</span>
-                </div>
-              );
-            })}
-          </div>
+          <Funnel stages={funnel} onStage={(i, label) => openFunnel(i, `Outlets · ${label}`)} />
         </Panel>
 
         <Panel className="col-span-5" title="Weekly cohorts" subtitle="Onboarded · how many ordered">
@@ -117,15 +95,13 @@ export default function Customers({ go }: { go: (p: Page) => void }) {
           />
         </Panel>
 
-        <div className="col-span-12 flex flex-col justify-center rounded-xl border border-dashed border-border bg-card p-5">
-          <b className="type-label">Need the outlet records?</b>
-          <p className="type-caption mt-0.5 text-foreground-secondary">Runs the Customer Master report with this scope · Platform Admin only · lands in Run history.</p>
-          <div className="mt-3">
-            <button type="button" onClick={() => go('reports')} className="type-caption rounded-md bg-primary px-3.5 py-2 font-medium text-primary-foreground hover:bg-primary-hover">
-              Run Customer Master
-            </button>
-          </div>
-        </div>
+        <Handoff
+          className="col-span-12"
+          go={go}
+          title="Need the outlet records?"
+          body="Runs the Customer Master report with this scope · Platform Admin only · lands in Run history."
+          cta="Run Customer Master"
+        />
       </div>
     </div>
   );

@@ -3,8 +3,9 @@
 // headers (# · Name · Share · Value · vs Jul); descriptive rows (funnel
 // outlets, quiet outlets) keep the card-row list.
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Button, Input, cn } from '@mockups/ui';
+import { makeTh } from './tableSort';
 import type { EntityRow } from '../data/entityRows';
 import type { Page } from '../nav';
 
@@ -39,17 +40,7 @@ export function EntityDrawer({
     });
   }
 
-  const th = (k: SortKey, label: string, right?: boolean) => (
-    <th
-      className={cn('cursor-pointer select-none py-2 pr-3 font-semibold hover:text-foreground', right && 'text-right')}
-      onClick={() => setSort((s) => ({ k, dir: s.k === k ? (s.dir === 1 ? -1 : 1) : k === 'name' ? 1 : -1 }))}
-    >
-      <span className="inline-flex items-center gap-0.5">
-        {label}
-        {sort.k === k && (sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
-      </span>
-    </th>
-  );
+  const th = makeTh<SortKey>(sort, setSort, (k) => (k === 'name' ? 1 : -1));
 
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">

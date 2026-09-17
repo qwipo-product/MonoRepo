@@ -3,7 +3,7 @@
 // screen with drill chips in the scope bar and panels reshaped to the subset.
 // Records never appear here — the last card hands the filters to a report.
 import { useState } from 'react';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, cn } from '@mockups/ui';
+import { Button, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { Columns, HBars } from '@mockups/components';
@@ -18,6 +18,7 @@ import {
 
 const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
 import { RecordsDrawer } from '../components/RecordsDrawer';
+import { Handoff } from '../components/Handoff';
 import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
@@ -381,18 +382,3 @@ function OverdueChart() {
   );
 }
 
-/** Dashed hand-off card: the only route from analytics to order-level records. */
-function Handoff({ title, body, cta, className, go }: { title: string; body: string; cta: string; className?: string; go: (p: Page) => void }) {
-  return (
-    <Card className={cn('flex flex-col justify-center border-dashed', className)}>
-      <CardHeader className="pb-3">
-        <CardTitle className="type-label">{title}</CardTitle>
-        <CardDescription>{body}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex gap-2">
-        <Button size="sm" onClick={() => go('reports')}>{cta}</Button>
-        <Button size="sm" variant="secondary" onClick={() => go('reports')}>Open Reports</Button>
-      </CardContent>
-    </Card>
-  );
-}

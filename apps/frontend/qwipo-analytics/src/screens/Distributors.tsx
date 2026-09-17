@@ -2,10 +2,11 @@
 // cancellation health, overdue load, beats, scheme placeholder. Same grammar
 // as the frozen Overview: no page navigation, everything drills via drawers.
 import { useState } from 'react';
-import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
 import { HBars } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
+import { Handoff } from '../components/Handoff';
+import { makeTh } from '../components/tableSort';
 import { Panel, KpiCard } from '../components/dashboard';
 import { RecordsDrawer } from '../components/RecordsDrawer';
 import { distributorRows, topBeats, type DistributorRow } from '../data/distributors';
@@ -29,17 +30,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
 
   const rows = [...distributorRows].sort((a, b) => sort.dir * (a[sort.k] - b[sort.k]));
   const rankOf = new Map([...distributorRows].sort((a, b) => b.value - a.value).map((r, i) => [r.name, i + 1]));
-  const th = (k: SortKey, label: string) => (
-    <th
-      className="cursor-pointer select-none py-2 pr-3 text-right font-semibold hover:text-foreground"
-      onClick={() => setSort((s) => ({ k, dir: s.k === k ? (s.dir === 1 ? -1 : 1) : -1 }))}
-    >
-      <span className="inline-flex items-center gap-0.5">
-        {label}
-        {sort.k === k && (sort.dir === 1 ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
-      </span>
-    </th>
-  );
+  const th = makeTh<SortKey>(sort, setSort);
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,11 +60,11 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
               <tr className="type-micro text-left text-foreground-tertiary">
                 <th className="w-7 py-2 pr-2 font-semibold">#</th>
                 <th className="py-2 pr-3 font-semibold">Distributor</th>
-                {th('orders', 'Orders')}
-                {th('value', 'Value')}
-                {th('change', 'vs Jul')}
-                {th('delivery', 'Delivery %')}
-                {th('cancel', 'Cancel %')}
+                {th('orders', 'Orders', true)}
+                {th('value', 'Value', true)}
+                {th('change', 'vs Jul', true)}
+                {th('delivery', 'Delivery %', true)}
+                {th('cancel', 'Cancel %', true)}
                 <th className="py-2 pr-3 text-right font-semibold">Activation</th>
                 <th className="py-2 font-semibold">Priority</th>
               </tr>
@@ -155,15 +146,13 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
           </div>
         </Panel>
 
-        <div className="col-span-7 flex flex-col justify-center rounded-xl border border-dashed border-border bg-card p-5">
-          <b className="type-label">Need distributor-level records?</b>
-          <p className="type-caption mt-0.5 text-foreground-secondary">Runs the Distributor Performance report with this scope · lands in Run history.</p>
-          <div className="mt-3">
-            <button type="button" onClick={() => go('reports')} className="type-caption rounded-md bg-primary px-3.5 py-2 font-medium text-primary-foreground hover:bg-primary-hover">
-              Run Distributor Performance
-            </button>
-          </div>
-        </div>
+        <Handoff
+          className="col-span-7"
+          go={go}
+          title="Need distributor-level records?"
+          body="Runs the Distributor Performance report with this scope · lands in Run history."
+          cta="Run Distributor Performance"
+        />
       </div>
     </div>
   );
