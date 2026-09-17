@@ -43,7 +43,7 @@ export function EntityDrawer({
         <div className="border-b border-border-subtle px-5 py-3">
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search outlet or city" className="h-9 pl-8" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="h-9 pl-8" />
           </div>
           {quickFilters && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -70,7 +70,7 @@ export function EntityDrawer({
               <span>
                 <span className="type-label block">{r.name}</span>
                 <span className="type-caption block text-foreground-secondary">{r.sub}</span>
-                <span className={cn('type-caption block', r.tone === 'error' ? 'text-error-foreground' : r.tone === 'warning' ? 'text-warning-foreground' : 'text-foreground-secondary')}>{r.mid}</span>
+                {r.mid && <span className={cn('type-caption block', r.tone === 'error' ? 'text-error-foreground' : r.tone === 'warning' ? 'text-warning-foreground' : 'text-foreground-secondary')}>{r.mid}</span>}
               </span>
               <span className="text-right">
                 <span className="type-price-sm block">{r.right}</span>

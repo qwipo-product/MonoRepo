@@ -69,6 +69,21 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     { label: 'Qualified', tag: 'qualified', count: 48 },
     { label: 'Silent', tag: 'silent', count: 93 },
   ];
+  // A dimension card opens its own entity list (18 distributors, 6 cities…).
+  const openDimension = (d: (typeof dimensions)[number]) => {
+    const totalVal = d.rows.reduce((s, r) => s + r.value, 0);
+    setEntity({
+      title: d.label,
+      total: d.total,
+      rows: d.rows.map((r) => ({
+        name: r.name,
+        sub: r.other ? '' : `${((r.value / totalVal) * 100).toFixed(1)}% share`,
+        right: `₹${r.value}L`,
+        rightSub: r.change === 0 ? '—' : `${r.change < 0 ? '↓' : '↑'} ${Math.abs(r.change)}%`,
+        tone: r.change < 0 ? ('error' as const) : undefined,
+      })),
+    });
+  };
   const openFunnel = (initialQf: number, title = 'Outlets onboarded this period') =>
     setEntity({ title, total: '210 outlets · 1 – 22 Aug', rows: funnelOutlets, quickFilters: funnelQuick, initialQf });
   // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
@@ -268,7 +283,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 const tail = total - top.reduce((s, r) => s + r.value, 0);
                 const count = parseInt(d.total.replace(/,/g, ''));
                 return (
-                  <Card key={d.key} variant="flat" className="border border-border p-3.5">
+                  <Card key={d.key} variant="interactive" className="border border-border p-3.5" onClick={() => openDimension(d)}>
                     <div className="mb-1 flex items-baseline justify-between">
                       <span className={cn('type-micro', dimText[d.key])}>{d.label}</span>
                       <span className="type-caption text-foreground-secondary">{d.total}</span>
@@ -277,7 +292,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                       <div
                         key={r.name}
                         className={cn('flex items-baseline gap-2 py-1', rowDrill(d.key, r.name, r.value) && '-mx-1.5 cursor-pointer rounded-md px-1.5 hover:bg-muted')}
-                        onClick={rowDrill(d.key, r.name, r.value)}
+                        onClick={(e) => { const fn = rowDrill(d.key, r.name, r.value); if (fn) { e.stopPropagation(); fn(); } }}
                       >
                         <i className="type-caption w-3.5 shrink-0 not-italic text-foreground-tertiary">{i + 1}</i>
                         <span className="type-body flex-1 truncate">{r.name}</span>

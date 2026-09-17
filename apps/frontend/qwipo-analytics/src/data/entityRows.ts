@@ -3,7 +3,7 @@
 export interface EntityRow {
   name: string;
   sub: string;
-  mid: string;
+  mid?: string;
   right: string;
   rightSub?: string;
   tone?: 'error' | 'warning';
