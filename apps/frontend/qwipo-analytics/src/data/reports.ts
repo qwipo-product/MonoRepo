@@ -99,10 +99,23 @@ export function addRun(reportKey: string) {
 export const lastRunOf = (key: string) => runs.find((r) => r.reportKey === key);
 
 /** Report schedules — the automation mails business already receives. */
-export const schedules: Record<string, string | undefined> = {
-  'order-register': 'Daily · 06:15',
-  'sales-report': 'Daily · 06:15',
+export interface Schedule {
+  freq: 'Daily' | 'Weekly' | 'Monthly';
+  /** Weekly: 'Mon'…'Sun'. Monthly: 1…31. */
+  day?: string | number;
+  time: string;
+}
+export const schedules: Record<string, Schedule | undefined> = {
+  'order-register': { freq: 'Daily', time: '06:15' },
+  'sales-report': { freq: 'Daily', time: '06:15' },
 };
-export function setSchedule(key: string, value?: string) {
+export function setSchedule(key: string, value?: Schedule) {
   schedules[key] = value;
+}
+const nth = (d: number) => `${d}${d % 10 === 1 && d !== 11 ? 'st' : d % 10 === 2 && d !== 12 ? 'nd' : d % 10 === 3 && d !== 13 ? 'rd' : 'th'}`;
+export function scheduleLabel(s?: Schedule) {
+  if (!s) return undefined;
+  if (s.freq === 'Daily') return `Daily · ${s.time}`;
+  if (s.freq === 'Weekly') return `Weekly · ${s.day} · ${s.time}`;
+  return `Monthly · ${nth(s.day as number)} · ${s.time}`;
 }

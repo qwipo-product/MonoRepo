@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { CalendarClock, ChevronLeft, ChevronRight, Download, History, Play, Search, X } from 'lucide-react';
 import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
-import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, type ReportDef, type Run } from '../data/reports';
+import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLabel, type ReportDef, type Run } from '../data/reports';
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import type { Page } from '../nav';
 
@@ -76,7 +76,7 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-3">
                     {schedules[def.key]
-                      ? <span className="tabular-nums text-foreground-secondary">{schedules[def.key]}</span>
+                      ? <span className="tabular-nums text-foreground-secondary">{scheduleLabel(schedules[def.key])}</span>
                       : <span className="text-foreground-tertiary">—</span>}
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-5 text-right">
@@ -225,10 +225,15 @@ function HistoryDrawer({ def, onClose }: { def: ReportDef; onClose: () => void }
 
 function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: () => void; onSaved: () => void }) {
   const current = schedules[def.key];
-  const [freq, setFreq] = useState(current ? current.split(' · ')[0] : 'Off');
-  const [time, setTime] = useState(current ? current.split(' · ')[1] : '06:15');
+  const [freq, setFreq] = useState<'Off' | 'Daily' | 'Weekly' | 'Monthly'>(current?.freq ?? 'Off');
+  const [weekday, setWeekday] = useState<string>(current?.freq === 'Weekly' ? (current.day as string) : 'Mon');
+  const [monthday, setMonthday] = useState<number>(current?.freq === 'Monthly' ? (current.day as number) : 1);
+  const [time, setTime] = useState(current?.time ?? '06:15');
+
   const save = () => {
-    setSchedule(def.key, freq === 'Off' ? undefined : `${freq} · ${time}`);
+    setSchedule(def.key, freq === 'Off' ? undefined : {
+      freq, time, day: freq === 'Weekly' ? weekday : freq === 'Monthly' ? monthday : undefined,
+    });
     onSaved();
     onClose();
   };
@@ -236,6 +241,7 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
     'type-caption rounded-full px-3 py-1',
     active ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
   );
+
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
       <aside
@@ -246,7 +252,9 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
         <header className="flex items-center gap-3 border-b border-border px-5 py-4">
           <span className="flex-1 leading-tight">
             <span className="type-h3 block">Schedule · {def.name}</span>
-            <span className="type-caption block text-foreground-secondary">The file is generated and mailed automatically</span>
+            <span className="type-caption block text-foreground-secondary">
+              {current ? `Currently ${scheduleLabel(current)}` : 'Not scheduled — the file is generated and mailed automatically'}
+            </span>
           </span>
           <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
             <X size={17} />
@@ -256,10 +264,43 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="type-micro mb-1.5 text-foreground-tertiary">Frequency</div>
           <div className="flex flex-wrap gap-1.5">
-            {['Off', 'Daily', 'Weekly (Mon)', 'Monthly (1st)'].map((o) => (
+            {(['Off', 'Daily', 'Weekly', 'Monthly'] as const).map((o) => (
               <button key={o} type="button" onClick={() => setFreq(o)} className={chip(freq === o)}>{o}</button>
             ))}
           </div>
+
+          {freq === 'Weekly' && (
+            <>
+              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Day of week</div>
+              <div className="flex flex-wrap gap-1.5">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                  <button key={d} type="button" onClick={() => setWeekday(d)} className={chip(weekday === d)}>{d}</button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {freq === 'Monthly' && (
+            <>
+              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Day of month</div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setMonthday(d)}
+                    className={cn(
+                      'type-caption h-8 rounded-md tabular-nums',
+                      monthday === d ? 'bg-primary font-medium text-primary-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              {monthday > 28 && <p className="type-caption mt-1.5 text-foreground-secondary">In shorter months it runs on the last day.</p>}
+            </>
+          )}
 
           {freq !== 'Off' && (
             <>
@@ -277,7 +318,7 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
         </div>
 
         <footer className="flex gap-2 border-t border-border p-4">
-          <Button fullWidth size="sm" onClick={save}>Save schedule</Button>
+          <Button fullWidth size="sm" onClick={save}>{freq === 'Off' && current ? 'Turn off schedule' : 'Save schedule'}</Button>
           <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
         </footer>
       </aside>
