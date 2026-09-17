@@ -7,6 +7,10 @@ export const dimBg: Record<DimensionKey, string> = {
   distributor: 'bg-chart-blue', city: 'bg-chart-cyan', company: 'bg-chart-indigo',
   category: 'bg-chart-violet', brand: 'bg-chart-sky', sku: 'bg-chart-teal',
 };
+export const dimText: Record<DimensionKey, string> = {
+  distributor: 'text-chart-blue', city: 'text-chart-cyan', company: 'text-chart-indigo',
+  category: 'text-chart-violet', brand: 'text-chart-sky', sku: 'text-chart-teal',
+};
 export const dimBorder: Record<DimensionKey, string> = {
   distributor: 'border-chart-blue', city: 'border-chart-cyan', company: 'border-chart-indigo',
   category: 'border-chart-violet', brand: 'border-chart-sky', sku: 'border-chart-teal',

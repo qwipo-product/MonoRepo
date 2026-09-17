@@ -6,9 +6,9 @@ import { EntityDrawer } from '../components/EntityDrawer';
 import { quietOutlets, decliningBrands, funnelOutlets, type EntityRow } from '../data/entityRows';
 import type { Stage } from '../data/orderRows';
 import { TrendChart } from '../components/TrendChart';
-import { RankedRow, Columns, Stat } from '@mockups/components';
+import { Columns, Stat } from '@mockups/components';
 import { Panel, KpiCard } from '../components/dashboard';
-import { dimBg, dimBorder, ageBg, severityText, openBg } from '../components/chartClasses';
+import { dimBg, dimText, ageBg, severityText, openBg } from '../components/chartClasses';
 import {
   kpis, dailyValue, dailyPrev, dailyDelivered, attention, statuses, ageing, funnel, newOutletsByWeek,
   dimensions, movers, dimensionLabel,
@@ -260,37 +260,45 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 ))}
               </div>
             </div>
-            {([['Who sells', ['distributor', 'city']], ['What sells', ['company', 'category']], ['', ['brand', 'sku']]] as const).map(([head, keys]) => (
-              <div key={keys.join()}>
-                {head && <div className="type-caption mb-2 font-medium text-foreground-secondary">{head}</div>}
-                <div className="grid grid-cols-2 gap-x-9 gap-y-5">
-                  {keys.map((k) => {
-                    const d = dimensions.find((x) => x.key === k)!;
-                    const max = Math.max(...d.rows.filter((r) => !r.other).map((r) => r.value));
-                    let rank = 0;
-                    return (
-                      <div key={k}>
-                        <h4 className={cn('type-micro mb-2.5 flex items-center gap-2 border-b-2 pb-1.5 text-foreground', dimBorder[d.key])}>
-                          <i className={cn('h-2 w-2 rounded-sm', dimBg[d.key])} />{d.label}
-                          <span className="ml-auto font-medium normal-case tracking-normal text-foreground-secondary">{d.total}</span>
-                        </h4>
-                        <div className="flex flex-col gap-2">
-                          {d.rows.map((r) => (
-                            <RankedRow
-                              key={r.name}
-                              rank={r.other ? undefined : ++rank}
-                              name={r.name} value={r.value} max={max} change={r.change}
-                              barClass={dimBg[d.key]} other={r.other}
-                              onClick={r.other ? undefined : rowDrill(d.key, r.name, r.value)}
-                            />
-                          ))}
-                        </div>
+            {/* Leader cards: top 3 + the tail, mini share bar. Rows drill per dimension. */}
+            <div className="grid grid-cols-3 gap-3">
+              {dimensions.map((d) => {
+                const top = d.rows.filter((r) => !r.other).slice(0, 3);
+                const total = d.rows.reduce((s, r) => s + r.value, 0);
+                const tail = total - top.reduce((s, r) => s + r.value, 0);
+                const count = parseInt(d.total.replace(/,/g, ''));
+                return (
+                  <Card key={d.key} variant="flat" className="border border-border p-3.5">
+                    <div className="mb-1 flex items-baseline justify-between">
+                      <span className={cn('type-micro', dimText[d.key])}>{d.label}</span>
+                      <span className="type-caption text-foreground-secondary">{d.total}</span>
+                    </div>
+                    {top.map((r, i) => (
+                      <div
+                        key={r.name}
+                        className={cn('flex items-baseline gap-2 py-1', rowDrill(d.key, r.name, r.value) && '-mx-1.5 cursor-pointer rounded-md px-1.5 hover:bg-muted')}
+                        onClick={rowDrill(d.key, r.name, r.value)}
+                      >
+                        <i className="type-caption w-3.5 shrink-0 not-italic text-foreground-tertiary">{i + 1}</i>
+                        <span className="type-body flex-1 truncate">{r.name}</span>
+                        <b className="type-price-sm">₹{r.value}L</b>
+                        <Badge variant={r.change < 0 ? 'danger' : 'success'}>{r.change < 0 ? '↓' : '↑'} {Math.abs(r.change)}%</Badge>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+                    ))}
+                    <div className="type-caption mt-1.5 flex justify-between border-t border-dashed border-border pt-1.5 text-foreground-secondary">
+                      <span>{(count - 3).toLocaleString('en-IN')} others</span>
+                      <span className="tabular-nums">₹{tail.toFixed(1)}L</span>
+                    </div>
+                    <div className="mt-2.5 flex h-1.5 gap-px overflow-hidden rounded-full">
+                      {top.map((r, i) => (
+                        <i key={r.name} className={cn('block', dimBg[d.key], i === 1 && 'opacity-70', i === 2 && 'opacity-45')} style={{ width: `${(r.value / total) * 100}%` }} />
+                      ))}
+                      <i className="block flex-1 bg-background-sunken" />
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>
