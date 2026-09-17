@@ -41,11 +41,11 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
         <table className="w-full border-collapse">
           <thead>
             <tr className="type-micro text-left text-foreground-tertiary">
-              <th className="py-2.5 pl-5 pr-3 font-semibold">Report</th>
-              <th className="py-2.5 pr-3 font-semibold">Last run</th>
-              <th className="py-2.5 pr-3 font-semibold">File</th>
-              <th className="py-2.5 pr-3 font-semibold">Schedule</th>
-              <th className="py-2.5 pr-5 font-semibold">Actions</th>
+              <th className="w-[26%] py-2.5 pl-5 pr-3 font-semibold">Report</th>
+              <th className="w-[18%] py-2.5 pr-3 font-semibold">Last run</th>
+              <th className="w-[10%] py-2.5 pr-3 font-semibold">File</th>
+              <th className="w-[14%] py-2.5 pr-3 font-semibold">Schedule</th>
+              <th className="py-2.5 pr-5 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="type-caption">
@@ -79,7 +79,7 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
                       ? <span className="tabular-nums text-foreground-secondary">{schedules[def.key]}</span>
                       : <span className="text-foreground-tertiary">—</span>}
                   </td>
-                  <td className="whitespace-nowrap py-2.5 pr-5">
+                  <td className="whitespace-nowrap py-2.5 pr-5 text-right">
                     <Button size="sm" onClick={() => setRunning(def)}><Play size={13} /> Run</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setHistory(def)}><History size={13} /> History</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setScheduling(def)}><CalendarClock size={13} /> Schedule</Button>
