@@ -3,7 +3,7 @@
 // History opens a right drawer with its run dates, statuses and files.
 // The Order Register also has a live paginated view (#reports/register).
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, FileSpreadsheet, History, Play, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, History, Play, Search, X } from 'lucide-react';
 import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { reportDefs, runs, addRun, lastRunOf, type ReportDef, type Run } from '../data/reports';
@@ -39,8 +39,7 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
             <tr className="type-micro text-left text-foreground-tertiary">
               <th className="py-2.5 pl-5 pr-3 font-semibold">Report</th>
               <th className="py-2.5 pr-3 font-semibold">Last run</th>
-              <th className="py-2.5 pr-3 font-semibold">Last status</th>
-              <th className="py-2.5 pr-3 font-semibold">Last file</th>
+              <th className="py-2.5 pr-3 font-semibold">File</th>
               <th className="py-2.5 pr-5 text-right font-semibold">Actions</th>
             </tr>
           </thead>
@@ -49,31 +48,32 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
               const last = lastRunOf(def.key);
               return (
                 <tr key={def.key} className="border-t border-border-subtle">
-                  <td className="max-w-[360px] py-2.5 pl-5 pr-3">
+                  <td className="py-2.5 pl-5 pr-3">
                     <span className="type-label flex items-center gap-2">
                       {def.name}
                       {def.flags?.map((f) => <Badge key={f.label} variant={f.variant} className="normal-case tracking-normal">{f.label}</Badge>)}
                     </span>
-                    <span className="block text-foreground-secondary">{def.desc}</span>
-                    {def.live && (
-                      <button type="button" onClick={() => go('reports/register')} className="mt-0.5 font-medium text-link hover:underline">
-                        Open live register →
-                      </button>
+                  </td>
+                  <td className="whitespace-nowrap py-2.5 pr-3">
+                    {last ? (
+                      <span className="flex items-center gap-2 tabular-nums text-foreground-secondary">
+                        {last.when} <Badge variant={statusBadge[last.status]}>{last.status}</Badge>
+                      </span>
+                    ) : (
+                      <span className="text-foreground-tertiary">Never run</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-foreground-secondary">{last?.when ?? 'Never run'}</td>
-                  <td className="py-2.5 pr-3">{last ? <Badge variant={statusBadge[last.status]}>{last.status}</Badge> : <span className="text-foreground-tertiary">—</span>}</td>
-                  <td className="max-w-[220px] py-2.5 pr-3">
+                  <td className="py-2.5 pr-3">
                     {last?.file ? (
-                      <button type="button" className="flex items-center gap-1.5 truncate font-medium text-link hover:underline" title={last.file}>
-                        <FileSpreadsheet size={13} className="shrink-0" />
-                        <span className="truncate">{last.file}</span>
+                      <button type="button" title={last.file} aria-label={`Download ${last.file}`} className="grid h-8 w-8 place-items-center rounded-md text-link hover:bg-muted">
+                        <Download size={15} />
                       </button>
                     ) : (
                       <span className="text-foreground-tertiary">—</span>
                     )}
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-5 text-right">
+                    {def.live && <Button variant="secondary" size="sm" className="mr-1.5" onClick={() => go('reports/register')}>Live</Button>}
                     <Button size="sm" onClick={() => setRunning(def)}><Play size={13} /> Run</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setHistory(def)}><History size={13} /> History</Button>
                   </td>
