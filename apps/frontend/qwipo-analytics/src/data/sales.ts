@@ -13,12 +13,12 @@ export const salesKpis: Kpi[] = [
 
 /** Month-wise order value with delivered + returned inside each bar. Aug = 22 days. */
 export const monthly = [
-  { label: 'Mar', value: 21.4, delivered: 8.6, returned: 0.22 },
-  { label: 'Apr', value: 24.8, delivered: 10.1, returned: 0.26 },
-  { label: 'May', value: 27.1, delivered: 11.2, returned: 0.28 },
-  { label: 'Jun', value: 29.6, delivered: 12.4, returned: 0.31 },
-  { label: 'Jul', value: 33.2, delivered: 13.6, returned: 0.35 },
-  { label: 'Aug*', value: 38.6, delivered: 15.0, returned: 0.4 },
+  { label: 'Mar', value: 21.4, delivered: 8.6, returned: 0.9 },
+  { label: 'Apr', value: 24.8, delivered: 10.1, returned: 1.1 },
+  { label: 'May', value: 27.1, delivered: 11.2, returned: 1.2 },
+  { label: 'Jun', value: 29.6, delivered: 12.4, returned: 1.4 },
+  { label: 'Jul', value: 33.2, delivered: 13.6, returned: 1.6 },
+  { label: 'Aug*', value: 38.6, delivered: 15.0, returned: 1.8 },
 ];
 
 export const networkCancelRate = 24.9;
