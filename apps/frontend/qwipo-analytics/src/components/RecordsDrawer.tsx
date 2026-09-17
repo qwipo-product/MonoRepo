@@ -137,7 +137,6 @@ export function RecordsDrawer({
           <span className="type-caption flex-1 text-foreground-secondary">
             Showing {rows.length} of {total.split(' ')[0]}{!capped && !q && ' · scroll for more'}
           </span>
-          <Button variant="secondary" size="sm" onClick={() => go('reports')}>Export XLSX</Button>
           <Button size="sm" onClick={() => go('reports')}>Full register in Reports</Button>
         </footer>
       </aside>
