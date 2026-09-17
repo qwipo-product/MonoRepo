@@ -12,6 +12,10 @@ copied these files by hand they have shipped at least one of the silent
 failures listed at the bottom — the kind that pass every check and produce a
 404 page in front of a client.
 
+Preconditions: the app builds (invoke `verify` first), and the generated
+files land like any other change — `start-work` for the branch, `land-work`
+to reach `dev`, which is the first branch a build fires from.
+
 ## Step 0 — is it actually deployable?
 
 An app qualifies if `apps/frontend/<app>/package.json` exists and `build`
