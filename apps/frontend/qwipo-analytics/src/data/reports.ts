@@ -97,3 +97,12 @@ export function addRun(reportKey: string) {
 }
 
 export const lastRunOf = (key: string) => runs.find((r) => r.reportKey === key);
+
+/** Report schedules — the automation mails business already receives. */
+export const schedules: Record<string, string | undefined> = {
+  'order-register': 'Daily · 06:15',
+  'sales-report': 'Daily · 06:15',
+};
+export function setSchedule(key: string, value?: string) {
+  schedules[key] = value;
+}

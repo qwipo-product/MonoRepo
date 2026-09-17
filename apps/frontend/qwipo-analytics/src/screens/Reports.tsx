@@ -3,10 +3,10 @@
 // History opens a right drawer with its run dates, statuses and files.
 // The Order Register also has a live paginated view (#reports/register).
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, History, Play, Search, X } from 'lucide-react';
+import { CalendarClock, ChevronLeft, ChevronRight, Download, History, Play, Search, X } from 'lucide-react';
 import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
-import { reportDefs, runs, addRun, lastRunOf, type ReportDef, type Run } from '../data/reports';
+import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, type ReportDef, type Run } from '../data/reports';
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import type { Page } from '../nav';
 
@@ -17,6 +17,7 @@ const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
 export default function Reports({ go, register }: { go: (p: Page | string) => void; register?: boolean }) {
   const [running, setRunning] = useState<ReportDef | null>(null);
   const [history, setHistory] = useState<ReportDef | null>(null);
+  const [scheduling, setScheduling] = useState<ReportDef | null>(null);
   const [, bump] = useState(0); // re-render after addRun
   if (register) return <Register go={go} />;
 
@@ -32,6 +33,9 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
         />
       )}
       {history && !running && <HistoryDrawer def={history} onClose={() => setHistory(null)} />}
+      {scheduling && !running && !history && (
+        <ScheduleDrawer def={scheduling} onClose={() => setScheduling(null)} onSaved={() => bump((n) => n + 1)} />
+      )}
 
       <Card className="flex flex-col">
         <table className="w-full border-collapse">
@@ -40,7 +44,8 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
               <th className="py-2.5 pl-5 pr-3 font-semibold">Report</th>
               <th className="py-2.5 pr-3 font-semibold">Last run</th>
               <th className="py-2.5 pr-3 font-semibold">File</th>
-              <th className="py-2.5 pr-5 text-right font-semibold">Actions</th>
+              <th className="py-2.5 pr-3 font-semibold">Schedule</th>
+              <th className="py-2.5 pr-5 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="type-caption">
@@ -69,10 +74,16 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
                       <span className="text-foreground-tertiary">—</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap py-2.5 pr-5 text-right">
-                    {def.live && <Button variant="secondary" size="sm" className="mr-1.5" onClick={() => go('reports/register')}>Live</Button>}
+                  <td className="whitespace-nowrap py-2.5 pr-3">
+                    {schedules[def.key]
+                      ? <span className="tabular-nums text-foreground-secondary">{schedules[def.key]}</span>
+                      : <span className="text-foreground-tertiary">—</span>}
+                  </td>
+                  <td className="whitespace-nowrap py-2.5 pr-5">
                     <Button size="sm" onClick={() => setRunning(def)}><Play size={13} /> Run</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setHistory(def)}><History size={13} /> History</Button>
+                    <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setScheduling(def)}><CalendarClock size={13} /> Schedule</Button>
+                    {def.live && <Button variant="ghost" size="sm" className="ml-1.5 text-link" onClick={() => go('reports/register')}>Live</Button>}
                   </td>
                 </tr>
               );
@@ -206,6 +217,70 @@ function HistoryDrawer({ def, onClose }: { def: ReportDef; onClose: () => void }
             </div>
           )}
         </div>
+      </aside>
+    </div>
+  );
+}
+
+/* ------------------------------ Schedule drawer ------------------------------ */
+
+function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: () => void; onSaved: () => void }) {
+  const current = schedules[def.key];
+  const [freq, setFreq] = useState(current ? current.split(' · ')[0] : 'Off');
+  const [time, setTime] = useState(current ? current.split(' · ')[1] : '06:15');
+  const save = () => {
+    setSchedule(def.key, freq === 'Off' ? undefined : `${freq} · ${time}`);
+    onSaved();
+    onClose();
+  };
+  const chip = (active: boolean) => cn(
+    'type-caption rounded-full px-3 py-1',
+    active ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
+  );
+  return (
+    <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
+      <aside
+        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[400px] flex-col border-l border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-label={`Schedule ${def.name}`}
+      >
+        <header className="flex items-center gap-3 border-b border-border px-5 py-4">
+          <span className="flex-1 leading-tight">
+            <span className="type-h3 block">Schedule · {def.name}</span>
+            <span className="type-caption block text-foreground-secondary">The file is generated and mailed automatically</span>
+          </span>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
+            <X size={17} />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="type-micro mb-1.5 text-foreground-tertiary">Frequency</div>
+          <div className="flex flex-wrap gap-1.5">
+            {['Off', 'Daily', 'Weekly (Mon)', 'Monthly (1st)'].map((o) => (
+              <button key={o} type="button" onClick={() => setFreq(o)} className={chip(freq === o)}>{o}</button>
+            ))}
+          </div>
+
+          {freq !== 'Off' && (
+            <>
+              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Time</div>
+              <div className="flex flex-wrap gap-1.5">
+                {['06:15', '09:00', '13:00', '18:00'].map((o) => (
+                  <button key={o} type="button" onClick={() => setTime(o)} className={chip(time === o)}>{o}</button>
+                ))}
+              </div>
+
+              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Recipients</div>
+              <p className="type-caption text-foreground-secondary">Your email, plus anyone in your team list. Each recipient gets the report in their own scope.</p>
+            </>
+          )}
+        </div>
+
+        <footer className="flex gap-2 border-t border-border p-4">
+          <Button fullWidth size="sm" onClick={save}>Save schedule</Button>
+          <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
+        </footer>
       </aside>
     </div>
   );
