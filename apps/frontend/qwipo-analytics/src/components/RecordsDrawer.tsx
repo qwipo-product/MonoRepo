@@ -37,12 +37,13 @@ const stageBadge: Record<Stage, NonNullable<BadgeProps['variant']>> = {
 };
 
 export function RecordsDrawer({
-  title, total, statusFilter, sortByValue, onClose, go,
+  title, total, statuses, sortByValue, onClose, go,
 }: {
   title: string;
   /** the KPI's real total, e.g. "1,142 orders · ₹38.6L" */
   total: string;
-  statusFilter?: Stage;
+  /** limit to these stages (e.g. the four open stages) */
+  statuses?: Stage[];
   sortByValue?: boolean;
   onClose: () => void;
   go: (p: Page) => void;
@@ -51,7 +52,7 @@ export function RecordsDrawer({
   const [pages, setPages] = useState(1);
   const capped = pages >= MAX_PAGES;
   let rows = Array.from({ length: pages }, (_, p) => pageRows(p)).flat();
-  if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
+  if (statuses?.length) rows = rows.filter((r) => statuses.includes(r.status));
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
   if (q) rows = rows.filter((r) => `${r.id} ${r.outlet} ${r.distributor}`.toLowerCase().includes(q.toLowerCase()));
 

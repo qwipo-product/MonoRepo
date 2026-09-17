@@ -16,14 +16,16 @@ import type { Page } from '../nav';
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 /** Drill-through per KPI: the record rows behind the number. null = navigate. */
-type Drill = { title: string; total: string; status?: Stage; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; sort?: boolean };
 const kpiDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
   { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
   null, // Active outlets — outlet records come with the Customers page
-  { title: 'Delivered orders', total: '454 orders · ₹15.0L', status: 'delivered' },
+  { title: 'Delivered orders', total: '454 orders · ₹15.0L', statuses: ['delivered'] },
 ];
+
+const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
@@ -38,7 +40,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
-      {drill && <RecordsDrawer {...drill} statusFilter={drill.status} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
+      {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
 
       <section>
         <div className="grid grid-cols-5 gap-3">
@@ -77,12 +79,20 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
         </Card>
 
         <Panel className="col-span-5" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`} onOpen={() => go('sales')}>
-          <Columns items={[
-            { label: 'Open', n: open, bg: openBg },
-            { label: 'Delivered', n: delivered, bg: 'bg-success' },
-            { label: 'Cancelled', n: cancelled, bg: 'bg-error' },
-            { label: 'Returned', n: returned, bg: 'bg-warning' },
-          ]} />
+          <Columns
+            items={[
+              { label: 'Open', n: open, bg: openBg },
+              { label: 'Delivered', n: delivered, bg: 'bg-success' },
+              { label: 'Cancelled', n: cancelled, bg: 'bg-error' },
+              { label: 'Returned', n: returned, bg: 'bg-warning' },
+            ]}
+            onBar={(l) => setDrill({
+              Open: { title: 'Open orders', total: `${open} orders · ₹12.7L`, statuses: openStages },
+              Delivered: { title: 'Delivered orders', total: `${delivered} orders · ₹15.0L`, statuses: ['delivered'] as Stage[] },
+              Cancelled: { title: 'Cancelled orders', total: `${cancelled} orders · ₹10.5L`, statuses: ['cancelled'] as Stage[] },
+              Returned: { title: 'Returned orders', total: `${returned} orders · ₹0.4L`, statuses: ['returned'] as Stage[] },
+            }[l] ?? null)}
+          />
           <div className="mt-5 flex gap-5">
             <Stat label="Delivery rate" value={`${((delivered / closed) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">target 70%</span> · {delivered} ÷ {closed} closed</>} />
             <Stat label="Cancellation rate" value={`${((cancelled / total) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">↑ 4.1 pts</span> · {cancelled} of {total.toLocaleString('en-IN')}</>} />
@@ -90,7 +100,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
         </Panel>
 
         <Panel className="col-span-7" title="Open orders by age" subtitle={`${open} open · days since order date`} onOpen={() => go('sales')}>
-          <Columns items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))} />
+          <Columns
+            items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
+            onBar={(l) => {
+              const i = ageing.buckets.findIndex((b) => l.startsWith(b));
+              setDrill({ title: `Open orders · ${ageing.buckets[i]}`, total: `${bucketTotals[i]} orders`, statuses: openStages });
+            }}
+          />
           <div className="type-caption mt-4 grid grid-cols-[80px_repeat(5,1fr)_48px] gap-1">
             <div />
             {ageing.buckets.map((b) => <div key={b} className="type-micro text-center text-foreground-secondary">{b}</div>)}
@@ -99,7 +115,14 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
               <Fragment key={r.stage}>
                 <div className="whitespace-nowrap">{r.stage}</div>
                 {r.counts.map((n, i) => (
-                  <div key={i} className="relative grid h-7 place-items-center rounded-sm font-medium tabular-nums">
+                  <div
+                    key={i}
+                    className="relative grid h-7 cursor-pointer place-items-center rounded-sm font-medium tabular-nums hover:ring-2 hover:ring-ring"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDrill({ title: `${r.stage} · ${ageing.buckets[i]}`, total: `${n} orders`, statuses: [r.stage.toLowerCase() as Stage] });
+                    }}
+                  >
                     <i className={cn('absolute inset-0 rounded-sm', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.12 + 0.88 * Math.min(n / 60, 1) }} />
                     <span className={cn('relative', n >= 30 ? 'text-primary-foreground' : 'text-foreground')}>{n}</span>
                   </div>

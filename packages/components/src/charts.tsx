@@ -41,13 +41,18 @@ export function RankedRow({
   );
 }
 
-/** Vertical bars with the value on top and the label underneath. `bg` is a token class. */
-export function Columns({ items, height = 130 }: { items: { label: string; n: number; bg: string }[]; height?: number }) {
+/** Vertical bars with the value on top and the label underneath. `bg` is a token class.
+ *  `onBar` makes each column a drill-through click target. */
+export function Columns({ items, height = 130, onBar }: { items: { label: string; n: number; bg: string }[]; height?: number; onBar?: (label: string) => void }) {
   const max = Math.max(...items.map((i) => i.n));
   return (
     <div className="flex items-end gap-2.5" style={{ height }}>
       {items.map((it) => (
-        <div key={it.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+        <div
+          key={it.label}
+          className={cn('flex h-full flex-1 flex-col items-center justify-end gap-1', onBar && 'cursor-pointer rounded-md hover:bg-muted')}
+          onClick={onBar && ((e: React.MouseEvent) => { e.stopPropagation(); onBar(it.label); })}
+        >
           <b className="type-price-sm">{it.n.toLocaleString('en-IN')}</b>
           <i className={cn('block w-full rounded-t-sm', it.bg)} style={{ height: `${(it.n / max) * 100}%` }} />
           <small className="type-caption whitespace-nowrap text-foreground-secondary">{it.label}</small>
@@ -58,11 +63,16 @@ export function Columns({ items, height = 130 }: { items: { label: string; n: nu
 }
 
 /** 100% horizontal stacked bar; labels sit inside segments wide enough to hold them. */
-export function StackBar({ parts }: { parts: { key: string; pct: number; label: string; bg: string }[] }) {
+export function StackBar({ parts, onPart }: { parts: { key: string; pct: number; label: string; bg: string }[]; onPart?: (key: string) => void }) {
   return (
     <div className="flex h-8 w-full overflow-hidden rounded-md">
       {parts.map((p) => (
-        <div key={p.key} className={cn('grid place-items-center overflow-hidden', p.bg)} style={{ width: `${p.pct}%` }}>
+        <div
+          key={p.key}
+          className={cn('grid place-items-center overflow-hidden', p.bg, onPart && 'cursor-pointer hover:opacity-85')}
+          style={{ width: `${p.pct}%` }}
+          onClick={onPart && ((e: React.MouseEvent) => { e.stopPropagation(); onPart(p.key); })}
+        >
           {p.pct >= 5 && <span className="type-micro normal-case tracking-normal text-primary-foreground">{p.label}</span>}
         </div>
       ))}
@@ -72,16 +82,21 @@ export function StackBar({ parts }: { parts: { key: string; pct: number; label: 
 
 /** Label · track · count+value rows; `barClass` is a token class per row. */
 export function HBars({
-  rows, wideLabel,
+  rows, wideLabel, onRow,
 }: {
   rows: { label: string; n: number; value: string; barClass: string }[];
   wideLabel?: boolean;
+  onRow?: (label: string) => void;
 }) {
   const max = Math.max(...rows.map((r) => r.n));
   return (
     <div className="flex flex-col gap-2">
       {rows.map((r) => (
-        <div key={r.label} className={cn('type-caption grid items-center gap-2.5 text-foreground', wideLabel ? 'grid-cols-[210px_1fr_84px]' : 'grid-cols-[170px_1fr_84px]')}>
+        <div
+          key={r.label}
+          className={cn('type-caption grid items-center gap-2.5 text-foreground', wideLabel ? 'grid-cols-[210px_1fr_84px]' : 'grid-cols-[170px_1fr_84px]', onRow && 'cursor-pointer rounded-md px-1 -mx-1 hover:bg-muted')}
+          onClick={onRow && ((e: React.MouseEvent) => { e.stopPropagation(); onRow(r.label); })}
+        >
           <span className="truncate">{r.label}</span>
           <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
             <div className={cn('h-full rounded-sm', r.barClass)} style={{ width: `${(r.n / max) * 100}%` }} />

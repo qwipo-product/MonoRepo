@@ -17,17 +17,18 @@ import {
 
 const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
 import { RecordsDrawer } from '../components/RecordsDrawer';
+import { useScope } from '../scope';
 import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
 /** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
-type Drill = { title: string; total: string; status?: Stage; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; sort?: boolean };
 const salesDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
   { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
-  { title: 'Delivered orders', total: '454 orders · ₹15.0L', status: 'delivered' },
-  { title: 'Cancelled orders', total: '284 orders · ₹10.5L', status: 'cancelled' },
+  { title: 'Delivered orders', total: '454 orders · ₹15.0L', statuses: ['delivered'] },
+  { title: 'Cancelled orders', total: '284 orders · ₹10.5L', statuses: ['cancelled'] },
   null, // Repeat-order rate — outlet records come with the Customers page
 ];
 
@@ -43,10 +44,15 @@ function FullSales({ go }: { go: (p: Page) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
   const totalOrders = statuses.reduce((s, x) => s + x.orders, 0);
   const totalValue = statuses.reduce((s, x) => s + x.value, 0);
+  const { f, setF } = useScope();
+  const stageDrill = (key: string) => {
+    const s = statuses.find((x) => x.key === key)!;
+    setDrill({ title: `${s.label} orders`, total: `${s.orders} orders · ₹${s.value.toFixed(1)}L`, statuses: [key as Stage] });
+  };
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
-      {drill && <RecordsDrawer {...drill} statusFilter={drill.status} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
+      {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
 
       <div className="flex gap-1.5">
         {['Summary', 'Trend', 'Status', 'Geography', 'Cancellations'].map((a, i) => (
@@ -95,9 +101,9 @@ function FullSales({ go }: { go: (p: Page) => void }) {
 
         <Panel className="col-span-5" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L`}>
           <div className="type-caption mb-1.5 text-foreground-secondary"><b className="text-foreground">Orders</b> · share of {totalOrders.toLocaleString('en-IN')}</div>
-          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
+          <StackBar onPart={stageDrill} parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
           <div className="type-caption mb-1.5 mt-4 text-foreground-secondary"><b className="text-foreground">Value</b> · share of ₹{totalValue.toFixed(1)}L</div>
-          <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
+          <StackBar onPart={stageDrill} parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
           <Legend items={statuses.map((s) => ({ bg: stageBg[s.key], label: s.label }))} />
           <div className="mt-4 grid grid-cols-3 gap-3">
             <Stat label="Delivery rate" value="61.5%" note={<><span className="font-medium text-error-foreground">target 70%</span> · 454 ÷ 738 closed</>} />
@@ -107,11 +113,18 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-7" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
-          <CityScatter />
+          {/* Clicking a city applies it to the app-wide scope — a drill IS a filter. */}
+          <CityScatter onCity={(name) => setF({ ...f, cities: [name], distributors: [] })} />
         </Panel>
 
         <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L" onOpen={() => go('reports')}>
-          <HBars rows={toHBars(cancelReasons)} />
+          <HBars
+            rows={toHBars(cancelReasons)}
+            onRow={(label) => {
+              const r = cancelReasons.find((x) => x.label === label)!;
+              setDrill({ title: `Cancelled · ${label}`, total: `${r.n} orders · ${r.value}`, statuses: ['cancelled'] });
+            }}
+          />
         </Panel>
 
         <Handoff
@@ -129,12 +142,14 @@ function FullSales({ go }: { go: (p: Page) => void }) {
 /* --------------------------------- drilled state --------------------------------- */
 
 function DrilledSales({ go }: { go: (p: Page) => void }) {
+  const [drill, setDrill] = useState<Drill | null>(null);
   return (
     <div className="flex flex-col gap-5">
       <div className="type-caption flex items-center gap-1.5 text-foreground-secondary">
         Overview › Attention › <b className="text-foreground">Open orders past 4 days</b>
         <Button variant="ghost" size="sm" className="ml-2 text-link" onClick={() => go('overview')}>← Back to Overview</Button>
       </div>
+      {drill && <RecordsDrawer {...drill} onClose={() => setDrill(null)} go={go} />}
 
       <ScopeBar
         chips={[
@@ -154,7 +169,14 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-5" title="The 91 by stage">
-          <Columns height={150} items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'shipped' ? 'bg-error' : stageBg[s.key] }))} />
+          <Columns
+            height={150}
+            items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'shipped' ? 'bg-error' : stageBg[s.key] }))}
+            onBar={(l) => {
+              const s = drillStages.find((x) => x.label === l)!;
+              setDrill({ title: `The 91 · ${s.label}`, total: `${s.n} orders`, statuses: [s.key as Stage] });
+            }}
+          />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">60 are already Shipped.</b></p>
         </Panel>
 
@@ -220,7 +242,7 @@ function MonthBars() {
 }
 
 /** Cities scatter: order value × cancellation rate, dot size by orders, network line. */
-function CityScatter() {
+function CityScatter({ onCity }: { onCity?: (name: string) => void }) {
   const x = (v: number) => 70 + v * 49;
   const y = (rate: number) => 270 - (rate - 20) * 16.8;
   const netY = y(networkCancelRate);
@@ -235,7 +257,7 @@ function CityScatter() {
       <text x={78} y={46} className="fill-error-foreground text-[10px] font-semibold">Cancels above network</text>
       <text x={78} y={292} className="fill-success-foreground text-[10px] font-semibold">Cleaner than network</text>
       {cities.map((c) => (
-        <g key={c.name}>
+        <g key={c.name} className={cn(onCity && 'cursor-pointer')} onClick={onCity && (() => onCity(c.name))}>
           <circle cx={x(c.value)} cy={y(c.cancel)} r={c.r} className={dotFill(c.cancel)} opacity={0.85} />
           <text
             x={x(c.value) + (c.labelLeft ? -(c.r + 5) : c.r + 5)}
