@@ -4,8 +4,25 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge, Button, Input, cn, type BadgeProps } from '@mockups/ui';
-import { orderRows, stageLabel, type Stage } from '../data/orderRows';
+import { orderRows, stageLabel, type OrderRow, type Stage } from '../data/orderRows';
 import type { Page } from '../nav';
+
+/** Infinite scroll, mocked: each "page" replays the sample rows a week earlier
+ *  with fresh ids (real build: keyset pagination against ClickHouse). */
+const MAX_PAGES = 5;
+const shiftDate = (d: string, weeks: number) => {
+  const day = parseInt(d) - weeks * 7;
+  return day > 0 ? `${day} Aug` : `${day + 31} Jul`;
+};
+function pageRows(page: number): OrderRow[] {
+  if (page === 0) return orderRows;
+  return orderRows.map((r, i) => ({
+    ...r,
+    id: `${r.id.slice(0, -2)}${page}${(i % 36).toString(36).toUpperCase()}`,
+    date: shiftDate(r.date, page),
+    delivered: r.delivered && shiftDate(r.delivered, page),
+  }));
+}
 
 /** "21 Aug" → "22 Aug" = "1d" (mock dates are day-month strings in one month). */
 function daysBetween(from: string, to?: string) {
@@ -31,9 +48,17 @@ export function RecordsDrawer({
   go: (p: Page) => void;
 }) {
   const [q, setQ] = useState('');
-  let rows = statusFilter ? orderRows.filter((r) => r.status === statusFilter) : orderRows;
+  const [pages, setPages] = useState(1);
+  const capped = pages >= MAX_PAGES;
+  let rows = Array.from({ length: pages }, (_, p) => pageRows(p)).flat();
+  if (statusFilter) rows = rows.filter((r) => r.status === statusFilter);
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
   if (q) rows = rows.filter((r) => `${r.id} ${r.outlet} ${r.distributor}`.toLowerCase().includes(q.toLowerCase()));
+
+  const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (!capped && !q && el.scrollTop + el.clientHeight > el.scrollHeight - 160) setPages(pages + 1);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
@@ -61,7 +86,7 @@ export function RecordsDrawer({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5">
+        <div className="flex-1 overflow-y-auto px-5" onScroll={onScroll}>
           <table className="w-full border-collapse">
             <thead className="sticky top-0 bg-card">
               <tr className="type-micro text-left text-foreground-tertiary">
@@ -97,12 +122,21 @@ export function RecordsDrawer({
               {rows.length === 0 && (
                 <tr><td colSpan={5} className="py-8 text-center text-foreground-secondary">No orders match</td></tr>
               )}
+              {capped && !q && (
+                <tr>
+                  <td colSpan={5} className="type-caption py-4 text-center text-foreground-secondary">
+                    Preview capped — open the full register for the rest
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         <footer className="flex items-center gap-2 border-t border-border p-4">
-          <span className="type-caption flex-1 text-foreground-secondary">Showing {rows.length} of {total.split(' ')[0]}</span>
+          <span className="type-caption flex-1 text-foreground-secondary">
+            Showing {rows.length} of {total.split(' ')[0]}{!capped && !q && ' · scroll for more'}
+          </span>
           <Button variant="secondary" size="sm" onClick={() => go('reports')}>Export XLSX</Button>
           <Button size="sm" onClick={() => go('reports')}>Full register in Reports</Button>
         </footer>
