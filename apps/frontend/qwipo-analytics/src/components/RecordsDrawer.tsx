@@ -68,7 +68,7 @@ export function RecordsDrawer({
                 <th className="py-2 pr-3 font-semibold">Date</th>
                 <th className="py-2 pr-3 font-semibold">Order</th>
                 <th className="py-2 pr-3 font-semibold">Outlet</th>
-                <th className="py-2 pr-3 font-semibold">{statusFilter === 'delivered' ? 'Delivered on' : 'Status'}</th>
+                <th className="py-2 pr-3 font-semibold">Status</th>
                 <th className="py-2 text-right font-semibold">Value</th>
               </tr>
             </thead>
@@ -82,13 +82,11 @@ export function RecordsDrawer({
                   </td>
                   <td className="max-w-[170px] truncate py-2 pr-3">{r.outlet}</td>
                   <td className="py-2 pr-3">
-                    {statusFilter === 'delivered' ? (
-                      <span className="whitespace-nowrap tabular-nums">
-                        {r.delivered}
-                        <span className="ml-1.5 text-foreground-tertiary">{daysBetween(r.date, r.delivered)}</span>
+                    <Badge variant={stageBadge[r.status]}>{stageLabel[r.status]}</Badge>
+                    {r.delivered && (
+                      <span className="mt-0.5 block whitespace-nowrap tabular-nums text-foreground-tertiary">
+                        {r.delivered} {daysBetween(r.date, r.delivered)}
                       </span>
-                    ) : (
-                      <Badge variant={stageBadge[r.status]}>{stageLabel[r.status]}</Badge>
                     )}
                   </td>
                   <td className={cn('py-2 text-right tabular-nums', r.status === 'cancelled' && 'text-error-foreground')}>
