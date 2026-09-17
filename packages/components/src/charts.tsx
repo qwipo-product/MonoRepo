@@ -110,10 +110,13 @@ export function HBars({
   );
 }
 
-/** Label · big number · note, used for rates under a chart. */
-export function Stat({ label, value, note }: { label: string; value: string; note: React.ReactNode }) {
+/** Label · big number · note, used for rates under a chart. `onClick` = drill-through. */
+export function Stat({ label, value, note, onClick }: { label: string; value: string; note: React.ReactNode; onClick?: () => void }) {
   return (
-    <div>
+    <div
+      className={cn(onClick && '-mx-1.5 cursor-pointer rounded-md px-1.5 hover:bg-muted')}
+      onClick={onClick && ((e: React.MouseEvent) => { e.stopPropagation(); onClick(); })}
+    >
       <div className="type-caption text-foreground-secondary">{label}</div>
       <div className="type-h1 tabular-nums">{value}</div>
       <div className="type-caption text-foreground-secondary">{note}</div>

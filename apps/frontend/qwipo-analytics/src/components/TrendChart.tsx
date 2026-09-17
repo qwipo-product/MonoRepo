@@ -18,7 +18,7 @@ function extrema(vals: number[]) {
 const lakh = (v: number, d = 1) => `₹${v.toFixed(d)}L`;
 const poly = (a: readonly (readonly [number, number])[]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
-export function TrendChart({ current, previous, delivered }: { current: number[]; previous: number[]; delivered: number[] }) {
+export function TrendChart({ current, previous, delivered, onPoint }: { current: number[]; previous: number[]; delivered: number[]; onPoint?: (i: number) => void }) {
   const c = pts(current), p = pts(previous), d = pts(delivered);
   const gridY = (v: number) => Y0 - v * SCALE;
   return (
@@ -35,7 +35,8 @@ export function TrendChart({ current, previous, delivered }: { current: number[]
       <polyline points={poly(p)} className="fill-none stroke-border-strong" strokeWidth={1.6} strokeDasharray="4 3" />
       <polyline points={poly(c)} className="fill-none stroke-primary" strokeWidth={2.2} />
       {extrema(current).map(({ i, peak }) => (
-        <g key={`c${i}`}>
+        <g key={`c${i}`} className={cn(onPoint && 'cursor-pointer')} onClick={onPoint && ((e) => { e.stopPropagation(); onPoint(i); })}>
+          {onPoint && <circle cx={c[i][0]} cy={c[i][1]} r={12} className="fill-transparent" />}
           <circle cx={c[i][0]} cy={c[i][1]} r={3} className="fill-primary" />
           <text x={c[i][0]} y={c[i][1] + (peak ? -9 : 18)} textAnchor="middle" className={cn(peak ? 'fill-foreground font-medium' : 'fill-foreground-secondary', 'text-[10px]')}>
             {lakh(current[i])}

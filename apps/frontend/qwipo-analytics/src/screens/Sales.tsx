@@ -21,8 +21,10 @@ import { useScope } from '../scope';
 import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
+const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+
 /** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
-type Drill = { title: string; total: string; statuses?: Stage[]; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributor?: string; sort?: boolean };
 const salesDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
@@ -82,7 +84,10 @@ function FullSales({ go }: { go: (p: Page) => void }) {
               ]} />
             </div>
           }>
-          <TrendChart current={dailyValue} previous={dailyPrev} delivered={dailyDelivered} />
+          <TrendChart
+            current={dailyValue} previous={dailyPrev} delivered={dailyDelivered}
+            onPoint={(i) => setDrill({ title: `Orders · ${i + 1} Aug`, total: `₹${dailyValue[i]}L placed · ₹${dailyDelivered[i]}L delivered`, date: `${i + 1} Aug` })}
+          />
           <Legend items={[
             { bg: 'bg-primary', label: 'Order value · ₹38.6L' },
             { bg: 'bg-success', label: 'Delivered value · ₹15.0L' },
@@ -91,7 +96,12 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-12" title="Month-wise sales" subtitle="Delivered value inside each bar">
-          <MonthBars />
+          {/* Clicking a month re-scopes the date range to that month. */}
+          <MonthBars onMonth={(m) => {
+            const idx = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug*'].indexOf(m) + 2;
+            const last = m === 'Aug*' ? 22 : new Date(2026, idx + 1, 0).getDate();
+            setF({ ...f, preset: 'Custom', from: new Date(2026, idx, 1).toISOString(), to: new Date(2026, idx, last).toISOString() });
+          }} />
           <Legend items={[
             { bg: openBg, label: 'Order value' },
             { bg: 'bg-success', label: 'Delivered value' },
@@ -106,9 +116,11 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           <StackBar onPart={stageDrill} parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
           <Legend items={statuses.map((s) => ({ bg: stageBg[s.key], label: s.label }))} />
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <Stat label="Delivery rate" value="61.5%" note={<><span className="font-medium text-error-foreground">target 70%</span> · 454 ÷ 738 closed</>} />
-            <Stat label="Cancellation rate" value="24.9%" note={<><span className="font-medium text-error-foreground">↑ 4.1 pts</span> · of 1,142</>} />
-            <Stat label="Return rate" value="2.6%" note="12 ÷ 466 delivered" />
+            <Stat label="Delivery rate" value="61.5%" note={<><span className="font-medium text-error-foreground">target 70%</span> · 454 ÷ 738 closed</>}
+              onClick={() => stageDrill('delivered')} />
+            <Stat label="Cancellation rate" value="24.9%" note={<><span className="font-medium text-error-foreground">↑ 4.1 pts</span> · of 1,142</>}
+              onClick={() => stageDrill('cancelled')} />
+            <Stat label="Return rate" value="2.6%" note="12 ÷ 466 delivered" onClick={() => stageDrill('returned')} />
           </div>
         </Panel>
 
@@ -163,7 +175,12 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
 
       <section>
         <div className="grid grid-cols-6 gap-3">
-          {drillKpis.map((k) => <KpiCard key={k.label} {...k} />)}
+          {drillKpis.map((k, i) => (
+            <KpiCard key={k.label} {...k} onOpen={i < 3 ? () => setDrill({
+              title: i === 0 ? 'The 91 overdue orders' : i === 1 ? 'The 91 · by value' : 'The 91 · by value',
+              total: '91 orders · ₹3.1L', statuses: openStages, sort: i > 0,
+            }) : undefined} />
+          ))}
         </div>
       </section>
 
@@ -181,7 +198,16 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-7" title="The 91 by distributor" onOpen={() => go('distributors')}>
-          <HBars rows={toHBars(drillDistributors)} wideLabel />
+          <HBars
+            rows={toHBars(drillDistributors)}
+            wideLabel
+            onRow={(label) => {
+              const name = label.split(' · ')[0];
+              if (name.includes('others')) return;
+              const d = drillDistributors.find((x) => x.label === label)!;
+              setDrill({ title: `The 91 · ${name}`, total: `${d.n} orders · ${d.value}`, statuses: openStages, distributor: name });
+            }}
+          />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>
         </Panel>
 
@@ -221,12 +247,16 @@ function Legend({ items }: { items: { bg: string; label: React.ReactNode }[] }) 
 }
 
 /** Month columns with the delivered slice inside each bar. */
-function MonthBars() {
+function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
   const max = Math.max(...monthly.map((m) => m.value));
   return (
     <div className="flex items-end justify-around gap-6 px-4" style={{ height: 210 }}>
       {monthly.map((m) => (
-        <div key={m.label} className="flex h-full w-full max-w-[110px] flex-col items-center justify-end gap-1">
+        <div
+          key={m.label}
+          className={cn('flex h-full w-full max-w-[110px] flex-col items-center justify-end gap-1', onMonth && 'cursor-pointer rounded-md hover:bg-muted')}
+          onClick={onMonth && (() => onMonth(m.label))}
+        >
           <b className="type-price-sm">₹{m.value}L</b>
           <div className="relative w-full" style={{ height: `${(m.value / max) * 82}%` }}>
             <div className={cn('absolute inset-0 rounded-t-sm', openBg)} />

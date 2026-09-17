@@ -16,7 +16,7 @@ import type { Page } from '../nav';
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 /** Drill-through per KPI: the record rows behind the number. null = navigate. */
-type Drill = { title: string; total: string; statuses?: Stage[]; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; sort?: boolean };
 const kpiDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
@@ -52,7 +52,10 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-8" title="Order value per day" subtitle="Delivered value shaded" onOpen={() => go('sales')}>
-          <TrendChart current={dailyValue} previous={dailyPrev} delivered={dailyDelivered} />
+          <TrendChart
+            current={dailyValue} previous={dailyPrev} delivered={dailyDelivered}
+            onPoint={(i) => setDrill({ title: `Orders · ${i + 1} Aug`, total: `₹${dailyValue[i]}L placed · ₹${dailyDelivered[i]}L delivered`, date: `${i + 1} Aug` })}
+          />
           <div className="type-caption mt-2 flex gap-4 text-foreground-secondary">
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-primary" />Order value · ₹38.6L</span>
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-success" />Delivered value · ₹15.0L</span>
@@ -94,8 +97,10 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             }[l] ?? null)}
           />
           <div className="mt-5 flex gap-5">
-            <Stat label="Delivery rate" value={`${((delivered / closed) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">target 70%</span> · {delivered} ÷ {closed} closed</>} />
-            <Stat label="Cancellation rate" value={`${((cancelled / total) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">↑ 4.1 pts</span> · {cancelled} of {total.toLocaleString('en-IN')}</>} />
+            <Stat label="Delivery rate" value={`${((delivered / closed) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">target 70%</span> · {delivered} ÷ {closed} closed</>}
+              onClick={() => setDrill({ title: 'Delivered orders', total: `${delivered} orders · ₹15.0L`, statuses: ['delivered'] })} />
+            <Stat label="Cancellation rate" value={`${((cancelled / total) * 100).toFixed(1)}%`} note={<><span className="text-error-foreground">↑ 4.1 pts</span> · {cancelled} of {total.toLocaleString('en-IN')}</>}
+              onClick={() => setDrill({ title: 'Cancelled orders', total: `${cancelled} orders · ₹10.5L`, statuses: ['cancelled'] })} />
           </div>
         </Panel>
 
