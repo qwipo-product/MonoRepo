@@ -3,7 +3,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui
 import { ScopeBar } from '../components/ScopeBar';
 import { RecordsDrawer } from '../components/RecordsDrawer';
 import { EntityDrawer } from '../components/EntityDrawer';
-import { quietOutlets, decliningBrands, type EntityRow } from '../data/entityRows';
+import { quietOutlets, decliningBrands, funnelOutlets, type EntityRow } from '../data/entityRows';
 import type { Stage } from '../data/orderRows';
 import { TrendChart } from '../components/TrendChart';
 import { RankedRow, Columns, Stat } from '@mockups/components';
@@ -51,7 +51,17 @@ const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
-  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[] } | null>(null);
+  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number } | null>(null);
+  // Funnel drill-down: outlets by stage, plus the silent list and weekly cohorts.
+  const funnelQuick = [
+    { label: 'All onboarded', count: 210 },
+    { label: 'Ordered', tag: 'ordered', count: 117 },
+    { label: 'Repeat ≥2', tag: 'repeat', count: 64 },
+    { label: 'Qualified', tag: 'qualified', count: 48 },
+    { label: 'Silent', tag: 'silent', count: 93 },
+  ];
+  const openFunnel = (initialQf: number, title = 'Outlets onboarded this period') =>
+    setEntity({ title, total: '210 outlets · 1 – 22 Aug', rows: funnelOutlets, quickFilters: funnelQuick, initialQf });
   // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
   const attentionDrills = [
     () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: ageQuick, initialQf: 5 }),
@@ -168,7 +178,11 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 const w = f.n / funnel[0].n; const nxt = i < funnel.length - 1 ? funnel[i + 1].n / funnel[0].n : w * 0.7;
                 const inset = ((w - nxt) / 2 / w) * 100;
                 return (
-                  <div key={f.label} className="type-caption grid grid-cols-[90px_minmax(160px,1fr)_100px] items-center gap-2">
+                  <div
+                    key={f.label}
+                    className="type-caption grid cursor-pointer grid-cols-[90px_minmax(160px,1fr)_100px] items-center gap-2 rounded-md hover:bg-muted"
+                    onClick={(e) => { e.stopPropagation(); openFunnel(i, `Outlets · ${f.label}`); }}
+                  >
                     <span className="text-right text-foreground">{f.label}</span>
                     <div className="flex justify-center">
                       <div className={cn('type-price-sm grid h-[34px] place-items-center text-primary-foreground', i === funnel.length - 1 ? 'bg-success' : 'bg-primary')}
@@ -183,14 +197,24 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             </div>
             <div>
               <p className="type-caption text-foreground-secondary"><b className="text-foreground">New outlets per week</b> · 62</p>
-              <Columns items={newOutletsByWeek.map((w) => ({ ...w, bg: dimBg.company }))} height={90} />
+              <Columns
+                items={newOutletsByWeek.map((w) => ({ ...w, bg: dimBg.company }))}
+                height={90}
+                onBar={(l) => {
+                  const wi = newOutletsByWeek.findIndex((w) => w.label === l);
+                  setEntity({ title: `Onboarded ${l} Aug`, total: `${newOutletsByWeek[wi].n} outlets`, rows: funnelOutlets.filter((r) => r.tags?.includes(`w${wi + 1}`)) });
+                }}
+              />
             </div>
-            <Card variant="compact" className="grid grid-cols-[10px_1fr] gap-2.5 p-3">
+            <Card
+              variant="interactive"
+              className="grid grid-cols-[10px_1fr] gap-2.5 p-3"
+              onClick={(e) => { e.stopPropagation(); openFunnel(4, '93 outlets onboarded but silent'); }}
+            >
               <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-error" />
               <div>
                 <b className="type-label">93 outlets onboarded but silent</b>
                 <p className="type-caption text-foreground-secondary">Median 11 days since onboarding · 61 in beats with no visit logged</p>
-                <span className="type-caption mt-1 block font-medium text-link">Sales →</span>
               </div>
             </Card>
           </div>
