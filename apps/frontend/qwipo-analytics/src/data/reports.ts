@@ -6,7 +6,9 @@ export interface ReportDef {
   name: string;
   desc: string;
   sheets: string[];
-  /** per-report filters shown in the Run drawer */
+  /** which scope filters this report takes */
+  scope: ('date' | 'company' | 'city' | 'distributor')[];
+  /** report-specific filters */
   filters: { label: string; options: string[] }[];
   /** dependency / access flags */
   flags?: { label: string; variant: 'warning' | 'info' }[];
@@ -16,54 +18,54 @@ export interface ReportDef {
 
 export const reportDefs: ReportDef[] = [
   {
-    key: 'order-register', name: 'Order Register',
+    key: 'order-register', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Order Register',
     desc: 'Every order line in scope — the 32-column contract business receives by mail today.',
     sheets: ['Register', 'Order Lines', 'Summary'],
     filters: [{ label: 'Status', options: ['All', 'Order placed', 'Delivered', 'Cancelled', 'Returned'] }],
     live: true,
   },
   {
-    key: 'sales-report', name: 'Sales Report (Excel)',
+    key: 'sales-report', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Sales Report (Excel)',
     desc: 'Order detail plus a last-3-days summary sheet.',
     sheets: ['Order Detail', 'Summary'],
     filters: [],
   },
   {
-    key: 'open-ageing', name: 'Open Order Ageing',
+    key: 'open-ageing', scope: ['date', 'city', 'distributor'] as const, name: 'Open Order Ageing',
     desc: 'Open orders with stage, age bucket and value at risk, per distributor.',
     sheets: ['Ageing', 'Register'],
     filters: [{ label: 'Age', options: ['All', 'D2+', 'D4+'] }],
   },
   {
-    key: 'delivery-cancellation', name: 'Delivery & Cancellation',
+    key: 'delivery-cancellation', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Delivery & Cancellation',
     desc: 'Delivered vs cancelled with reasons and days-to-deliver.',
     sheets: ['Summary', 'Cancelled', 'Delivered'],
     filters: [{ label: 'Reason', options: ['All', 'Out of stock', 'Retailer cancelled', 'Price mismatch', 'Delivery delay'] }],
     flags: [{ label: 'needs reason taxonomy', variant: 'warning' }],
   },
   {
-    key: 'distributor-performance', name: 'Distributor Performance',
+    key: 'distributor-performance', scope: ['date', 'city', 'distributor'] as const, name: 'Distributor Performance',
     desc: 'Leaderboard with delivery, cancellation and value per distributor.',
     sheets: ['Leaderboard', 'Detail'],
     filters: [{ label: 'City', options: ['All', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad'] }],
     flags: [{ label: 'activation needs retailer mapping', variant: 'warning' }],
   },
   {
-    key: 'scheme-discount', name: 'Scheme & Discount',
+    key: 'scheme-discount', scope: ['date', 'company', 'distributor'] as const, name: 'Scheme & Discount',
     desc: 'Scheme uptake and discount impact per distributor and company.',
     sheets: ['Schemes', 'Discounts'],
     filters: [],
     flags: [{ label: 'needs scheme feed', variant: 'warning' }],
   },
   {
-    key: 'customer-master', name: 'Customer Master',
+    key: 'customer-master', scope: ['city', 'distributor'] as const, name: 'Customer Master',
     desc: 'Outlet register with contact, geo and mapping columns.',
     sheets: ['Outlets'],
     filters: [{ label: 'Status', options: ['All', 'Active', 'Inactive'] }],
     flags: [{ label: 'Platform Admin only', variant: 'info' }],
   },
   {
-    key: 'onboarding-funnel', name: 'Onboarding Funnel',
+    key: 'onboarding-funnel', scope: ['date', 'city', 'distributor'] as const, name: 'Onboarding Funnel',
     desc: 'Onboarded outlets with stage, cohort week and first-order dates.',
     sheets: ['Funnel', 'Outlets'],
     filters: [{ label: 'Stage', options: ['All', 'Ordered', 'Repeat', 'Qualified', 'Silent'] }],

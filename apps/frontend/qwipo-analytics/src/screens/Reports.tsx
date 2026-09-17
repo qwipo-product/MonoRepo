@@ -8,6 +8,8 @@ import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLabel, type ReportDef, type Run } from '../data/reports';
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
+import { DateField } from '../components/DateField';
+import { companyOptions, cityOptions, distributorOptions } from '../components/filters';
 import type { Page } from '../nav';
 
 const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
@@ -99,14 +101,48 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
 function RunDrawer({ def, onClose, onDone, onHistory }: {
   def: ReportDef; onClose: () => void; onDone: () => void; onHistory: () => void;
 }) {
+  const [preset, setPreset] = useState('Month to date');
+  const [from, setFrom] = useState<Date | undefined>();
+  const [to, setTo] = useState<Date | undefined>();
+  const [calOpen, setCalOpen] = useState<'from' | 'to' | null>(null);
+  const [companies, setCompanies] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [dists, setDists] = useState<string[]>([]);
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const generate = () => { addRun(def.key); setDone(true); onDone(); };
 
+  const chip = (active: boolean) => cn(
+    'type-caption rounded-full px-3 py-1',
+    active ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
+  );
+  const toggle = (list: string[], set: (v: string[]) => void, o: string) =>
+    set(list.includes(o) ? list.filter((x) => x !== o) : [...list, o]);
+
+  const multi = (label: string, options: string[], selected: string[], set: (v: string[]) => void, more?: number) => (
+    <div className="mt-4">
+      <div className="type-micro mb-1.5 flex items-baseline justify-between text-foreground-tertiary">
+        {label}
+        {selected.length > 0 && (
+          <button type="button" onClick={() => set([])} className="type-caption font-medium normal-case tracking-normal text-link">
+            {selected.length} selected · Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <button type="button" onClick={() => set([])} className={chip(selected.length === 0)}>All</button>
+        {options.map((o) => (
+          <button key={o} type="button" onClick={() => toggle(selected, set, o)} className={chip(selected.includes(o))}>{o}</button>
+        ))}
+      </div>
+      {more ? <p className="type-caption mt-1 text-foreground-tertiary">+ {more} more in the full picker</p> : null}
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
       <aside
-        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[420px] flex-col border-l border-border bg-card shadow-xl"
+        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[440px] flex-col border-l border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-label={`Run ${def.name}`}
       >
@@ -121,23 +157,43 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="type-micro mb-1.5 text-foreground-tertiary">Scope</div>
-          <p className="type-caption text-foreground-secondary">Full network · 1 – 22 Aug 2026 · follows your filters and role — no wider.</p>
+          {def.scope.includes('date') && (
+            <div>
+              <div className="type-micro mb-1.5 text-foreground-tertiary">Date range</div>
+              <div className="flex flex-wrap gap-1.5">
+                {['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'].map((o) => (
+                  <button key={o} type="button" onClick={() => { setPreset(o); if (o === 'Custom' && !from) { setFrom(new Date(2026, 7, 1)); setTo(new Date(2026, 7, 22)); } }} className={chip(preset === o)}>{o}</button>
+                ))}
+              </div>
+              {preset === 'Custom' && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <DateField
+                    label="From" date={from}
+                    open={calOpen === 'from'} onOpen={() => setCalOpen('from')} onClose={() => setCalOpen(null)}
+                    rangeStart={from} rangeEnd={to}
+                    onPick={(d) => { setFrom(d); if (to && d > to) setTo(d); setCalOpen('to'); }}
+                  />
+                  <DateField
+                    label="To" date={to}
+                    open={calOpen === 'to'} onOpen={() => setCalOpen('to')} onClose={() => setCalOpen(null)}
+                    rangeStart={from} rangeEnd={to}
+                    onPick={(d) => { if (from && d < from) { setTo(from); setFrom(d); } else setTo(d); setCalOpen(null); }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {def.scope.includes('company') && multi('Company', companyOptions, companies, setCompanies, 34)}
+          {def.scope.includes('city') && multi('City', cityOptions, cities, setCities)}
+          {def.scope.includes('distributor') && multi('Distributor', distributorOptions, dists, setDists, 12)}
 
           {def.filters.map((f) => (
             <div key={f.label} className="mt-4">
               <div className="type-micro mb-1.5 text-foreground-tertiary">{f.label}</div>
               <div className="flex flex-wrap gap-1.5">
                 {f.options.map((o) => (
-                  <button
-                    key={o}
-                    type="button"
-                    onClick={() => setPicked({ ...picked, [f.label]: o })}
-                    className={cn(
-                      'type-caption rounded-full px-3 py-1',
-                      (picked[f.label] ?? 'All') === o ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
-                    )}
-                  >
+                  <button key={o} type="button" onClick={() => setPicked({ ...picked, [f.label]: o })} className={chip((picked[f.label] ?? 'All') === o)}>
                     {o}
                   </button>
                 ))}
@@ -151,8 +207,10 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
             </div>
           )}
 
+          <p className="type-caption mt-4 text-foreground-tertiary">Whatever you pick, the report never widens past your role's scope.</p>
+
           {done && (
-            <div className="mt-5 rounded-lg border border-success-border bg-success-subtle px-3.5 py-2.5">
+            <div className="mt-4 rounded-lg border border-success-border bg-success-subtle px-3.5 py-2.5">
               <span className="type-label text-success-foreground">Report generated</span>
               <span className="type-caption block text-success-foreground">The file is in this report's History, ready any time.</span>
             </div>
