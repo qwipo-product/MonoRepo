@@ -37,7 +37,7 @@ const stageBadge: Record<Stage, NonNullable<BadgeProps['variant']>> = {
 };
 
 export function RecordsDrawer({
-  title, total, statuses, date, distributor, sortByValue, onClose, go,
+  title, total, statuses, date, distributors, sortByValue, onClose, go,
 }: {
   title: string;
   /** the KPI's real total, e.g. "1,142 orders · ₹38.6L" */
@@ -45,7 +45,7 @@ export function RecordsDrawer({
   /** limit to these stages (e.g. the four open stages) */
   statuses?: Stage[];
   date?: string;
-  distributor?: string;
+  distributors?: string[];
   sortByValue?: boolean;
   onClose: () => void;
   go: (p: Page) => void;
@@ -56,7 +56,7 @@ export function RecordsDrawer({
   let rows = Array.from({ length: pages }, (_, p) => pageRows(p)).flat();
   if (statuses?.length) rows = rows.filter((r) => statuses.includes(r.status));
   if (date) rows = rows.filter((r) => r.date === date);
-  if (distributor) rows = rows.filter((r) => r.distributor === distributor);
+  if (distributors?.length) rows = rows.filter((r) => distributors.includes(r.distributor));
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
   if (q) rows = rows.filter((r) => `${r.id} ${r.outlet} ${r.distributor}`.toLowerCase().includes(q.toLowerCase()));
 

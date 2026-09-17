@@ -24,7 +24,7 @@ import type { Page } from '../nav';
 const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 /** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
-type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributor?: string; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean };
 const salesDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
@@ -205,7 +205,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
               const name = label.split(' · ')[0];
               if (name.includes('others')) return;
               const d = drillDistributors.find((x) => x.label === label)!;
-              setDrill({ title: `The 91 · ${name}`, total: `${d.n} orders · ${d.value}`, statuses: openStages, distributor: name });
+              setDrill({ title: `The 91 · ${name}`, total: `${d.n} orders · ${d.value}`, statuses: openStages, distributors: [name] });
             }}
           />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>

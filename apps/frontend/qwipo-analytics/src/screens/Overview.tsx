@@ -2,6 +2,8 @@ import { Fragment, useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { RecordsDrawer } from '../components/RecordsDrawer';
+import { EntityDrawer } from '../components/EntityDrawer';
+import { quietOutlets, decliningBrands, type EntityRow } from '../data/entityRows';
 import type { Stage } from '../data/orderRows';
 import { TrendChart } from '../components/TrendChart';
 import { RankedRow, Columns, Stat } from '@mockups/components';
@@ -16,7 +18,7 @@ import type { Page } from '../nav';
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 /** Drill-through per KPI: the record rows behind the number. null = navigate. */
-type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; sort?: boolean };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean };
 const kpiDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L' },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
@@ -29,6 +31,14 @@ const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
+  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[] } | null>(null);
+  // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
+  const attentionDrills = [
+    () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', statuses: openStages }),
+    () => setDrill({ title: 'Cancelled · Vijaya & Lakshmi', total: '89 orders · ₹3.3L', statuses: ['cancelled'], distributors: ['Vijaya Distributors', 'Lakshmi Agencies'] }),
+    () => setEntity({ title: 'High-value outlets gone quiet', total: '148 outlets · ₹6.2L monthly value', rows: quietOutlets }),
+    () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands }),
+  ];
   const total = sum(statuses.map((s) => s.orders));
   const open = sum(statuses.filter((s) => ['created', 'accepted', 'packed', 'shipped'].includes(s.key)).map((s) => s.orders));
   const delivered = statuses.find((s) => s.key === 'delivered')!.orders;
@@ -41,6 +51,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
       {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
+      {entity && <EntityDrawer {...entity} onClose={() => setEntity(null)} go={go} />}
 
       <section>
         <div className="grid grid-cols-5 gap-3">
@@ -68,11 +79,11 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             <CardTitle className="type-label">Attention</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5">
-            {attention.map((a) => (
+            {attention.map((a, i) => (
               <Card
                 key={a.title}
-                variant={a.drill ? 'interactive' : 'default'}
-                onClick={a.drill ? () => setDrill({ title: a.title, total: `${a.count} orders · ₹3.1L`, statuses: openStages }) : undefined}
+                variant="interactive"
+                onClick={attentionDrills[i]}
                 className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5"
               >
                 <span className={cn('type-h1 text-right tabular-nums', severityText[a.severity])}>{a.count}</span>
