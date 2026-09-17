@@ -83,7 +83,6 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
                     <Button size="sm" onClick={() => setRunning(def)}><Play size={13} /> Run</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setHistory(def)}><History size={13} /> History</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setScheduling(def)}><CalendarClock size={13} /> Schedule</Button>
-                    {def.live && <Button variant="ghost" size="sm" className="ml-1.5 text-link" onClick={() => go('reports/register')}>Live</Button>}
                   </td>
                 </tr>
               );
