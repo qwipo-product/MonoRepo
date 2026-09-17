@@ -3,7 +3,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui
 import { ScopeBar } from '../components/ScopeBar';
 import { RecordsDrawer } from '../components/RecordsDrawer';
 import { EntityDrawer } from '../components/EntityDrawer';
-import { quietOutlets, decliningBrands, funnelOutlets, type EntityRow } from '../data/entityRows';
+import { quietOutlets, decliningBrands, funnelOutlets, dimensionFullRows, type EntityRow } from '../data/entityRows';
 import type { Stage } from '../data/orderRows';
 import { TrendChart } from '../components/TrendChart';
 import { Columns, Stat } from '@mockups/components';
@@ -60,7 +60,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     if (dim === 'company') return () => setF({ ...f, companies: [name] });
     return undefined; // category / brand / SKU drill with the Brands page
   };
-  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number } | null>(null);
+  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number; shareTotal?: number } | null>(null);
   // Funnel drill-down: outlets by stage, plus the silent list and weekly cohorts.
   const funnelQuick = [
     { label: 'All onboarded', count: 210 },
@@ -69,17 +69,15 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     { label: 'Qualified', tag: 'qualified', count: 48 },
     { label: 'Silent', tag: 'silent', count: 93 },
   ];
-  // A dimension card opens its own entity list (18 distributors, 6 cities…).
+  // A dimension card opens its own entity list — ALL rows, sortable table.
   const openDimension = (d: (typeof dimensions)[number]) => {
-    const totalVal = d.rows.reduce((s, r) => s + r.value, 0);
+    const shareTotal = parseFloat(d.total.split('₹')[1]);
     setEntity({
       title: d.label,
       total: d.total,
-      rows: d.rows.map((r) => ({
-        name: r.name,
-        sub: r.other ? '' : `${((r.value / totalVal) * 100).toFixed(1)}% share`,
-        right: `₹${r.value}L`,
-        rightSub: r.change === 0 ? '—' : `${r.change < 0 ? '↓' : '↑'} ${Math.abs(r.change)}%`,
+      shareTotal,
+      rows: dimensionFullRows[d.key].map((r) => ({
+        name: r.name, sub: '', right: `₹${r.value}L`, v: r.value, delta: r.change,
         tone: r.change < 0 ? ('error' as const) : undefined,
       })),
     });

@@ -9,6 +9,9 @@ export interface EntityRow {
   tone?: 'error' | 'warning';
   /** slice keys for drawer quick filters (funnel stage, onboarding week…) */
   tags?: string[];
+  /** numeric value + change, when present the drawer offers sorting */
+  v?: number;
+  delta?: number;
 }
 
 /** 148 high-value outlets gone quiet — first page. */
@@ -52,3 +55,59 @@ export const funnelOutlets: EntityRow[] = [
   { name: 'Mahalakshmi Provision', sub: 'Nizamabad', mid: 'No order yet · 4d', right: '18 Aug', rightSub: 'Silent', tone: 'warning', tags: ['silent', 'w3'] },
   { name: 'Surya Kirana Stores', sub: 'Karimnagar', mid: 'No order yet · today', right: '22 Aug', rightSub: 'Silent', tone: 'warning', tags: ['silent', 'w4'] },
 ];
+
+
+/** Full per-dimension rankings for the dimension drawers — no "N others" rows. */
+export const dimensionFullRows: Record<string, { name: string; value: number; change: number }[]> = {
+  distributor: [
+    { name: 'Sri Balaji Agencies', value: 7.9, change: 21 }, { name: 'S R Enterprises', value: 5.6, change: 8 },
+    { name: 'Vijaya Distributors', value: 4.4, change: -9 }, { name: 'Annapurna Traders', value: 3.9, change: 4 },
+    { name: 'Lakshmi Agencies', value: 3.1, change: 1 }, { name: 'Sai Krishna Agencies', value: 2.9, change: 6 },
+    { name: 'Sri Venkateswara Agencies', value: 1.4, change: 7 }, { name: 'Balaji Traders', value: 1.3, change: 3 },
+    { name: 'Om Sri Distributors', value: 1.2, change: -2 }, { name: 'Hanuman Agencies', value: 1.1, change: 5 },
+    { name: 'Sri Raghavendra Traders', value: 1.0, change: 9 }, { name: 'Krishna Enterprises', value: 0.9, change: 2 },
+    { name: 'Durga Agencies', value: 0.9, change: -4 }, { name: 'Sri Sai Distributors', value: 0.8, change: 11 },
+    { name: 'Manikanta Agencies', value: 0.7, change: 6 }, { name: 'Vasavi Traders', value: 0.6, change: 1 },
+    { name: 'Padmavati Enterprises', value: 0.5, change: -1 }, { name: 'Govinda Agencies', value: 0.4, change: 14 },
+  ],
+  city: [
+    { name: 'Hyderabad', value: 16.2, change: 12 }, { name: 'Secunderabad', value: 7.7, change: 9 },
+    { name: 'Warangal', value: 5.5, change: -6 }, { name: 'Nizamabad', value: 4.1, change: 3 },
+    { name: 'Karimnagar', value: 2.9, change: 5 }, { name: 'Sangareddy', value: 2.2, change: 2 },
+  ],
+  company: [
+    { name: 'Fortune (AWL)', value: 11.4, change: 18 }, { name: 'ITC', value: 9.1, change: 9 },
+    { name: 'HUL', value: 7.3, change: 6 }, { name: 'Parle', value: 4.6, change: 1 },
+    { name: 'Britannia', value: 3.8, change: -14 }, { name: 'Unmapped lines', value: 2.4, change: 0 },
+  ],
+  category: [
+    { name: 'Edible oils', value: 12.1, change: 17 }, { name: 'Atta & staples', value: 7.4, change: 8 },
+    { name: 'Biscuits', value: 4.1, change: -11 }, { name: 'Detergents', value: 3.9, change: 6 },
+    { name: 'Beverages', value: 3.2, change: 4 }, { name: 'Snacks & namkeen', value: 1.2, change: 6 },
+    { name: 'Personal care', value: 1.0, change: 3 }, { name: 'Dairy', value: 0.9, change: 8 },
+    { name: 'Spices & masala', value: 0.8, change: 2 }, { name: 'Rice & grains', value: 0.7, change: -3 },
+    { name: 'Cleaning', value: 0.5, change: 5 }, { name: 'Confectionery', value: 0.4, change: 1 },
+  ],
+  brand: [
+    { name: 'Fortune Oil', value: 11.4, change: 18 }, { name: 'Aashirvaad', value: 5.3, change: 9 },
+    { name: 'Sunfeast', value: 3.8, change: -4 }, { name: 'Surf Excel', value: 3.1, change: 6 },
+    { name: 'Parle-G', value: 2.9, change: -6 }, { name: 'Tata Salt', value: 1.1, change: 4 },
+    { name: 'Red Label', value: 1.0, change: -11 }, { name: 'Maggi', value: 0.95, change: 7 },
+    { name: 'Colgate', value: 0.9, change: 3 }, { name: 'Clinic Plus', value: 0.85, change: 5 },
+    { name: 'Good Day', value: 0.8, change: -8 }, { name: 'Lifebuoy', value: 0.75, change: 2 },
+    { name: 'Everest', value: 0.7, change: 6 }, { name: 'MDH', value: 0.65, change: 4 },
+    { name: 'Vim', value: 0.6, change: 1 },
+  ],
+  sku: [
+    { name: 'Fortune Sunflower 1L×12', value: 2.41, change: 19 }, { name: 'Aashirvaad Atta 5kg', value: 2.06, change: 8 },
+    { name: 'Surf Excel 1kg', value: 1.38, change: 7 }, { name: 'Parle-G 800g', value: 0.92, change: -5 },
+    { name: 'Sunfeast Dark Fantasy', value: 0.71, change: -9 }, { name: 'Tata Salt 1kg', value: 0.62, change: 4 },
+    { name: 'Maggi 560g×12', value: 0.58, change: 8 }, { name: 'Red Label 500g', value: 0.55, change: -12 },
+    { name: 'Fortune Sunflower 5L', value: 0.52, change: 15 }, { name: 'Clinic Plus 340ml', value: 0.48, change: 5 },
+    { name: 'Colgate 200g', value: 0.45, change: 3 }, { name: 'Good Day 100g×24', value: 0.41, change: -7 },
+    { name: 'Aashirvaad Atta 10kg', value: 0.38, change: 9 }, { name: 'Lifebuoy 125g×4', value: 0.34, change: 2 },
+    { name: 'Everest Chilli 100g', value: 0.31, change: 6 }, { name: 'Vim Bar 300g', value: 0.28, change: 1 },
+    { name: 'Surf Excel 500g', value: 0.26, change: 4 }, { name: 'Maggi Masala-e-Magic', value: 0.24, change: 11 },
+    { name: 'Parle Monaco 200g', value: 0.22, change: -2 }, { name: 'MDH Deggi Mirch 100g', value: 0.2, change: 3 },
+  ],
+};
