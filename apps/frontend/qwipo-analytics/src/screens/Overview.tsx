@@ -45,13 +45,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
       <section>
         <div className="grid grid-cols-5 gap-3">
           {kpis.map((k, i) => (
-            <KpiCard key={k.label} {...k} onOpen={kpiDrills[i] ? () => setDrill(kpiDrills[i]) : () => go('sales')} />
+            <KpiCard key={k.label} {...k} onOpen={kpiDrills[i] ? () => setDrill(kpiDrills[i]) : undefined} />
           ))}
         </div>
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-8" title="Order value per day" subtitle="Delivered value shaded" onOpen={() => go('sales')}>
+        <Panel className="col-span-8" title="Order value per day" subtitle="Delivered value shaded">
           <TrendChart
             current={dailyValue} previous={dailyPrev} delivered={dailyDelivered}
             onPoint={(i) => setDrill({ title: `Orders · ${i + 1} Aug`, total: `₹${dailyValue[i]}L placed · ₹${dailyDelivered[i]}L delivered`, date: `${i + 1} Aug` })}
@@ -69,19 +69,24 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5">
             {attention.map((a) => (
-              <Card key={a.title} variant="interactive" onClick={() => go(a.drill ? `${a.goto}/${a.drill}` : a.goto)} className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5">
+              <Card
+                key={a.title}
+                variant={a.drill ? 'interactive' : 'default'}
+                onClick={a.drill ? () => setDrill({ title: a.title, total: `${a.count} orders · ₹3.1L`, statuses: openStages }) : undefined}
+                className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5"
+              >
                 <span className={cn('type-h1 text-right tabular-nums', severityText[a.severity])}>{a.count}</span>
                 <span>
                   <b className="type-label block leading-snug">{a.title}</b>
                   <span className="type-caption block text-foreground-secondary">{a.detail}</span>
-                  <span className="type-caption mt-0.5 block font-medium text-link">{a.owner} →</span>
+                  <span className="type-caption mt-0.5 block font-medium text-foreground-tertiary">{a.owner}</span>
                 </span>
               </Card>
             ))}
           </CardContent>
         </Card>
 
-        <Panel className="col-span-5" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`} onOpen={() => go('sales')}>
+        <Panel className="col-span-5" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`}>
           <Columns
             items={[
               { label: 'Open', n: open, bg: openBg },
@@ -104,7 +109,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" title="Open orders by age" subtitle={`${open} open · days since order date`} onOpen={() => go('sales')}>
+        <Panel className="col-span-7" title="Open orders by age" subtitle={`${open} open · days since order date`}>
           <Columns
             items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
             onBar={(l) => {
@@ -142,7 +147,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Shipped</b>.</p>
         </Panel>
 
-        <Panel className="col-span-12" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`} onOpen={() => go('customers')}>
+        <Panel className="col-span-12" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`}>
           <div className="grid grid-cols-[5fr_3fr_4fr] items-start gap-7">
             <div className="flex flex-col gap-1">
               {funnel.map((f, i) => {
