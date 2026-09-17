@@ -24,6 +24,12 @@ function pageRows(page: number): OrderRow[] {
   }));
 }
 
+/** Days since order date, as of the 22 Aug refresh. */
+function ageDays(date: string) {
+  const d = parseInt(date);
+  return date.includes('Jul') ? 22 + 31 - d : 22 - d;
+}
+
 /** "21 Aug" → "22 Aug" = "1d" (mock dates are day-month strings in one month). */
 function daysBetween(from: string, to?: string) {
   if (!to) return '';
@@ -54,8 +60,8 @@ export function RecordsDrawer({
   date?: string;
   distributors?: string[];
   sortByValue?: boolean;
-  /** chips inside the drawer to slice the list, e.g. All / Open / Delivered */
-  quickFilters?: { label: string; statuses?: Stage[]; count: number | string }[];
+  /** chips inside the drawer to slice the list — by status group or age bucket */
+  quickFilters?: { label: string; statuses?: Stage[]; age?: [number, number | null]; count: number | string }[];
   onClose: () => void;
   go: (p: Page) => void;
 }) {
@@ -63,9 +69,15 @@ export function RecordsDrawer({
   const [pages, setPages] = useState(1);
   const [qf, setQf] = useState(0);
   const capped = pages >= MAX_PAGES;
-  const activeStatuses = quickFilters ? quickFilters[qf]?.statuses : statuses;
+  const active = quickFilters?.[qf];
+  const activeStatuses = quickFilters ? active?.statuses : statuses;
+  const showAge = quickFilters?.some((x) => x.age) ?? false;
   let rows = Array.from({ length: pages }, (_, p) => pageRows(p)).flat();
   if (activeStatuses?.length) rows = rows.filter((r) => activeStatuses.includes(r.status));
+  if (active?.age) {
+    const [lo, hi] = active.age;
+    rows = rows.filter((r) => ageDays(r.date) >= lo && (hi === null || ageDays(r.date) <= hi));
+  }
   if (date) rows = rows.filter((r) => r.date === date);
   if (distributors?.length) rows = rows.filter((r) => distributors.includes(r.distributor));
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
@@ -127,6 +139,7 @@ export function RecordsDrawer({
                 <th className="py-2 pr-3 font-semibold">Order</th>
                 <th className="py-2 pr-3 font-semibold">Outlet</th>
                 <th className="py-2 pr-3 font-semibold">Status</th>
+                {showAge && <th className="py-2 pr-3 font-semibold">Age</th>}
                 <th className="py-2 text-right font-semibold">Value</th>
               </tr>
             </thead>
@@ -147,6 +160,11 @@ export function RecordsDrawer({
                       </span>
                     )}
                   </td>
+                  {showAge && (
+                    <td className={cn('whitespace-nowrap py-2 pr-3 tabular-nums', ageDays(r.date) >= 4 ? 'font-medium text-error-foreground' : 'text-foreground-secondary')}>
+                      {ageDays(r.date) >= 4 ? 'D4+' : `D${ageDays(r.date)}`} · {ageDays(r.date)}d
+                    </td>
+                  )}
                   <td className={cn('py-2 text-right tabular-nums', r.status === 'cancelled' && 'text-error-foreground')}>
                     ₹{r.value.toLocaleString('en-IN')}
                   </td>

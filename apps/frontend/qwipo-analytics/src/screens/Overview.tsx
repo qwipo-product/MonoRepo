@@ -18,7 +18,7 @@ import type { Page } from '../nav';
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 /** Drill-through per KPI: the record rows behind the number. null = navigate. */
-type QuickFilter = { label: string; statuses?: Stage[]; count: number | string };
+type QuickFilter = { label: string; statuses?: Stage[]; age?: [number, number | null]; count: number | string };
 type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean; quickFilters?: QuickFilter[] };
 
 /** All / Open / Delivered / Cancelled / Returned — matches the outcomes card. */
@@ -29,13 +29,15 @@ const statusQuick: QuickFilter[] = [
   { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
   { label: 'Returned', statuses: ['returned'], count: 12 },
 ];
-/** Within open orders: by current stage. */
-const openQuick: QuickFilter[] = [
-  { label: 'All placed', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
-  { label: 'Order placed', statuses: ['created'], count: 92 },
-  { label: 'Accepted', statuses: ['accepted'], count: 114 },
-  { label: 'Packed', statuses: ['packed'], count: 85 },
-  { label: 'Shipped', statuses: ['shipped'], count: 101 },
+/** Within open orders: by age bucket (matches the ageing card). */
+const openStagesAll: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+const ageQuick: QuickFilter[] = [
+  { label: 'All', statuses: openStagesAll, count: 392 },
+  { label: 'D0', statuses: openStagesAll, age: [0, 0], count: 118 },
+  { label: 'D1', statuses: openStagesAll, age: [1, 1], count: 94 },
+  { label: 'D2', statuses: openStagesAll, age: [2, 2], count: 57 },
+  { label: 'D3', statuses: openStagesAll, age: [3, 3], count: 32 },
+  { label: 'D4+', statuses: openStagesAll, age: [4, null], count: 91 },
 ];
 const kpiDrills: (Drill | null)[] = [
   { title: 'Orders', total: '1,142 orders · ₹38.6L', quickFilters: statusQuick },
@@ -52,7 +54,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[] } | null>(null);
   // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
   const attentionDrills = [
-    () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: openQuick }),
+    () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: ageQuick }),
     () => setDrill({ title: 'Cancelled · Vijaya & Lakshmi', total: '89 orders · ₹3.3L', statuses: ['cancelled'], distributors: ['Vijaya Distributors', 'Lakshmi Agencies'] }),
     () => setEntity({ title: 'High-value outlets gone quiet', total: '148 outlets · ₹6.2L monthly value', rows: quietOutlets }),
     () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands }),
@@ -147,13 +149,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           className="col-span-7"
           title="Open orders by age"
           subtitle={`${open} open · days since order date`}
-          onOpen={() => setDrill({ title: 'Open orders', total: `${open} orders · ₹12.7L`, quickFilters: openQuick })}
+          onOpen={() => setDrill({ title: 'Open orders by age', total: `${open} orders · ₹12.7L`, quickFilters: ageQuick })}
         >
           <Columns
             items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
             onBar={(l) => {
               const i = ageing.buckets.findIndex((b) => l.startsWith(b));
-              setDrill({ title: `Open orders · ${ageing.buckets[i]}`, total: `${bucketTotals[i]} orders`, statuses: openStages });
+              setDrill({ title: `Open orders · ${ageing.buckets[i]}`, total: `${bucketTotals[i]} orders`, quickFilters: ageQuick });
             }}
           />
           <div className="type-caption mt-4 grid grid-cols-[80px_repeat(5,1fr)_48px] gap-1">
