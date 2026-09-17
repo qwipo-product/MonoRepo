@@ -70,8 +70,9 @@ const shell = isWeb
 
 /* ── which design system the new app rides ───────────────────────────────────
  *
- * Mobile mockups get the mobile-first kit: @mockups/ui primitives, with the
- * app declaring its own tokens in an `@theme` block.
+ * Mobile mockups get the mobile-first kit: @mockups/ui primitives on
+ * @mockups/design-tokens, whose theme.css the app imports whole. The app
+ * declares no tokens of its own — one design language, shared.
  *
  * Web mockups get the desktop/admin kit: @mockups/web-ui (shadcn + Radix —
  * data tables, dialogs, the app shell) on @mockups/web-tokens, which ships a
@@ -96,6 +97,7 @@ const deps = isWeb
       'react-router': 'catalog:',
     }
   : {
+      '@mockups/design-tokens': 'workspace:*',
       '@mockups/i18n': 'workspace:*',
       '@mockups/mock-data': 'workspace:*',
       '@mockups/types': 'workspace:*',
@@ -114,7 +116,7 @@ const mainTsx = isWeb
 
 const indexCss = isWeb
   ? `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/web-ui renders\n   unstyled and nothing errors. */\n@source "../../../../packages/web-ui/src";\n\n/* Desktop/admin tokens: light + \`.dark\`, @theme, Radix animations, and the\n   dark-mode utility rebinding layer. This app needs no @theme block of its\n   own — change a token in packages/web-tokens, not here. */\n@import "../../../../packages/web-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`
-  : `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared sources or @mockups/ui renders unstyled. */\n@source "../../../../packages/ui/src";\n\n/* Design tokens for this mockup. Change these, not the component internals.\n   Copy the block from apps/frontend/qwipo-buyer-paytm-app/src/index.css if you want\n   the full Qwipo palette. */\n@theme {\n  --color-primary: #2563eb;\n  --color-primary-foreground: #ffffff;\n  --color-background: #ffffff;\n  --color-foreground: #252525;\n  --color-card: #ffffff;\n  --color-muted: #ececf0;\n  --color-muted-foreground: #717182;\n  --color-shell: #f7f7f9;\n  --color-destructive: #d4183d;\n  --color-destructive-foreground: #ffffff;\n\n  --radius-lg: 8px;\n  --radius-xl: 12px;\n\n  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n}\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n  font-family: var(--font-sans);\n  -webkit-font-smoothing: antialiased;\n}\n`;
+  : `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/ui renders unstyled. */\n@source "../../../../packages/ui/src";\n\n/* The mobile token layer: light + \`.dark\`, @theme, the .type-* role classes\n   and the sheet animations. One design language shared by every mockup —\n   this app defines no tokens of its own. Change a value in\n   packages/design-tokens (tokens.ts AND theme.css), not here. */\n@import "../../../../packages/design-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`;
 
 const homeTsx = isWeb
   ? `import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@mockups/web-ui';\n\nexport default function Home() {\n  return (\n    <div className="p-6 space-y-6">\n      <div>\n        <h1 className="text-2xl font-semibold">${title}</h1>\n        <p className="mt-1 text-sm text-muted-foreground">\n          Delete this screen and build the real thing. The desktop kit is already wired up.\n        </p>\n      </div>\n\n      <Card className="max-w-lg">\n        <CardHeader>\n          <CardTitle className="text-base font-semibold">The web kit is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-3">\n          <p className="text-sm">\n            Tables, dialogs, sheets, comboboxes, charts and AppShell all come from\n            @mockups/web-ui. Browse them in storybook-web.\n          </p>\n          <div className="flex items-center gap-2">\n            <StatusBadge tone="success">Verified</StatusBadge>\n            <StatusBadge tone="warning">Pending</StatusBadge>\n            <StatusBadge tone="danger">Rejected</StatusBadge>\n          </div>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`
