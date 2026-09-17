@@ -9,6 +9,8 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { useEmptyable } from '../review/demoState';
+import { offersForProduct } from '../data/offers';
+import { OfferStrip } from '../components/OfferBits';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
@@ -47,7 +49,7 @@ export function CatalogScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsFor, setDiscountsFor] = useState<Product | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -126,9 +128,15 @@ export function CatalogScreen({
               onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
-              onDiscounts={() => setDiscountsOpen(true)}
+              onDiscounts={() => setDiscountsFor(p)}
               subtotal={p.price * (qty[p.id] ?? 0)}
               subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
+              offerStrip={
+                <OfferStrip
+                  offers={offersForProduct(p).filter((o) => o.level === 'secondary' && o.itemIds.length > 0)}
+                  onOpen={() => setDiscountsFor(p)}
+                />
+              }
               footer={deliveryFooter(p.seller)}
             />
           ))
@@ -160,7 +168,7 @@ export function CatalogScreen({
         onClose={() => setFilterOpen(false)}
       />
 
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
+      <DiscountsSheet product={discountsFor} onClose={() => setDiscountsFor(null)} />
     </div>
   );
 }

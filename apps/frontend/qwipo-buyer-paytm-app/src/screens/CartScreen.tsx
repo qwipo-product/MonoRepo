@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
+import { BadgePercent, ChevronLeft, Gift, Plus, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 import { PriceChangeBanner } from '../components/PriceChange';
 import { useEmptyable } from '../review/demoState';
+import { appliedFor, schemeSavingsFor, SCHEME_NUDGES, TOTAL_SCHEME_SAVINGS } from '../data/offers';
 
 /** kg with at most 2 decimals + unit (e.g. "0.45 kg", "25 kg"). */
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
@@ -86,6 +87,9 @@ export function CartScreen({
                   Total Cart Value
                 </div>
                 <div className="text-lg font-bold tabular-nums">{formatInr(grandTotal)}</div>
+                <div className="text-xs text-success-foreground">
+                  Scheme savings − {formatInr(TOTAL_SCHEME_SAVINGS)} at checkout
+                </div>
                 <div className={deliveryFee > 0 ? 'text-xs text-foreground-secondary' : 'text-xs text-success-foreground'}>
                   {deliveryFee > 0 ? `+ ${formatInr(deliveryFee)} delivery fee` : 'Free delivery'}
                 </div>
@@ -114,6 +118,9 @@ function SellerCard({
   const CAP = 3;
   const shown = seller.items.slice(0, CAP);
   const extra = seller.items.length - shown.length;
+  const schemes = appliedFor(seller.name);
+  const schemeSavings = schemeSavingsFor(seller.name);
+  const nudge = SCHEME_NUDGES[seller.name];
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -137,6 +144,41 @@ function SellerCard({
             )}
           </div>
         </div>
+
+        {/* scheme breakdown — the offer lines of this seller's order quote
+            (negative price + free-goods lines), per the ONDC apply payload */}
+        {schemes.length > 0 && (
+          <div className="mt-2.5 rounded-lg border border-success-border bg-success-subtle p-2.5">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-success-foreground">
+                <BadgePercent className="h-3.5 w-3.5" /> Scheme benefits applied
+              </span>
+              {schemeSavings > 0 && (
+                <span className="text-xs font-bold tabular-nums text-success-foreground">
+                  − {formatInr(schemeSavings)}
+                </span>
+              )}
+            </div>
+            <div className="space-y-1">
+              {schemes.map((a) => (
+                <div key={a.offerId} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="min-w-0 flex-1 truncate text-foreground">{a.title}</span>
+                  <span className="shrink-0 font-medium tabular-nums text-success-foreground">
+                    {a.freeQty ? `${a.freeQty} FREE (${formatInr(a.freeValue ?? 0)})` : `− ${formatInr(Math.abs(a.amount))}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* nearest unmet scheme — nudge to unlock */}
+        {nudge && (
+          <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-primary-soft p-2.5">
+            <Gift className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="text-xs font-medium text-primary">{nudge}</span>
+          </div>
+        )}
 
         {/* MOV — below-minimum-value progress */}
         {seller.status === 'below' && (

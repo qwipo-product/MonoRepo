@@ -40,6 +40,8 @@ export interface ProductCardProps {
   subtotalLabel?: string;
   /** Optional footer strip (e.g. delivery day + MOV). */
   footer?: React.ReactNode;
+  /** Optional scheme/offer strip shown between price and actions. */
+  offerStrip?: React.ReactNode;
   className?: string;
 }
 
@@ -79,6 +81,7 @@ export function ProductCard({
   subtotal,
   subtotalLabel = 'Total',
   footer,
+  offerStrip,
   className,
 }: ProductCardProps) {
   return (
@@ -160,6 +163,8 @@ export function ProductCard({
         {margin ? <Badge variant="success">{margin}</Badge> : <span />}
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
+
+      {offerStrip}
 
       {/* actions — Discounts + Add/Qty keep fixed widths so the row never
           reflows when qty changes (Add ⇄ stepper swap inside a fixed box). */}

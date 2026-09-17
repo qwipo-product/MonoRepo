@@ -1,111 +1,109 @@
-import type { ComponentType } from 'react';
-import { ChevronDown, Gift, Percent, Truck } from 'lucide-react';
-import { Sheet, cn } from '@mockups/ui';
-import { formatInrExact } from '@mockups/components';
+import { ChevronDown, Percent } from 'lucide-react';
+import { Sheet } from '@mockups/ui';
+import { offersForProduct, type Offer } from '../data/offers';
+import {
+  OfferIconChip,
+  OfferMetaChips,
+  SchemeProgressBar,
+  SlabTable,
+} from '../components/OfferBits';
 
-/* Offer & Schemes sheet — opened from a product card's "Discounts" button. Shows
-   the quantity price-slab (margin + unit price per case band) and the seller's
-   running offers as expandable rows. Self-contained demo content. */
+/* Offers & Schemes sheet — opened from a product card's "Discounts" button.
+   Shows only what actually runs on THIS product (ONDC applicability:
+   item_ids / seller-wide offers), not a fixed table:
 
-interface Slab {
-  qty: string;
-  margin: number;
+     Primary   — the product's QPS slab table (unit price per band) and/or the
+                 seller's invoice value slab
+     Secondary — cart/checkout schemes touching this product, as expandable
+                 rows with eligibility, validity and scheme progress. */
+
+export interface DiscountsProduct {
+  id: string;
+  shortName: string;
+  seller: string;
   price: number;
 }
 
-const SLABS: Slab[] = [
-  { qty: '> 5 Cases', margin: 17, price: 153.45 },
-  { qty: '3 - 4 Cases', margin: 14, price: 160.05 },
-  { qty: '1 - 2 Cases', margin: 12, price: 165 },
-];
+export function DiscountsSheet({
+  product,
+  onClose,
+}: {
+  product: DiscountsProduct | null;
+  onClose: () => void;
+}) {
+  const offers = product ? offersForProduct(product) : [];
+  const primary = offers.filter((o) => o.level === 'primary');
+  const secondary = offers.filter((o) => o.level === 'secondary');
 
-interface Offer {
-  icon: ComponentType<{ className?: string }>;
-  tint: string;
-  title: string;
-  sub: string;
-  detail: string;
-}
-
-const OFFERS: Offer[] = [
-  {
-    icon: Gift,
-    tint: 'bg-warning-subtle text-warning-foreground',
-    title: 'Buy 10 Cases Get 1 Free',
-    sub: 'On purchases of 16 Pcs/Case',
-    detail: 'Add 10 cases of this product and 1 case is added free at checkout.',
-  },
-  {
-    icon: Percent,
-    tint: 'bg-primary-soft text-primary',
-    title: '5% Off',
-    sub: 'Get 5% off on your order above ₹500 upto ₹100',
-    detail: 'Applies to the seller subtotal above ₹500. Maximum discount ₹100 per order.',
-  },
-  {
-    icon: Truck,
-    tint: 'bg-success-subtle text-success-foreground',
-    title: 'Free Delivery',
-    sub: 'Free shipping on orders above ₹3,000',
-    detail: "Delivery fee is waived once this seller's subtotal crosses ₹3,000.",
-  },
-];
-
-export function DiscountsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Sheet
-      open={open}
+      open={product != null}
       onClose={onClose}
       icon={<Percent size={18} />}
-      title="Offer & Schemes"
-      subtitle="Please review the following before proceeding"
+      title="Offers & Schemes"
+      subtitle={product ? `On ${product.shortName} · ${product.seller}` : undefined}
     >
-      {/* quantity price slab */}
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Quantity Price Slab</h3>
-        <div className="overflow-hidden rounded-lg border border-border">
-          <div className="grid grid-cols-3 bg-muted px-3 py-2.5 text-xs font-medium text-foreground-secondary">
-            <span>Quantity</span>
-            <span>Margin %</span>
-            <span className="text-right">Unit Price</span>
-          </div>
-          {SLABS.map((s) => (
-            <div
-              key={s.qty}
-              className="grid grid-cols-3 items-center border-t border-border px-3 py-3.5 text-sm"
-            >
-              <span className="font-medium text-foreground">{s.qty}</span>
-              <span className="font-semibold text-success-foreground">{s.margin} %</span>
-              <span className="text-right font-bold tabular-nums text-foreground">{formatInrExact(s.price)}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {offers.length === 0 && (
+        <p className="py-6 text-center text-sm text-foreground-secondary">
+          No running schemes on this product right now.
+        </p>
+      )}
 
-      {/* other offers */}
-      <section className="mt-5">
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Other Offers</h3>
-        <div className="space-y-3">
-          {OFFERS.map((o) => (
-            <details
-              key={o.title}
-              className="group rounded-lg border border-border bg-card [&_summary::-webkit-details-marker]:hidden"
-            >
-              <summary className="flex cursor-pointer list-none items-center gap-3 p-3">
-                <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', o.tint)}>
-                  <o.icon className="h-5 w-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-foreground">{o.title}</span>
-                  <span className="block text-xs text-foreground-secondary">{o.sub}</span>
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="border-t border-border p-3 text-sm text-foreground-secondary">{o.detail}</div>
-            </details>
-          ))}
-        </div>
-      </section>
+      {/* primary — the price you buy at */}
+      {primary.map((o) => (
+        <section key={o.id} className="mb-5">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{o.framework}</h3>
+            <span className="text-[11px] text-foreground-secondary">Valid {o.period}</span>
+          </div>
+          {/* QPS on this item shows the resulting unit price; the seller-wide
+              value slab has no per-unit price — bands + % only */}
+          <SlabTable offer={o} unitPrice={o.itemIds.length > 0 && product ? product.price : undefined} />
+          {o.itemIds.length === 0 && (
+            <p className="mt-1.5 text-[11px] text-foreground-secondary">
+              On the seller&rsquo;s whole invoice — the matching band applies at checkout.
+            </p>
+          )}
+        </section>
+      ))}
+
+      {/* secondary — applied on the cart, settled at checkout */}
+      {secondary.length > 0 && (
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">More offers on this product</h3>
+          <div className="space-y-3">
+            {secondary.map((o) => (
+              <SecondaryRow key={o.id} offer={o} />
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-foreground-secondary">
+            These apply on your cart total and show as lines in the checkout bill — free goods
+            appear at ₹0.00 with their quantity.
+          </p>
+        </section>
+      )}
     </Sheet>
+  );
+}
+
+function SecondaryRow({ offer }: { offer: Offer }) {
+  return (
+    <details className="group rounded-lg border border-border bg-card [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-3 p-3">
+        <OfferIconChip offer={offer} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-foreground">{offer.title}</span>
+          <span className="block text-xs text-foreground-secondary">{offer.eligibility}</span>
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-2.5 border-t border-border p-3">
+        <div className="text-sm text-foreground-secondary">
+          <span className="font-medium text-success-foreground">{offer.benefit}</span> · valid {offer.period}
+        </div>
+        {offer.progress && <SchemeProgressBar progress={offer.progress} />}
+        <OfferMetaChips offer={offer} showType />
+      </div>
+    </details>
   );
 }

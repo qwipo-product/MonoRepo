@@ -6,7 +6,7 @@ import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '.
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorPicker } from '../components/VendorPicker';
-import { DiscountsSheet } from '../sheets/DiscountsSheet';
+import { DiscountsSheet, type DiscountsProduct } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -46,7 +46,7 @@ export function WholesalerProductsScreen({
   const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsFor, setDiscountsFor] = useState<DiscountsProduct | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -115,7 +115,10 @@ export function WholesalerProductsScreen({
               onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
               onAdd={() => setSheetId(p.id)}
               onImageClick={() => setGalleryId(p.id)}
-              onDiscounts={() => setDiscountsOpen(true)}
+              onDiscounts={() => {
+                const v = vendorFor(p);
+                setDiscountsFor({ id: p.id, shortName: p.name, seller: v.name, price: v.price });
+              }}
             />
           ))
         )}
@@ -162,7 +165,7 @@ export function WholesalerProductsScreen({
         onClose={() => setFilterOpen(false)}
       />
 
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
+      <DiscountsSheet product={discountsFor} onClose={() => setDiscountsFor(null)} />
     </div>
   );
 }

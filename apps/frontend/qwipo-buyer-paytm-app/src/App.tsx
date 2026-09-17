@@ -62,6 +62,9 @@ import { DMS_PARTNERS, dmsPartnerById, type DmsStatus } from './data/dmsPartners
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
+import { OffersSchemesScreen } from './screens/OffersSchemesScreen';
+import { OfferDetailScreen } from './screens/OfferDetailScreen';
+import { OFFERS, offerById } from './data/offers';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -77,6 +80,7 @@ const BUILT = new Set<ScreenId>([
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'dms-partners', 'dms-register', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
+  'offers-schemes', ...OFFERS.map((o) => `offer:${o.id}`),
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'app-update', 'app-update-required', 'message-styles',
   'login-error', 'otp-error', 'cart-price-changes',
@@ -472,6 +476,13 @@ export default function App() {
             cartTotal={cartTotal}
           />
         );
+      case 'offers-schemes':
+        return (
+          <OffersSchemesScreen
+            onBack={() => go('home')}
+            onOpenOffer={(id) => go(`offer:${id}`)}
+          />
+        );
       case 'cart':
         return (
           <CartScreen
@@ -636,8 +647,22 @@ export default function App() {
           <Placeholder id={screen} />
         );
       }
-      default:
+      default: {
+        // Per-offer review pages: offer:<id> → one scheme in detail.
+        if (screen.startsWith('offer:')) {
+          const offer = offerById(screen.slice('offer:'.length));
+          if (offer) {
+            return (
+              <OfferDetailScreen
+                offer={offer}
+                onBack={() => go('offers-schemes')}
+                onOpenOffer={(id) => go(`offer:${id}`)}
+              />
+            );
+          }
+        }
         return <Placeholder id={screen} />;
+      }
     }
   })();
 

@@ -1,8 +1,9 @@
-import { Banknote, ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
+import { Banknote, BadgePercent, ChevronLeft, ChevronRight, MapPin, Tag, Timer } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
+import { ALL_APPLIED, TOTAL_SCHEME_SAVINGS } from '../data/offers';
 
 /* Order Summary — read-only review before Place Order. One bill card per
    seller (brand · item summary + chosen delivery window), then the overall
@@ -26,7 +27,7 @@ export function OrderSummaryScreen({
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.reduce((a, i) => a + i.quantity, 0), 0);
   const grandSavings = sellers.reduce((n, s) => n + s.savings, 0);
-  const toPay = grandTotal + deliveryFee;
+  const toPay = grandTotal + deliveryFee - TOTAL_SCHEME_SAVINGS;
   const address = ADDRESSES.find((a) => a.id === DEFAULT_ADDRESS_ID) ?? ADDRESSES[0];
 
   return (
@@ -62,12 +63,39 @@ export function OrderSummaryScreen({
           <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
         </button>
 
+        {/* Scheme breakdown — final consolidated view by scheme ID (every
+            applied offer line from the order quote, across sellers) */}
+        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <BadgePercent className="h-4 w-4 text-success-foreground" /> Scheme breakdown
+            </h2>
+            <span className="text-sm font-bold tabular-nums text-success-foreground">
+              − {formatInr(TOTAL_SCHEME_SAVINGS)}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {ALL_APPLIED.map((a) => (
+              <div key={a.offerId} className="flex items-center justify-between gap-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-foreground">{a.title}</span>
+                  <span className="block font-mono text-[10px] text-foreground-secondary">{a.offerId}</span>
+                </span>
+                <span className="shrink-0 font-medium tabular-nums text-success-foreground">
+                  {a.freeQty ? `${a.freeQty} × ${formatInr(0)}` : `− ${formatInr(Math.abs(a.amount))}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Bill details */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-2 text-sm font-semibold text-foreground">Bill details</h2>
           <BillRow label="Total items" value={String(totalItems)} />
           <BillRow label="Item total" value={formatInr(grandTotal)} />
-          {grandSavings > 0 && <BillRow label="You save" value={`− ${formatInr(grandSavings)}`} good />}
+          {grandSavings > 0 && <BillRow label="MRP savings" value={`− ${formatInr(grandSavings)}`} good />}
+          <BillRow label="Scheme discounts" value={`− ${formatInr(TOTAL_SCHEME_SAVINGS)}`} good />
           <BillRow label="Delivery fee" value={deliveryFee === 0 ? 'Free' : formatInr(deliveryFee)} />
           <div className="mt-2 flex items-center justify-between border-t border-border pt-2.5">
             <span className="text-sm font-semibold text-foreground">To pay</span>
@@ -96,6 +124,16 @@ export function OrderSummaryScreen({
           <p className="mt-2 text-xs text-foreground-secondary">
             COD is currently the only payment mode. Online payment options are coming soon.
           </p>
+          {/* early-payment scheme — explained at the payment step, per the
+              PRD's scheme-visibility rule */}
+          <div className="mt-2 flex items-start gap-2 rounded-md bg-warning-subtle p-2.5">
+            <Timer className="mt-0.5 h-4 w-4 shrink-0 text-warning-foreground" />
+            <p className="text-xs leading-relaxed text-warning-foreground">
+              <span className="font-semibold">Early payment scheme (earlypay1):</span> settle within
+              7 days of delivery and Sri Sai Krishna Traders credits an extra 1% cash discount
+              (~{formatInr(Math.round(toPay * 0.01))}) on your next invoice.
+            </p>
+          </div>
         </div>
 
         {/* Delivery address */}

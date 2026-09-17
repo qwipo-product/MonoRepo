@@ -2,6 +2,8 @@
    numbered sidebar. `built` (in App) marks what's migrated to v2 so far; the
    rest render a placeholder and show a "soon" tag here. IDs match qwipo-app so
    navigation links (?screen=<id>) stay stable across both apps. */
+import { OFFERS } from '../data/offers';
+
 export type ScreenId = string;
 
 export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: string }[] }[] = [
@@ -44,6 +46,18 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
       { id: 'wholesaler-units', label: 'Wholesaler Selling Units' },
       { id: 'reorder', label: 'Reorder' },
+    ],
+  },
+  {
+    // One overview page + one review page per scheme (sidebar follows the
+    // offer catalog: primary schemes first, then secondary).
+    title: 'Offers & Schemes',
+    items: [
+      { id: 'offers-schemes', label: 'All Offers & Schemes' },
+      ...OFFERS.map((o) => ({
+        id: `offer:${o.id}`,
+        label: `${o.level === 'primary' ? 'Primary' : 'Secondary'} · ${o.menuLabel}`,
+      })),
     ],
   },
   {
