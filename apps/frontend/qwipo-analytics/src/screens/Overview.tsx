@@ -1,6 +1,8 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
+import { RecordsDrawer } from '../components/RecordsDrawer';
+import type { Stage } from '../data/orderRows';
 import { TrendChart } from '../components/TrendChart';
 import { RankedRow, Columns, Stat } from '@mockups/components';
 import { Panel, KpiCard } from '../components/dashboard';
@@ -13,7 +15,18 @@ import type { Page } from '../nav';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
+/** Drill-through per KPI: the record rows behind the number. null = navigate. */
+type Drill = { title: string; total: string; status?: Stage; sort?: boolean };
+const kpiDrills: (Drill | null)[] = [
+  { title: 'Orders', total: '1,142 orders · ₹38.6L' },
+  { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
+  { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
+  null, // Active outlets — outlet records come with the Customers page
+  { title: 'Delivered orders', total: '454 orders · ₹15.0L', status: 'delivered' },
+];
+
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
+  const [drill, setDrill] = useState<Drill | null>(null);
   const total = sum(statuses.map((s) => s.orders));
   const open = sum(statuses.filter((s) => ['created', 'accepted', 'packed', 'shipped'].includes(s.key)).map((s) => s.orders));
   const delivered = statuses.find((s) => s.key === 'delivered')!.orders;
@@ -25,10 +38,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
+      {drill && <RecordsDrawer {...drill} statusFilter={drill.status} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
 
       <section>
         <div className="grid grid-cols-5 gap-3">
-          {kpis.map((k) => <KpiCard key={k.label} {...k} onOpen={() => go('sales')} />)}
+          {kpis.map((k, i) => (
+            <KpiCard key={k.label} {...k} onOpen={kpiDrills[i] ? () => setDrill(kpiDrills[i]) : () => go('sales')} />
+          ))}
         </div>
       </section>
 

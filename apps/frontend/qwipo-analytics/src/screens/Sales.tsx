@@ -16,7 +16,20 @@ import {
 } from '../data/sales';
 
 const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
+import { RecordsDrawer } from '../components/RecordsDrawer';
+import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
+
+/** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
+type Drill = { title: string; total: string; status?: Stage; sort?: boolean };
+const salesDrills: (Drill | null)[] = [
+  { title: 'Orders', total: '1,142 orders · ₹38.6L' },
+  { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
+  { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
+  { title: 'Delivered orders', total: '454 orders · ₹15.0L', status: 'delivered' },
+  { title: 'Cancelled orders', total: '284 orders · ₹10.5L', status: 'cancelled' },
+  null, // Repeat-order rate — outlet records come with the Customers page
+];
 
 export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?: boolean }) {
   return drilled ? <DrilledSales go={go} /> : <FullSales go={go} />;
@@ -27,11 +40,13 @@ export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?
 function FullSales({ go }: { go: (p: Page) => void }) {
   const [metric, setMetric] = useState('value');
   const [grain, setGrain] = useState('daily');
+  const [drill, setDrill] = useState<Drill | null>(null);
   const totalOrders = statuses.reduce((s, x) => s + x.orders, 0);
   const totalValue = statuses.reduce((s, x) => s + x.value, 0);
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
+      {drill && <RecordsDrawer {...drill} statusFilter={drill.status} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
 
       <div className="flex gap-1.5">
         {['Summary', 'Trend', 'Status', 'Geography', 'Cancellations'].map((a, i) => (
@@ -43,7 +58,9 @@ function FullSales({ go }: { go: (p: Page) => void }) {
 
       <section>
         <div className="grid grid-cols-6 gap-3">
-          {salesKpis.map((k) => <KpiCard key={k.label} {...k} />)}
+          {salesKpis.map((k, i) => (
+            <KpiCard key={k.label} {...k} onOpen={salesDrills[i] ? () => setDrill(salesDrills[i]) : undefined} />
+          ))}
         </div>
       </section>
 
