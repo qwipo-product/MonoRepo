@@ -75,3 +75,27 @@ export const drillDistributors: BarRow[] = [
 /** Open orders past D4 at the end of each day, 1–22 Aug vs 1–22 Jul. */
 export const overdueDaily = [53, 54, 52, 56, 59, 60, 57, 62, 65, 68, 70, 67, 72, 75, 78, 80, 77, 83, 86, 88, 90, 91];
 export const overduePrev = [58, 59, 57, 60, 62, 63, 61, 64, 66, 68, 69, 67, 70, 71, 73, 74, 72, 75, 76, 78, 77, 77];
+
+/** How fast delivered orders landed (454 total). */
+export const deliverySpeed = [
+  { label: '0–1 day', n: 212 },
+  { label: '1–2 days', n: 138 },
+  { label: '2–3 days', n: 68 },
+  { label: '3+ days', n: 36 },
+];
+
+/** Order-size bands behind the ₹3,380 AOV (1,142 orders). */
+export const orderSizeBands = [
+  { label: '< ₹1k', n: 318 },
+  { label: '₹1–3k', n: 342 },
+  { label: '₹3–5k', n: 276 },
+  { label: '> ₹5k', n: 206 },
+];
+
+/** Return remarks (12 returned orders · ₹0.4L) — logistics remark taxonomy. */
+export const returnRemarks: BarRow[] = [
+  { label: 'Store closed / merchant not available', n: 5, value: '₹0.17L', tone: 'warning' },
+  { label: 'Delivery not possible (vehicle issues)', n: 3, value: '₹0.11L', tone: 'warning' },
+  { label: 'Wrong or damaged items', n: 2, value: '₹0.08L', tone: 'error' },
+  { label: 'Other', n: 2, value: '₹0.04L', tone: 'dim' },
+];

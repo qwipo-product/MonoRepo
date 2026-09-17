@@ -8,10 +8,11 @@ import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { Columns, Stat, StackBar, HBars } from '@mockups/components';
 import { Panel, KpiCard } from '../components/dashboard';
-import { stageBg, toneBg, openBg } from '../components/chartClasses';
+import { stageBg, toneBg, openBg, ageBg } from '../components/chartClasses';
 import { dailyValue, dailyPrev, dailyDelivered, statuses } from '../data/overview';
 import {
   salesKpis, monthly, cities, networkCancelRate, cancelReasons,
+  deliverySpeed, orderSizeBands, returnRemarks,
   drillKpis, drillStages, drillDistributors, overdueDaily, overduePrev, type BarRow,
 } from '../data/sales';
 
@@ -133,6 +134,38 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         <Panel className="col-span-7" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
           {/* Clicking a city applies it to the app-wide scope — a drill IS a filter. */}
           <CityScatter onCity={(name) => setF({ ...f, cities: [name], distributors: [] })} />
+        </Panel>
+
+        <Panel className="col-span-4" title="Days to deliver" subtitle="454 delivered · avg 1.6 days">
+          <Columns
+            height={110}
+            items={deliverySpeed.map((b, i) => ({ label: b.label, n: b.n, bg: ageBg[i] }))}
+            onBar={(l) => {
+              const b = deliverySpeed.find((x) => x.label === l)!;
+              setDrill({ title: `Delivered · ${l}`, total: `${b.n} orders`, statuses: ['delivered'] });
+            }}
+          />
+        </Panel>
+
+        <Panel className="col-span-4" title="Order size" subtitle="1,142 orders · ₹3,380 avg">
+          <Columns
+            height={110}
+            items={orderSizeBands.map((b) => ({ label: b.label, n: b.n, bg: 'bg-chart-blue' }))}
+            onBar={(l) => {
+              const b = orderSizeBands.find((x) => x.label === l)!;
+              setDrill({ title: `Orders · ${l}`, total: `${b.n} orders`, sort: true });
+            }}
+          />
+        </Panel>
+
+        <Panel className="col-span-4" title="Returns" subtitle="12 orders · ₹0.4L · 2.6% of delivered">
+          <HBars
+            rows={toHBars(returnRemarks)}
+            onRow={(label) => {
+              const r = returnRemarks.find((x) => x.label === label)!;
+              setDrill({ title: `Returned · ${label}`, total: `${r.n} orders · ${r.value}`, statuses: ['returned'] });
+            }}
+          />
         </Panel>
 
         <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L">
