@@ -98,15 +98,19 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-12" title="Month-wise sales" subtitle="Delivered value inside each bar">
-          {/* Clicking a month re-scopes the date range to that month. */}
+          {/* Month click = drill-through drawer, same approach as the Overview. */}
           <MonthBars onMonth={(m) => {
-            const idx = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug*'].indexOf(m) + 2;
-            const last = m === 'Aug*' ? 22 : new Date(2026, idx + 1, 0).getDate();
-            setF({ ...f, preset: 'Custom', from: new Date(2026, idx, 1).toISOString(), to: new Date(2026, idx, last).toISOString() });
+            const mo = monthly.find((x) => x.label === m)!;
+            setDrill({
+              title: `Orders · ${m.replace('*', '')} 2026`,
+              total: `₹${mo.value}L placed · ₹${mo.delivered}L delivered`,
+              quickFilters: statusQuick,
+            });
           }} />
           <Legend items={[
             { bg: openBg, label: 'Order value' },
             { bg: 'bg-success', label: 'Delivered value' },
+            { bg: 'bg-warning', label: 'Returned' },
             { bg: '', label: '* Aug = 22 days' },
           ]} />
         </Panel>
@@ -286,6 +290,7 @@ function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
           <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
             <i className="h-2 w-2 rounded-full bg-chart-blue-soft" /><span>Order value <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].value}L</b></span>
             <i className="h-2 w-2 rounded-full bg-success" /><span>Delivered <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].delivered}L</b> · {((monthly[hover].delivered / monthly[hover].value) * 100).toFixed(0)}%</span>
+            <i className="h-2 w-2 rounded-full bg-warning" /><span>Returned <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].returned}L</b></span>
           </div>
         </div>
       )}
@@ -304,6 +309,7 @@ function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
             <div className="absolute inset-x-0 bottom-0 grid place-items-center bg-success" style={{ height: `${(m.delivered / m.value) * 100}%` }}>
               <span className="type-caption font-medium text-primary-foreground">₹{m.delivered}L</span>
             </div>
+            <div className="absolute inset-x-0 bg-warning" style={{ bottom: `${(m.delivered / m.value) * 100}%`, height: `${Math.max((m.returned / m.value) * 100, 1.5)}%` }} />
           </div>
           <small className="type-caption text-foreground-secondary">{m.label}</small>
         </div>
