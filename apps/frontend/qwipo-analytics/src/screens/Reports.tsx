@@ -9,6 +9,7 @@ import { ScopeBar } from '../components/ScopeBar';
 import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLabel, type ReportDef, type Run } from '../data/reports';
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import { DateField } from '../components/DateField';
+import { Section, Option, MultiSection } from '../components/filterControls';
 import { companyOptions, cityOptions, distributorOptions } from '../components/filters';
 import type { Page } from '../nav';
 
@@ -112,37 +113,10 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
   const [done, setDone] = useState(false);
   const generate = () => { addRun(def.key); setDone(true); onDone(); };
 
-  const chip = (active: boolean) => cn(
-    'type-caption rounded-full px-3 py-1',
-    active ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
-  );
-  const toggle = (list: string[], set: (v: string[]) => void, o: string) =>
-    set(list.includes(o) ? list.filter((x) => x !== o) : [...list, o]);
-
-  const multi = (label: string, options: string[], selected: string[], set: (v: string[]) => void, more?: number) => (
-    <div className="mt-4">
-      <div className="type-micro mb-1.5 flex items-baseline justify-between text-foreground-tertiary">
-        {label}
-        {selected.length > 0 && (
-          <button type="button" onClick={() => set([])} className="type-caption font-medium normal-case tracking-normal text-link">
-            {selected.length} selected · Clear
-          </button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        <button type="button" onClick={() => set([])} className={chip(selected.length === 0)}>All</button>
-        {options.map((o) => (
-          <button key={o} type="button" onClick={() => toggle(selected, set, o)} className={chip(selected.includes(o))}>{o}</button>
-        ))}
-      </div>
-      {more ? <p className="type-caption mt-1 text-foreground-tertiary">+ {more} more in the full picker</p> : null}
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
       <aside
-        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[440px] flex-col border-l border-border bg-card shadow-xl"
+        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[360px] flex-col border-l border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-label={`Run ${def.name}`}
       >
@@ -156,17 +130,24 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto">
           {def.scope.includes('date') && (
-            <div>
-              <div className="type-micro mb-1.5 text-foreground-tertiary">Date range</div>
-              <div className="flex flex-wrap gap-1.5">
-                {['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'].map((o) => (
-                  <button key={o} type="button" onClick={() => { setPreset(o); if (o === 'Custom' && !from) { setFrom(new Date(2026, 7, 1)); setTo(new Date(2026, 7, 22)); } }} className={chip(preset === o)}>{o}</button>
-                ))}
-              </div>
+            <Section label="Date range">
+              {['Month to date', 'Last month', 'Last 7 days', 'Last 30 days', 'Custom'].map((r) => (
+                <Option
+                  key={r}
+                  selected={preset === r}
+                  onClick={() => {
+                    setPreset(r);
+                    if (r === 'Custom') { if (!from) { setFrom(new Date(2026, 7, 1)); setTo(new Date(2026, 7, 22)); } setCalOpen('from'); }
+                    else setCalOpen(null);
+                  }}
+                >
+                  {r === 'Month to date' ? '1 – 22 Aug 2026 · month to date' : r === 'Last month' ? '1 – 31 Jul 2026 · last month' : r === 'Custom' ? 'Custom…' : r}
+                </Option>
+              ))}
               {preset === 'Custom' && (
-                <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
                   <DateField
                     label="From" date={from}
                     open={calOpen === 'from'} onOpen={() => setCalOpen('from')} onClose={() => setCalOpen(null)}
@@ -181,40 +162,41 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
                   />
                 </div>
               )}
-            </div>
+            </Section>
           )}
 
-          {def.scope.includes('company') && multi('Company', companyOptions, companies, setCompanies, 34)}
-          {def.scope.includes('city') && multi('City', cityOptions, cities, setCities)}
-          {def.scope.includes('distributor') && multi('Distributor', distributorOptions, dists, setDists, 12)}
+          {def.scope.includes('company') && (
+            <MultiSection label="Company" unit="companies" total={42} searchable options={companyOptions} selected={companies} onChange={setCompanies} />
+          )}
+          {def.scope.includes('city') && (
+            <MultiSection label="City" unit="cities" total={6} options={cityOptions} selected={cities} onChange={setCities} />
+          )}
+          {def.scope.includes('distributor') && (
+            <MultiSection label="Distributor" unit="distributors" total={18} searchable options={distributorOptions} selected={dists} onChange={setDists} />
+          )}
 
           {def.filters.map((f) => (
-            <div key={f.label} className="mt-4">
-              <div className="type-micro mb-1.5 text-foreground-tertiary">{f.label}</div>
-              <div className="flex flex-wrap gap-1.5">
-                {f.options.map((o) => (
-                  <button key={o} type="button" onClick={() => setPicked({ ...picked, [f.label]: o })} className={chip((picked[f.label] ?? 'All') === o)}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Section key={f.label} label={f.label}>
+              {f.options.map((o) => (
+                <Option key={o} selected={(picked[f.label] ?? 'All') === o} onClick={() => setPicked({ ...picked, [f.label]: o })}>{o}</Option>
+              ))}
+            </Section>
           ))}
 
-          {def.flags && (
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {def.flags.map((f) => <Badge key={f.label} variant={f.variant} className="normal-case tracking-normal">{f.label}</Badge>)}
-            </div>
-          )}
-
-          <p className="type-caption mt-4 text-foreground-tertiary">Whatever you pick, the report never widens past your role's scope.</p>
-
-          {done && (
-            <div className="mt-4 rounded-lg border border-success-border bg-success-subtle px-3.5 py-2.5">
-              <span className="type-label text-success-foreground">Report generated</span>
-              <span className="type-caption block text-success-foreground">The file is in this report's History, ready any time.</span>
-            </div>
-          )}
+          <div className="px-5 py-4">
+            {def.flags && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {def.flags.map((f) => <Badge key={f.label} variant={f.variant} className="normal-case tracking-normal">{f.label}</Badge>)}
+              </div>
+            )}
+            <p className="type-caption text-foreground-tertiary">Whatever you pick, the report never widens past your role's scope.</p>
+            {done && (
+              <div className="mt-3 rounded-lg border border-success-border bg-success-subtle px-3.5 py-2.5">
+                <span className="type-label text-success-foreground">Report generated</span>
+                <span className="type-caption block text-success-foreground">The file is in this report's History, ready any time.</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <footer className="flex gap-2 border-t border-border p-4">
