@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
+import { Banknote, ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
@@ -75,6 +75,29 @@ export function OrderSummaryScreen({
           </div>
         </div>
 
+        {/* Payment mode — COD is the only mode, pre-selected and locked */}
+        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <h2 className="mb-2 text-sm font-semibold text-foreground">Payment mode</h2>
+          <div className="flex items-center gap-3 rounded-md border border-primary bg-primary-soft p-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-card text-primary">
+              <Banknote className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-foreground">Cash on Delivery (COD)</div>
+              <div className="text-xs text-foreground-secondary">
+                Pay {formatInr(toPay)} in cash when your order is delivered
+              </div>
+            </div>
+            {/* selected radio — filled, since COD is the default and only option */}
+            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary">
+              <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-foreground-secondary">
+            COD is currently the only payment mode. Online payment options are coming soon.
+          </p>
+        </div>
+
         {/* Delivery address */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-2 text-sm font-semibold text-foreground">Delivery address</h2>
@@ -95,6 +118,7 @@ export function OrderSummaryScreen({
           <div className="leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
+            <div className="text-[11px] font-medium text-primary">Cash on Delivery</div>
           </div>
           <Button className="px-8" onClick={onPlaceOrder}>
             Place order

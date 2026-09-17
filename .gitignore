@@ -5,6 +5,11 @@ node_modules/
 dist/
 build/
 out/
+# `storybook build` output. Regenerate with
+# `bun run build --filter=@mockups/storybook[-web]` — it is not a source
+# artefact, and its filenames are content-hashed, so committing it grows the
+# repo on every build instead of replacing the previous copy.
+storybook-static/
 
 # tool caches
 .turbo/
@@ -41,3 +46,4 @@ Thumbs.db
 .claude-flow/
 .swarm/
 .hive-mind/
+storybook-static/

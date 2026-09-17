@@ -1,0 +1,391 @@
+import { useEffect, useMemo, useState } from "react";
+import { Card } from "@mockups/web-ui";
+import { Button } from "@mockups/web-ui";
+import { Input } from "@mockups/web-ui";
+import { Badge } from "@mockups/web-ui";
+import { ListPagination, paginate } from "@mockups/web-ui";
+
+const PAGE_SIZE = 10;
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@mockups/web-ui";
+import {
+  Search,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Inbox,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  getRequests,
+  approveRequest,
+  rejectRequest,
+  type SellerRequest,
+} from "../../lib/mock-store";
+import { EmptyState } from "@mockups/web-ui";
+
+type Filter = "pending" | "approved" | "rejected" | "all";
+
+export function AdminNewRequests() {
+  const [requests, setRequests] = useState<SellerRequest[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("pending");
+  const [viewRequest, setViewRequest] = useState<SellerRequest | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "approve" | "reject";
+    request: SellerRequest;
+  } | null>(null);
+  // Pagination — reset to 1 on any filter / search change so the
+  // visible window doesn't fall off the end of a shorter result set.
+  const [page, setPage] = useState(1);
+
+  const refresh = () => setRequests(getRequests());
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const filtered = useMemo(() => {
+    return requests.filter((r) => {
+      if (filter !== "all" && r.status !== filter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          r.name.toLowerCase().includes(q) ||
+          r.businessName.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q) ||
+          r.phone.toLowerCase().includes(q) ||
+          r.city.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [requests, filter, searchQuery]);
+
+  const pageRows = paginate(filtered, page, PAGE_SIZE);
+
+  const getStatusBadge = (status: SellerRequest["status"]) => {
+    if (status === "pending") {
+      return (
+        <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          Pending
+        </Badge>
+      );
+    }
+    if (status === "approved") {
+      return (
+        <Badge className="bg-green-50 text-green-700 border-green-200">
+          Approved
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>
+    );
+  };
+
+  const handleApprove = () => {
+    if (!confirmAction) return;
+    const seller = approveRequest(confirmAction.request.id);
+    if (seller) {
+      toast.success(`Approved ${confirmAction.request.name}`);
+      refresh();
+    } else {
+      toast.error("Unable to approve request");
+    }
+    setConfirmAction(null);
+  };
+
+  const handleReject = () => {
+    if (!confirmAction) return;
+    const ok = rejectRequest(confirmAction.request.id);
+    if (ok) {
+      toast.success(`Rejected ${confirmAction.request.name}`);
+      refresh();
+    } else {
+      toast.error("Unable to reject request");
+    }
+    setConfirmAction(null);
+  };
+
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+
+  return (
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Filter / Search Bar — sticky toolbar. */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="bg-gray-100 p-1 rounded-lg inline-flex gap-1">
+              {(["pending", "approved", "rejected", "all"] as Filter[]).map(
+                (f) => (
+                  <button
+                    key={f}
+                    onClick={() => {
+                      setFilter(f);
+                      setPage(1);
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-medium capitalize transition-all ${
+                      filter === f
+                        ? "bg-white shadow-sm text-gray-900"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ),
+              )}
+            </div>
+            {pendingCount > 0 && (
+              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                {pendingCount} pending
+              </Badge>
+            )}
+          </div>
+
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by name, business, email, city..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content — Card stretches to fill the available height; only
+          the row body scrolls, the toolbar above and pagination below
+          stay pinned. */}
+      <div className="flex-1 overflow-hidden p-6">
+        <Card className="h-full flex flex-col overflow-hidden p-0 gap-0">
+          {filtered.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <EmptyState
+                icon={Inbox}
+                title={
+                  requests.length === 0
+                    ? "No signup requests yet"
+                    : "No requests found"
+                }
+                description={
+                  requests.length === 0
+                    ? "When a new seller signs up via the onboarding form, their request will appear here for you to approve."
+                    : searchQuery
+                      ? "No requests match your search. Try a different term."
+                      : "Nothing matches the current filter — try the All tab to see everything."
+                }
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Business
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Phone
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        City
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Submitted
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {pageRows.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{r.name}</p>
+                          <p className="text-xs text-gray-500">{r.email}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {r.businessName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {r.phone}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {r.city}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {new Date(r.submittedAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3">{getStatusBadge(r.status)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="View details"
+                              onClick={() => setViewRequest(r)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {r.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                                  onClick={() =>
+                                    setConfirmAction({ type: "approve", request: r })
+                                  }
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                  onClick={() =>
+                                    setConfirmAction({ type: "reject", request: r })
+                                  }
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ListPagination
+                page={page}
+                total={filtered.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+                itemLabel="request"
+              />
+            </>
+          )}
+        </Card>
+      </div>
+
+      {/* View Details dialog */}
+      <Dialog open={viewRequest !== null} onOpenChange={(o) => !o && setViewRequest(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Details</DialogTitle>
+            <DialogDescription>
+              Submitted on{" "}
+              {viewRequest
+                ? new Date(viewRequest.submittedAt).toLocaleString()
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {viewRequest && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-gray-500 text-xs">Name</p>
+                  <p className="font-medium">{viewRequest.name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Phone</p>
+                  <p className="font-medium">{viewRequest.phone}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500 text-xs">Email</p>
+                  <p className="font-medium">{viewRequest.email}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Business</p>
+                  <p className="font-medium">{viewRequest.businessName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">City</p>
+                  <p className="font-medium">{viewRequest.city}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-gray-500 text-xs">Status</p>
+                  {getStatusBadge(viewRequest.status)}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewRequest(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve/Reject confirm dialog */}
+      <Dialog
+        open={confirmAction !== null}
+        onOpenChange={(o) => !o && setConfirmAction(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction?.type === "approve"
+                ? "Approve Request"
+                : "Reject Request"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmAction?.type === "approve" ? (
+                <>
+                  Approve <b>{confirmAction?.request.name}</b> from{" "}
+                  <b>{confirmAction?.request.businessName}</b>? An active seller
+                  account will be created.
+                </>
+              ) : (
+                <>
+                  Reject <b>{confirmAction?.request.name}</b>'s request? This
+                  cannot be undone from the UI.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAction(null)}>
+              Cancel
+            </Button>
+            {confirmAction?.type === "approve" ? (
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleApprove}
+              >
+                Approve
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={handleReject}>
+                Reject
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

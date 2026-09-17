@@ -358,7 +358,7 @@ export default function App() {
       case 'kyc-complete':
         return <CompleteKycScreen onCancel={() => go('listing')} onRegister={() => go('kyc-success')} />;
       case 'kyc-success':
-        return <KycSuccessScreen onPlaceOrder={() => go('listing')} />;
+        return <KycSuccessScreen onExplore={() => go('listing')} />;
       case 'home':
         return (
           <HomeScreen
