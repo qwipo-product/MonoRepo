@@ -6,19 +6,18 @@ import { useState } from 'react';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
-import { Columns, Stat, StackBar, HBars } from '@mockups/components';
+import { Columns, HBars } from '@mockups/components';
 import { Panel, KpiCard } from '../components/dashboard';
 import { stageBg, toneBg, openBg, ageBg } from '../components/chartClasses';
-import { dailyValue, dailyPrev, dailyDelivered, statuses } from '../data/overview';
+import { dailyValue, dailyPrev, dailyDelivered } from '../data/overview';
 import {
-  salesKpis, monthly, cities, networkCancelRate, cancelReasons,
+  salesKpis, monthly, cancelReasons,
   deliverySpeed, orderSizeBands, returnRemarks,
   drillKpis, drillStages, drillDistributors, overdueDaily, overduePrev, type BarRow,
 } from '../data/sales';
 
 const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
 import { RecordsDrawer } from '../components/RecordsDrawer';
-import { useScope } from '../scope';
 import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
@@ -54,13 +53,6 @@ function FullSales({ go }: { go: (p: Page) => void }) {
   const [metric, setMetric] = useState('value');
   const [grain, setGrain] = useState('daily');
   const [drill, setDrill] = useState<Drill | null>(null);
-  const totalOrders = statuses.reduce((s, x) => s + x.orders, 0);
-  const totalValue = statuses.reduce((s, x) => s + x.value, 0);
-  const { f, setF } = useScope();
-  const stageDrill = (key: string) => {
-    const s = statuses.find((x) => x.key === key)!;
-    setDrill({ title: `${s.label} orders`, total: `${s.orders} orders · ₹${s.value.toFixed(1)}L`, statuses: [key as Stage] });
-  };
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
@@ -114,26 +106,6 @@ function FullSales({ go }: { go: (p: Page) => void }) {
             { bg: 'bg-warning', label: 'Returned' },
             { bg: '', label: '* Aug = 22 days' },
           ]} />
-        </Panel>
-
-        <Panel className="col-span-5" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L`}>
-          <div className="type-caption mb-1.5 text-foreground-secondary"><b className="text-foreground">Orders</b> · share of {totalOrders.toLocaleString('en-IN')}</div>
-          <StackBar onPart={stageDrill} parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
-          <div className="type-caption mb-1.5 mt-4 text-foreground-secondary"><b className="text-foreground">Value</b> · share of ₹{totalValue.toFixed(1)}L</div>
-          <StackBar onPart={stageDrill} parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
-          <Legend items={statuses.map((s) => ({ bg: stageBg[s.key], label: s.label }))} />
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <Stat label="Delivery rate" value="61.5%" note={<><span className="font-medium text-error-foreground">target 70%</span> · 454 ÷ 738 closed</>}
-              onClick={() => stageDrill('delivered')} />
-            <Stat label="Cancellation rate" value="24.9%" note={<><span className="font-medium text-error-foreground">↑ 4.1 pts</span> · of 1,142</>}
-              onClick={() => stageDrill('cancelled')} />
-            <Stat label="Return rate" value="2.6%" note="12 ÷ 466 delivered" onClick={() => stageDrill('returned')} />
-          </div>
-        </Panel>
-
-        <Panel className="col-span-7" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
-          {/* Clicking a city applies it to the app-wide scope — a drill IS a filter. */}
-          <CityScatter onCity={(name) => setF({ ...f, cities: [name], distributors: [] })} />
         </Panel>
 
         <Panel className="col-span-4" title="Days to deliver" subtitle="454 delivered · avg 1.6 days">
@@ -348,71 +320,6 @@ function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
         </div>
       ))}
     </div>
-    </div>
-  );
-}
-
-/** Cities scatter: order value × cancellation rate, dot size by orders, network line. */
-function CityScatter({ onCity }: { onCity?: (name: string) => void }) {
-  const x = (v: number) => 70 + v * 49;
-  const y = (rate: number) => 270 - (rate - 20) * 16.8;
-  const netY = y(networkCancelRate);
-  const dotFill = (c: number) =>
-    c <= networkCancelRate ? 'fill-success' : c <= networkCancelRate + 1.5 ? 'fill-warning' : 'fill-error';
-  const [hover, setHover] = useState<number | null>(null);
-  const hc = hover !== null ? cities[hover] : null;
-  return (
-    <div className="relative">
-      {hc && (
-        <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-3 py-2 shadow-md"
-          style={{ left: `${Math.min(Math.max((x(hc.value) / 1000) * 100, 14), 86)}%`, top: `${(y(hc.cancel) / 360) * 100 - 4}%` }}
-        >
-          <div className="type-label whitespace-nowrap">{hc.name}</div>
-          <div className="type-caption mt-0.5 whitespace-nowrap text-foreground-secondary">
-            Order value <b className="text-foreground tabular-nums">₹{hc.value}L</b> · {hc.change} vs Jul
-          </div>
-          <div className={cn('type-caption whitespace-nowrap', hc.cancel > networkCancelRate ? 'text-error-foreground' : 'text-success-foreground')}>
-            Cancellation {hc.cancel}% · network {networkCancelRate}%
-          </div>
-        </div>
-      )}
-    <svg viewBox="0 0 1000 360" className="block w-full" role="img" aria-label="Cities: order value on x, cancellation rate on y, dot size by orders, network rate line at 24.9%.">
-      <rect x={70} y={30} width={880} height={netY - 30} className="fill-error-subtle" />
-      <rect x={70} y={netY} width={880} height={300 - netY} className="fill-success-subtle" />
-      <line x1={70} y1={netY} x2={950} y2={netY} className="stroke-foreground" strokeDasharray="5 4" />
-      <text x={950} y={netY - 6} textAnchor="end" className="fill-foreground-secondary text-[10px]">network {networkCancelRate}%</text>
-      <text x={78} y={46} className="fill-error-foreground text-[10px] font-semibold">Cancels above network</text>
-      <text x={78} y={292} className="fill-success-foreground text-[10px] font-semibold">Cleaner than network</text>
-      {cities.map((c) => (
-        <g
-          key={c.name}
-          className={cn(onCity && 'cursor-pointer')}
-          onClick={onCity && (() => onCity(c.name))}
-          onMouseEnter={() => setHover(cities.indexOf(c))}
-          onMouseLeave={() => setHover(null)}
-        >
-          <circle cx={x(c.value)} cy={y(c.cancel)} r={c.r} className={dotFill(c.cancel)} opacity={0.85} />
-          <text
-            x={x(c.value) + (c.labelLeft ? -(c.r + 5) : c.r + 5)}
-            y={y(c.cancel) + 4}
-            textAnchor={c.labelLeft ? 'end' : 'start'}
-            className="fill-foreground text-[10px] font-medium"
-          >
-            {c.name} <tspan className="fill-foreground-secondary font-normal">₹{c.value}L · {c.cancel}% · {c.change}</tspan>
-          </text>
-        </g>
-      ))}
-      {[4, 8, 12, 16].map((v) => (
-        <text key={v} x={x(v)} y={318} textAnchor="middle" className="fill-foreground-secondary text-[10px]">₹{v}L</text>
-      ))}
-      {[20, 25, 30].map((r) => (
-        <text key={r} x={62} y={y(r) + 4} textAnchor="end" className="fill-foreground-secondary text-[10px]">{r}%</text>
-      ))}
-      <text x={510} y={340} textAnchor="middle" className="fill-foreground-secondary text-[10px]">
-        Order value · dot size = orders · label shows change vs 1 – 22 Jul
-      </text>
-    </svg>
     </div>
   );
 }
