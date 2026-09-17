@@ -1,6 +1,9 @@
 // Order value per day: current (primary), delivered (success, shaded), previous
 // period (dashed, border-strong). All colours are token classes so the chart
-// follows the theme. Peaks and troughs on both lines are labelled.
+// follows the theme. Peaks and troughs on both lines are labelled; hovering
+// shows a guide line + tooltip with that day's three values.
+
+import { useState } from 'react';
 
 const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380, SCALE = 105;
 
@@ -21,8 +24,39 @@ const poly = (a: readonly (readonly [number, number])[]) => a.map(([x, y]) => `$
 export function TrendChart({ current, previous, delivered, onPoint }: { current: number[]; previous: number[]; delivered: number[]; onPoint?: (i: number) => void }) {
   const c = pts(current), p = pts(previous), d = pts(delivered);
   const gridY = (v: number) => Y0 - v * SCALE;
+  const [hover, setHover] = useState<number | null>(null);
+  const n = current.length;
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.round(((px - X0) / (X1 - X0)) * (n - 1));
+    setHover(Math.max(0, Math.min(n - 1, i)));
+  };
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img" aria-label="Order value per day with delivered value and previous period">
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max((c[hover][0] / W) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{hover + 1} Aug 2026</div>
+          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
+            <i className="h-2 w-2 rounded-full bg-primary" /><span>Order value <b className="ml-1 text-foreground tabular-nums">{lakh(current[hover])}</b></span>
+            <i className="h-2 w-2 rounded-full bg-success" /><span>Delivered <b className="ml-1 text-foreground tabular-nums">{lakh(delivered[hover], 2)}</b></span>
+            <i className="h-2 w-2 rounded-full bg-border-strong" /><span>{hover + 1} Jul <b className="ml-1 text-foreground tabular-nums">{lakh(previous[hover], 2)}</b></span>
+          </div>
+        </div>
+      )}
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="block w-full"
+      role="img"
+      aria-label="Order value per day with delivered value and previous period"
+      onMouseMove={onMove}
+      onMouseLeave={() => setHover(null)}
+    >
       {[1, 2].map((v) => (
         <g key={v}>
           <line x1={X0} y1={gridY(v)} x2={X1} y2={gridY(v)} className="stroke-border" />
@@ -56,7 +90,16 @@ export function TrendChart({ current, previous, delivered, onPoint }: { current:
           {i + 1} Aug
         </text>
       ))}
+      {hover !== null && (
+        <g className="pointer-events-none">
+          <line x1={c[hover][0]} y1={40} x2={c[hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
+          <circle cx={c[hover][0]} cy={c[hover][1]} r={4.5} className="fill-primary stroke-card" strokeWidth={2} />
+          <circle cx={d[hover][0]} cy={d[hover][1]} r={4} className="fill-success stroke-card" strokeWidth={2} />
+          <circle cx={p[hover][0]} cy={p[hover][1]} r={3.5} className="fill-border-strong stroke-card" strokeWidth={2} />
+        </g>
+      )}
     </svg>
+    </div>
   );
 }
 
