@@ -50,7 +50,7 @@ const stageBadge: Record<Stage, { variant: NonNullable<BadgeProps['variant']>; l
 };
 
 export function RecordsDrawer({
-  title, total, statuses, date, distributors, sortByValue, quickFilters, onClose, go,
+  title, total, statuses, date, distributors, sortByValue, quickFilters, initialQf, onClose, go,
 }: {
   title: string;
   /** the KPI's real total, e.g. "1,142 orders · ₹38.6L" */
@@ -62,12 +62,14 @@ export function RecordsDrawer({
   sortByValue?: boolean;
   /** chips inside the drawer to slice the list — by status group or age bucket */
   quickFilters?: { label: string; statuses?: Stage[]; age?: [number, number | null]; count: number | string }[];
+  /** index of the chip to preselect (e.g. the bar the user clicked) */
+  initialQf?: number;
   onClose: () => void;
   go: (p: Page) => void;
 }) {
   const [q, setQ] = useState('');
   const [pages, setPages] = useState(1);
-  const [qf, setQf] = useState(0);
+  const [qf, setQf] = useState(initialQf ?? 0);
   const capped = pages >= MAX_PAGES;
   const active = quickFilters?.[qf];
   const activeStatuses = quickFilters ? active?.statuses : statuses;
@@ -138,7 +140,7 @@ export function RecordsDrawer({
                 <th className="py-2 pr-3 font-semibold">Date</th>
                 <th className="py-2 pr-3 font-semibold">Order</th>
                 <th className="py-2 pr-3 font-semibold">Outlet</th>
-                <th className="py-2 pr-3 font-semibold">Status</th>
+                {!showAge && <th className="py-2 pr-3 font-semibold">Status</th>}
                 {showAge && <th className="py-2 pr-3 font-semibold">Age</th>}
                 <th className="py-2 text-right font-semibold">Value</th>
               </tr>
@@ -152,17 +154,22 @@ export function RecordsDrawer({
                     <span className="block text-foreground-tertiary">{r.distributor}</span>
                   </td>
                   <td className="max-w-[170px] truncate py-2 pr-3">{r.outlet}</td>
-                  <td className="py-2 pr-3">
-                    <Badge variant={stageBadge[r.status].variant}>{stageBadge[r.status].label}</Badge>
-                    {r.delivered && (
-                      <span className="mt-0.5 block whitespace-nowrap tabular-nums text-foreground-tertiary">
-                        {r.delivered} {daysBetween(r.date, r.delivered)}
-                      </span>
-                    )}
-                  </td>
+                  {!showAge && (
+                    <td className="py-2 pr-3">
+                      <Badge variant={stageBadge[r.status].variant}>{stageBadge[r.status].label}</Badge>
+                      {r.delivered && (
+                        <span className="mt-0.5 block whitespace-nowrap tabular-nums text-foreground-tertiary">
+                          {r.delivered} {daysBetween(r.date, r.delivered)}
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {showAge && (
-                    <td className={cn('whitespace-nowrap py-2 pr-3 tabular-nums', ageDays(r.date) >= 4 ? 'font-medium text-error-foreground' : 'text-foreground-secondary')}>
-                      {ageDays(r.date) >= 4 ? 'D4+' : `D${ageDays(r.date)}`} · {ageDays(r.date)}d
+                    <td className="py-2 pr-3">
+                      <Badge variant={ageDays(r.date) >= 4 ? 'danger' : ageDays(r.date) >= 2 ? 'warning' : 'info'}>
+                        {ageDays(r.date) >= 4 ? 'D4+' : `D${ageDays(r.date)}`}
+                      </Badge>
+                      <span className="ml-1.5 tabular-nums text-foreground-secondary">{ageDays(r.date)}d</span>
                     </td>
                   )}
                   <td className={cn('py-2 text-right tabular-nums', r.status === 'cancelled' && 'text-error-foreground')}>

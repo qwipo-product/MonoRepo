@@ -19,7 +19,7 @@ const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
 /** Drill-through per KPI: the record rows behind the number. null = navigate. */
 type QuickFilter = { label: string; statuses?: Stage[]; age?: [number, number | null]; count: number | string };
-type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean; quickFilters?: QuickFilter[] };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean; quickFilters?: QuickFilter[]; initialQf?: number };
 
 /** All / Open / Delivered / Cancelled / Returned — matches the outcomes card. */
 const statusQuick: QuickFilter[] = [
@@ -54,7 +54,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[] } | null>(null);
   // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
   const attentionDrills = [
-    () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: ageQuick }),
+    () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: ageQuick, initialQf: 5 }),
     () => setDrill({ title: 'Cancelled · Vijaya & Lakshmi', total: '89 orders · ₹3.3L', statuses: ['cancelled'], distributors: ['Vijaya Distributors', 'Lakshmi Agencies'] }),
     () => setEntity({ title: 'High-value outlets gone quiet', total: '148 outlets · ₹6.2L monthly value', rows: quietOutlets }),
     () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands }),
@@ -155,7 +155,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
             onBar={(l) => {
               const i = ageing.buckets.findIndex((b) => l.startsWith(b));
-              setDrill({ title: `Open orders · ${ageing.buckets[i]}`, total: `${bucketTotals[i]} orders`, quickFilters: ageQuick });
+              setDrill({ title: 'Open orders by age', total: '392 orders · ₹12.7L', quickFilters: ageQuick, initialQf: i + 1 });
             }}
           />
           <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Shipped</b>.</p>
