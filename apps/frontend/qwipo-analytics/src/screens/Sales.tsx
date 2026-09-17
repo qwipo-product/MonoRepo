@@ -65,13 +65,6 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
       {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
 
-      <div className="flex gap-1.5">
-        {['Summary', 'Trend', 'Status', 'Geography', 'Cancellations'].map((a, i) => (
-          <span key={a} className={cn('type-caption rounded-full px-3 py-1', i === 0 ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'text-foreground-secondary')}>
-            {a}
-          </span>
-        ))}
-      </div>
 
       <section>
         <div className="grid grid-cols-6 gap-3">
@@ -82,7 +75,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-12" title="Orders and value over time" subtitle="Delivered value shaded" onOpen={() => go('reports')}
+        <Panel className="col-span-12" title="Orders and value over time" subtitle="Delivered value shaded"
           right={
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <SegmentedControl className="w-auto" value={metric} onChange={setMetric} options={[
@@ -138,7 +131,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           <CityScatter onCity={(name) => setF({ ...f, cities: [name], distributors: [] })} />
         </Panel>
 
-        <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L" onOpen={() => go('reports')}>
+        <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L">
           <HBars
             rows={toHBars(cancelReasons)}
             onRow={(label) => {
