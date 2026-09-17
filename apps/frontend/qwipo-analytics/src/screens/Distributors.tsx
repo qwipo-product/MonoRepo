@@ -9,6 +9,7 @@ import { Handoff } from '../components/Handoff';
 import { makeTh } from '../components/tableSort';
 import { Panel, KpiCard } from '../components/dashboard';
 import { RecordsDrawer } from '../components/RecordsDrawer';
+import { DistributorDrawer } from '../components/DistributorDrawer';
 import { distributorRows, topBeats, type DistributorRow } from '../data/distributors';
 import { drillDistributors } from '../data/sales';
 import { toneBg } from '../components/chartClasses';
@@ -23,6 +24,7 @@ const priorityVariant = { Spotlight: 'success', 'Push in beats': 'info', Nurture
 
 export default function Distributors({ go }: { go: (p: Page) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
+  const [detail, setDetail] = useState<DistributorRow | null>(null);
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'value', dir: -1 });
 
   const openOrders = (d: DistributorRow) =>
@@ -36,6 +38,10 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
     <div className="flex flex-col gap-5">
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
       {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
+      {detail && !drill && (
+        <DistributorDrawer d={detail} onClose={() => setDetail(null)} go={go}
+          onOrders={() => { openOrders(detail); setDetail(null); }} />
+      )}
 
       <section>
         <div className="grid grid-cols-5 gap-3">
@@ -52,7 +58,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
         <Panel
           className="col-span-12"
           title="Leaderboard"
-          subtitle="All 18 · click a row for its orders"
+          subtitle="All 18 · click a row to drill in"
           right={<Badge variant="warning" className="normal-case tracking-normal">Activation needs retailer mapping</Badge>}
         >
           <table className="w-full border-collapse">
@@ -71,7 +77,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
             </thead>
             <tbody className="type-caption">
               {rows.map((d) => (
-                <tr key={d.name} className="cursor-pointer border-t border-border-subtle hover:bg-muted" onClick={() => openOrders(d)}>
+                <tr key={d.name} className="cursor-pointer border-t border-border-subtle hover:bg-muted" onClick={() => setDetail(d)}>
                   <td className="py-2 pr-2 tabular-nums text-foreground-tertiary">{rankOf.get(d.name)}</td>
                   <td className="py-2 pr-3">
                     <span className="block font-medium">{d.name}</span>
@@ -93,7 +99,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
         </Panel>
 
         <Panel className="col-span-7" title="Size against momentum" subtitle="Value × growth · dot size = orders">
-          <MomentumScatter onPick={(name) => openOrders(distributorRows.find((d) => d.name === name)!)} />
+          <MomentumScatter onPick={(name) => setDetail(distributorRows.find((d) => d.name === name)!)} />
         </Panel>
 
         <Panel className="col-span-5" title="Cancellation health" subtitle={`Network ${NETWORK_CANCEL}% · worst first`}>
