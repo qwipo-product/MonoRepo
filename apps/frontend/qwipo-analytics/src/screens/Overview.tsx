@@ -13,7 +13,6 @@ import {
   kpis, dailyValue, dailyPrev, dailyDelivered, attention, statuses, ageing, funnel, newOutletsByWeek,
   dimensions, movers, dimensionLabel,
 } from '../data/overview';
-import { useScope } from '../scope';
 import type { Page } from '../nav';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
@@ -52,14 +51,6 @@ const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
-  const { f, setF } = useScope();
-  // Contribution rows: distributor → its orders; city/company → becomes the scope filter.
-  const rowDrill = (dim: string, name: string, value: number): (() => void) | undefined => {
-    if (dim === 'distributor') return () => setDrill({ title: `Orders · ${name}`, total: `₹${value}L this period`, distributors: [name] });
-    if (dim === 'city') return () => setF({ ...f, cities: [name], distributors: [] });
-    if (dim === 'company') return () => setF({ ...f, companies: [name] });
-    return undefined; // category / brand / SKU drill with the Brands page
-  };
   const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number; shareTotal?: number } | null>(null);
   // Funnel drill-down: outlets by stage, plus the silent list and weekly cohorts.
   const funnelQuick = [
@@ -258,8 +249,8 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                     {movers[dir].map((m) => (
                       <div
                         key={m.name}
-                        className={cn('type-caption grid grid-cols-[78px_1fr_1fr_70px] items-center gap-2.5 border-b border-border-subtle py-1.5 text-foreground', rowDrill(m.type, m.name, 0) && 'cursor-pointer hover:bg-muted')}
-                        onClick={rowDrill(m.type, m.name.replace(' (ITC)', ''), 0)}
+                        className="type-caption grid cursor-pointer grid-cols-[78px_1fr_1fr_70px] items-center gap-2.5 border-b border-border-subtle py-1.5 text-foreground hover:bg-muted"
+                        onClick={() => openDimension(dimensions.find((x) => x.key === m.type)!)}
                       >
                         <Badge className={cn('justify-center normal-case tracking-normal text-primary-foreground', dimBg[m.type])}>{dimensionLabel[m.type]}</Badge>
                         <span>{m.name}<span className="block text-foreground-secondary">{m.sub}</span></span>
@@ -289,8 +280,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                     {top.map((r, i) => (
                       <div
                         key={r.name}
-                        className={cn('flex items-baseline gap-2 py-1', rowDrill(d.key, r.name, r.value) && '-mx-1.5 cursor-pointer rounded-md px-1.5 hover:bg-muted')}
-                        onClick={(e) => { const fn = rowDrill(d.key, r.name, r.value); if (fn) { e.stopPropagation(); fn(); } }}
+                        className="flex items-baseline gap-2 py-1"
                       >
                         <i className="type-caption w-3.5 shrink-0 not-italic text-foreground-tertiary">{i + 1}</i>
                         <span className="type-body flex-1 truncate">{r.name}</span>
