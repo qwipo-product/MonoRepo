@@ -271,16 +271,32 @@ function Legend({ items }: { items: { bg: string; label: React.ReactNode }[] }) 
   );
 }
 
-/** Month columns with the delivered slice inside each bar. */
+/** Month columns with the delivered slice inside each bar. Hover = tooltip. */
 function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
   const max = Math.max(...monthly.map((m) => m.value));
+  const [hover, setHover] = useState<number | null>(null);
   return (
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max(((hover + 0.5) / monthly.length) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{monthly[hover].label.replace('*', '')} 2026{monthly[hover].label.includes('*') ? ' · 22 days' : ''}</div>
+          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
+            <i className="h-2 w-2 rounded-full bg-chart-blue-soft" /><span>Order value <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].value}L</b></span>
+            <i className="h-2 w-2 rounded-full bg-success" /><span>Delivered <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].delivered}L</b> · {((monthly[hover].delivered / monthly[hover].value) * 100).toFixed(0)}%</span>
+          </div>
+        </div>
+      )}
     <div className="flex items-end justify-around gap-6 px-4" style={{ height: 210 }}>
       {monthly.map((m) => (
         <div
           key={m.label}
           className={cn('flex h-full w-full max-w-[110px] flex-col items-center justify-end gap-1', onMonth && 'cursor-pointer rounded-md hover:bg-muted')}
           onClick={onMonth && (() => onMonth(m.label))}
+          onMouseEnter={() => setHover(monthly.indexOf(m))}
+          onMouseLeave={() => setHover(null)}
         >
           <b className="type-price-sm">₹{m.value}L</b>
           <div className="relative w-full" style={{ height: `${(m.value / max) * 82}%` }}>
@@ -293,6 +309,7 @@ function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
         </div>
       ))}
     </div>
+    </div>
   );
 }
 
@@ -303,7 +320,24 @@ function CityScatter({ onCity }: { onCity?: (name: string) => void }) {
   const netY = y(networkCancelRate);
   const dotFill = (c: number) =>
     c <= networkCancelRate ? 'fill-success' : c <= networkCancelRate + 1.5 ? 'fill-warning' : 'fill-error';
+  const [hover, setHover] = useState<number | null>(null);
+  const hc = hover !== null ? cities[hover] : null;
   return (
+    <div className="relative">
+      {hc && (
+        <div
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max((x(hc.value) / 1000) * 100, 14), 86)}%`, top: `${(y(hc.cancel) / 360) * 100 - 4}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{hc.name}</div>
+          <div className="type-caption mt-0.5 whitespace-nowrap text-foreground-secondary">
+            Order value <b className="text-foreground tabular-nums">₹{hc.value}L</b> · {hc.change} vs Jul
+          </div>
+          <div className={cn('type-caption whitespace-nowrap', hc.cancel > networkCancelRate ? 'text-error-foreground' : 'text-success-foreground')}>
+            Cancellation {hc.cancel}% · network {networkCancelRate}%
+          </div>
+        </div>
+      )}
     <svg viewBox="0 0 1000 360" className="block w-full" role="img" aria-label="Cities: order value on x, cancellation rate on y, dot size by orders, network rate line at 24.9%.">
       <rect x={70} y={30} width={880} height={netY - 30} className="fill-error-subtle" />
       <rect x={70} y={netY} width={880} height={300 - netY} className="fill-success-subtle" />
@@ -312,7 +346,13 @@ function CityScatter({ onCity }: { onCity?: (name: string) => void }) {
       <text x={78} y={46} className="fill-error-foreground text-[10px] font-semibold">Cancels above network</text>
       <text x={78} y={292} className="fill-success-foreground text-[10px] font-semibold">Cleaner than network</text>
       {cities.map((c) => (
-        <g key={c.name} className={cn(onCity && 'cursor-pointer')} onClick={onCity && (() => onCity(c.name))}>
+        <g
+          key={c.name}
+          className={cn(onCity && 'cursor-pointer')}
+          onClick={onCity && (() => onCity(c.name))}
+          onMouseEnter={() => setHover(cities.indexOf(c))}
+          onMouseLeave={() => setHover(null)}
+        >
           <circle cx={x(c.value)} cy={y(c.cancel)} r={c.r} className={dotFill(c.cancel)} opacity={0.85} />
           <text
             x={x(c.value) + (c.labelLeft ? -(c.r + 5) : c.r + 5)}
@@ -334,6 +374,7 @@ function CityScatter({ onCity }: { onCity?: (name: string) => void }) {
         Order value · dot size = orders · label shows change vs 1 – 22 Jul
       </text>
     </svg>
+    </div>
   );
 }
 
@@ -343,8 +384,27 @@ function OverdueChart() {
   const y = (n: number) => 170 - (n - 30) * 2;
   const line = (vals: number[]) => vals.map((n, i) => `${x(i).toFixed(1)},${y(n)}`).join(' ');
   const last = overdueDaily.length - 1;
+  const [hover, setHover] = useState<number | null>(null);
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 1000;
+    setHover(Math.max(0, Math.min(last, Math.round(((px - 50) / 920) * last))));
+  };
   return (
-    <svg viewBox="0 0 1000 200" className="block w-full" role="img" aria-label="Overdue open orders per day, rising from 53 to 91 over August; previous month dashed.">
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max((x(hover) / 1000) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{hover + 1} Aug 2026</div>
+          <div className="type-caption mt-0.5 whitespace-nowrap text-foreground-secondary">
+            Overdue <b className="text-error-foreground tabular-nums">{overdueDaily[hover]}</b> · {hover + 1} Jul <b className="text-foreground tabular-nums">{overduePrev[hover]}</b>
+          </div>
+        </div>
+      )}
+    <svg viewBox="0 0 1000 200" className="block w-full" role="img" aria-label="Overdue open orders per day, rising from 53 to 91 over August; previous month dashed."
+      onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
       {[60, 90].map((v) => (
         <g key={v}>
           <line x1={50} y1={y(v)} x2={970} y2={y(v)} className="stroke-border" />
@@ -363,7 +423,15 @@ function OverdueChart() {
           {i + 1} Aug
         </text>
       ))}
+      {hover !== null && (
+        <g className="pointer-events-none">
+          <line x1={x(hover)} y1={30} x2={x(hover)} y2={170} className="stroke-border-strong" strokeDasharray="3 3" />
+          <circle cx={x(hover)} cy={y(overdueDaily[hover])} r={4} className="fill-error stroke-card" strokeWidth={2} />
+          <circle cx={x(hover)} cy={y(overduePrev[hover])} r={3.5} className="fill-border-strong stroke-card" strokeWidth={2} />
+        </g>
+      )}
     </svg>
+    </div>
   );
 }
 
