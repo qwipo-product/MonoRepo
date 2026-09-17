@@ -49,8 +49,9 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
-    // One overview page + one review page per scheme (sidebar follows the
-    // offer catalog: primary schemes first, then secondary).
+    // One overview page; each scheme entry opens its detail as a bottom
+    // sheet over the list (sidebar follows the offer catalog: primary
+    // schemes first, then secondary).
     title: 'Offers & Schemes',
     items: [
       { id: 'offers-schemes', label: 'All Offers & Schemes' },

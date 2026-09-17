@@ -12,6 +12,7 @@ import {
   SchemeProgressBar,
   SlabTable,
 } from '../components/OfferBits';
+import { OfferDetailSheet } from '../sheets/OfferDetailSheet';
 
 /* Offers & Schemes — every running scheme from the retailer's sellers, per the
    ONDC eB2B offer catalog (/on_search offers[]) + retailer-specific
@@ -29,9 +30,15 @@ type Filter = 'all' | OfferLevel;
 export function OffersSchemesScreen({
   onBack,
   onOpenOffer,
+  openOffer = null,
+  onCloseOffer,
 }: {
   onBack: () => void;
+  /** Tap on a scheme card — opens that offer's detail sheet. */
   onOpenOffer: (id: string) => void;
+  /** Offer whose detail sheet is open over the list (bottom pop-up). */
+  openOffer?: Offer | null;
+  onCloseOffer: () => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -95,6 +102,9 @@ export function OffersSchemesScreen({
           </Section>
         )}
       </div>
+
+      {/* one scheme in full — bottom pop-up, same shell as the Discounts sheet */}
+      <OfferDetailSheet offer={openOffer} onClose={onCloseOffer} />
     </div>
   );
 }

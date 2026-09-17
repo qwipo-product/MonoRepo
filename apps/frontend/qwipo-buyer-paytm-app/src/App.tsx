@@ -63,7 +63,6 @@ import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
 import { OffersSchemesScreen } from './screens/OffersSchemesScreen';
-import { OfferDetailScreen } from './screens/OfferDetailScreen';
 import { OFFERS, offerById } from './data/offers';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
@@ -481,6 +480,7 @@ export default function App() {
           <OffersSchemesScreen
             onBack={() => go('home')}
             onOpenOffer={(id) => go(`offer:${id}`)}
+            onCloseOffer={() => go('offers-schemes')}
           />
         );
       case 'cart':
@@ -648,15 +648,17 @@ export default function App() {
         );
       }
       default: {
-        // Per-offer review pages: offer:<id> → one scheme in detail.
+        // Per-offer review entries: offer:<id> → the Offers & Schemes list
+        // with that scheme's detail sheet open (bottom pop-up, app behaviour).
         if (screen.startsWith('offer:')) {
           const offer = offerById(screen.slice('offer:'.length));
           if (offer) {
             return (
-              <OfferDetailScreen
-                offer={offer}
-                onBack={() => go('offers-schemes')}
+              <OffersSchemesScreen
+                onBack={() => go('home')}
                 onOpenOffer={(id) => go(`offer:${id}`)}
+                openOffer={offer}
+                onCloseOffer={() => go('offers-schemes')}
               />
             );
           }

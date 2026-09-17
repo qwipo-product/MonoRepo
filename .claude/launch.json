@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "qwipo-buyer-app",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "C:/Users/User/OneDrive - Xavica Primary/Desktop/Qwipo Main Buyer App/mockups-lab/apps/frontend/qwipo-buyer-paytm-app", "dev"],
+      "port": 5175
+    }
+  ]
+}
