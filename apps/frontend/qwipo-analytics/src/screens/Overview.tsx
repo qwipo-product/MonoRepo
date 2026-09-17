@@ -97,7 +97,12 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </CardContent>
         </Card>
 
-        <Panel className="col-span-5" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`}>
+        <Panel
+          className="col-span-5"
+          title="Order outcomes"
+          subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`}
+          onOpen={() => setDrill({ title: 'All orders', total: `${total.toLocaleString('en-IN')} orders · ₹38.6L` })}
+        >
           <Columns
             items={[
               { label: 'Open', n: open, bg: openBg },
@@ -120,7 +125,12 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" title="Open orders by age" subtitle={`${open} open · days since order date`}>
+        <Panel
+          className="col-span-7"
+          title="Open orders by age"
+          subtitle={`${open} open · days since order date`}
+          onOpen={() => setDrill({ title: 'Open orders', total: `${open} orders · ₹12.7L`, statuses: openStages })}
+        >
           <Columns
             items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
             onBar={(l) => {
