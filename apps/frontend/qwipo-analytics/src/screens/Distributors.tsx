@@ -55,23 +55,39 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel
-          className="col-span-12"
+          className="col-span-5"
           title="Leaderboard"
-          subtitle="Top 8 by value · click a bar for the distributor, the card for all 18"
+          subtitle="18 distributors · ₹38.6L"
           onOpen={() => setBoard(true)}
         >
-          <HBars
-            wideLabel
-            rows={[...distributorRows].sort((a, b) => b.value - a.value).slice(0, 8).map((d) => ({
-              label: `${d.name} · ${d.city}`, n: d.value, value: `₹${d.value}L`,
-              barClass: d.cancel > 30 ? 'bg-error' : d.change < 0 ? 'bg-warning' : 'bg-chart-blue',
-            }))}
-            onRow={(label) => setDetail(distributorRows.find((d) => label.startsWith(d.name))!)}
-          />
-          <p className="type-caption mt-3 text-foreground-secondary">Red = over 30% cancellation · amber = shrinking vs Jul</p>
+          {[...distributorRows].sort((a, b) => b.value - a.value).slice(0, 3).map((d, i) => (
+            <div
+              key={d.name}
+              className="-mx-1.5 flex cursor-pointer items-baseline gap-2 rounded-md px-1.5 py-1.5 hover:bg-muted"
+              onClick={(e) => { e.stopPropagation(); setDetail(d); }}
+            >
+              <i className="type-caption w-3.5 shrink-0 not-italic text-foreground-tertiary">{i + 1}</i>
+              <span className="min-w-0 flex-1">
+                <span className="type-body block truncate">{d.name}</span>
+                <span className="type-caption block text-foreground-tertiary">{d.city} · delivery {d.delivery}%</span>
+              </span>
+              <b className="type-price-sm">₹{d.value}L</b>
+              <Badge variant={d.change < 0 ? 'danger' : 'success'}>{d.change < 0 ? '↓' : '↑'} {Math.abs(d.change)}%</Badge>
+            </div>
+          ))}
+          <div className="type-caption mt-1.5 flex justify-between border-t border-dashed border-border pt-1.5 text-foreground-secondary">
+            <span>15 others</span>
+            <span className="tabular-nums">₹20.7L</span>
+          </div>
+          <div className="mt-2.5 flex h-1.5 gap-px overflow-hidden rounded-full">
+            <i className="block bg-chart-blue" style={{ width: '20.5%' }} />
+            <i className="block bg-chart-blue opacity-70" style={{ width: '14.5%' }} />
+            <i className="block bg-chart-blue opacity-45" style={{ width: '11.4%' }} />
+            <i className="block flex-1 bg-background-sunken" />
+          </div>
         </Panel>
 
-        <Panel className="col-span-7" title="Size against momentum" subtitle="Value × growth · dot size = orders">
+        <Panel className="col-span-7" title="Size against momentum" subtitle="Value × growth · dot size = orders · click a dot to drill in">
           <MomentumScatter onPick={(name) => setDetail(distributorRows.find((d) => d.name === name)!)} />
         </Panel>
 
