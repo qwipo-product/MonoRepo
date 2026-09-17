@@ -7,22 +7,16 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, cn } from '@mockups/ui';
 import type { Trend } from '../data/overview';
 
-/** Grey uppercase question label above a panel or KPI row. */
-export function Question({ children }: { children: React.ReactNode }) {
-  return <div className="type-micro mb-1 text-foreground-tertiary">{children}</div>;
-}
-
 /** A card that opens a page on click; the interactive Card variant is the affordance. */
 export function Panel({
-  question, title, subtitle, onOpen, className, children, right,
+  title, subtitle, onOpen, className, children, right,
 }: {
-  question: string; title: string; subtitle?: string; onOpen?: () => void;
+  title: string; subtitle?: string; onOpen?: () => void;
   className?: string; children: React.ReactNode; right?: React.ReactNode;
 }) {
   return (
     <Card variant={onOpen ? 'interactive' : 'default'} className={cn('flex flex-col', className)} onClick={onOpen}>
       <CardHeader className="pb-3">
-        <Question>{question}</Question>
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="type-label">{title}</CardTitle>

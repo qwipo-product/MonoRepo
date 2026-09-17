@@ -7,7 +7,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Segm
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { Columns, Stat, StackBar, HBars } from '@mockups/components';
-import { Panel, Question, KpiCard } from '../components/dashboard';
+import { Panel, KpiCard } from '../components/dashboard';
 import { stageBg, toneBg, openBg } from '../components/chartClasses';
 import { dailyValue, dailyPrev, dailyDelivered, statuses } from '../data/overview';
 import {
@@ -42,14 +42,13 @@ function FullSales({ go }: { go: (p: Page) => void }) {
       </div>
 
       <section>
-        <Question>Summary · vs 1 – 22 Jul 2026</Question>
         <div className="grid grid-cols-6 gap-3">
           {salesKpis.map((k) => <KpiCard key={k.label} {...k} />)}
         </div>
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-12" question="Trend" title="Orders and value over time" subtitle="Delivered value shaded" onOpen={() => go('reports')}
+        <Panel className="col-span-12" title="Orders and value over time" subtitle="Delivered value shaded" onOpen={() => go('reports')}
           right={
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <SegmentedControl className="w-auto" value={metric} onChange={setMetric} options={[
@@ -68,7 +67,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           ]} />
         </Panel>
 
-        <Panel className="col-span-12" question="Trend · monthly" title="Month-wise sales" subtitle="Delivered value inside each bar">
+        <Panel className="col-span-12" title="Month-wise sales" subtitle="Delivered value inside each bar">
           <MonthBars />
           <Legend items={[
             { bg: openBg, label: 'Order value' },
@@ -77,15 +76,12 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           ]} />
         </Panel>
 
-        <Panel className="col-span-5" question="Status" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L`}>
+        <Panel className="col-span-5" title="Orders and value by status" subtitle={`${totalOrders.toLocaleString('en-IN')} orders · ₹${totalValue.toFixed(1)}L`}>
           <div className="type-caption mb-1.5 text-foreground-secondary"><b className="text-foreground">Orders</b> · share of {totalOrders.toLocaleString('en-IN')}</div>
           <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.orders / totalOrders) * 100, label: String(s.orders), bg: stageBg[s.key] }))} />
           <div className="type-caption mb-1.5 mt-4 text-foreground-secondary"><b className="text-foreground">Value</b> · share of ₹{totalValue.toFixed(1)}L</div>
           <StackBar parts={statuses.map((s) => ({ key: s.key, pct: (s.value / totalValue) * 100, label: `₹${s.value.toFixed(1)}L`, bg: stageBg[s.key] }))} />
           <Legend items={statuses.map((s) => ({ bg: stageBg[s.key], label: s.label }))} />
-          <p className="type-caption mt-2 text-foreground-secondary">
-            Cancelled is 24.9% of orders but 27.2% of value: bigger orders cancel more. Open stages hold ₹12.7L (33%) that has not landed yet.
-          </p>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <Stat label="Delivery rate" value="61.5%" note={<><span className="font-medium text-error-foreground">target 70%</span> · 454 ÷ 738 closed</>} />
             <Stat label="Cancellation rate" value="24.9%" note={<><span className="font-medium text-error-foreground">↑ 4.1 pts</span> · of 1,142</>} />
@@ -93,27 +89,19 @@ function FullSales({ go }: { go: (p: Page) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" question="Geography" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
+        <Panel className="col-span-7" title="Cities: size against cancellation" subtitle="Telangana · 6 cities">
           <CityScatter />
-          <p className="type-caption mt-1.5 text-foreground-secondary">
-            Hyderabad and Secunderabad carry 62% of value and cancel below the network rate. Warangal is the one to act on: big enough
-            to matter, worst cancellation, and shrinking. City comes from outlet GPS; 64 unresolved outlets are excluded.
-          </p>
         </Panel>
 
-        <Panel className="col-span-5" question="Cancellations" title="Cancellation reasons" subtitle="284 orders · ₹10.5L" onOpen={() => go('reports')}>
+        <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L" onOpen={() => go('reports')}>
           <HBars rows={toHBars(cancelReasons)} />
-          <p className="type-caption mt-3 text-foreground-secondary">
-            Stock-outs are 35% of cancellations and 90% of them sit with two distributors.{' '}
-            <span className="font-medium text-warning-foreground">Needs a reason taxonomy: cancellation_reason is free text today; cancelled_by (actor) is the only constrained field</span>
-          </p>
         </Panel>
 
         <Handoff
           className="col-span-7"
           go={go}
           title="Need the orders themselves?"
-          body="Order-level records are not shown on analytics pages. Run the Order Register report with the current scope and period; it opens in Reports with these filters pre-filled and lands in Run history when ready."
+          body="Runs the Order Register report with this scope · lands in Run history."
           cta="Run Order Register with this scope"
         />
       </div>
@@ -142,40 +130,35 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
       />
 
       <section>
-        <Question>Summary · the 91 overdue open orders</Question>
         <div className="grid grid-cols-6 gap-3">
           {drillKpis.map((k) => <KpiCard key={k.label} {...k} />)}
         </div>
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-5" question="Status" title="The 91 by stage">
+        <Panel className="col-span-5" title="The 91 by stage">
           <Columns height={150} items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'shipped' ? 'bg-error' : stageBg[s.key] }))} />
-          <p className="type-caption mt-3 text-foreground-secondary">
-            <b className="text-foreground">60 are already Shipped.</b> The delay is in the last mile, not at acceptance. Packed orders (18)
-            are the next risk: they have been sitting 4+ days without dispatch.
-          </p>
+          <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">60 are already Shipped.</b></p>
         </Panel>
 
-        <Panel className="col-span-7" question="Who" title="The 91 by distributor" onOpen={() => go('distributors')}>
+        <Panel className="col-span-7" title="The 91 by distributor" onOpen={() => go('distributors')}>
           <HBars rows={toHBars(drillDistributors)} wideLabel />
           <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>
         </Panel>
 
-        <Panel className="col-span-12" question="Trend" title="Overdue count by day">
+        <Panel className="col-span-12" title="Overdue count by day">
           <OverdueChart />
           <Legend items={[
             { bg: 'bg-error', label: 'Overdue open orders · today 91' },
             { bg: 'bg-border-strong', label: '1 – 22 Jul · ended at 77' },
           ]} />
-          <p className="type-caption mt-2 text-foreground-secondary">Overdue count has climbed every week this month; it is not a one-day spike.</p>
         </Panel>
 
         <Handoff
           className="col-span-12"
           go={go}
           title="Need the 91 orders themselves?"
-          body="Open Order Ageing carries these exact filters: status Open, age D4+, this scope and period. It lists every order with outlet, distributor, stage, age and value."
+          body="Runs Open Order Ageing with these drill filters · lands in Run history."
           cta="Run Open Order Ageing with this drill"
         />
       </div>
@@ -295,7 +278,6 @@ function Handoff({ title, body, cta, className, go }: { title: string; body: str
   return (
     <Card className={cn('flex flex-col justify-center border-dashed', className)}>
       <CardHeader className="pb-3">
-        <Question>Records</Question>
         <CardTitle className="type-label">{title}</CardTitle>
         <CardDescription>{body}</CardDescription>
       </CardHeader>

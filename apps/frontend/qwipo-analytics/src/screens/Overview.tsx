@@ -3,7 +3,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui
 import { ScopeBar } from '../components/ScopeBar';
 import { TrendChart } from '../components/TrendChart';
 import { RankedRow, Columns, Stat } from '@mockups/components';
-import { Panel, Question, KpiCard } from '../components/dashboard';
+import { Panel, KpiCard } from '../components/dashboard';
 import { dimBg, dimBorder, ageBg, severityText, openBg } from '../components/chartClasses';
 import {
   kpis, dailyValue, dailyPrev, dailyDelivered, attention, statuses, ageing, funnel, newOutletsByWeek,
@@ -27,14 +27,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
       <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
 
       <section>
-        <Question>Are we growing?</Question>
         <div className="grid grid-cols-5 gap-3">
           {kpis.map((k) => <KpiCard key={k.label} {...k} onOpen={() => go('sales')} />)}
         </div>
       </section>
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel className="col-span-8" question="What changed?" title="Order value per day" subtitle="Delivered value shaded" onOpen={() => go('sales')}>
+        <Panel className="col-span-8" title="Order value per day" subtitle="Delivered value shaded" onOpen={() => go('sales')}>
           <TrendChart current={dailyValue} previous={dailyPrev} delivered={dailyDelivered} />
           <div className="type-caption mt-2 flex gap-4 text-foreground-secondary">
             <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-primary" />Order value · ₹38.6L</span>
@@ -45,7 +44,6 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
         <Card className="col-span-4">
           <CardHeader className="pb-3">
-            <Question>What needs me today?</Question>
             <CardTitle className="type-label">Attention</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5">
@@ -62,7 +60,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </CardContent>
         </Card>
 
-        <Panel className="col-span-5" question="Are we fulfilling?" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`} onOpen={() => go('sales')}>
+        <Panel className="col-span-5" title="Order outcomes" subtitle={`${total.toLocaleString('en-IN')} orders · open ${open} · closed ${closed}`} onOpen={() => go('sales')}>
           <Columns items={[
             { label: 'Open', n: open, bg: openBg },
             { label: 'Delivered', n: delivered, bg: 'bg-success' },
@@ -75,7 +73,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" question="What is stuck?" title="Open orders by age" subtitle={`${open} open · days since order date`} onOpen={() => go('sales')}>
+        <Panel className="col-span-7" title="Open orders by age" subtitle={`${open} open · days since order date`} onOpen={() => go('sales')}>
           <Columns items={ageing.buckets.map((b, i) => ({ label: i === 0 ? 'D0 today' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))} />
           <div className="type-caption mt-4 grid grid-cols-[80px_repeat(5,1fr)_48px] gap-1">
             <div />
@@ -97,10 +95,10 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
             {bucketTotals.map((t, i) => <div key={i} className="text-center tabular-nums text-foreground-secondary">{t}</div>)}
             <div className="text-right tabular-nums text-foreground-secondary">{open}</div>
           </div>
-          <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue orders are already <b className="text-foreground">Shipped</b>: the delay is last-mile, not acceptance.</p>
+          <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Shipped</b>.</p>
         </Panel>
 
-        <Panel className="col-span-12" question="Are we widening the base?" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`} onOpen={() => go('customers')}>
+        <Panel className="col-span-12" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`} onOpen={() => go('customers')}>
           <div className="grid grid-cols-[5fr_3fr_4fr] items-start gap-7">
             <div className="flex flex-col gap-1">
               {funnel.map((f, i) => {
@@ -119,10 +117,9 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                   </div>
                 );
               })}
-              <p className="type-caption mt-1.5 text-foreground-secondary">Qualified = ≥2 orders, each &gt; ₹300</p>
             </div>
             <div>
-              <p className="type-caption text-foreground-secondary"><b className="text-foreground">New outlets per week</b> · first-ever order · 62 total</p>
+              <p className="type-caption text-foreground-secondary"><b className="text-foreground">New outlets per week</b> · 62</p>
               <Columns items={newOutletsByWeek.map((w) => ({ ...w, bg: dimBg.company }))} height={90} />
             </div>
             <Card variant="compact" className="grid grid-cols-[10px_1fr] gap-2.5 p-3">
@@ -138,7 +135,6 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
 
         <Card className="col-span-12">
           <CardHeader className="pb-3">
-            <Question>Who drives, who drags?</Question>
             <CardTitle className="type-label">Contribution</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
@@ -187,7 +183,6 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 </div>
               </div>
             ))}
-            <p className="type-caption text-foreground-secondary">Company and brand values are line-item scoped: ₹36.2L mapped + ₹2.4L unmapped = ₹38.6L. Full rankings → Distributors and Brands pages, SKU Performance report.</p>
           </CardContent>
         </Card>
       </div>
