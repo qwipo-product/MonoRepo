@@ -96,6 +96,7 @@ docs/handoffs/              specs handed to engineering (handoff)
 | `seller-store` | 5174 | web | Distributor + super-admin console, 51 pages; five personas, OTP `1234` (its README) |
 | `rirn` | 5173 | web | Retailer identity network — company discovery console |
 | `rirn-retailer` | 5176 | **mobile** | Retailer-facing RIRN pages for a buyer-app WebView |
+| `qwipo-analytics` | 5177 | mobile kit, desktop layout | DigiDukaan analytics console + Reports framework; predates the web kit (its README) |
 | `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
 | `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
 

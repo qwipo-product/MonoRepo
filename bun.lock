@@ -36,6 +36,7 @@
         "@mockups/design-tokens": "workspace:*",
         "@mockups/types": "workspace:*",
         "@mockups/ui": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
         "lucide-react": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",

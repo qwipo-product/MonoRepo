@@ -1,5 +1,0 @@
-import{i as e}from"./preload-helper-xPQekRTU.js";import{t}from"./iframe-23vKX6RU.js";import{o as n,t as r}from"./src-ChYCHCux.js";var i,a,o,s,c,l;e((()=>{r(),i=t(),a=[`placed`,`processing`,`in_transit`,`delivered`,`cancelled`],o={title:`Components/StatusBadge`,component:n,args:{status:`processing`},argTypes:{status:{control:`select`,options:a}}},s={},c={render:()=>(0,i.jsx)(`div`,{className:`flex flex-wrap gap-2`,children:a.map(e=>(0,i.jsx)(n,{status:e},e))})},s.parameters={...s.parameters,docs:{...s.parameters?.docs,source:{originalSource:`{}`,...s.parameters?.docs?.source}}},c.parameters={...c.parameters,docs:{...c.parameters?.docs,source:{originalSource:`{
-  render: () => <div className="flex flex-wrap gap-2">
-      {statuses.map(s => <StatusBadge key={s} status={s} />)}
-    </div>
-}`,...c.parameters?.docs?.source}}},l=[`Playground`,`AllStatuses`]}))();export{c as AllStatuses,s as Playground,l as __namedExportsOrder,o as default};
