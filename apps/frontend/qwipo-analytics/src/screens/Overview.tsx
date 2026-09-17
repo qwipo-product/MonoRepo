@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { RecordsDrawer } from '../components/RecordsDrawer';
@@ -158,33 +158,6 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
               setDrill({ title: `Open orders · ${ageing.buckets[i]}`, total: `${bucketTotals[i]} orders`, quickFilters: ageQuick });
             }}
           />
-          <div className="type-caption mt-4 grid grid-cols-[80px_repeat(5,1fr)_48px] gap-1">
-            <div />
-            {ageing.buckets.map((b) => <div key={b} className="type-micro text-center text-foreground-secondary">{b}</div>)}
-            <div />
-            {ageing.rows.map((r) => (
-              <Fragment key={r.stage}>
-                <div className="whitespace-nowrap">{r.stage}</div>
-                {r.counts.map((n, i) => (
-                  <div
-                    key={i}
-                    className="relative grid h-7 cursor-pointer place-items-center rounded-sm font-medium tabular-nums hover:ring-2 hover:ring-ring"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDrill({ title: `${r.stage} · ${ageing.buckets[i]}`, total: `${n} orders`, statuses: [(r.stage === 'Order placed' ? 'created' : r.stage.toLowerCase()) as Stage] });
-                    }}
-                  >
-                    <i className={cn('absolute inset-0 rounded-sm', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.12 + 0.88 * Math.min(n / 60, 1) }} />
-                    <span className={cn('relative', n >= 30 ? 'text-primary-foreground' : 'text-foreground')}>{n}</span>
-                  </div>
-                ))}
-                <div className="text-right tabular-nums text-foreground-secondary">{sum(r.counts)}</div>
-              </Fragment>
-            ))}
-            <div className="text-foreground-secondary">Total</div>
-            {bucketTotals.map((t, i) => <div key={i} className="text-center tabular-nums text-foreground-secondary">{t}</div>)}
-            <div className="text-right tabular-nums text-foreground-secondary">{open}</div>
-          </div>
           <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Shipped</b>.</p>
         </Panel>
 
