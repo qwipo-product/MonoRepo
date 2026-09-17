@@ -24,9 +24,18 @@ import type { Page } from '../nav';
 const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
 
 /** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
-type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean };
+type QuickFilter = { label: string; statuses?: Stage[]; count: number | string };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean; quickFilters?: QuickFilter[] };
+
+const statusQuick: QuickFilter[] = [
+  { label: 'All', count: '1,142' },
+  { label: 'Open', statuses: openStages, count: 392 },
+  { label: 'Delivered', statuses: ['delivered'], count: 454 },
+  { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
+  { label: 'Returned', statuses: ['returned'], count: 12 },
+];
 const salesDrills: (Drill | null)[] = [
-  { title: 'Orders', total: '1,142 orders · ₹38.6L' },
+  { title: 'Orders', total: '1,142 orders · ₹38.6L', quickFilters: statusQuick },
   { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
   { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
   { title: 'Delivered orders', total: '454 orders · ₹15.0L', statuses: ['delivered'] },

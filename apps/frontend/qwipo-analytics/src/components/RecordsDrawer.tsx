@@ -37,7 +37,7 @@ const stageBadge: Record<Stage, NonNullable<BadgeProps['variant']>> = {
 };
 
 export function RecordsDrawer({
-  title, total, statuses, date, distributors, sortByValue, onClose, go,
+  title, total, statuses, date, distributors, sortByValue, quickFilters, onClose, go,
 }: {
   title: string;
   /** the KPI's real total, e.g. "1,142 orders · ₹38.6L" */
@@ -47,14 +47,18 @@ export function RecordsDrawer({
   date?: string;
   distributors?: string[];
   sortByValue?: boolean;
+  /** chips inside the drawer to slice the list, e.g. All / Open / Delivered */
+  quickFilters?: { label: string; statuses?: Stage[]; count: number | string }[];
   onClose: () => void;
   go: (p: Page) => void;
 }) {
   const [q, setQ] = useState('');
   const [pages, setPages] = useState(1);
+  const [qf, setQf] = useState(0);
   const capped = pages >= MAX_PAGES;
+  const activeStatuses = quickFilters ? quickFilters[qf]?.statuses : statuses;
   let rows = Array.from({ length: pages }, (_, p) => pageRows(p)).flat();
-  if (statuses?.length) rows = rows.filter((r) => statuses.includes(r.status));
+  if (activeStatuses?.length) rows = rows.filter((r) => activeStatuses.includes(r.status));
   if (date) rows = rows.filter((r) => r.date === date);
   if (distributors?.length) rows = rows.filter((r) => distributors.includes(r.distributor));
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
@@ -89,6 +93,23 @@ export function RecordsDrawer({
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search order, outlet or distributor" className="h-9 pl-8" />
           </div>
+          {quickFilters && (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {quickFilters.map((f, i) => (
+                <button
+                  key={f.label}
+                  type="button"
+                  onClick={() => setQf(i)}
+                  className={cn(
+                    'type-caption rounded-full px-3 py-1',
+                    i === qf ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
+                  )}
+                >
+                  {f.label} <span className="tabular-nums">{typeof f.count === 'number' ? f.count.toLocaleString('en-IN') : f.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-5" onScroll={onScroll}>
