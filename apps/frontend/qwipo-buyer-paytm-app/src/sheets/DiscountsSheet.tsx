@@ -1,12 +1,7 @@
 import { ChevronDown, Percent } from 'lucide-react';
 import { Sheet } from '@mockups/ui';
 import { offersForProduct, type Offer } from '../data/offers';
-import {
-  OfferIconChip,
-  OfferMetaChips,
-  SchemeProgressBar,
-  SlabTable,
-} from '../components/OfferBits';
+import { OfferIconChip, SchemeProgressBar, SlabTable } from '../components/OfferBits';
 
 /* Offers & Schemes sheet — opened from a product card's "Discounts" button.
    Shows only what actually runs on THIS product (ONDC applicability:
@@ -52,18 +47,12 @@ export function DiscountsSheet({
       {/* primary — the price you buy at */}
       {primary.map((o) => (
         <section key={o.id} className="mb-5">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{o.framework}</h3>
-            <span className="text-[11px] text-foreground-secondary">Valid {o.period}</span>
-          </div>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">
+            {o.itemIds.length > 0 ? 'Buy more, pay less' : 'On your total bill'}
+          </h3>
           {/* QPS on this item shows the resulting unit price; the seller-wide
               value slab has no per-unit price — bands + % only */}
           <SlabTable offer={o} unitPrice={o.itemIds.length > 0 && product ? product.price : undefined} />
-          {o.itemIds.length === 0 && (
-            <p className="mt-1.5 text-[11px] text-foreground-secondary">
-              On the seller&rsquo;s whole invoice — the matching band applies at checkout.
-            </p>
-          )}
         </section>
       ))}
 
@@ -76,10 +65,6 @@ export function DiscountsSheet({
               <SecondaryRow key={o.id} offer={o} />
             ))}
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-foreground-secondary">
-            These apply on your cart total and show as lines in the checkout bill — free goods
-            appear at ₹0.00 with their quantity.
-          </p>
         </section>
       )}
     </Sheet>
@@ -98,11 +83,8 @@ function SecondaryRow({ offer }: { offer: Offer }) {
         <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
       </summary>
       <div className="space-y-2.5 border-t border-border p-3">
-        <div className="text-sm text-foreground-secondary">
-          <span className="font-medium text-success-foreground">{offer.benefit}</span> · valid {offer.period}
-        </div>
+        <div className="text-sm font-medium text-success-foreground">{offer.benefit}</div>
         {offer.progress && <SchemeProgressBar progress={offer.progress} />}
-        <OfferMetaChips offer={offer} showType />
       </div>
     </details>
   );

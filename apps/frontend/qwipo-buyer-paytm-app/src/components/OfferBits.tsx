@@ -82,9 +82,7 @@ export function SchemeProgressBar({ progress }: { progress: SchemeProgress }) {
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-border">
         <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
       </div>
-      <div className="mt-1 text-[11px] text-foreground-secondary">
-        {fmt(progress.remaining)} to go · valid till {progress.validTill}
-      </div>
+      <div className="mt-1 text-[11px] text-foreground-secondary">{fmt(progress.remaining)} to go</div>
     </div>
   );
 }
@@ -108,7 +106,7 @@ export function SlabTable({ offer, unitPrice }: { offer: Offer; unitPrice?: numb
           <span className="font-medium text-foreground">{s.band}</span>
           <span className={cn('font-semibold', showPrice ? '' : 'text-right', s.percent > 0 ? 'text-success-foreground' : 'text-foreground-secondary')}>
             {s.percent > 0 ? `${s.percent}%` : '—'}
-            {s.cap ? <span className="ml-1 font-normal text-[11px] text-foreground-secondary">cap {formatInr(s.cap)}</span> : null}
+            {s.cap ? <span className="ml-1 font-normal text-[11px] text-foreground-secondary">max {formatInr(s.cap)}</span> : null}
           </span>
           {showPrice && (
             <span className="text-right font-bold tabular-nums text-foreground">
