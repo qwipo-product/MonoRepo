@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge, Button, Input, cn, type BadgeProps } from '@mockups/ui';
-import { orderRows, stageLabel, type OrderRow, type Stage } from '../data/orderRows';
+import { orderRows, type OrderRow, type Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
 /** Infinite scroll, mocked: each "page" replays the sample rows a week earlier
@@ -31,9 +31,16 @@ function daysBetween(from: string, to?: string) {
   return d > 0 ? `· ${d}d` : '· same day';
 }
 
-const stageBadge: Record<Stage, NonNullable<BadgeProps['variant']>> = {
-  created: 'neutral', accepted: 'info', packed: 'info', shipped: 'info',
-  delivered: 'success', cancelled: 'danger', returned: 'warning',
+// Badges speak outcome language, matching the Order outcomes card: every open
+// stage reads "Order placed"; only real outcomes get their own badge.
+const stageBadge: Record<Stage, { variant: NonNullable<BadgeProps['variant']>; label: string }> = {
+  created: { variant: 'info', label: 'Order placed' },
+  accepted: { variant: 'info', label: 'Order placed' },
+  packed: { variant: 'info', label: 'Order placed' },
+  shipped: { variant: 'info', label: 'Order placed' },
+  delivered: { variant: 'success', label: 'Delivered' },
+  cancelled: { variant: 'danger', label: 'Cancelled' },
+  returned: { variant: 'warning', label: 'Returned' },
 };
 
 export function RecordsDrawer({
@@ -133,7 +140,7 @@ export function RecordsDrawer({
                   </td>
                   <td className="max-w-[170px] truncate py-2 pr-3">{r.outlet}</td>
                   <td className="py-2 pr-3">
-                    <Badge variant={stageBadge[r.status]}>{stageLabel[r.status]}</Badge>
+                    <Badge variant={stageBadge[r.status].variant}>{stageBadge[r.status].label}</Badge>
                     {r.delivered && (
                       <span className="mt-0.5 block whitespace-nowrap tabular-nums text-foreground-tertiary">
                         {r.delivered} {daysBetween(r.date, r.delivered)}
