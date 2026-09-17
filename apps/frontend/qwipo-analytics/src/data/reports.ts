@@ -1,0 +1,99 @@
+// Report definitions + per-report run history (in-memory for the mockup).
+// Every report generates as multi-sheet XLSX within the caller's scope.
+
+export interface ReportDef {
+  key: string;
+  name: string;
+  desc: string;
+  sheets: string[];
+  /** per-report filters shown in the Run drawer */
+  filters: { label: string; options: string[] }[];
+  /** dependency / access flags */
+  flags?: { label: string; variant: 'warning' | 'info' }[];
+  /** has a live on-screen register view */
+  live?: boolean;
+}
+
+export const reportDefs: ReportDef[] = [
+  {
+    key: 'order-register', name: 'Order Register',
+    desc: 'Every order line in scope — the 32-column contract business receives by mail today.',
+    sheets: ['Register', 'Order Lines', 'Summary'],
+    filters: [{ label: 'Status', options: ['All', 'Order placed', 'Delivered', 'Cancelled', 'Returned'] }],
+    live: true,
+  },
+  {
+    key: 'sales-report', name: 'Sales Report (Excel)',
+    desc: 'Order detail plus a last-3-days summary sheet.',
+    sheets: ['Order Detail', 'Summary'],
+    filters: [],
+  },
+  {
+    key: 'open-ageing', name: 'Open Order Ageing',
+    desc: 'Open orders with stage, age bucket and value at risk, per distributor.',
+    sheets: ['Ageing', 'Register'],
+    filters: [{ label: 'Age', options: ['All', 'D2+', 'D4+'] }],
+  },
+  {
+    key: 'delivery-cancellation', name: 'Delivery & Cancellation',
+    desc: 'Delivered vs cancelled with reasons and days-to-deliver.',
+    sheets: ['Summary', 'Cancelled', 'Delivered'],
+    filters: [{ label: 'Reason', options: ['All', 'Out of stock', 'Retailer cancelled', 'Price mismatch', 'Delivery delay'] }],
+    flags: [{ label: 'needs reason taxonomy', variant: 'warning' }],
+  },
+  {
+    key: 'distributor-performance', name: 'Distributor Performance',
+    desc: 'Leaderboard with delivery, cancellation and value per distributor.',
+    sheets: ['Leaderboard', 'Detail'],
+    filters: [{ label: 'City', options: ['All', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad'] }],
+    flags: [{ label: 'activation needs retailer mapping', variant: 'warning' }],
+  },
+  {
+    key: 'scheme-discount', name: 'Scheme & Discount',
+    desc: 'Scheme uptake and discount impact per distributor and company.',
+    sheets: ['Schemes', 'Discounts'],
+    filters: [],
+    flags: [{ label: 'needs scheme feed', variant: 'warning' }],
+  },
+  {
+    key: 'customer-master', name: 'Customer Master',
+    desc: 'Outlet register with contact, geo and mapping columns.',
+    sheets: ['Outlets'],
+    filters: [{ label: 'Status', options: ['All', 'Active', 'Inactive'] }],
+    flags: [{ label: 'Platform Admin only', variant: 'info' }],
+  },
+  {
+    key: 'onboarding-funnel', name: 'Onboarding Funnel',
+    desc: 'Onboarded outlets with stage, cohort week and first-order dates.',
+    sheets: ['Funnel', 'Outlets'],
+    filters: [{ label: 'Stage', options: ['All', 'Ordered', 'Repeat', 'Qualified', 'Silent'] }],
+  },
+];
+
+export interface Run {
+  id: number;
+  reportKey: string;
+  when: string;
+  scope: string;
+  status: 'Ready' | 'Running' | 'Failed';
+  file?: string;
+}
+
+/** Module-level store — survives page switches within the session. */
+export const runs: Run[] = [
+  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'order_register_2026-08-22.xlsx' },
+  { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
+  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', scope: 'Full network · 1 – 21 Aug', status: 'Ready', file: 'order_register_2026-08-21.xlsx' },
+  { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
+  { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Failed' },
+  { id: 1, reportKey: 'customer-master', when: '18 Aug, 09:02', scope: 'Full network · snapshot', status: 'Ready', file: 'customer_master_2026-08-18.xlsx' },
+];
+
+export function addRun(reportKey: string) {
+  runs.unshift({
+    id: Date.now(), reportKey, when: 'Just now', scope: 'Full network · 1 – 22 Aug',
+    status: 'Ready', file: `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
+  });
+}
+
+export const lastRunOf = (key: string) => runs.find((r) => r.reportKey === key);

@@ -4,6 +4,7 @@ import Overview from './screens/Overview';
 import Sales from './screens/Sales';
 import Distributors from './screens/Distributors';
 import Customers from './screens/Customers';
+import Reports from './screens/Reports';
 import { ALL, type Filters } from './components/filters';
 import { ScopeContext } from './scope';
 import type { Page } from './nav';
@@ -36,6 +37,8 @@ export default function App() {
           <Distributors go={go} />
         ) : route.page === 'customers' ? (
           <Customers go={go} />
+        ) : route.page === 'reports' ? (
+          <Reports go={go} register={route.drill === 'register'} />
         ) : (
           <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
         )}

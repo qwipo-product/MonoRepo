@@ -45,3 +45,20 @@ export const orderRows: OrderRow[] = [
   { id: 'QW-ONDC-260816-G8TS6K', date: '16 Aug', outlet: 'Sri Kanyaka Traders', distributor: 'Sri Balaji Agencies', status: 'delivered', value: 63960, delivered: '17 Aug' },
   { id: 'QW-ONDC-260816-D4RW9P', date: '16 Aug', outlet: 'Vuaja Laxmi Kiranam', distributor: 'Lakshmi Agencies', status: 'delivered', value: 5800, delivered: '18 Aug' },
 ];
+
+/** Mock paging: each "page" replays the sample rows a week earlier with fresh
+ *  ids (real build: keyset pagination against ClickHouse). */
+export const MAX_PAGES = 5;
+const shiftDate = (d: string, weeks: number) => {
+  const day = parseInt(d) - weeks * 7;
+  return day > 0 ? `${day} Aug` : `${day + 31} Jul`;
+};
+export function pageRows(page: number): OrderRow[] {
+  if (page === 0) return orderRows;
+  return orderRows.map((r, i) => ({
+    ...r,
+    id: `${r.id.slice(0, -2)}${page}${(i % 36).toString(36).toUpperCase()}`,
+    date: shiftDate(r.date, page),
+    delivered: r.delivered && shiftDate(r.delivered, page),
+  }));
+}

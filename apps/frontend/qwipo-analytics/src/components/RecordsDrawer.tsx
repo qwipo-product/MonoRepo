@@ -4,25 +4,8 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge, Button, Input, cn, type BadgeProps } from '@mockups/ui';
-import { orderRows, stageLabel, type OrderRow, type Stage } from '../data/orderRows';
+import { MAX_PAGES, pageRows, stageLabel, type Stage } from '../data/orderRows';
 import type { Page } from '../nav';
-
-/** Infinite scroll, mocked: each "page" replays the sample rows a week earlier
- *  with fresh ids (real build: keyset pagination against ClickHouse). */
-const MAX_PAGES = 5;
-const shiftDate = (d: string, weeks: number) => {
-  const day = parseInt(d) - weeks * 7;
-  return day > 0 ? `${day} Aug` : `${day + 31} Jul`;
-};
-function pageRows(page: number): OrderRow[] {
-  if (page === 0) return orderRows;
-  return orderRows.map((r, i) => ({
-    ...r,
-    id: `${r.id.slice(0, -2)}${page}${(i % 36).toString(36).toUpperCase()}`,
-    date: shiftDate(r.date, page),
-    delivered: r.delivered && shiftDate(r.delivered, page),
-  }));
-}
 
 /** Days since order date, as of the 22 Aug refresh. */
 function ageDays(date: string) {
@@ -65,7 +48,7 @@ export function RecordsDrawer({
   /** index of the chip to preselect (e.g. the bar the user clicked) */
   initialQf?: number;
   onClose: () => void;
-  go: (p: Page) => void;
+  go: (p: Page | string) => void;
 }) {
   const [q, setQ] = useState('');
   const [pages, setPages] = useState(1);
@@ -196,7 +179,7 @@ export function RecordsDrawer({
           <span className="type-caption flex-1 text-foreground-secondary">
             Showing {rows.length} of {total.split(' ')[0]}{!capped && !q && ' · scroll for more'}
           </span>
-          <Button size="sm" onClick={() => go('reports')}>Full register in Reports</Button>
+          <Button size="sm" onClick={() => go('reports/register')}>Full register in Reports</Button>
         </footer>
       </aside>
     </div>
