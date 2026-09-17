@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Shell } from './components/Shell';
 import Overview from './screens/Overview';
 import Sales from './screens/Sales';
+import Distributors from './screens/Distributors';
+import Customers from './screens/Customers';
 import { ALL, type Filters } from './components/filters';
 import { ScopeContext } from './scope';
 import type { Page } from './nav';
@@ -30,6 +32,10 @@ export default function App() {
           <Overview go={go} />
         ) : route.page === 'sales' ? (
           <Sales go={go} drilled={route.drill === 'overdue'} />
+        ) : route.page === 'distributors' ? (
+          <Distributors go={go} />
+        ) : route.page === 'customers' ? (
+          <Customers go={go} />
         ) : (
           <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
         )}

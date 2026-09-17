@@ -1,5 +1,5 @@
 export type Page =
-  | 'overview' | 'sales' | 'distributors' | 'customers' | 'brands' | 'marketing'
+  | 'overview' | 'sales' | 'distributors' | 'customers'
   | 'lg-today' | 'lg-network' | 'lg-platform'
   | 'reports' | 'history';
 
@@ -8,8 +8,6 @@ export const digiPages: { key: Page; label: string; disabled?: string }[] = [
   { key: 'sales', label: 'Sales' },
   { key: 'distributors', label: 'Distributors' },
   { key: 'customers', label: 'Customers & Onboarding' },
-  { key: 'brands', label: 'Brands' },
-  { key: 'marketing', label: 'Marketing', disabled: 'needs event tracking' },
 ];
 
 export const opsPages: { key: Page; label: string; disabled?: string }[] = [
@@ -25,7 +23,6 @@ export const reportPages: { key: Page; label: string }[] = [
 
 export const titles: Record<Page, string> = {
   overview: 'Overview', sales: 'Sales', distributors: 'Distributors', customers: 'Customers & Onboarding',
-  brands: 'Brands', marketing: 'Marketing',
   'lg-today': 'Dispatch today', 'lg-network': 'Distributor network', 'lg-platform': 'Platform health',
   reports: 'Report Catalogue', history: 'Run History',
 };
