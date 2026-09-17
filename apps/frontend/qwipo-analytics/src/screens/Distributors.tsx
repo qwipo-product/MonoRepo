@@ -26,11 +26,13 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
   const [detail, setDetail] = useState<DistributorRow | null>(null);
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'value', dir: -1 });
+  const [showAll, setShowAll] = useState(false);
 
   const openOrders = (d: DistributorRow) =>
     setDrill({ title: `Orders · ${d.name}`, total: `${d.orders} orders · ₹${d.value}L`, distributors: [d.name] });
 
-  const rows = [...distributorRows].sort((a, b) => sort.dir * (a[sort.k] - b[sort.k]));
+  const sorted = [...distributorRows].sort((a, b) => sort.dir * (a[sort.k] - b[sort.k]));
+  const rows = showAll ? sorted : sorted.slice(0, 8);
   const rankOf = new Map([...distributorRows].sort((a, b) => b.value - a.value).map((r, i) => [r.name, i + 1]));
   const th = makeTh<SortKey>(sort, setSort);
 
@@ -58,7 +60,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
         <Panel
           className="col-span-12"
           title="Leaderboard"
-          subtitle="All 18 · click a row to drill in"
+          subtitle={showAll ? 'All 18 · click a row to drill in' : 'Top 8 of 18 · click a row to drill in'}
           right={<Badge variant="warning" className="normal-case tracking-normal">Activation needs retailer mapping</Badge>}
         >
           <table className="w-full border-collapse">
@@ -96,6 +98,13 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
               ))}
             </tbody>
           </table>
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            className="type-caption mt-2 self-center rounded-full bg-background-sunken px-3.5 py-1.5 font-medium text-foreground-secondary hover:bg-muted"
+          >
+            {showAll ? 'Show top 8 ▴' : 'Show all 18 ▾'}
+          </button>
         </Panel>
 
         <Panel className="col-span-7" title="Size against momentum" subtitle="Value × growth · dot size = orders">
