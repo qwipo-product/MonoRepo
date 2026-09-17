@@ -49,10 +49,7 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
               return (
                 <tr key={def.key} className="border-t border-border-subtle">
                   <td className="py-2.5 pl-5 pr-3">
-                    <span className="type-label flex items-center gap-2">
-                      {def.name}
-                      {def.flags?.map((f) => <Badge key={f.label} variant={f.variant} className="normal-case tracking-normal">{f.label}</Badge>)}
-                    </span>
+                    <span className="type-label">{def.name}</span>
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-3">
                     {last ? (
