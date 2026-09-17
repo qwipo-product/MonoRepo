@@ -21,7 +21,7 @@ import { useScope } from '../scope';
 import type { Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
-const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+const openStages: Stage[] = ['created', 'accepted'];
 
 /** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
 type QuickFilter = { label: string; statuses?: Stage[]; count: number | string };
@@ -197,13 +197,13 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
         <Panel className="col-span-5" title="The 91 by stage">
           <Columns
             height={150}
-            items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'shipped' ? 'bg-error' : stageBg[s.key] }))}
+            items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'accepted' ? 'bg-error' : stageBg[s.key] }))}
             onBar={(l) => {
               const s = drillStages.find((x) => x.label === l)!;
               setDrill({ title: `The 91 · ${s.label}`, total: `${s.n} orders`, statuses: [s.key as Stage] });
             }}
           />
-          <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">60 are already Shipped.</b></p>
+          <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">88 of 91 are already Accepted</b> — waiting on distributors.</p>
         </Panel>
 
         <Panel className="col-span-7" title="The 91 by distributor" onOpen={() => go('distributors')}>

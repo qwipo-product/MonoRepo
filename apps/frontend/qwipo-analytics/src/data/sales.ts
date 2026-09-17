@@ -60,9 +60,7 @@ export const drillKpis: Kpi[] = [
 /** Where each of the 91 overdue orders sits now. */
 export const drillStages = [
   { key: 'created', label: 'Order placed', n: 3 },
-  { key: 'accepted', label: 'Accepted', n: 10 },
-  { key: 'packed', label: 'Packed', n: 18 },
-  { key: 'shipped', label: 'Shipped', n: 60 },
+  { key: 'accepted', label: 'Accepted', n: 88 },
 ];
 
 export const drillDistributors: BarRow[] = [

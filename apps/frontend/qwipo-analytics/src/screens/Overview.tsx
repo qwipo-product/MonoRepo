@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { RecordsDrawer } from '../components/RecordsDrawer';
@@ -24,13 +24,13 @@ type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; 
 /** All / Open / Delivered / Cancelled / Returned — matches the outcomes card. */
 const statusQuick: QuickFilter[] = [
   { label: 'All', count: '1,142' },
-  { label: 'Order placed', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
+  { label: 'Order placed', statuses: ['created', 'accepted'], count: 392 },
   { label: 'Delivered', statuses: ['delivered'], count: 454 },
   { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
   { label: 'Returned', statuses: ['returned'], count: 12 },
 ];
 /** Within open orders: by age bucket (matches the ageing card). */
-const openStagesAll: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+const openStagesAll: Stage[] = ['created', 'accepted'];
 const ageQuick: QuickFilter[] = [
   { label: 'All', statuses: openStagesAll, count: 392 },
   { label: 'D0', statuses: openStagesAll, age: [0, 0], count: 118 },
@@ -47,7 +47,7 @@ const kpiDrills: (Drill | null)[] = [
   { title: 'Delivered orders', total: '454 orders · ₹15.0L', statuses: ['delivered'] },
 ];
 
-const openStages: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+const openStages: Stage[] = ['created', 'accepted'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
@@ -83,7 +83,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands }),
   ];
   const total = sum(statuses.map((s) => s.orders));
-  const open = sum(statuses.filter((s) => ['created', 'accepted', 'packed', 'shipped'].includes(s.key)).map((s) => s.orders));
+  const open = sum(statuses.filter((s) => ['created', 'accepted'].includes(s.key)).map((s) => s.orders));
   const delivered = statuses.find((s) => s.key === 'delivered')!.orders;
   const cancelled = statuses.find((s) => s.key === 'cancelled')!.orders;
   const returned = statuses.find((s) => s.key === 'returned')!.orders;
@@ -181,7 +181,37 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
               setDrill({ title: 'Open orders by age', total: '392 orders · ₹12.7L', quickFilters: ageQuick, initialQf: i + 1 });
             }}
           />
-          <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[3].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Shipped</b>.</p>
+          <div className="type-caption mt-4 grid grid-cols-[90px_repeat(5,1fr)_48px] gap-1">
+            <div />
+            {ageing.buckets.map((b) => <div key={b} className="type-micro text-center text-foreground-secondary">{b}</div>)}
+            <div />
+            {ageing.rows.map((r) => (
+              <Fragment key={r.stage}>
+                <div className="whitespace-nowrap">{r.stage}</div>
+                {r.counts.map((n, i) => (
+                  <div
+                    key={i}
+                    className="relative grid h-7 cursor-pointer place-items-center rounded-sm font-medium tabular-nums hover:ring-2 hover:ring-ring"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDrill({
+                        title: `${r.stage} · ${ageing.buckets[i]}`, total: `${n} orders`,
+                        quickFilters: ageQuick, initialQf: i + 1,
+                      });
+                    }}
+                  >
+                    <i className={cn('absolute inset-0 rounded-sm', i === 4 ? 'bg-error' : 'bg-primary')} style={{ opacity: 0.12 + 0.88 * Math.min(n / 88, 1) }} />
+                    <span className={cn('relative', n >= 40 ? 'text-primary-foreground' : 'text-foreground')}>{n}</span>
+                  </div>
+                ))}
+                <div className="text-right tabular-nums text-foreground-secondary">{sum(r.counts)}</div>
+              </Fragment>
+            ))}
+            <div className="text-foreground-secondary">Total</div>
+            {bucketTotals.map((t, i) => <div key={i} className="text-center tabular-nums text-foreground-secondary">{t}</div>)}
+            <div className="text-right tabular-nums text-foreground-secondary">{open}</div>
+          </div>
+          <p className="type-caption mt-2.5 text-foreground-secondary">{ageing.rows[1].counts[4]} of {bucketTotals[4]} overdue are already <b className="text-foreground">Accepted</b> — waiting on distributors.</p>
         </Panel>
 
         <Panel className="col-span-12" title="Outlet funnel" subtitle={`${funnel[0].n} outlets onboarded in period`}>
