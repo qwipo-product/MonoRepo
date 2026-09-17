@@ -10,7 +10,7 @@ import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLa
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import { DateField } from '../components/DateField';
 import { Section, Option, MultiSection } from '../components/filterControls';
-import { companyOptions, cityOptions, distributorOptions } from '../components/filters';
+import { companyOptions, cityOptions, distributorOptions, stateOptions, totals } from '../components/filters';
 import type { Page } from '../nav';
 
 const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
@@ -107,6 +107,7 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
   const [to, setTo] = useState<Date | undefined>();
   const [calOpen, setCalOpen] = useState<'from' | 'to' | null>(null);
   const [companies, setCompanies] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [dists, setDists] = useState<string[]>([]);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -166,13 +167,32 @@ function RunDrawer({ def, onClose, onDone, onHistory }: {
           )}
 
           {def.scope.includes('company') && (
-            <MultiSection label="Company" unit="companies" total={42} searchable options={companyOptions} selected={companies} onChange={setCompanies} />
+            <MultiSection
+              label="Company" unit="companies" total={totals.companies} searchable
+              hint="Counts stay whole-order; ₹ becomes the selected companies' lines only"
+              options={companyOptions} selected={companies} onChange={setCompanies}
+            />
           )}
           {def.scope.includes('city') && (
-            <MultiSection label="City" unit="cities" total={6} options={cityOptions} selected={cities} onChange={setCities} />
+            <MultiSection
+              label="State" unit="states" total={totals.states}
+              hint="More states appear as they onboard · cities narrow to the selected states"
+              options={stateOptions} selected={states} onChange={(v) => { setStates(v); setCities([]); setDists([]); }}
+            />
+          )}
+          {def.scope.includes('city') && (
+            <MultiSection
+              label="City" unit="cities" total={totals.cities}
+              hint="From outlet GPS · 64 unresolved outlets excluded · changing city resets Distributor"
+              options={cityOptions} selected={cities} onChange={(v) => { setCities(v); setDists([]); }}
+            />
           )}
           {def.scope.includes('distributor') && (
-            <MultiSection label="Distributor" unit="distributors" total={18} searchable options={distributorOptions} selected={dists} onChange={setDists} />
+            <MultiSection
+              label="Distributor" unit="distributors" total={totals.distributors} searchable
+              hint="Narrowed by the selected cities"
+              options={distributorOptions} selected={dists} onChange={setDists}
+            />
           )}
 
           {def.filters.map((f) => (
