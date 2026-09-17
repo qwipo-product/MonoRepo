@@ -2,14 +2,14 @@
 // cancellation health, overdue load, beats, scheme placeholder. Same grammar
 // as the frozen Overview: no page navigation, everything drills via drawers.
 import { useState } from 'react';
-import { Badge, cn } from '@mockups/ui';
+import { Badge } from '@mockups/ui';
 import { HBars } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
-import { makeTh } from '../components/tableSort';
 import { Panel, KpiCard } from '../components/dashboard';
 import { RecordsDrawer } from '../components/RecordsDrawer';
 import { DistributorDrawer } from '../components/DistributorDrawer';
+import { LeaderboardDrawer } from '../components/LeaderboardDrawer';
 import { distributorRows, topBeats, type DistributorRow } from '../data/distributors';
 import { drillDistributors } from '../data/sales';
 import { toneBg } from '../components/chartClasses';
@@ -18,23 +18,16 @@ import type { Page } from '../nav';
 
 const NETWORK_CANCEL = 24.9;
 type Drill = { title: string; total: string; statuses?: Stage[]; distributors?: string[]; sort?: boolean };
-type SortKey = 'value' | 'orders' | 'delivery' | 'cancel' | 'change';
 
-const priorityVariant = { Spotlight: 'success', 'Push in beats': 'info', Nurture: 'neutral' } as const;
 
 export default function Distributors({ go }: { go: (p: Page) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
   const [detail, setDetail] = useState<DistributorRow | null>(null);
-  const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'value', dir: -1 });
-  const [showAll, setShowAll] = useState(false);
+  const [board, setBoard] = useState(false);
 
   const openOrders = (d: DistributorRow) =>
     setDrill({ title: `Orders · ${d.name}`, total: `${d.orders} orders · ₹${d.value}L`, distributors: [d.name] });
 
-  const sorted = [...distributorRows].sort((a, b) => sort.dir * (a[sort.k] - b[sort.k]));
-  const rows = showAll ? sorted : sorted.slice(0, 8);
-  const rankOf = new Map([...distributorRows].sort((a, b) => b.value - a.value).map((r, i) => [r.name, i + 1]));
-  const th = makeTh<SortKey>(sort, setSort);
 
   return (
     <div className="flex flex-col gap-5">
@@ -43,6 +36,10 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
       {detail && !drill && (
         <DistributorDrawer d={detail} onClose={() => setDetail(null)} go={go}
           onOrders={() => { openOrders(detail); setDetail(null); }} />
+      )}
+      {board && !detail && !drill && (
+        <LeaderboardDrawer onClose={() => setBoard(false)} go={go}
+          onPick={(d) => { setBoard(false); setDetail(d); }} />
       )}
 
       <section>
@@ -60,51 +57,18 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
         <Panel
           className="col-span-12"
           title="Leaderboard"
-          subtitle={showAll ? 'All 18 · click a row to drill in' : 'Top 8 of 18 · click a row to drill in'}
-          right={<Badge variant="warning" className="normal-case tracking-normal">Activation needs retailer mapping</Badge>}
+          subtitle="Top 8 by value · click a bar for the distributor, the card for all 18"
+          onOpen={() => setBoard(true)}
         >
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="type-micro text-left text-foreground-tertiary">
-                <th className="w-7 py-2 pr-2 font-semibold">#</th>
-                <th className="py-2 pr-3 font-semibold">Distributor</th>
-                {th('orders', 'Orders', true)}
-                {th('value', 'Value', true)}
-                {th('change', 'vs Jul', true)}
-                {th('delivery', 'Delivery %', true)}
-                {th('cancel', 'Cancel %', true)}
-                <th className="py-2 pr-3 text-right font-semibold">Activation</th>
-                <th className="py-2 font-semibold">Priority</th>
-              </tr>
-            </thead>
-            <tbody className="type-caption">
-              {rows.map((d) => (
-                <tr key={d.name} className="cursor-pointer border-t border-border-subtle hover:bg-muted" onClick={() => setDetail(d)}>
-                  <td className="py-2 pr-2 tabular-nums text-foreground-tertiary">{rankOf.get(d.name)}</td>
-                  <td className="py-2 pr-3">
-                    <span className="block font-medium">{d.name}</span>
-                    <span className="block text-foreground-tertiary">{d.city}</span>
-                  </td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{d.orders}</td>
-                  <td className="py-2 pr-3 text-right font-medium tabular-nums">₹{d.value}L</td>
-                  <td className={cn('py-2 pr-3 text-right tabular-nums', d.change < 0 ? 'font-medium text-error-foreground' : 'text-success-foreground')}>
-                    {d.change < 0 ? '↓' : '↑'} {Math.abs(d.change)}%
-                  </td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{d.delivery}%</td>
-                  <td className={cn('py-2 pr-3 text-right tabular-nums', d.cancel > NETWORK_CANCEL && 'font-medium text-error-foreground')}>{d.cancel}%</td>
-                  <td className="py-2 pr-3 text-right text-foreground-tertiary">—</td>
-                  <td className="py-2"><Badge variant={priorityVariant[d.priority]}>{d.priority}</Badge></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button
-            type="button"
-            onClick={() => setShowAll((v) => !v)}
-            className="type-caption mt-2 self-center rounded-full bg-background-sunken px-3.5 py-1.5 font-medium text-foreground-secondary hover:bg-muted"
-          >
-            {showAll ? 'Show top 8 ▴' : 'Show all 18 ▾'}
-          </button>
+          <HBars
+            wideLabel
+            rows={[...distributorRows].sort((a, b) => b.value - a.value).slice(0, 8).map((d) => ({
+              label: `${d.name} · ${d.city}`, n: d.value, value: `₹${d.value}L`,
+              barClass: d.cancel > 30 ? 'bg-error' : d.change < 0 ? 'bg-warning' : 'bg-chart-blue',
+            }))}
+            onRow={(label) => setDetail(distributorRows.find((d) => label.startsWith(d.name))!)}
+          />
+          <p className="type-caption mt-3 text-foreground-secondary">Red = over 30% cancellation · amber = shrinking vs Jul</p>
         </Panel>
 
         <Panel className="col-span-7" title="Size against momentum" subtitle="Value × growth · dot size = orders">
