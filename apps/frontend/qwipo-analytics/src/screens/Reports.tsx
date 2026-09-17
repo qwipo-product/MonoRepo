@@ -297,52 +297,53 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
     onSaved();
     onClose();
   };
-  const chip = (active: boolean) => cn(
-    'type-caption rounded-full px-3 py-1',
-    active ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'bg-background-sunken text-foreground-secondary hover:bg-muted',
-  );
 
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
       <aside
-        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[400px] flex-col border-l border-border bg-card shadow-xl"
+        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[360px] flex-col border-l border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-label={`Schedule ${def.name}`}
       >
         <header className="flex items-center gap-3 border-b border-border px-5 py-4">
           <span className="flex-1 leading-tight">
             <span className="type-h3 block">Schedule · {def.name}</span>
-            <span className="type-caption block text-foreground-secondary">
-              {current ? `Currently ${scheduleLabel(current)}` : 'Not scheduled — the file is generated and mailed automatically'}
-            </span>
+            <span className="type-caption block text-foreground-secondary">Generated and mailed automatically</span>
           </span>
           <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
             <X size={17} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="type-micro mb-1.5 text-foreground-tertiary">Frequency</div>
-          <div className="flex flex-wrap gap-1.5">
-            {(['Off', 'Daily', 'Weekly', 'Monthly'] as const).map((o) => (
-              <button key={o} type="button" onClick={() => setFreq(o)} className={chip(freq === o)}>{o}</button>
-            ))}
+        <div className="flex-1 overflow-y-auto">
+          {/* The saved schedule, unmissable. */}
+          <div className={cn('mx-5 mt-4 rounded-lg border px-3.5 py-2.5', current ? 'border-info-border bg-info-subtle' : 'border-border bg-background-sunken')}>
+            {current ? (
+              <>
+                <span className="type-label text-info-foreground">Scheduled · {scheduleLabel(current)}</span>
+                <span className="type-caption block text-info-foreground">Next: {current.freq === 'Daily' ? 'tomorrow' : current.freq === 'Weekly' ? `next ${current.day}` : 'next month'} at {current.time} IST</span>
+              </>
+            ) : (
+              <span className="type-caption text-foreground-secondary">Not scheduled yet — set it up below.</span>
+            )}
           </div>
 
+          <Section label="Frequency">
+            {(['Off', 'Daily', 'Weekly', 'Monthly'] as const).map((o) => (
+              <Option key={o} selected={freq === o} onClick={() => setFreq(o)}>{o}</Option>
+            ))}
+          </Section>
+
           {freq === 'Weekly' && (
-            <>
-              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Day of week</div>
-              <div className="flex flex-wrap gap-1.5">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                  <button key={d} type="button" onClick={() => setWeekday(d)} className={chip(weekday === d)}>{d}</button>
-                ))}
-              </div>
-            </>
+            <Section label="Day of week">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <Option key={d} selected={weekday === d} onClick={() => setWeekday(d)}>{d === 'Mon' ? 'Monday' : d === 'Tue' ? 'Tuesday' : d === 'Wed' ? 'Wednesday' : d === 'Thu' ? 'Thursday' : d === 'Fri' ? 'Friday' : d === 'Sat' ? 'Saturday' : 'Sunday'}</Option>
+              ))}
+            </Section>
           )}
 
           {freq === 'Monthly' && (
-            <>
-              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Day of month</div>
+            <Section label="Day of month" hint={monthday > 28 ? 'In shorter months it runs on the last day' : undefined}>
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                   <button
@@ -358,21 +359,17 @@ function ScheduleDrawer({ def, onClose, onSaved }: { def: ReportDef; onClose: ()
                   </button>
                 ))}
               </div>
-              {monthday > 28 && <p className="type-caption mt-1.5 text-foreground-secondary">In shorter months it runs on the last day.</p>}
-            </>
+            </Section>
           )}
 
           {freq !== 'Off' && (
             <>
-              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Time</div>
-              <div className="flex flex-wrap gap-1.5">
-                {['06:15', '09:00', '13:00', '18:00'].map((o) => (
-                  <button key={o} type="button" onClick={() => setTime(o)} className={chip(time === o)}>{o}</button>
-                ))}
-              </div>
-
-              <div className="type-micro mb-1.5 mt-4 text-foreground-tertiary">Recipients</div>
-              <p className="type-caption text-foreground-secondary">Your email, plus anyone in your team list. Each recipient gets the report in their own scope.</p>
+              <Section label="Time" hint="24-hour · IST">
+                <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-9 w-36 tabular-nums" />
+              </Section>
+              <Section label="Recipients">
+                <p className="type-caption text-foreground-secondary">Your email, plus anyone in your team list. Each recipient gets the report in their own scope.</p>
+              </Section>
             </>
           )}
         </div>
