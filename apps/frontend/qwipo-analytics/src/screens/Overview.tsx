@@ -24,14 +24,14 @@ type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; 
 /** All / Open / Delivered / Cancelled / Returned — matches the outcomes card. */
 const statusQuick: QuickFilter[] = [
   { label: 'All', count: '1,142' },
-  { label: 'Open', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
+  { label: 'Order placed', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
   { label: 'Delivered', statuses: ['delivered'], count: 454 },
   { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
   { label: 'Returned', statuses: ['returned'], count: 12 },
 ];
 /** Within open orders: by current stage. */
 const openQuick: QuickFilter[] = [
-  { label: 'All open', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
+  { label: 'All placed', statuses: ['created', 'accepted', 'packed', 'shipped'], count: 392 },
   { label: 'Created', statuses: ['created'], count: 92 },
   { label: 'Accepted', statuses: ['accepted'], count: 114 },
   { label: 'Packed', statuses: ['packed'], count: 85 },
@@ -123,13 +123,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
         >
           <Columns
             items={[
-              { label: 'Open', n: open, bg: openBg },
+              { label: 'Order placed', n: open, bg: openBg },
               { label: 'Delivered', n: delivered, bg: 'bg-success' },
               { label: 'Cancelled', n: cancelled, bg: 'bg-error' },
               { label: 'Returned', n: returned, bg: 'bg-warning' },
             ]}
             onBar={(l) => setDrill({
-              Open: { title: 'Open orders', total: `${open} orders · ₹12.7L`, statuses: openStages },
+              'Order placed': { title: 'Order placed', total: `${open} orders · ₹12.7L`, statuses: openStages },
               Delivered: { title: 'Delivered orders', total: `${delivered} orders · ₹15.0L`, statuses: ['delivered'] as Stage[] },
               Cancelled: { title: 'Cancelled orders', total: `${cancelled} orders · ₹10.5L`, statuses: ['cancelled'] as Stage[] },
               Returned: { title: 'Returned orders', total: `${returned} orders · ₹0.4L`, statuses: ['returned'] as Stage[] },

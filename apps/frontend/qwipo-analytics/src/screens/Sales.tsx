@@ -29,7 +29,7 @@ type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; 
 
 const statusQuick: QuickFilter[] = [
   { label: 'All', count: '1,142' },
-  { label: 'Open', statuses: openStages, count: 392 },
+  { label: 'Order placed', statuses: openStages, count: 392 },
   { label: 'Delivered', statuses: ['delivered'], count: 454 },
   { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
   { label: 'Returned', statuses: ['returned'], count: 12 },
@@ -174,7 +174,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
 
       <ScopeBar
         chips={[
-          { label: 'Drill · Status', value: 'Open', drill: true },
+          { label: 'Drill · Status', value: 'Order placed', drill: true },
           { label: 'Drill · Age', value: 'D4+ overdue', drill: true },
         ]}
         line={<>Drilled from Overview · same scope and period · <b className="text-foreground">91 orders</b> match · the two drill chips can be removed one at a time</>}
