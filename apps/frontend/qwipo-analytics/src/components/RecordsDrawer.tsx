@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge, Button, Input, cn, type BadgeProps } from '@mockups/ui';
-import { orderRows, type OrderRow, type Stage } from '../data/orderRows';
+import { orderRows, stageLabel, type OrderRow, type Stage } from '../data/orderRows';
 import type { Page } from '../nav';
 
 /** Infinite scroll, mocked: each "page" replays the sample rows a week earlier
@@ -170,6 +170,7 @@ export function RecordsDrawer({
                         {ageDays(r.date) >= 4 ? 'D4+' : `D${ageDays(r.date)}`}
                       </Badge>
                       <span className="ml-1.5 tabular-nums text-foreground-secondary">{ageDays(r.date)}d</span>
+                      <span className="mt-0.5 block text-foreground-tertiary">{stageLabel[r.status]}</span>
                     </td>
                   )}
                   <td className={cn('py-2 text-right tabular-nums', r.status === 'cancelled' && 'text-error-foreground')}>
