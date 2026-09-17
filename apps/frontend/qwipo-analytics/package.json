@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Qwipo Analytics \u2014 DigiDukaan analytics pages and the Reports framework, desktop web. Dev port 5176.",
+  "description": "Qwipo Analytics \u2014 DigiDukaan analytics pages and the Reports framework, desktop web. Dev port 5177.",
   "scripts": {
-    "dev": "vite --port 5176",
+    "dev": "vite --port 5177",
     "build": "vite build",
-    "preview": "vite preview --port 6176",
+    "preview": "vite preview --port 6177",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
@@ -18,6 +18,7 @@
     "@mockups/design-tokens": "workspace:*",
     "@mockups/types": "workspace:*",
     "@mockups/ui": "workspace:*",
+    "@mockups/version-badge": "workspace:*",
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
