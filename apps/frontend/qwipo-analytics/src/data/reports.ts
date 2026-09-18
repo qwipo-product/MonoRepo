@@ -99,7 +99,9 @@ export const runs: Run[] = [
 
 export function addRun(reportKey: string) {
   runs.unshift({
-    id: Date.now(), reportKey, when: 'Just now', scope: 'Full network · 1 – 22 Aug',
+    id: Date.now(), reportKey,
+    when: `22 Aug, ${new Date().toTimeString().slice(0, 5)}`,
+    scope: 'Full network · 1 – 22 Aug',
     status: 'Ready',
     file: reportKey === 'order-register' ? 'orders_2026-08-22.xlsx' : `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
   });
