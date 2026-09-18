@@ -26,12 +26,6 @@ export const reportDefs: ReportDef[] = [
     live: true,
   },
   {
-    key: 'sales-report', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Sales Report (Excel)',
-    desc: 'Order detail plus a last-3-days summary sheet.',
-    sheets: ['Order Detail', 'Summary'],
-    filters: [],
-  },
-  {
     key: 'open-ageing', scope: ['date', 'city', 'distributor'] as const, name: 'Open Order Ageing',
     desc: 'Open orders with stage, age bucket and value at risk, per distributor.',
     sheets: ['Ageing', 'Register'],
@@ -46,8 +40,8 @@ export const reportDefs: ReportDef[] = [
   },
   {
     key: 'distributor-performance', scope: ['date', 'city', 'distributor'] as const, name: 'Distributor Performance',
-    desc: 'Leaderboard with delivery, cancellation and value per distributor.',
-    sheets: ['Leaderboard', 'Detail'],
+    desc: 'Leaderboard with delivery, cancellation and value per distributor, plus beat-wise sales.',
+    sheets: ['Leaderboard', 'Detail', 'Beats'],
     filters: [{ label: 'City', options: ['All', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad'] }],
     flags: [{ label: 'activation needs retailer mapping', variant: 'warning' }],
   },
@@ -77,6 +71,13 @@ export const reportDefs: ReportDef[] = [
     sheets: ['Funnel', 'Outlets'],
     filters: [{ label: 'Stage', options: ['All', 'Ordered', 'Repeat', 'Qualified', 'Silent'] }],
   },
+  {
+    key: 'data-health', scope: ['date', 'city'] as const, name: 'Data Health',
+    desc: 'What the dashboards exclude — order lines with no company mapping (₹2.4L) and outlets with unresolved GPS (64).',
+    sheets: ['Unmapped lines', 'Unresolved outlets'],
+    filters: [],
+    flags: [{ label: 'Platform Admin only', variant: 'info' }],
+  },
 ];
 
 export interface Run {
@@ -98,7 +99,6 @@ export const runs: Run[] = [
     filters: [{ label: 'Date', value: '1 – 22 Aug 2026 · month to date' }, { label: 'Company', value: 'ITC' }, { label: 'City', value: 'Hyderabad' }, { label: 'Status', value: 'Cancelled' }],
   },
   { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'orders_2026-08-22.xlsx' },
-  { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
   { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', filters: network('1 – 21 Aug'), status: 'Ready', file: 'orders_2026-08-21.xlsx' },
   { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
   { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Failed' },
@@ -126,7 +126,6 @@ export interface Schedule {
 }
 export const schedules: Record<string, Schedule | undefined> = {
   'order-register': { freq: 'Daily', time: '06:15' },
-  'sales-report': { freq: 'Daily', time: '06:15' },
 };
 export function setSchedule(key: string, value?: Schedule) {
   schedules[key] = value;
