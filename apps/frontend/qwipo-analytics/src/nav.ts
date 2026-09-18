@@ -16,10 +16,6 @@ export const opsPages: { key: Page; label: string; disabled?: string }[] = [
   { key: 'lg-platform', label: 'Platform health' },
 ];
 
-export const reportPages: { key: Page; label: string }[] = [
-  { key: 'reports', label: 'Reports' },
-];
-
 export const titles: Record<Page, string> = {
   overview: 'Overview', sales: 'Sales', distributors: 'Distributors', customers: 'Customers & Onboarding',
   'lg-today': 'Dispatch today', 'lg-network': 'Distributor network', 'lg-platform': 'Platform health',

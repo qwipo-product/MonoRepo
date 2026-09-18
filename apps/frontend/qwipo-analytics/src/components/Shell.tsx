@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Truck } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
-import { digiPages, opsPages, reportPages, titles, type Page } from '../nav';
+import { digiPages, opsPages, titles, type Page } from '../nav';
 
 interface Props {
   page: Page;
@@ -100,8 +100,17 @@ export function Shell({ page, onNavigate, children }: Props) {
           <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
             <NavGroup icon={<LineChart size={18} />} label="DigiDukaan" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
             <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
-            <div className="type-micro px-3 pt-2 text-foreground-tertiary">Reports</div>
-            <NavGroup icon={<FileText size={18} />} label="Reports" active={!inDigi && !inOps} items={reportPages} page={page} onNavigate={onNavigate} />
+            <button
+              type="button"
+              onClick={() => onNavigate('reports')}
+              className={cn(
+                'type-body flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-primary-soft',
+                page === 'reports' ? 'bg-primary-soft text-primary-soft-foreground font-medium' : 'text-foreground'
+              )}
+            >
+              <FileText size={18} />
+              Reports
+            </button>
             <div className="type-micro px-3 pt-2 text-foreground-tertiary">Administration</div>
             <div className="type-body flex items-center gap-3 px-3 py-2"><Settings size={18} />Settings</div>
           </nav>
