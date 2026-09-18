@@ -10,7 +10,7 @@ import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLa
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import { DateField } from '../components/DateField';
 import { Section, Option, MultiSection } from '../components/filterControls';
-import { companyOptions, cityOptions, distributorOptions, stateOptions, totals } from '../components/filters';
+import { companyOptions, cityOptions, distributorOptions, stateOptions, totals, scopeSummary, type Filters } from '../components/filters';
 import { useScope } from '../scope';
 import type { Page } from '../nav';
 
@@ -123,7 +123,15 @@ function RunDrawer({ def, initialPicked, onClose, onDone, onHistory }: {
   const [dists, setDists] = useState<string[]>(f.distributors);
   const [picked, setPicked] = useState<Record<string, string>>(initialPicked ?? {});
   const [done, setDone] = useState(false);
-  const generate = () => { addRun(def.key); setDone(true); onDone(); };
+  const generate = () => {
+    const extras = Object.entries(picked).filter(([, v]) => v !== 'All').map(([k, v]) => `${k}: ${v}`);
+    addRun(def.key, scopeSummary({
+      states, companies, cities, distributors: dists,
+      preset: preset as Filters['preset'], from: from?.toISOString(), to: to?.toISOString(),
+    }, extras));
+    setDone(true);
+    onDone();
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
@@ -404,6 +412,7 @@ const PER_PAGE = 25;
 const TOTAL = 1142;
 
 function Register({ go }: { go: (p: Page | string) => void }) {
+  const { f } = useScope();
   const [page, setPage] = useState(0);
   const [q, setQ] = useState('');
   const [exported, setExported] = useState(false);
@@ -426,7 +435,7 @@ function Register({ go }: { go: (p: Page | string) => void }) {
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search order, outlet or distributor" className="h-9 pl-8" />
           </div>
           <span className="type-caption text-foreground-secondary">Preview shows 6 of 32 columns</span>
-          <Button size="sm" onClick={() => { addRun('order-register'); setExported(true); }}>Export XLSX</Button>
+          <Button size="sm" onClick={() => { addRun('order-register', scopeSummary(f)); setExported(true); }}>Export XLSX</Button>
         </div>
         {exported && (
           <div className="type-caption border-b border-border-subtle bg-success-subtle px-5 py-2 text-success-foreground">
