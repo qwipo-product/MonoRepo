@@ -51,6 +51,12 @@ export const reportDefs: ReportDef[] = [
     flags: [{ label: 'activation needs retailer mapping', variant: 'warning' }],
   },
   {
+    key: 'sales-mix', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Sales Mix',
+    desc: 'Full rankings behind the Contribution cards — value, share and change per dimension.',
+    sheets: ['Companies', 'Categories', 'Brands', 'SKUs', 'Cities'],
+    filters: [],
+  },
+  {
     key: 'scheme-discount', scope: ['date', 'company', 'distributor'] as const, name: 'Scheme & Discount',
     desc: 'Scheme uptake and discount impact per distributor and company.',
     sheets: ['Schemes', 'Discounts'],
