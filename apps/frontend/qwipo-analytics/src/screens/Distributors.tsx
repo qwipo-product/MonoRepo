@@ -31,7 +31,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <ScopeBar line="Compared with the same days of the previous month, 1 – 22 Jul 2026 · Full network · Super Admin" />
+      <ScopeBar />
       {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
       {detail && !drill && (
         <DistributorDrawer d={detail} onClose={() => setDetail(null)} go={go}
