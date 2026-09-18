@@ -11,7 +11,7 @@ const meta = {
   args: { name: 'Product', price: 0 },
 } satisfies Meta<typeof ProductCard>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 const base = {
   name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos',

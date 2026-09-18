@@ -1,0 +1,139 @@
+// Report definitions + per-report run history (in-memory for the mockup).
+// Every report generates as multi-sheet XLSX within the caller's scope.
+import type { ChipData } from '../components/filters';
+
+export interface ReportDef {
+  key: string;
+  name: string;
+  desc: string;
+  sheets: string[];
+  /** which scope filters this report takes */
+  scope: ('date' | 'company' | 'city' | 'distributor')[];
+  /** report-specific filters */
+  filters: { label: string; options: string[] }[];
+  /** dependency / access flags */
+  flags?: { label: string; variant: 'warning' | 'info' }[];
+  /** has a live on-screen register view */
+  live?: boolean;
+}
+
+export const reportDefs: ReportDef[] = [
+  {
+    key: 'order-register', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Order Register',
+    desc: 'Every order line in scope — the exact 32-column single-sheet workbook business receives by mail today.',
+    sheets: ['Orders'],
+    filters: [{ label: 'Status', options: ['All', 'Order placed', 'Delivered', 'Cancelled', 'Returned'] }],
+    live: true,
+  },
+  {
+    key: 'open-ageing', scope: ['date', 'city', 'distributor'] as const, name: 'Open Order Ageing',
+    desc: 'Open orders with stage, age bucket and value at risk, per distributor.',
+    sheets: ['Ageing', 'Register'],
+    filters: [{ label: 'Age', options: ['All', 'D2+', 'D4+'] }],
+  },
+  {
+    key: 'delivery-cancellation', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Delivery & Cancellation',
+    desc: 'Delivered vs cancelled with reasons and days-to-deliver.',
+    sheets: ['Summary', 'Cancelled', 'Delivered'],
+    filters: [{ label: 'Reason', options: ['All', 'Out of stock', 'Retailer cancelled', 'Price mismatch', 'Delivery delay'] }],
+    flags: [{ label: 'needs reason taxonomy', variant: 'warning' }],
+  },
+  {
+    key: 'distributor-performance', scope: ['date', 'city', 'distributor'] as const, name: 'Distributor Performance',
+    desc: 'Leaderboard with delivery, cancellation and value per distributor, plus beat-wise sales.',
+    sheets: ['Leaderboard', 'Detail', 'Beats'],
+    filters: [{ label: 'City', options: ['All', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad'] }],
+    flags: [{ label: 'activation needs retailer mapping', variant: 'warning' }],
+  },
+  {
+    key: 'sales-mix', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Sales Mix',
+    desc: 'Full rankings behind the Contribution cards — value, share and change per dimension.',
+    sheets: ['Companies', 'Categories', 'Brands', 'SKUs', 'Cities'],
+    filters: [],
+  },
+  {
+    key: 'scheme-discount', scope: ['date', 'company', 'distributor'] as const, name: 'Scheme & Discount',
+    desc: 'Scheme uptake and discount impact per distributor and company.',
+    sheets: ['Schemes', 'Discounts'],
+    filters: [],
+    flags: [{ label: 'needs scheme feed', variant: 'warning' }],
+  },
+  {
+    key: 'customer-master', scope: ['city', 'distributor'] as const, name: 'Customer Master',
+    desc: 'Outlet register with contact, geo and mapping columns.',
+    sheets: ['Outlets'],
+    filters: [{ label: 'Status', options: ['All', 'Active', 'Inactive'] }],
+    flags: [{ label: 'Platform Admin only', variant: 'info' }],
+  },
+  {
+    key: 'onboarding-funnel', scope: ['date', 'city', 'distributor'] as const, name: 'Onboarding Funnel',
+    desc: 'Onboarded outlets with stage, cohort week and first-order dates.',
+    sheets: ['Funnel', 'Outlets'],
+    filters: [{ label: 'Stage', options: ['All', 'Ordered', 'Repeat', 'Qualified', 'Silent'] }],
+  },
+  {
+    key: 'data-health', scope: ['date', 'city'] as const, name: 'Data Health',
+    desc: 'What the dashboards exclude — order lines with no company mapping (₹2.4L) and outlets with unresolved GPS (64).',
+    sheets: ['Unmapped lines', 'Unresolved outlets'],
+    filters: [],
+    flags: [{ label: 'Platform Admin only', variant: 'info' }],
+  },
+];
+
+export interface Run {
+  id: number;
+  reportKey: string;
+  when: string;
+  /** the filters this run was generated with, one chip per entry */
+  filters: ChipData[];
+  status: 'Ready' | 'Running' | 'Failed';
+  file?: string;
+}
+
+const network = (date: string): ChipData[] => [{ label: 'Date', value: date }, { value: 'Full network' }];
+
+/** Module-level store — survives page switches within the session. */
+export const runs: Run[] = [
+  {
+    id: 7, reportKey: 'order-register', when: '22 Aug, 10:41', status: 'Ready', file: 'orders_2026-08-22.xlsx',
+    filters: [{ label: 'Date', value: '1 – 22 Aug 2026 · month to date' }, { label: 'Company', value: 'ITC' }, { label: 'City', value: 'Hyderabad' }, { label: 'Status', value: 'Cancelled' }],
+  },
+  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'orders_2026-08-22.xlsx' },
+  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', filters: network('1 – 21 Aug'), status: 'Ready', file: 'orders_2026-08-21.xlsx' },
+  { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
+  { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Failed' },
+  { id: 1, reportKey: 'customer-master', when: '18 Aug, 09:02', filters: network('snapshot'), status: 'Ready', file: 'customer_master_2026-08-18.xlsx' },
+];
+
+export function addRun(reportKey: string, filters: ChipData[] = network('1 – 22 Aug')) {
+  runs.unshift({
+    id: Date.now(), reportKey,
+    when: `22 Aug, ${new Date().toTimeString().slice(0, 5)}`,
+    filters,
+    status: 'Ready',
+    file: reportKey === 'order-register' ? 'orders_2026-08-22.xlsx' : `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
+  });
+}
+
+export const lastRunOf = (key: string) => runs.find((r) => r.reportKey === key);
+
+/** Report schedules — the automation mails business already receives. */
+export interface Schedule {
+  freq: 'Daily' | 'Weekly' | 'Monthly';
+  /** Weekly: 'Mon'…'Sun'. Monthly: 1…31. */
+  day?: string | number;
+  time: string;
+}
+export const schedules: Record<string, Schedule | undefined> = {
+  'order-register': { freq: 'Daily', time: '06:15' },
+};
+export function setSchedule(key: string, value?: Schedule) {
+  schedules[key] = value;
+}
+const nth = (d: number) => `${d}${d % 10 === 1 && d !== 11 ? 'st' : d % 10 === 2 && d !== 12 ? 'nd' : d % 10 === 3 && d !== 13 ? 'rd' : 'th'}`;
+export function scheduleLabel(s?: Schedule) {
+  if (!s) return undefined;
+  if (s.freq === 'Daily') return `Daily · ${s.time}`;
+  if (s.freq === 'Weekly') return `Weekly · ${s.day} · ${s.time}`;
+  return `Monthly · ${nth(s.day as number)} · ${s.time}`;
+}

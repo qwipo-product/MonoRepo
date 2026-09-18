@@ -11,7 +11,7 @@ const meta = {
   args: { checked: false, onCheckedChange: () => {} },
 } satisfies Meta<typeof Switch>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Playground: Story = {
   render: () => {

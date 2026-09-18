@@ -11,7 +11,7 @@ const meta = {
   args: { value: 1, onChange: () => {} },
 } satisfies Meta<typeof QtyStepper>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Neutral: Story = {
   render: () => {
