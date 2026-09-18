@@ -3,7 +3,7 @@
 // History opens a right drawer with its run dates, statuses and files.
 // The Order Register also has a live paginated view (#reports/register).
 import { useState } from 'react';
-import { CalendarClock, ChevronLeft, ChevronRight, Download, History, Play, Search, X } from 'lucide-react';
+import { CalendarClock, ChevronLeft, ChevronRight, Download, History, Play, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLabel, type ReportDef, type Run } from '../data/reports';
@@ -259,6 +259,7 @@ function RunDrawer({ def, initialPicked, onClose, onDone, onHistory }: {
 
 function HistoryDrawer({ def, onClose }: { def: ReportDef; onClose: () => void }) {
   const mine = runs.filter((r) => r.reportKey === def.key);
+  const [showFilters, setShowFilters] = useState<number | null>(null);
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
       <aside
@@ -279,13 +280,27 @@ function HistoryDrawer({ def, onClose }: { def: ReportDef; onClose: () => void }
         <div className="flex-1 overflow-y-auto px-5 py-2">
           {mine.map((r) => (
             <div key={r.id} className="border-b border-border-subtle py-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="type-label tabular-nums">{r.when}</span>
+              <div className="flex items-center gap-2">
+                <span className="type-label flex-1 tabular-nums">{r.when}</span>
+                <button
+                  type="button"
+                  title="Filters this run was generated with"
+                  aria-label="Show this run's filters"
+                  onClick={() => setShowFilters(showFilters === r.id ? null : r.id)}
+                  className={cn(
+                    'grid h-7 w-7 place-items-center rounded-md',
+                    showFilters === r.id ? 'bg-primary-soft text-primary-soft-foreground' : 'text-foreground-secondary hover:bg-muted',
+                  )}
+                >
+                  <SlidersHorizontal size={14} />
+                </button>
                 <Badge variant={statusBadge[r.status]}>{r.status}</Badge>
               </div>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {r.filters.map((c) => <Chip key={`${c.label}-${c.value}`} label={c.label} value={c.value} />)}
-              </div>
+              {showFilters === r.id && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {r.filters.map((c) => <Chip key={`${c.label}-${c.value}`} label={c.label} value={c.value} />)}
+                </div>
+              )}
               {r.file ? (
                 <button type="button" className="type-caption mt-1 flex items-center gap-1.5 font-medium text-link hover:underline" title={r.file}>
                   <Download size={13} /> {r.file}
