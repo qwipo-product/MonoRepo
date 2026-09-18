@@ -1,0 +1,43 @@
+{
+  "name": "@mockups/storybook-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Storybook for the WEB/desktop design system — @mockups/web-tokens foundations and @mockups/web-ui primitives. Sibling to @mockups/storybook, which covers the mobile-first layer.",
+  "scripts": {
+    "storybook": "storybook dev -p 6007",
+    "dev": "storybook dev -p 6007 --no-open",
+    "build": "storybook build -o storybook-static",
+    "build-storybook": "storybook build -o storybook-static",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf storybook-static .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@mockups/version-badge": "workspace:*",
+    "@mockups/web-tokens": "workspace:*",
+    "@mockups/web-ui": "workspace:*",
+    "lucide-react": "catalog:",
+    "next-themes": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@storybook/addon-a11y": "10.5.7",
+    "@storybook/addon-docs": "10.5.7",
+    "@storybook/addon-themes": "10.5.7",
+    "@storybook/react-vite": "10.5.7",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "storybook": "10.5.7",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

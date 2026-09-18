@@ -1,0 +1,264 @@
+# Build template for every mockup — the repo-local counterpart of
+# azure-cicd/templates/base-docker-template.yaml in the `Qwipo B2B/k8s` repo.
+#
+# Why a local template: the shared one has no notion of a release — every
+# build is `<branch>-<sha>` — and the mockups version their releases with
+# semver git tags, the same model as buyer-web-mini in buyer-apps-monorepo.
+# Rather than inline that logic once per app, each app's docker-build.yml
+# `extends:` this file and passes four parameters. Only the `qwipo-global`
+# variable group is shared with the k8s repo.
+#
+# ── Versioning model ─────────────────────────────────────────────────────────
+#
+# main builds get a semver:
+#   1. next version = latest `<tag_prefix>-v*` git tag bumped per `bump`
+#      (auto-triggered runs always take the default, patch; a manual run may
+#      pick minor/major). No tags yet → 1.0.0. The prefix is a STATIC
+#      parameter on purpose: deriving it from package.json or the folder name
+#      would silently fork the tag lineage the day something is renamed.
+#   2. the annotated tag `<tag_prefix>-v<semver>` is pushed BEFORE the image
+#      is built. A new-ref push is atomic on the remote, so the number is
+#      reserved: of two racing main builds the loser fails at the push, before
+#      anything touched the registry, and a re-run computes the next number.
+#      A tag whose build fails afterwards simply has no image; the release
+#      template's tag mode checks the registry and fails loudly on such a tag.
+#   3. image tags: <semver> and <sha>.
+# Any other branch (dev, testing, staging) keeps the sha flow — <sha>,
+# <branch>, <branch>-<sha> — and no git tag. Consequence: tag-mode releases
+# can only ever deploy main-built code.
+#
+# ── The version is baked into the bundle ─────────────────────────────────────
+#
+# The mockups have no runtime config (no entrypoint, no config.*.json), so the
+# image's own tag is handed to `docker build` as a build arg, the Dockerfile
+# exports it as VITE_APP_VERSION, and Vite inlines it. That is what
+# @mockups/version-badge shows in the corner of every mockup. One image is one
+# version, in every environment — the badge can never name an image that is
+# not the one serving the page.
+#
+# ── One-time permission ──────────────────────────────────────────────────────
+#
+# The tag push runs as the project Build Service identity, which needs
+# `Contribute` and `Create tag` on THIS repo (Azure DevOps → Project settings →
+# Repositories → mockups-lab → Security → "Qwipo B2B Build Service"). Without
+# it every main build fails at "push semver git tag" with a 403. Nothing else
+# is affected: the push happens before the image build, and non-main branches
+# never push a tag. A tag push cannot retrigger a build — triggers are
+# branch-only.
+
+parameters:
+    - name: service_name
+      displayName: Image / ArgoCD service name (mockups-<what-it-is>)
+      type: string
+    - name: tag_prefix
+      displayName: Git tag prefix (tags are <tag_prefix>-v<semver>)
+      type: string
+    - name: dockerfile
+      displayName: Path to Dockerfile (repo-relative)
+      type: string
+    - name: bump
+      displayName: Semver bump on main
+      type: string
+      default: patch
+      values:
+          - patch
+          - minor
+          - major
+
+variables:
+    - group: qwipo-global
+    # The one branch that cuts releases. Every step below keys off IS_RELEASE,
+    # so moving the release branch is this single edit.
+    - name: IS_RELEASE
+      ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+          value: 'true'
+      ${{ else }}:
+          value: 'false'
+
+jobs:
+    - job: build_job
+      displayName: version, docker build, tag, push
+
+      pool:
+          name: Xavica-Qwipo
+
+      steps:
+          - checkout: self
+            fetchDepth: 1
+            # keeps the auth extraheader configured on origin so the tag push
+            # below works as the Build Service identity with a plain `git push`
+            persistCredentials: true
+
+          - task: CmdLine@2
+            displayName: set common variables, compute version
+            inputs:
+                script: |
+                    set -e
+
+                    BRANCH_NAME=$(echo $(Build.SourceBranch) | sed -E 's|refs/heads/||')
+                    if [[ ! "$BRANCH_NAME" =~ ^(dev|testing|staging|master|main)$ ]]; then
+                      BRANCH_NAME=$(echo "$BRANCH_NAME" | sed -E 's/[^a-zA-Z0-9]/-/g')
+                      BRANCH_NAME=${BRANCH_NAME:0:20}
+                    fi
+
+                    SERVICE_NAME='${{ parameters.service_name }}'
+                    TAG_PREFIX='${{ parameters.tag_prefix }}'
+                    DOCKERFILE_PATH='${{ parameters.dockerfile }}'
+                    SHORT_SHA=$(git rev-parse --short HEAD)
+                    IMAGE_NAME=$DOCR_NAME/$SERVICE_NAME
+
+                    if [ "$(IS_RELEASE)" = "true" ]; then
+                      # Tag NAMES only, straight from the remote — needs no local
+                      # tag refs, so it is immune to fetchDepth/fetchTags.
+                      # Annotated tags list twice (`x` and `x^{}`); the peeled
+                      # lines are dropped.
+                      LAST_VERSION=$(git ls-remote --tags origin "refs/tags/${TAG_PREFIX}-v*" \
+                        | awk '{print $2}' | grep -v '\^{}$' | sed "s|refs/tags/${TAG_PREFIX}-v||" \
+                        | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+                      if [ -z "$LAST_VERSION" ]; then
+                        VERSION=1.0.0
+                      else
+                        IFS=. read -r MAJOR MINOR PATCH <<< "$LAST_VERSION"
+                        case "${{ parameters.bump }}" in
+                          major) VERSION="$((MAJOR + 1)).0.0" ;;
+                          minor) VERSION="$MAJOR.$((MINOR + 1)).0" ;;
+                          *)     VERSION="$MAJOR.$MINOR.$((PATCH + 1))" ;;
+                        esac
+                      fi
+
+                      GIT_TAG="${TAG_PREFIX}-v${VERSION}"
+                      IMAGE_GIT_DIGEST=$VERSION
+                      echo "release build: ${LAST_VERSION:-<none>} -> $VERSION (bump: ${{ parameters.bump }})"
+                    else
+                      GIT_TAG=""
+                      VERSION=""
+                      IMAGE_GIT_DIGEST="$BRANCH_NAME-$SHORT_SHA"
+                      echo "branch build: $IMAGE_GIT_DIGEST (no git tag)"
+                    fi
+
+                    echo "##vso[task.setvariable variable=SERVICE_NAME]$SERVICE_NAME"
+                    echo "##vso[task.setvariable variable=DOCKERFILE_PATH]$DOCKERFILE_PATH"
+                    echo "##vso[task.setvariable variable=SHORT_SHA]$SHORT_SHA"
+                    echo "##vso[task.setvariable variable=IMAGE_NAME]$IMAGE_NAME"
+                    echo "##vso[task.setvariable variable=BRANCH_NAME]$BRANCH_NAME"
+                    echo "##vso[task.setvariable variable=VERSION]$VERSION"
+                    echo "##vso[task.setvariable variable=GIT_TAG]$GIT_TAG"
+                    echo "##vso[task.setvariable variable=IMAGE_GIT_DIGEST]$IMAGE_GIT_DIGEST"
+
+                    echo "##vso[task.setvariable variable=CONTAINER_REGISTRY_URL]$CONTAINER_REGISTRY_URL"
+                    echo "##vso[task.setvariable variable=DOCR_NAME]$DOCR_NAME"
+                    echo "##vso[task.setvariable variable=DOCR_CI_USER]$DOCR_CI_USER"
+                    echo "##vso[task.setvariable variable=DOCR_CI_PAT]$DOCR_CI_PAT"
+
+                    echo "##vso[task.setvariable variable=GITOPS_GIT_USER]$GITOPS_GIT_USER"
+                    echo "##vso[task.setvariable variable=GITOPS_GIT_EMAIL]$GITOPS_GIT_EMAIL"
+            env:
+                CONTAINER_REGISTRY_URL: $(CONTAINER_REGISTRY_URL)
+                DOCR_NAME: $(DOCR_NAME)
+                DOCR_CI_USER: $(DOCR_CI_USER)
+                DOCR_CI_PAT: $(DOCR_CI_PAT)
+
+                GITOPS_GIT_USER: $(GITOPS_GIT_USER)
+                GITOPS_GIT_EMAIL: $(GITOPS_GIT_EMAIL)
+
+          - task: CmdLine@2
+            displayName: push semver git tag (reserves the version)
+            condition: and(succeeded(), eq(variables.IS_RELEASE, 'true'))
+            inputs:
+                script: |
+                    set -e
+
+                    git config user.email "$GITOPS_GIT_EMAIL"
+                    git config user.name "$GITOPS_GIT_USER"
+
+                    # The self-hosted agent reuses the checkout between runs, so
+                    # a tag created by an earlier run whose PUSH then failed
+                    # lingers locally and would make `git tag -a` fatal. The
+                    # remote is the only source of truth (VERSION comes from
+                    # ls-remote); local tags are disposable.
+                    git tag -d "$GIT_TAG" > /dev/null 2>&1 || true
+                    git tag -a "$GIT_TAG" -m "$SERVICE_NAME $VERSION (build $(Build.BuildId) by $(Build.RequestedFor))" HEAD
+
+                    # Nothing has touched the registry yet whenever this push
+                    # fails. Only claim a version race if the tag really exists
+                    # remotely (a concurrent main build claimed it first —
+                    # atomic new-ref push, never force); anything else (403
+                    # permission, network) surfaces as-is.
+                    if ! git push origin "refs/tags/$GIT_TAG"; then
+                      if git ls-remote --exit-code origin "refs/tags/$GIT_TAG" > /dev/null 2>&1; then
+                        echo "##vso[task.logissue type=error]$GIT_TAG already exists — a concurrent main build claimed $VERSION. Re-run this pipeline to pick the next number."
+                      else
+                        echo "##vso[task.logissue type=error]git push of $GIT_TAG failed (not a version race — see output above; likely permissions: the Build Service identity needs Contribute + Create tag on the mockups-lab repo)."
+                      fi
+                      exit 1
+                    fi
+
+          - task: CmdLine@2
+            displayName: build using the dockerfile
+            inputs:
+                script: |
+                    set -e
+
+                    # APP_VERSION is the exact registry tag this image will be
+                    # deployed under; the Dockerfile exports it to the Vite
+                    # build, and @mockups/version-badge renders it.
+                    docker buildx build \
+                      --build-arg APP_VERSION=$IMAGE_GIT_DIGEST \
+                      --build-arg APP_COMMIT=$SHORT_SHA \
+                      --file $DOCKERFILE_PATH \
+                      --tag $SERVICE_NAME:$SHORT_SHA \
+                      .
+
+          - task: CmdLine@2
+            displayName: tag the image
+            inputs:
+                script: |
+                    set -e
+
+                    if [ "$(IS_RELEASE)" = "true" ]; then
+                      docker image tag $SERVICE_NAME:$SHORT_SHA $IMAGE_NAME:$VERSION
+                      docker image tag $SERVICE_NAME:$SHORT_SHA $IMAGE_NAME:$SHORT_SHA
+                    else
+                      docker image tag $SERVICE_NAME:$SHORT_SHA $IMAGE_NAME:$SHORT_SHA
+                      docker image tag $SERVICE_NAME:$SHORT_SHA $IMAGE_NAME:$BRANCH_NAME
+                      docker image tag $SERVICE_NAME:$SHORT_SHA $IMAGE_NAME:$BRANCH_NAME-$SHORT_SHA
+                    fi
+
+                    echo $IMAGE_GIT_DIGEST
+
+          - task: CmdLine@2
+            displayName: authenticate to docr
+            inputs:
+                script: |
+                    echo $DOCR_CI_PAT | docker login -u $DOCR_CI_USER --password-stdin $CONTAINER_REGISTRY_URL
+
+          - task: CmdLine@2
+            displayName: push the image
+            inputs:
+                script: |
+                    set -e
+
+                    # Explicit tags, not --all-tags: on the shared self-hosted
+                    # agent, stale local tags of $IMAGE_NAME from earlier builds
+                    # would otherwise be (re-)pushed.
+                    if [ "$(IS_RELEASE)" = "true" ]; then
+                      docker image push $IMAGE_NAME:$VERSION
+                      docker image push $IMAGE_NAME:$SHORT_SHA
+                    else
+                      docker image push $IMAGE_NAME:$SHORT_SHA
+                      docker image push $IMAGE_NAME:$BRANCH_NAME
+                      docker image push $IMAGE_NAME:$BRANCH_NAME-$SHORT_SHA
+                    fi
+
+          - task: CmdLine@2
+            displayName: save variables to artifact
+            inputs:
+                script: |
+                    cat <<EOT > $(Build.ArtifactStagingDirectory)/build_vars.env
+                    SERVICE_NAME=$SERVICE_NAME
+                    IMAGE_GIT_DIGEST=$IMAGE_GIT_DIGEST
+                    EOT
+
+          - task: PublishBuildArtifacts@1
+            displayName: publish build variables artifact

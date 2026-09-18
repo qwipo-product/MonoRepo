@@ -209,6 +209,9 @@
   --color-destructive: var(--error);
   --color-destructive-foreground: #ffffff;
   --color-border-token: var(--border);
+  /* The surface behind the phone frame in a mobile mockup (`bg-shell` in
+     App.tsx). An alias of background-sunken, not a new value. */
+  --color-shell: var(--background-sunken);
 
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);

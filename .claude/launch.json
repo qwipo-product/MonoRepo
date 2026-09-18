@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "storybook-web",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook-web"],
+      "port": 6007
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook"],
+      "port": 6006
+    }
+  ]
+}
