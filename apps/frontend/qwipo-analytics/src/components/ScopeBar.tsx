@@ -10,9 +10,9 @@ import { useScope } from '../scope';
 export interface ScopeChip { label: string; value: string; drill?: boolean }
 
 export function ScopeBar({
-  chips = [], line, refreshed = 'Data refreshed 22 Aug, 06:15 IST', action, onAction,
+  chips = [], line, action, onAction,
 }: {
-  chips?: ScopeChip[]; line?: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
+  chips?: ScopeChip[]; line?: React.ReactNode; action?: string; onAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const { f, setF } = useScope();
@@ -62,13 +62,9 @@ export function ScopeBar({
           </Button>
         </span>
       </div>
-      <div className="type-caption mt-2.5 flex flex-wrap justify-between gap-2 text-foreground-secondary">
-        <span>{scopeLine}</span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-success" />
-          {refreshed}
-        </span>
-      </div>
+      {scopeLine && (
+        <div className="type-caption mt-2.5 text-foreground-secondary">{scopeLine}</div>
+      )}
 
       {/* Mounted only while open so each opening starts from the APPLIED filters. */}
       {open && <FilterPanel open value={f} onClose={() => setOpen(false)} onApply={setF} />}
