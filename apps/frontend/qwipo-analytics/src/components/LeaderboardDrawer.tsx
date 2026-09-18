@@ -14,7 +14,7 @@ const priorityVariant = { Spotlight: 'success', 'Push in beats': 'info', Nurture
 export function LeaderboardDrawer({
   onClose, onPick, go,
 }: {
-  onClose: () => void; onPick: (d: DistributorRow) => void; go: (p: Page) => void;
+  onClose: () => void; onPick: (d: DistributorRow) => void; go: (p: Page | string) => void;
 }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: 'value', dir: -1 });
@@ -89,7 +89,7 @@ export function LeaderboardDrawer({
 
         <footer className="flex items-center gap-2 border-t border-border p-4">
           <span className="type-caption flex-1 text-warning-foreground">Activation column needs the retailer↔distributor mapping feed</span>
-          <Button size="sm" onClick={() => go('reports')}>Full list in Reports</Button>
+          <Button size="sm" onClick={() => go('reports/run:distributor-performance')}>Full list in Reports</Button>
         </footer>
       </aside>
     </div>

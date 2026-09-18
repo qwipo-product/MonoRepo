@@ -68,6 +68,18 @@ export function RecordsDrawer({
   if (sortByValue) rows = [...rows].sort((a, b) => b.value - a.value);
   if (q) rows = rows.filter((r) => `${r.id} ${r.outlet} ${r.distributor}`.toLowerCase().includes(q.toLowerCase()));
 
+  // The status the list is sliced to, as the register's Status filter option —
+  // carried in the hash so the Run drawer opens with it pre-applied.
+  const open: Stage[] = ['created', 'accepted', 'packed', 'shipped'];
+  const s = activeStatuses ?? [];
+  const outcome =
+    s.length === 0 ? 'All'
+      : s.every((x) => x === 'delivered') ? 'Delivered'
+      : s.every((x) => x === 'cancelled') ? 'Cancelled'
+      : s.every((x) => x === 'returned') ? 'Returned'
+      : s.every((x) => open.includes(x)) ? 'Order placed'
+      : 'All';
+
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     if (!capped && !q && el.scrollTop + el.clientHeight > el.scrollHeight - 160) setPages(pages + 1);
@@ -179,7 +191,7 @@ export function RecordsDrawer({
           <span className="type-caption flex-1 text-foreground-secondary">
             Showing {rows.length} of {total.split(' ')[0]}{!capped && !q && ' · scroll for more'}
           </span>
-          <Button size="sm" onClick={() => go('reports/register')}>Full register in Reports</Button>
+          <Button size="sm" onClick={() => go(`reports/run:order-register:${encodeURIComponent(outcome)}`)}>Full register in Reports</Button>
         </footer>
       </aside>
     </div>

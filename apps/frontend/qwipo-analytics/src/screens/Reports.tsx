@@ -11,18 +11,25 @@ import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRo
 import { DateField } from '../components/DateField';
 import { Section, Option, MultiSection } from '../components/filterControls';
 import { companyOptions, cityOptions, distributorOptions, stateOptions, totals } from '../components/filters';
+import { useScope } from '../scope';
 import type { Page } from '../nav';
 
 const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
   Ready: 'success', Running: 'info', Failed: 'danger',
 };
 
-export default function Reports({ go, register }: { go: (p: Page | string) => void; register?: boolean }) {
-  const [running, setRunning] = useState<ReportDef | null>(null);
+export default function Reports({ go, drill }: { go: (p: Page | string) => void; drill?: string }) {
+  // #reports/run:<report-key>:<Status> — a drill-down hand-off: open the Run
+  // drawer for that report with the status the user was looking at applied.
+  const runMatch = drill?.startsWith('run:') ? drill.slice(4).split(':') : null;
+  const [running, setRunning] = useState<ReportDef | null>(
+    runMatch ? reportDefs.find((d) => d.key === runMatch[0]) ?? null : null,
+  );
   const [history, setHistory] = useState<ReportDef | null>(null);
   const [scheduling, setScheduling] = useState<ReportDef | null>(null);
   const [, bump] = useState(0); // re-render after addRun
-  if (register) return <Register go={go} />;
+  if (drill === 'register') return <Register go={go} />;
+  const closeRun = () => { setRunning(null); if (runMatch) go('reports'); };
 
   return (
     <div className="flex flex-col gap-5">
@@ -30,9 +37,10 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
       {running && (
         <RunDrawer
           def={running}
-          onClose={() => setRunning(null)}
+          initialPicked={runMatch?.[1] && runMatch[1] !== 'All' ? { Status: decodeURIComponent(runMatch[1]) } : undefined}
+          onClose={closeRun}
           onDone={() => bump((n) => n + 1)}
-          onHistory={() => { setHistory(running); setRunning(null); }}
+          onHistory={() => { setHistory(running); closeRun(); }}
         />
       )}
       {history && !running && <HistoryDrawer def={history} onClose={() => setHistory(null)} />}
@@ -99,18 +107,21 @@ export default function Reports({ go, register }: { go: (p: Page | string) => vo
 
 /* -------------------------------- Run drawer -------------------------------- */
 
-function RunDrawer({ def, onClose, onDone, onHistory }: {
-  def: ReportDef; onClose: () => void; onDone: () => void; onHistory: () => void;
+function RunDrawer({ def, initialPicked, onClose, onDone, onHistory }: {
+  def: ReportDef; initialPicked?: Record<string, string>; onClose: () => void; onDone: () => void; onHistory: () => void;
 }) {
-  const [preset, setPreset] = useState('Month to date');
-  const [from, setFrom] = useState<Date | undefined>();
-  const [to, setTo] = useState<Date | undefined>();
+  // Opens pre-filled with the dashboard's applied scope — the report runs on
+  // exactly what the user was looking at, then they adjust if needed.
+  const { f } = useScope();
+  const [preset, setPreset] = useState<string>(f.preset);
+  const [from, setFrom] = useState<Date | undefined>(f.from ? new Date(f.from) : undefined);
+  const [to, setTo] = useState<Date | undefined>(f.to ? new Date(f.to) : undefined);
   const [calOpen, setCalOpen] = useState<'from' | 'to' | null>(null);
-  const [companies, setCompanies] = useState<string[]>([]);
-  const [states, setStates] = useState<string[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [dists, setDists] = useState<string[]>([]);
-  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [companies, setCompanies] = useState<string[]>(f.companies);
+  const [states, setStates] = useState<string[]>(f.states);
+  const [cities, setCities] = useState<string[]>(f.cities);
+  const [dists, setDists] = useState<string[]>(f.distributors);
+  const [picked, setPicked] = useState<Record<string, string>>(initialPicked ?? {});
   const [done, setDone] = useState(false);
   const generate = () => { addRun(def.key); setDone(true); onDone(); };
 

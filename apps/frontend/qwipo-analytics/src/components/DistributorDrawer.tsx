@@ -13,7 +13,7 @@ const priorityVariant = { Spotlight: 'success', 'Push in beats': 'info', Nurture
 export function DistributorDrawer({
   d, onClose, onOrders, go,
 }: {
-  d: DistributorRow; onClose: () => void; onOrders: () => void; go: (p: Page) => void;
+  d: DistributorRow; onClose: () => void; onOrders: () => void; go: (p: Page | string) => void;
 }) {
   const overdue = drillDistributors.find((x) => x.label.startsWith(d.name));
   const beats = topBeats.filter((b) => b.label.toLowerCase().includes(d.name.split(' ')[0] === 'Sri' ? d.name.split(' ')[1].toLowerCase() : d.name.split(' ')[0].toLowerCase()));
@@ -90,7 +90,7 @@ export function DistributorDrawer({
 
         <footer className="flex gap-2 border-t border-border p-4">
           <Button fullWidth size="sm" onClick={onOrders}>View {d.orders} orders</Button>
-          <Button variant="secondary" size="sm" onClick={() => go('reports')}>Distributor report</Button>
+          <Button variant="secondary" size="sm" onClick={() => go('reports/run:distributor-performance')}>Distributor report</Button>
         </footer>
       </aside>
     </div>

@@ -38,7 +38,7 @@ export default function App() {
         ) : route.page === 'customers' ? (
           <Customers go={go} />
         ) : route.page === 'reports' ? (
-          <Reports go={go} register={route.drill === 'register'} />
+          <Reports go={go} drill={route.drill} />
         ) : (
           <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
         )}
