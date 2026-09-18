@@ -14,13 +14,15 @@ export interface EntityQuickFilter { label: string; tag?: string; count: number 
 type SortKey = 'name' | 'v' | 'delta';
 
 export function EntityDrawer({
-  title, total, rows, quickFilters, initialQf, shareTotal, onClose, go,
+  title, total, rows, quickFilters, initialQf, shareTotal, report, onClose, go,
 }: {
   title: string; total: string; rows: EntityRow[];
   quickFilters?: EntityQuickFilter[]; initialQf?: number;
   /** denominator for the Share column; enables the table rendering */
   shareTotal?: number;
-  onClose: () => void; go: (p: Page) => void;
+  /** the report serving this list — the footer opens its Run drawer */
+  report?: string;
+  onClose: () => void; go: (p: Page | string) => void;
 }) {
   const [q, setQ] = useState('');
   const [qf, setQf] = useState(initialQf ?? 0);
@@ -139,7 +141,7 @@ export function EntityDrawer({
 
         <footer className="flex items-center gap-2 border-t border-border p-4">
           <span className="type-caption flex-1 text-foreground-secondary">Showing {shown.length} of {quickFilters?.[qf]?.count ?? total.split(' ')[0]}</span>
-          <Button size="sm" onClick={() => go('reports')}>Full list in Reports</Button>
+          <Button size="sm" onClick={() => go(report ? `reports/run:${report}` : 'reports')}>Full list in Reports</Button>
         </footer>
       </aside>
     </div>

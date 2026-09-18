@@ -144,6 +144,7 @@ export default function Distributors({ go }: { go: (p: Page) => void }) {
         <Handoff
           className="col-span-7"
           go={go}
+          report="distributor-performance"
           title="Need distributor-level records?"
           body="Runs the Distributor Performance report with this scope · lands in Run history."
           cta="Run Distributor Performance"

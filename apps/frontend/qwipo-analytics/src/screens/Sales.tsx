@@ -154,6 +154,7 @@ function FullSales({ go }: { go: (p: Page) => void }) {
         <Handoff
           className="col-span-7"
           go={go}
+          report="order-register"
           title="Need the orders themselves?"
           body="Runs the Order Register report with this scope · lands in Run history."
           cta="Run Order Register with this scope"
@@ -234,6 +235,7 @@ function DrilledSales({ go }: { go: (p: Page) => void }) {
         <Handoff
           className="col-span-12"
           go={go}
+          report="open-ageing"
           title="Need the 91 orders themselves?"
           body="Runs Open Order Ageing with these drill filters · lands in Run history."
           cta="Run Open Order Ageing with this drill"

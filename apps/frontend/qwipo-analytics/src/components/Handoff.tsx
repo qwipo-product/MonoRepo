@@ -3,9 +3,12 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, cn }
 import type { Page } from '../nav';
 
 export function Handoff({
-  title, body, cta, className, go,
+  title, body, cta, className, report, go,
 }: {
-  title: string; body: string; cta: string; className?: string; go: (p: Page) => void;
+  title: string; body: string; cta: string; className?: string;
+  /** the report this card runs — the button opens its Run drawer */
+  report?: string;
+  go: (p: Page | string) => void;
 }) {
   return (
     <Card className={cn('flex flex-col justify-center border-dashed', className)}>
@@ -14,7 +17,7 @@ export function Handoff({
         <CardDescription>{body}</CardDescription>
       </CardHeader>
       <CardContent className="flex gap-2">
-        <Button size="sm" onClick={() => go('reports')}>{cta}</Button>
+        <Button size="sm" onClick={() => go(report ? `reports/run:${report}` : 'reports')}>{cta}</Button>
       </CardContent>
     </Card>
   );

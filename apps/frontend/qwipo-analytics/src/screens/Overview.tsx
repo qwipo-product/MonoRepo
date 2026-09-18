@@ -52,7 +52,7 @@ const openStages: Stage[] = ['created', 'accepted'];
 
 export default function Overview({ go }: { go: (p: Page | string) => void }) {
   const [drill, setDrill] = useState<Drill | null>(null);
-  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number; shareTotal?: number } | null>(null);
+  const [entity, setEntity] = useState<{ title: string; total: string; rows: EntityRow[]; quickFilters?: { label: string; tag?: string; count: number | string }[]; initialQf?: number; shareTotal?: number; report?: string } | null>(null);
   // Funnel drill-down: outlets by stage, plus the silent list and weekly cohorts.
   const funnelQuick = [
     { label: 'All onboarded', count: 210 },
@@ -68,6 +68,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
       title: d.label,
       total: d.total,
       shareTotal,
+      report: 'sales-mix',
       rows: dimensionFullRows[d.key].map((r) => ({
         name: r.name, sub: '', right: `₹${r.value}L`, v: r.value, delta: r.change,
         tone: r.change < 0 ? ('error' as const) : undefined,
@@ -75,13 +76,13 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
     });
   };
   const openFunnel = (initialQf: number, title = 'Outlets onboarded this period') =>
-    setEntity({ title, total: '210 outlets · 1 – 22 Aug', rows: funnelOutlets, quickFilters: funnelQuick, initialQf });
+    setEntity({ title, total: '210 outlets · 1 – 22 Aug', rows: funnelOutlets, quickFilters: funnelQuick, initialQf, report: 'onboarding-funnel' });
   // One drill-down per attention item: orders, cancelled-by-distributor, outlets, brands.
   const attentionDrills = [
     () => setDrill({ title: 'Open orders past 4 days', total: '91 orders · ₹3.1L', quickFilters: ageQuick, initialQf: 5 }),
     () => setDrill({ title: 'Cancelled · Vijaya & Lakshmi', total: '89 orders · ₹3.3L', statuses: ['cancelled'], distributors: ['Vijaya Distributors', 'Lakshmi Agencies'] }),
-    () => setEntity({ title: 'High-value outlets gone quiet', total: '148 outlets · ₹6.2L monthly value', rows: quietOutlets }),
-    () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands }),
+    () => setEntity({ title: 'High-value outlets gone quiet', total: '148 outlets · ₹6.2L monthly value', rows: quietOutlets, report: 'customer-master' }),
+    () => setEntity({ title: 'Brands declining over 10%', total: '3 brands · −₹1.03L vs Jul', rows: decliningBrands, report: 'sales-mix' }),
   ];
   const total = sum(statuses.map((s) => s.orders));
   const open = sum(statuses.filter((s) => ['created', 'accepted'].includes(s.key)).map((s) => s.orders));
@@ -225,7 +226,7 @@ export default function Overview({ go }: { go: (p: Page | string) => void }) {
                 height={90}
                 onBar={(l) => {
                   const wi = newOutletsByWeek.findIndex((w) => w.label === l);
-                  setEntity({ title: `Onboarded ${l} Aug`, total: `${newOutletsByWeek[wi].n} outlets`, rows: funnelOutlets.filter((r) => r.tags?.includes(`w${wi + 1}`)) });
+                  setEntity({ title: `Onboarded ${l} Aug`, total: `${newOutletsByWeek[wi].n} outlets`, rows: funnelOutlets.filter((r) => r.tags?.includes(`w${wi + 1}`)), report: 'onboarding-funnel' });
                 }}
               />
             </div>
