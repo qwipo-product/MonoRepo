@@ -37,9 +37,13 @@ const fmtIso = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day:
 /** One chip's worth of applied filter — what each report run records. */
 export interface ChipData { label?: string; value: string }
 
-/** The chips a report run records: Date first, then each selected value — same order as the ScopeBar. */
+/** The chips a report run records: Date first, then each selected value under its filter's name. */
 export function scopeChips(f: Filters): ChipData[] {
-  const values = [...f.companies, ...f.states, ...f.cities, ...f.distributors].map((value) => ({ value }));
+  const group = (label: string, sel: string[]) => sel.map((value) => ({ label, value }));
+  const values = [
+    ...group('Company', f.companies), ...group('State', f.states),
+    ...group('City', f.cities), ...group('Distributor', f.distributors),
+  ];
   return [
     { label: 'Date', value: rangeLabel(f) },
     ...(values.length ? values : [{ value: 'Full network' }]),

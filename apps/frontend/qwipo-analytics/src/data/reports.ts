@@ -95,7 +95,7 @@ const network = (date: string): ChipData[] => [{ label: 'Date', value: date }, {
 export const runs: Run[] = [
   {
     id: 7, reportKey: 'order-register', when: '22 Aug, 10:41', status: 'Ready', file: 'orders_2026-08-22.xlsx',
-    filters: [{ label: 'Date', value: '1 – 22 Aug 2026 · month to date' }, { value: 'ITC' }, { value: 'Hyderabad' }, { label: 'Status', value: 'Cancelled' }],
+    filters: [{ label: 'Date', value: '1 – 22 Aug 2026 · month to date' }, { label: 'Company', value: 'ITC' }, { label: 'City', value: 'Hyderabad' }, { label: 'Status', value: 'Cancelled' }],
   },
   { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'orders_2026-08-22.xlsx' },
   { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
