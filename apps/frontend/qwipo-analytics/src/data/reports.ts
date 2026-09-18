@@ -19,8 +19,8 @@ export interface ReportDef {
 export const reportDefs: ReportDef[] = [
   {
     key: 'order-register', scope: ['date', 'company', 'city', 'distributor'] as const, name: 'Order Register',
-    desc: 'Every order line in scope — the 32-column contract business receives by mail today.',
-    sheets: ['Register', 'Order Lines', 'Summary'],
+    desc: 'Every order line in scope — the exact 32-column single-sheet workbook business receives by mail today.',
+    sheets: ['Orders'],
     filters: [{ label: 'Status', options: ['All', 'Order placed', 'Delivered', 'Cancelled', 'Returned'] }],
     live: true,
   },
@@ -83,9 +83,9 @@ export interface Run {
 
 /** Module-level store — survives page switches within the session. */
 export const runs: Run[] = [
-  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'order_register_2026-08-22.xlsx' },
+  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'orders_2026-08-22.xlsx' },
   { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
-  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', scope: 'Full network · 1 – 21 Aug', status: 'Ready', file: 'order_register_2026-08-21.xlsx' },
+  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', scope: 'Full network · 1 – 21 Aug', status: 'Ready', file: 'orders_2026-08-21.xlsx' },
   { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
   { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Failed' },
   { id: 1, reportKey: 'customer-master', when: '18 Aug, 09:02', scope: 'Full network · snapshot', status: 'Ready', file: 'customer_master_2026-08-18.xlsx' },
@@ -94,7 +94,8 @@ export const runs: Run[] = [
 export function addRun(reportKey: string) {
   runs.unshift({
     id: Date.now(), reportKey, when: 'Just now', scope: 'Full network · 1 – 22 Aug',
-    status: 'Ready', file: `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
+    status: 'Ready',
+    file: reportKey === 'order-register' ? 'orders_2026-08-22.xlsx' : `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
   });
 }
 
