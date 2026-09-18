@@ -89,6 +89,7 @@ export interface Run {
 
 /** Module-level store — survives page switches within the session. */
 export const runs: Run[] = [
+  { id: 7, reportKey: 'order-register', when: '22 Aug, 10:41', scope: 'ITC · Hyderabad · Status: Cancelled · 1 – 22 Aug 2026 · month to date', status: 'Ready', file: 'orders_2026-08-22.xlsx' },
   { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'orders_2026-08-22.xlsx' },
   { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
   { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', scope: 'Full network · 1 – 21 Aug', status: 'Ready', file: 'orders_2026-08-21.xlsx' },
