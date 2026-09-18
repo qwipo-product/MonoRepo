@@ -12,7 +12,7 @@ export interface ScopeChip { label: string; value: string; drill?: boolean }
 export function ScopeBar({
   chips = [], line, refreshed = 'Data refreshed 22 Aug, 06:15 IST', action, onAction,
 }: {
-  chips?: ScopeChip[]; line: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
+  chips?: ScopeChip[]; line?: React.ReactNode; refreshed?: string; action?: string; onAction?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const { f, setF } = useScope();
