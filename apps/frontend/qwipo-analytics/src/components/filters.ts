@@ -34,16 +34,16 @@ export function countLabel(sel: string[], unit: string, total: number) {
 
 const fmtIso = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
-/** One line naming everything a report ran with — stored on each run for History. */
-export function scopeSummary(f: Filters, extra: string[] = []) {
-  const parts = [
-    f.companies.length ? countLabel(f.companies, 'companies', totals.companies) : '',
-    f.states.length ? countLabel(f.states, 'states', totals.states) : '',
-    f.cities.length ? countLabel(f.cities, 'cities', totals.cities) : '',
-    f.distributors.length ? countLabel(f.distributors, 'distributors', totals.distributors) : '',
-    ...extra,
-  ].filter(Boolean);
-  return `${parts.length ? parts.join(' · ') : 'Full network'} · ${rangeLabel(f)}`;
+/** One chip's worth of applied filter — what each report run records. */
+export interface ChipData { label?: string; value: string }
+
+/** The chips a report run records: Date first, then each selected value — same order as the ScopeBar. */
+export function scopeChips(f: Filters): ChipData[] {
+  const values = [...f.companies, ...f.states, ...f.cities, ...f.distributors].map((value) => ({ value }));
+  return [
+    { label: 'Date', value: rangeLabel(f) },
+    ...(values.length ? values : [{ value: 'Full network' }]),
+  ];
 }
 
 export function rangeLabel(f: Filters) {

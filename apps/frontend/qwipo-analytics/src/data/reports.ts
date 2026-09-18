@@ -1,5 +1,6 @@
 // Report definitions + per-report run history (in-memory for the mockup).
 // Every report generates as multi-sheet XLSX within the caller's scope.
+import type { ChipData } from '../components/filters';
 
 export interface ReportDef {
   key: string;
@@ -82,27 +83,33 @@ export interface Run {
   id: number;
   reportKey: string;
   when: string;
-  scope: string;
+  /** the filters this run was generated with, one chip per entry */
+  filters: ChipData[];
   status: 'Ready' | 'Running' | 'Failed';
   file?: string;
 }
 
+const network = (date: string): ChipData[] => [{ label: 'Date', value: date }, { value: 'Full network' }];
+
 /** Module-level store — survives page switches within the session. */
 export const runs: Run[] = [
-  { id: 7, reportKey: 'order-register', when: '22 Aug, 10:41', scope: 'ITC · Hyderabad · Status: Cancelled · 1 – 22 Aug 2026 · month to date', status: 'Ready', file: 'orders_2026-08-22.xlsx' },
-  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'orders_2026-08-22.xlsx' },
-  { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', scope: 'Full network · 1 – 22 Aug', status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
-  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', scope: 'Full network · 1 – 21 Aug', status: 'Ready', file: 'orders_2026-08-21.xlsx' },
-  { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
-  { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', scope: 'Full network · 1 – 20 Aug', status: 'Failed' },
-  { id: 1, reportKey: 'customer-master', when: '18 Aug, 09:02', scope: 'Full network · snapshot', status: 'Ready', file: 'customer_master_2026-08-18.xlsx' },
+  {
+    id: 7, reportKey: 'order-register', when: '22 Aug, 10:41', status: 'Ready', file: 'orders_2026-08-22.xlsx',
+    filters: [{ label: 'Date', value: '1 – 22 Aug 2026 · month to date' }, { value: 'ITC' }, { value: 'Hyderabad' }, { label: 'Status', value: 'Cancelled' }],
+  },
+  { id: 6, reportKey: 'order-register', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'orders_2026-08-22.xlsx' },
+  { id: 5, reportKey: 'sales-report', when: '22 Aug, 06:20', filters: network('1 – 22 Aug'), status: 'Ready', file: 'sales_report_2026-08-22.xlsx' },
+  { id: 4, reportKey: 'order-register', when: '21 Aug, 06:15', filters: network('1 – 21 Aug'), status: 'Ready', file: 'orders_2026-08-21.xlsx' },
+  { id: 3, reportKey: 'distributor-performance', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Ready', file: 'distributor_performance_2026-08-20.xlsx' },
+  { id: 2, reportKey: 'order-register', when: '20 Aug, 06:15', filters: network('1 – 20 Aug'), status: 'Failed' },
+  { id: 1, reportKey: 'customer-master', when: '18 Aug, 09:02', filters: network('snapshot'), status: 'Ready', file: 'customer_master_2026-08-18.xlsx' },
 ];
 
-export function addRun(reportKey: string, scope = 'Full network · 1 – 22 Aug') {
+export function addRun(reportKey: string, filters: ChipData[] = network('1 – 22 Aug')) {
   runs.unshift({
     id: Date.now(), reportKey,
     when: `22 Aug, ${new Date().toTimeString().slice(0, 5)}`,
-    scope,
+    filters,
     status: 'Ready',
     file: reportKey === 'order-register' ? 'orders_2026-08-22.xlsx' : `${reportKey.replace(/-/g, '_')}_2026-08-22.xlsx`,
   });

@@ -1,52 +1,13 @@
 import { useState } from 'react';
-import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
-import { Button, Card, cn } from '@mockups/ui';
+import { SlidersHorizontal } from 'lucide-react';
+import { Button, Card } from '@mockups/ui';
+import { Chip } from './Chip';
 import { FilterPanel } from './FilterPanel';
 import { ALL, rangeLabel, totals } from './filters';
 import { useScope } from '../scope';
 
 /** Extra read-only chips (the Sales drill state). */
 export interface ScopeChip { label: string; value: string; drill?: boolean }
-
-/** The one chip shape everything in the bar uses. */
-function Chip({
-  label, value, active, tone, onClick, onRemove,
-}: {
-  label?: string; value: string; active?: boolean; tone?: 'drill';
-  onClick?: () => void; onRemove?: () => void;
-}) {
-  return (
-    <span
-      className={cn(
-        'type-caption flex items-center gap-1.5 rounded-full py-1.5 pl-3',
-        onRemove ? 'pr-1.5' : 'pr-3',
-        tone === 'drill'
-          ? 'border border-info-border bg-info-subtle font-medium text-info-foreground'
-          : active
-            ? 'bg-primary-soft font-medium text-primary-soft-foreground'
-            : 'bg-background-sunken text-foreground',
-        onClick && !active && tone !== 'drill' && 'cursor-pointer hover:bg-muted',
-        onClick && 'cursor-pointer',
-      )}
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
-    >
-      {label && <span className={cn(!active && tone !== 'drill' && 'text-foreground-secondary')}>{label} ·</span>}
-      {value}
-      {onClick && !onRemove && <ChevronDown size={12} className={cn(tone !== 'drill' && !active && 'text-foreground-tertiary')} />}
-      {onRemove && (
-        <button
-          type="button"
-          aria-label={`Remove ${value}`}
-          onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="grid h-4 w-4 place-items-center rounded-full hover:bg-primary/15"
-        >
-          <X size={11} />
-        </button>
-      )}
-    </span>
-  );
-}
 
 export function ScopeBar({
   chips = [], line, refreshed = 'Data refreshed 22 Aug, 06:15 IST', action, onAction,
