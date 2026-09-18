@@ -34,7 +34,6 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
 
   return (
     <div className="flex flex-col gap-5">
-      <ScopeBar line="Every report is generated within your scope and the selected period · Super Admin" />
       {running && (
         <RunDrawer
           def={running}
