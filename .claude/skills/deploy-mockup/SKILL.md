@@ -45,7 +45,7 @@ Current allocations, and two hostnames reserved for apps that don't exist yet:
 | `storybook-web` | `mockups-storybook-web` | live |
 | `storybook` | `mockups-storybook` | live |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | live |
-| `qwipo-analytics` | `mockups-analytics` | fileset generated; live once the k8s manifest and pipelines exist |
+| `qwipo-analytics` | `mockups-analytics` | live |
 | — | `mockups-rirn-distributor` | **reserved, no app yet** |
 | — | `mockups-rirn-admin` | **reserved, no app yet** |
 
