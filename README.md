@@ -262,6 +262,7 @@ following the `docker-cd-*` / `argocd-*` convention the service repos use.
 | `storybook-web` | `mockups-storybook-web` | mockups-storybook-web.dev.bms.qwipo.com | Storybook Web - Build | Storybook Web - Deploy |
 | `storybook` | `mockups-storybook` | mockups-storybook.dev.bms.qwipo.com | Storybook - Build | Storybook - Deploy |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
+| `qwipo-analytics` | `mockups-analytics` | mockups-analytics.dev.bms.qwipo.com | Analytics - Build | Analytics - Deploy |
 
 `mock-api` is **not** on this path, deliberately. Nothing calls it — every
 mockup bundles `@mockups/mock-data` at build time — so it was never built and
