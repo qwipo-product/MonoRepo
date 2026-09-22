@@ -502,6 +502,7 @@ export default function App() {
               setScreen('view-items');
             }}
             onAddMore={() => go('listing')}
+            onOpenCoupons={() => go('coupons')}
           />
         );
       case 'view-items':
@@ -522,7 +523,6 @@ export default function App() {
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
             onCompleteKyc={() => go('kyc-complete')}
-            onOpenCoupons={() => go('coupons')}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
               setOrderItemsOpen(true);
@@ -530,7 +530,7 @@ export default function App() {
           />
         );
       case 'coupons':
-        return <CouponsScreen onBack={() => go('order-summary')} onApply={() => go('order-summary')} />;
+        return <CouponsScreen onBack={() => go('cart')} onApply={() => go('cart')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':

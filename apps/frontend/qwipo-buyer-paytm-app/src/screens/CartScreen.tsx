@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
@@ -19,11 +19,13 @@ export function CartScreen({
   onCheckout,
   onViewItems,
   onAddMore,
+  onOpenCoupons,
 }: {
   onBack: () => void;
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
+  onOpenCoupons: () => void;
 }) {
   const cart = useMemo(() => buildCart(), []);
   const { grandTotal, totalItems, anyBelow, priceChanges } = cart;
@@ -72,6 +74,24 @@ export function CartScreen({
                 onAddMore={() => onAddMore(s.id)}
               />
             ))}
+
+            {/* Apply coupon — last card in the list, so it reads as the final
+                step before the Checkout bar. */}
+            <button
+              onClick={onOpenCoupons}
+              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+                <Tag className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
+                <span className="block text-xs text-foreground-secondary">
+                  Offers available — tap to view &amp; apply
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
+            </button>
           </div>
 
           <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
