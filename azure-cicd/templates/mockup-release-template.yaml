@@ -244,9 +244,17 @@ jobs:
 
                                 ARGO_APP_NAME=${DEPLOY_ENVIRONMENT}-${SERVICE_NAME}-argo-app
 
-                                curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/$ARGO_CLI_VERSION/argocd-linux-amd64
-                                sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-                                rm argocd-linux-amd64
+                                # The build-agent image (bms-infra/build_agents) ships argocd. On any
+                                # other agent, fetch it into the job's temp dir — not /usr/local/bin:
+                                # the agent user has no sudo (nor should a job need it), and the dir
+                                # is wiped after the job.
+                                if ! command -v argocd >/dev/null 2>&1; then
+                                    curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/$ARGO_CLI_VERSION/argocd-linux-amd64
+                                    install -m 555 argocd-linux-amd64 "$AGENT_TEMPDIRECTORY/argocd"
+                                    rm argocd-linux-amd64
+                                    export PATH="$AGENT_TEMPDIRECTORY:$PATH"
+                                fi
+                                argocd version --client
 
                                 argocd login $ARGOCD_URL --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD
 
