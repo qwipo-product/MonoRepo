@@ -26,8 +26,6 @@ export interface Offer {
   benefit: string;
   /** What the benefit applies to — trails the benefit in the same sentence. */
   scope: string;
-  /** Still matched by the "Have a coupon code?" field, not shown on the card. */
-  code: string;
   /** Schemes apply themselves; coupons wait for the buyer to tap Apply. */
   automatic: boolean;
   /** Scheme requirement — every line must be met. */
@@ -46,7 +44,6 @@ export const OFFERS: Offer[] = [
     label: '5% Off',
     benefit: 'Get 5% off',
     scope: 'on your order above ₹500 upto ₹100',
-    code: 'SAVE5',
     automatic: false,
     minOrder: 500,
   },
@@ -54,7 +51,6 @@ export const OFFERS: Offer[] = [
     id: 'oil-case',
     benefit: 'Buy 10 Cases Get 1 Free',
     scope: 'on Freedom Refined Sunflower Oil',
-    code: 'OILCASE',
     automatic: true,
     needs: [{ productId: 'p1', qty: 10 }],
   },
@@ -63,7 +59,6 @@ export const OFFERS: Offer[] = [
     label: 'Freebie',
     benefit: 'Buy 8 units → Get 1 FREE',
     scope: 'on Aashirvaad Atta',
-    code: 'ATTA8',
     automatic: true,
     needs: [{ productId: 'p2', qty: 8 }],
   },
@@ -72,7 +67,6 @@ export const OFFERS: Offer[] = [
     label: 'Case Bonus',
     benefit: 'Buy 50 units → Get 5 FREE',
     scope: 'on Fortune Besan',
-    code: 'BESAN50',
     automatic: true,
     needs: [{ productId: 'p3', qty: 50 }],
   },
@@ -81,7 +75,6 @@ export const OFFERS: Offer[] = [
     label: 'Combo',
     benefit: '15% Off',
     scope: 'on Fortune Besan when bought together with Red Label Tea',
-    code: 'BESANTEA',
     automatic: true,
     needs: [
       { productId: 'p3', qty: 1 },

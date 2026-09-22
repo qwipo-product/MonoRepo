@@ -1,25 +1,25 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { BadgePercent, Check, ChevronLeft, Plus } from 'lucide-react';
-import { Button, Card, Input } from '@mockups/ui';
+import { Button, Card } from '@mockups/ui';
 import { OFFERS, resolveOffer, type ResolvedOffer } from '../data/coupons';
 import { buildCart } from '../data/cart';
 
-/* Apply Coupon — enter a code, or work down the Offers & schemes list.
-   Each card carries its own action, because the offers don't all behave the
-   same way:
+/* Apply Coupon — one list, Offers & schemes. Each card carries its own
+   action, because the offers don't all behave the same way:
 
      • a seller's scheme applies itself once the cart qualifies, so the card
        reports "Applied automatically" and there is nothing to tap;
      • a scheme the cart is short of says exactly what's missing and offers
        to add it;
      • a coupon is the buyer's choice, so it shows Apply, and reads "Applied"
-       once taken. One coupon at a time — applying a second replaces the first.
+       with a Remove beside it once taken — what the buyer turned on, the
+       buyer can turn off. One coupon at a time; applying a second replaces
+       the first.
 
    States are derived from the cart, not stored on the fixture, so the
    shortfall on screen always matches the quantities in the cart. */
 export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply: () => void }) {
   const cart = useMemo(() => buildCart(), []);
-  const [code, setCode] = useState('');
   const [appliedId, setAppliedId] = useState<string | null>(null);
 
   /** Units of a product in the cart, ignoring lines the seller gave free. */
@@ -31,11 +31,6 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
 
   const resolved = OFFERS.map((o) => resolveOffer(o, qtyOf, cart.grandTotal, appliedId));
   const appliedCount = resolved.filter((r) => r.state === 'auto' || r.state === 'applied').length;
-
-  const check = () => {
-    const match = resolved.find((r) => r.offer.code.toUpperCase() === code.trim().toUpperCase());
-    if (match && match.state === 'available') setAppliedId(match.offer.id);
-  };
 
   return (
     <div className="flex h-full flex-col">
@@ -51,31 +46,14 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
-        {/* code entry */}
-        <label htmlFor="coupon-code" className="mb-2 block text-sm font-medium text-foreground">
-          Have a coupon code?
-        </label>
-        <div className="flex gap-2">
-          <Input
-            id="coupon-code"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Enter coupon code"
-            aria-label="Coupon code"
-          />
-          <Button variant={code.trim() ? 'primary' : 'secondary'} disabled={!code.trim()} onClick={check}>
-            Check
-          </Button>
-        </div>
-
-        {/* offers */}
-        <h2 className="mb-2 mt-5 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
+        <h2 className="mb-2 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
         <div className="space-y-3">
           {resolved.map((r) => (
             <OfferCard
               key={r.offer.id}
               resolved={r}
               onApplyCoupon={() => setAppliedId(r.offer.id)}
+              onRemoveCoupon={() => setAppliedId(null)}
               onAddItems={onBack}
             />
           ))}
@@ -109,14 +87,15 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
 function OfferCard({
   resolved,
   onApplyCoupon,
+  onRemoveCoupon,
   onAddItems,
 }: {
   resolved: ResolvedOffer;
   onApplyCoupon: () => void;
+  onRemoveCoupon: () => void;
   onAddItems: () => void;
 }) {
   const { offer, state, requirement } = resolved;
-  const done = state === 'auto' || state === 'applied';
 
   return (
     <Card className="p-4">
@@ -136,13 +115,19 @@ function OfferCard({
         </div>
       </div>
 
-      {/* action — centred under the copy, one per state */}
-      <div className="mt-3 flex justify-center">
-        {done ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-success-subtle px-3 py-1.5 text-xs font-semibold text-success-foreground">
-            <Check className="h-3.5 w-3.5" />
-            {state === 'auto' ? 'Applied automatically' : 'Applied'}
-          </span>
+      {/* action — centred under the copy, one per state. A scheme the seller
+          applied is stated, not offered; a coupon the buyer chose can be taken
+          back off, so it carries Remove beside it. */}
+      <div className="mt-3 flex items-center justify-center gap-2">
+        {state === 'auto' ? (
+          <AppliedPill>Applied automatically</AppliedPill>
+        ) : state === 'applied' ? (
+          <>
+            <AppliedPill>Applied</AppliedPill>
+            <Button variant="ghost" size="sm" className="text-error-foreground" onClick={onRemoveCoupon}>
+              Remove
+            </Button>
+          </>
         ) : state === 'needs-items' ? (
           <Button className="px-8" onClick={onAddItems}>
             <Plus className="h-4 w-4" />
@@ -155,5 +140,15 @@ function OfferCard({
         )}
       </div>
     </Card>
+  );
+}
+
+/** The green "this is on" chip, shared by both applied states. */
+function AppliedPill({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-success-subtle px-3 py-1.5 text-xs font-semibold text-success-foreground">
+      <Check className="h-3.5 w-3.5" />
+      {children}
+    </span>
   );
 }
