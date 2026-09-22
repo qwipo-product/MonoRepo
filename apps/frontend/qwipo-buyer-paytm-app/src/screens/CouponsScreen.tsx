@@ -1,31 +1,40 @@
-import { useState } from 'react';
-import { ChevronLeft, Ticket, Percent, Truck, Wallet } from 'lucide-react';
-import { Button, Input, SelectableCard, cn } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
-import { COUPONS, savingsText, type Coupon, type CouponType } from '../data/coupons';
+import { useMemo, useState } from 'react';
+import { BadgePercent, Check, ChevronLeft, Plus } from 'lucide-react';
+import { Button, Card, Input } from '@mockups/ui';
+import { OFFERS, resolveOffer, type ResolvedOffer } from '../data/coupons';
 import { buildCart } from '../data/cart';
 
-const ICONS: Record<CouponType, typeof Ticket> = {
-  flat: Ticket,
-  percent: Percent,
-  free: Truck,
-  cashback: Wallet,
-};
+/* Apply Coupon — enter a code, or work down the Offers & schemes list.
+   Each card carries its own action, because the offers don't all behave the
+   same way:
 
-/* Apply Coupon — enter a code or pick from Available offers. Eligibility is
-   derived against the cart's grand total; ineligible offers dim and show the
-   shortfall. Sticky Apply reflects the selection. */
+     • a seller's scheme applies itself once the cart qualifies, so the card
+       reports "Applied automatically" and there is nothing to tap;
+     • a scheme the cart is short of says exactly what's missing and offers
+       to add it;
+     • a coupon is the buyer's choice, so it shows Apply, and reads "Applied"
+       once taken. One coupon at a time — applying a second replaces the first.
+
+   States are derived from the cart, not stored on the fixture, so the
+   shortfall on screen always matches the quantities in the cart. */
 export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply: () => void }) {
-  const { grandTotal } = buildCart();
+  const cart = useMemo(() => buildCart(), []);
   const [code, setCode] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [appliedId, setAppliedId] = useState<string | null>(null);
 
-  const selected = COUPONS.find((c) => c.id === selectedId) ?? null;
-  const canApply = !!selected && grandTotal >= selected.minOrder;
+  /** Units of a product in the cart, ignoring lines the seller gave free. */
+  const qtyOf = (productId: string) =>
+    cart.sellers.reduce(
+      (n, s) => n + s.items.filter((i) => i.product.id === productId && !i.free).reduce((a, i) => a + i.quantity, 0),
+      0
+    );
+
+  const resolved = OFFERS.map((o) => resolveOffer(o, qtyOf, cart.grandTotal, appliedId));
+  const appliedCount = resolved.filter((r) => r.state === 'auto' || r.state === 'applied').length;
 
   const check = () => {
-    const match = COUPONS.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
-    if (match) setSelectedId(match.id);
+    const match = resolved.find((r) => r.offer.code.toUpperCase() === code.trim().toUpperCase());
+    if (match && match.state === 'available') setAppliedId(match.offer.id);
   };
 
   return (
@@ -60,91 +69,91 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
         </div>
 
         {/* offers */}
-        <h2 className="mb-2 mt-5 text-sm font-semibold text-foreground">Available offers</h2>
+        <h2 className="mb-2 mt-5 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
         <div className="space-y-3">
-          {COUPONS.map((c) => (
+          {resolved.map((r) => (
             <OfferCard
-              key={c.id}
-              coupon={c}
-              eligible={grandTotal >= c.minOrder}
-              shortfall={c.minOrder - grandTotal}
-              selected={selectedId === c.id}
-              onSelect={() => setSelectedId(c.id)}
+              key={r.offer.id}
+              resolved={r}
+              onApplyCoupon={() => setAppliedId(r.offer.id)}
+              onAddItems={onBack}
             />
           ))}
         </div>
       </div>
 
-      {/* sticky apply */}
+      {/* sticky summary — the Apply action lives on the cards now, so the bar
+          just reports the running state and gets the buyer back to the cart */}
       <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-        {selected ? (
-          <div className="min-w-0 leading-tight">
-            <div className="truncate text-sm font-semibold text-foreground">{selected.code}</div>
-            <div className="truncate text-xs text-foreground-secondary">
-              You save <span className="font-medium text-success-foreground">{savingsText(selected)}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="text-sm text-foreground-secondary">Select a coupon to apply</div>
-        )}
-        <Button className="px-8" disabled={!canApply} onClick={onApply}>
-          Apply
+        <div className="min-w-0 text-sm text-foreground-secondary">
+          {appliedCount > 0 ? (
+            <>
+              <span className="font-semibold text-foreground">{appliedCount}</span>{' '}
+              {appliedCount === 1 ? 'offer applied' : 'offers applied'}
+            </>
+          ) : (
+            'No offers applied yet'
+          )}
+        </div>
+        <Button className="px-8" onClick={onApply}>
+          Done
         </Button>
       </div>
     </div>
   );
 }
 
+/* One card for every offer. The headline is a single sentence built from three
+   pieces — the scheme name in quotes, the benefit, and what it applies to —
+   so a long combo rule wraps as prose instead of as a stack of labels. */
 function OfferCard({
-  coupon,
-  eligible,
-  shortfall,
-  selected,
-  onSelect,
+  resolved,
+  onApplyCoupon,
+  onAddItems,
 }: {
-  coupon: Coupon;
-  eligible: boolean;
-  shortfall: number;
-  selected: boolean;
-  onSelect: () => void;
+  resolved: ResolvedOffer;
+  onApplyCoupon: () => void;
+  onAddItems: () => void;
 }) {
-  const Icon = ICONS[coupon.type];
+  const { offer, state, requirement } = resolved;
+  const done = state === 'auto' || state === 'applied';
+
   return (
-    <SelectableCard
-      selected={selected}
-      radio
-      disabled={!eligible}
-      onClick={onSelect}
-      className={cn('p-3', !eligible && 'opacity-60')}
-    >
-      <div className="flex gap-3 pr-7">
-        <div className="flex w-10 shrink-0 flex-col items-center gap-1">
-          <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-soft text-primary">
-            <Icon className="h-5 w-5" />
-          </span>
-          {coupon.tag && (
-            <span className="rounded bg-warning-subtle px-1 py-0.5 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-warning-foreground">
-              {coupon.tag}
-            </span>
-          )}
-        </div>
+    <Card className="p-4">
+      <div className="flex gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+          <BadgePercent className="h-5 w-5" />
+        </span>
 
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-foreground">{coupon.title}</div>
-          <div className="text-xs text-foreground-secondary">{coupon.sub}</div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="rounded border border-dashed border-border px-1.5 py-0.5 text-xs font-medium text-foreground">
-              {coupon.code}
-            </span>
-            <span className="text-xs text-foreground-secondary">Expires {coupon.expires}</span>
-          </div>
-          {!eligible && (
-            <div className="mt-1 text-xs font-medium text-warning-foreground">
-              Add {formatInr(shortfall)} more to use
-            </div>
-          )}
+          <p className="text-sm leading-snug">
+            {offer.label && <span className="font-medium text-primary">“{offer.label}” </span>}
+            <span className="font-semibold text-foreground">{offer.benefit}</span>{' '}
+            <span className="font-medium text-primary">{offer.scope}</span>
+          </p>
+          <p className="mt-1 text-xs text-foreground-secondary">Applicable only for eligible products</p>
+          {requirement && <p className="mt-1 text-xs font-medium text-warning-foreground">{requirement}</p>}
         </div>
       </div>
-    </SelectableCard>
+
+      {/* action — centred under the copy, one per state */}
+      <div className="mt-3 flex justify-center">
+        {done ? (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-success-subtle px-3 py-1.5 text-xs font-semibold text-success-foreground">
+            <Check className="h-3.5 w-3.5" />
+            {state === 'auto' ? 'Applied automatically' : 'Applied'}
+          </span>
+        ) : state === 'needs-items' ? (
+          <Button className="px-8" onClick={onAddItems}>
+            <Plus className="h-4 w-4" />
+            Add Items
+          </Button>
+        ) : (
+          <Button className="px-10" disabled={state === 'locked'} onClick={onApplyCoupon}>
+            Apply
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }
