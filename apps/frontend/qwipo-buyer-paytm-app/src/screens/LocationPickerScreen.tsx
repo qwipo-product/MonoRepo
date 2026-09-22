@@ -94,7 +94,7 @@ export function LocationPickerScreen({
       </header>
 
       {/* map + overlays */}
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#eef2f6] dark:bg-[#1b2430]">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-background-sunken">
         <div
           ref={surfaceRef}
           onPointerDown={onPointerDown}
@@ -188,7 +188,10 @@ const clamp = (n: number) => Math.max(0, Math.min(VIEW, n));
 
 /* Drawn map — blocks, roads, a lake and a park, plus a dot for every known
    locality so panning has landmarks to aim at. Purely decorative: the address
-   comes from `nearestPlace`, not from anything drawn here. */
+   comes from `nearestPlace`, not from anything drawn here.
+
+   Every surface is a token rather than a hex, so the map follows the theme
+   into dark mode like the rest of the app. */
 function MapCanvas({ centre }: { centre: { x: number; y: number } }) {
   const half = 210; // half of the 420-unit window
   return (
@@ -199,22 +202,22 @@ function MapCanvas({ centre }: { centre: { x: number; y: number } }) {
     >
       <defs>
         <pattern id="blocks" width="80" height="80" patternUnits="userSpaceOnUse">
-          <rect width="80" height="80" className="fill-[#e7edf3] dark:fill-[#222d3c]" />
-          <rect x="6" y="6" width="30" height="26" rx="3" className="fill-[#dbe3ec] dark:fill-[#2b3849]" />
-          <rect x="44" y="6" width="30" height="26" rx="3" className="fill-[#dbe3ec] dark:fill-[#2b3849]" />
-          <rect x="6" y="46" width="30" height="26" rx="3" className="fill-[#dbe3ec] dark:fill-[#2b3849]" />
-          <rect x="44" y="46" width="30" height="26" rx="3" className="fill-[#dbe3ec] dark:fill-[#2b3849]" />
+          <rect width="80" height="80" className="fill-background-subtle" />
+          <rect x="6" y="6" width="30" height="26" rx="3" className="fill-border" />
+          <rect x="44" y="6" width="30" height="26" rx="3" className="fill-border" />
+          <rect x="6" y="46" width="30" height="26" rx="3" className="fill-border" />
+          <rect x="44" y="46" width="30" height="26" rx="3" className="fill-border" />
         </pattern>
       </defs>
 
       <rect x="-200" y="-200" width="1400" height="1400" fill="url(#blocks)" />
 
       {/* water + green, so the map has orientation cues while panning */}
-      <ellipse cx="760" cy="640" rx="150" ry="90" className="fill-[#c3ddf2] dark:fill-[#20394f]" />
-      <rect x="120" y="700" width="220" height="150" rx="16" className="fill-[#cfe6cf] dark:fill-[#24382a]" />
+      <ellipse cx="760" cy="640" rx="150" ry="90" className="fill-info-subtle" />
+      <rect x="120" y="700" width="220" height="150" rx="16" className="fill-success-subtle" />
 
       {/* arterial roads */}
-      <g className="stroke-white dark:stroke-[#38465a]" strokeLinecap="round" fill="none">
+      <g className="stroke-card" strokeLinecap="round" fill="none">
         <path d="M-200 300 H1200" strokeWidth="18" />
         <path d="M-200 560 H1200" strokeWidth="14" />
         <path d="M400 -200 V1200" strokeWidth="18" />
