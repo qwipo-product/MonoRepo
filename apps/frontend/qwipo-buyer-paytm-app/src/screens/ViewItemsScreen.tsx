@@ -11,7 +11,9 @@ const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 /* Cart · View Items — the per-seller line list reached from a Cart Summary
    card's "View items". Edit quantities or remove lines; tapping a line opens
    the selling-units sheet (screen 20). Local item state keeps the mock
-   interactive without touching the Shop add-to-cart flow. */
+   interactive without touching the Shop add-to-cart flow.
+
+   Lines the offer added for free are read-only — see `remove`. */
 export function ViewItemsScreen({
   seller,
   onBack,
@@ -49,7 +51,17 @@ export function ViewItemsScreen({
     net: moved.reduce((n, i) => n + (i.lineDelta ?? 0), 0),
   };
 
-  const remove = (index: number) => setItems((list) => list.filter((_, i) => i !== index));
+  /* A free line belongs to the paid line that earned it — the buyer never put
+     it there, so they can't take it away either. Removing the paid units takes
+     the offer's free units with them. */
+  const remove = (index: number) =>
+    setItems((list) => {
+      const target = list[index];
+      if (!target || target.free) return list;
+      return list.filter(
+        (it, i) => i !== index && !(it.free && it.product.id === target.product.id)
+      );
+    });
 
   return (
     <div className="flex h-full flex-col">
@@ -122,34 +134,48 @@ export function ViewItemsScreen({
               key={`${item.product.id}-${idx}`}
               className="relative flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
             >
-              <button
-                onClick={() => remove(idx)}
-                aria-label={`Remove ${item.product.shortName}`}
-                className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-muted text-foreground-secondary active:scale-[0.98]"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              {/* a free line has no controls at all — it isn't the buyer's to
+                  change, so there is nothing here to tap */}
+              {!item.free && (
+                <button
+                  onClick={() => remove(idx)}
+                  aria-label={`Remove ${item.product.shortName}`}
+                  className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-muted text-foreground-secondary active:scale-[0.98]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
 
-              <button
-                onClick={() => onItemTap(item.product.id)}
-                aria-label={`Edit ${item.product.shortName}`}
-                className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl active:scale-[0.98]"
-              >
-                {item.product.image}
-                {item.free && (
+              {item.free ? (
+                <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
+                  {item.product.image}
                   <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
                     FREE
                   </span>
-                )}
-              </button>
-
-              <div className="min-w-0 flex-1">
+                </div>
+              ) : (
                 <button
                   onClick={() => onItemTap(item.product.id)}
-                  className="block truncate pr-6 text-left text-sm font-medium text-foreground"
+                  aria-label={`Edit ${item.product.shortName}`}
+                  className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl active:scale-[0.98]"
                 >
-                  {item.product.shortName}
+                  {item.product.image}
                 </button>
+              )}
+
+              <div className="min-w-0 flex-1">
+                {item.free ? (
+                  <div className="truncate text-sm font-medium text-foreground">
+                    {item.product.shortName}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onItemTap(item.product.id)}
+                    className="block truncate pr-6 text-left text-sm font-medium text-foreground"
+                  >
+                    {item.product.shortName}
+                  </button>
+                )}
                 <div className="mt-1 flex items-center gap-2">
                   {item.free ? (
                     <span className="text-xs font-semibold text-success-foreground">Free item</span>
@@ -174,9 +200,15 @@ export function ViewItemsScreen({
                   <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
                     Qty ×{item.quantity}
                   </span>
-                  <Button size="sm" onClick={() => onItemTap(item.product.id)}>
-                    + Add
-                  </Button>
+                  {item.free ? (
+                    <span className="text-right text-xs text-foreground-secondary">
+                      Added by the offer
+                    </span>
+                  ) : (
+                    <Button size="sm" onClick={() => onItemTap(item.product.id)}>
+                      + Add
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
