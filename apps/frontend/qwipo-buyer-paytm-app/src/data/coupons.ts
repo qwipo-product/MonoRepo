@@ -260,6 +260,17 @@ export const OFFERS: Offer[] = [
     id: 'tata-salt-iodised-bonus',
   },
   {
+    // Parle-G has a scheme but no quantity price slab (see products.ts) — the
+    // SKU that exercises the Discounts sheet with only one section in it.
+    label: 'Freebie',
+    benefit: 'Buy 24 units → Get 2 FREE',
+    scope: 'on Parle-G Gold Biscuits',
+    automatic: true,
+    needs: [{ productId: 'p40', qty: 24 }],
+    reward: { productId: 'p40', qty: 2 },
+    id: 'parle-g-gold-freebie',
+  },
+  {
     label: 'Slab',
     benefit: '12% Off',
     scope: 'on 5+ cases of Tata Salt Iodised',

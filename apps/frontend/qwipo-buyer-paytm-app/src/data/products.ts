@@ -343,9 +343,42 @@ export const PRODUCTS: Product[] = [
     seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
     price: 24, mrp: 28, deliveryDay: 'Mon (Beat day)', mov: 2000,
   },
+  {
+    // No quantity price slab — this distributor sells it at one price whatever
+    // the quantity, so the Discounts sheet shows only the scheme. Kept
+    // deliberately, as the SKU that proves the sheet reads right with its
+    // top section missing.
+    id: 'p40', name: 'Parle-G Gold Biscuits - 100 g Pack X 48 Nos', shortName: 'Parle-G Gold Biscuits',
+    category: 'Biscuits & Snacks', caseLabel: 'Case: 48 pc', caseSize: 48, image: '🍪',
+    variants: [{ id: '100g', label: '100 g' }],
+    seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '8% Margin',
+    price: 10, mrp: 12, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);
+
+/** A band in a SKU's quantity price slab — buy more per order, pay less. */
+export interface PriceSlab {
+  qty: string;
+  margin: number;
+  price: number;
+}
+
+/* Most distributors rate a SKU in bands. Some don't, and those SKUs simply
+   have no slab to show — the Discounts sheet drops the whole section rather
+   than printing an empty table. */
+const DEFAULT_SLABS: PriceSlab[] = [
+  { qty: '> 5 Cases', margin: 17, price: 153.45 },
+  { qty: '3 - 4 Cases', margin: 14, price: 160.05 },
+  { qty: '1 - 2 Cases', margin: 12, price: 165 },
+];
+
+/** SKUs sold at a flat price, with no quantity slab. */
+const NO_PRICE_SLAB = new Set<string>(['p40']);
+
+export const priceSlabsFor = (id?: string | null): PriceSlab[] =>
+  !id || NO_PRICE_SLAB.has(id) ? [] : DEFAULT_SLABS;
 
 /** Pack tiers offered in the selling-units sheet: single, half-case, full case. */
 export function packTiers(caseSize: number) {

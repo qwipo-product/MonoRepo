@@ -34,6 +34,7 @@ export const UNIT_WEIGHT_KG: Record<string, number> = {
   p35: 1, // Surf Excel Detergent 1 kg
   p36: 1, // Sunfeast Marie Gold Biscuits 1 kg
   p37: 0.2, // Colgate Toothpaste 200 g
+  p40: 0.1, // Parle-G Gold 100 g
 };
 
 /** Minimum order WEIGHT (kg) per seller. 0 → no weight minimum. */
