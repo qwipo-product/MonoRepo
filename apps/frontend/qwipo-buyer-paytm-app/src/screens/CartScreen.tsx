@@ -153,6 +153,25 @@ function SellerCard({
           </div>
         </div>
 
+        {/* minimum order value — one label, the seller's threshold, and a
+            bar. Only while the minimum is unmet: once it's cleared there is
+            no progress left to report, so the card says nothing. Deliberately
+            plain, since the totals bar already says checkout is blocked. */}
+        {seller.mov > 0 && seller.subtotal < seller.mov && (
+          <div className="mt-2.5">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-foreground-secondary">Minimum order value</span>
+              <span className="font-medium tabular-nums text-foreground">{formatInr(seller.mov)}</span>
+            </div>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${Math.min(100, Math.round((seller.subtotal / seller.mov) * 100))}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* delivery pill — driven by the fee, not the status, so a seller
             charging nothing reads "Free delivery" and matches what the
             totals bar adds up. */}
