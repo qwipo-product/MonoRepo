@@ -154,9 +154,10 @@ function SellerCard({
         </div>
 
         {/* minimum order value — one label, the seller's threshold, and a
-            bar. Deliberately plain: the totals bar already says checkout is
-            blocked, so this only has to show where the order stands. */}
-        {seller.mov > 0 && (
+            bar. Only while the minimum is unmet: once it's cleared there is
+            no progress left to report, so the card says nothing. Deliberately
+            plain, since the totals bar already says checkout is blocked. */}
+        {seller.mov > 0 && seller.subtotal < seller.mov && (
           <div className="mt-2.5">
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="text-foreground-secondary">Minimum order value</span>
