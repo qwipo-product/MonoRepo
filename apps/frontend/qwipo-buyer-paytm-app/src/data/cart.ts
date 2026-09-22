@@ -88,8 +88,6 @@ export interface CartSeller {
   deliveryFee: number;
   /** ₹ still needed to clear the minimum (0 unless status === 'below'). */
   unlockRemaining: number;
-  /** 0–100, subtotal toward the minimum. */
-  progress: number;
   windows: string[];
   // ── Minimum Order Weight (MOW) ──
   /** Minimum order weight (kg) for this seller; 0 → no weight minimum. */
@@ -100,8 +98,6 @@ export interface CartSeller {
   belowWeight: boolean;
   /** kg still needed to clear the MOW (0 unless belowWeight). */
   weightRemaining: number;
-  /** 0–100, weight toward the MOW. */
-  weightProgress: number;
   /** Checkout is blocked when below MOV or below MOW. */
   blocked: boolean;
 }
@@ -267,13 +263,11 @@ export function buildCart(
       status,
       deliveryFee: status === 'paid' ? 30 : 0,
       unlockRemaining: status === 'below' ? cfg.mov - subtotal : 0,
-      progress: Math.min(100, Math.round((subtotal / cfg.mov) * 100)),
       windows: cfg.windows,
       mow,
       weight,
       belowWeight,
       weightRemaining: belowWeight ? mow - weight : 0,
-      weightProgress: mow > 0 ? Math.min(100, Math.round((weight / mow) * 100)) : 100,
       blocked: status === 'below' || belowWeight,
     });
   }
