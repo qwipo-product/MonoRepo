@@ -1,5 +1,5 @@
 import { Banknote, ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
-import { Button } from '@mockups/ui';
+import { Button, InlineMessage } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
@@ -16,11 +16,16 @@ export function OrderSummaryScreen({
   onPlaceOrder,
   onOpenCoupons,
   onViewItems,
+  kycPending = false,
+  onCompleteKyc,
 }: {
   onBack: () => void;
   onPlaceOrder: () => void;
   onOpenCoupons: () => void;
   onViewItems: (sellerId: string) => void;
+  /** First order waits on account verification. */
+  kycPending?: boolean;
+  onCompleteKyc?: () => void;
 }) {
   const { sellers, grandTotal } = buildCart();
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
@@ -114,13 +119,28 @@ export function OrderSummaryScreen({
       </div>
 
       <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+        {kycPending && (
+          <InlineMessage
+            className="mb-3"
+            variant="warning"
+            title="Complete KYC to place this order"
+            description="Your account needs to be verified before your first order."
+            action={
+              onCompleteKyc ? (
+                <Button size="sm" variant="soft" onClick={onCompleteKyc}>
+                  Complete KYC
+                </Button>
+              ) : undefined
+            }
+          />
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
             <div className="text-[11px] font-medium text-primary">Cash on Delivery</div>
           </div>
-          <Button className="px-8" onClick={onPlaceOrder}>
+          <Button className="px-8" disabled={kycPending} onClick={onPlaceOrder}>
             Place order
           </Button>
         </div>

@@ -14,12 +14,24 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
+    // Shown on BOTH surfaces. Paytm runs the same phone + OTP sign-in as the
+    // Qwipo app; only the app splash is Qwipo-only, since the mini launches
+    // inside Paytm rather than cold-starting.
     title: 'Auth',
     items: [
       { id: 'splash', label: 'Splash' },
       { id: 'login', label: 'Login' },
       { id: 'otp', label: 'OTP Verification' },
+    ],
+  },
+  {
+    // Shown on BOTH surfaces. Paytm skips sign-in but still needs the buyer to
+    // onboard and complete KYC before they can order.
+    title: 'Onboarding & KYC',
+    items: [
       { id: 'onboarding', label: 'Onboarding' },
+      { id: 'location-picker', label: 'Select Location (map)' },
+      { id: 'address-details', label: 'Address Details' },
       { id: 'kyc-complete', label: 'Complete KYC' },
       { id: 'kyc-success', label: 'KYC Submitted' },
     ],
@@ -105,7 +117,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'app-update', label: 'What\u2019s New / Update' },
       { id: 'app-update-required', label: 'Update Required (force)' },
-      { id: 'message-styles', label: 'Message Styles (reference)' },
       { id: 'login-error', label: 'Login \u00b7 Errors' },
       { id: 'otp-error', label: 'OTP \u00b7 Errors' },
       { id: 'cart-price-changes', label: 'Cart \u00b7 Price Changes' },
@@ -134,14 +145,28 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
 /** Flat list in display order — handy for prev/next and index lookups. */
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
 
-/** Screens visible for a surface — same group filter FlowIndex renders with
-    (Paytm group only in paytm; Auth hidden in paytm; Salesperson only for that role). */
-export function visibleScreens(shell: string, role: string) {
+/* Individual screens hidden on the Paytm mini even though their group is
+   shown. The mini launches from inside Paytm, so it never shows an app splash. */
+const PAYTM_HIDDEN = new Set<ScreenId>(['splash']);
+
+/** Groups + items visible for a surface. FlowIndex renders from this, and
+    screenNumber counts from it, so the sidebar and the numbering can't drift.
+    (Paytm group only in paytm; Salesperson only for that role; Auth and
+    Onboarding & KYC on both surfaces, minus the per-item PAYTM_HIDDEN list.) */
+export function visibleGroups(shell: string, role: string) {
   const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')
-    .filter((g) => shell !== 'paytm' || g.title !== 'Auth')
     .filter((g) => shell === 'paytm' || g.title !== 'Paytm')
-    .flatMap((g) => g.items);
+    .map((g) => ({
+      ...g,
+      items: shell === 'paytm' ? g.items.filter((i) => !PAYTM_HIDDEN.has(i.id)) : g.items,
+    }))
+    .filter((g) => g.items.length > 0);
+}
+
+/** Flat list of the screens visible for a surface. */
+export function visibleScreens(shell: string, role: string) {
+  return visibleGroups(shell, role).flatMap((g) => g.items);
 }
 
 /** 1-based number as shown in the sidebar (0 if the screen isn't listed). */
