@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Tailwind never scans node_modules, and the shared packages are symlinked
+   there — point it at their real sources or the token-bound utilities are
+   never generated. */
+@source "../../../../packages/ui/src";
+@source "../../../../packages/components/src";
+
+/* Design tokens — the single source of truth (light + `.dark`), including the
+   chart palette and age ramp. Domain → hue mapping lives in
+   src/components/chartClasses.ts. */
+@import "../../../../packages/design-tokens/theme.css";
+
+/* Right-side filter drawer (FilterPanel). */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.22s cubic-bezier(0, 0, 0.2, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--background-subtle);
+}

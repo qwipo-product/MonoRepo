@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Tailwind never scans node_modules, and workspace packages are symlinked
+   there — so point it at the shared source or @mockups/web-ui renders
+   unstyled and nothing errors. This app's own src/ is auto-detected. */
+@source "../../../../packages/web-ui/src";
+
+/* Desktop/admin tokens: light + `.dark`, @theme, Radix animations, and the
+   dark-mode utility rebinding layer — the last of those is what lets these
+   pages, written with raw `bg-white` / `text-gray-900` utilities, go
+   dark-aware without being rewritten. Change a token in packages/web-tokens,
+   not here. */
+@import "../../../../packages/web-tokens/theme.css";
+
+/* Leaflet's own stylesheet, for the orders map dialog. */
+@import "leaflet/dist/leaflet.css";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

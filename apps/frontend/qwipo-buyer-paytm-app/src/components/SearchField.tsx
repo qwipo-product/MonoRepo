@@ -26,7 +26,6 @@ export function SearchField({
     >
       <Search className="h-5 w-5 shrink-0 text-primary" />
       <input
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         value={value}
         onChange={(e) => onChange(e.target.value)}

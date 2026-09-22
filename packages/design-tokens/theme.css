@@ -93,6 +93,20 @@
   --elevation-lg: 0 10px 20px -4px rgba(0, 0, 0, 0.10);
   --elevation-xl: 0 20px 32px -8px rgba(0, 0, 0, 0.14);
   --elevation-bar-top: 0 -4px 16px rgba(0, 0, 0, 0.08);
+
+  /* chart — categorical hues (apps map domain → hue) + soft fill + age ramp */
+  --chart-blue: #2563eb;
+  --chart-cyan: #0891b2;
+  --chart-indigo: #4f46e5;
+  --chart-violet: #7c3aed;
+  --chart-sky: #0284c7;
+  --chart-teal: #0f766e;
+  --chart-gray: #9ca3af;
+  --chart-blue-soft: #93c5fd;
+  --chart-age-0: #bfdbfe;
+  --chart-age-1: #93c5fd;
+  --chart-age-2: #60a5fa;
+  --chart-age-3: #3b82f6;
 }
 
 /* ---- Dark --------------------------------------------------------------- */
@@ -151,6 +165,19 @@
   --elevation-lg: 0 10px 20px -4px rgba(0, 0, 0, 0.55);
   --elevation-xl: 0 20px 32px -8px rgba(0, 0, 0, 0.60);
   --elevation-bar-top: 0 -4px 16px rgba(0, 0, 0, 0.50);
+
+  --chart-blue: #60a5fa;
+  --chart-cyan: #22d3ee;
+  --chart-indigo: #818cf8;
+  --chart-violet: #a78bfa;
+  --chart-sky: #38bdf8;
+  --chart-teal: #2dd4bf;
+  --chart-gray: #6b7280;
+  --chart-blue-soft: #1e40af;
+  --chart-age-0: #1e3a8a;
+  --chart-age-1: #1d4ed8;
+  --chart-age-2: #3b82f6;
+  --chart-age-3: #93c5fd;
 }
 
 /* ---- Expose to Tailwind v4 utilities ------------------------------------ */
@@ -182,6 +209,9 @@
   --color-destructive: var(--error);
   --color-destructive-foreground: #ffffff;
   --color-border-token: var(--border);
+  /* The surface behind the phone frame in a mobile mockup (`bg-shell` in
+     App.tsx). An alias of background-sunken, not a new value. */
+  --color-shell: var(--background-sunken);
 
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
@@ -224,6 +254,19 @@
   --shadow-lg: var(--elevation-lg);
   --shadow-xl: var(--elevation-xl);
   --shadow-bar-top: var(--elevation-bar-top);
+
+  --color-chart-blue: var(--chart-blue);
+  --color-chart-cyan: var(--chart-cyan);
+  --color-chart-indigo: var(--chart-indigo);
+  --color-chart-violet: var(--chart-violet);
+  --color-chart-sky: var(--chart-sky);
+  --color-chart-teal: var(--chart-teal);
+  --color-chart-gray: var(--chart-gray);
+  --color-chart-blue-soft: var(--chart-blue-soft);
+  --color-chart-age-0: var(--chart-age-0);
+  --color-chart-age-1: var(--chart-age-1);
+  --color-chart-age-2: var(--chart-age-2);
+  --color-chart-age-3: var(--chart-age-3);
 }
 
 /* ---- Base + semantic typography roles ----------------------------------- */
@@ -289,4 +332,9 @@
   /* Scroll without a visible scrollbar (device-like). */
   .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Declining series in ranked bars: same hue, hatched with the card colour. */
+  .hatched {
+    background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--card) 5px 8px);
+  }
 }

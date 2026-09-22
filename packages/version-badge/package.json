@@ -1,0 +1,28 @@
+{
+  "name": "@mockups/version-badge",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "The deployed-version pill every mockup shows in a corner, and the APP_VERSION constant behind it. Belongs to neither design kit. Raw TypeScript, no build step.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./storybook": "./src/storybook.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf .turbo *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "react": "*"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:"
+  }
+}

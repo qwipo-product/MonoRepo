@@ -1,0 +1,260 @@
+# Release template for every mockup — the repo-local counterpart of
+# azure-cicd/templates/base-release-template.yaml in the `Qwipo B2B/k8s` repo.
+# Each app's azure-release.yaml `extends:` this and passes a concrete
+# environment, the service name and the git tag prefix. The k8s repo is only
+# touched at runtime via `git clone $TARGET_REPO_URL`, so no repository
+# resource is needed.
+#
+# ── Two modes, chosen by the ref the run is on ───────────────────────────────
+#
+# BUILD mode — auto-triggered by "<Label> - Build", or run manually picking a
+#   build run. Downloads the `drop` artifact of THE BUILD THAT TRIGGERED IT
+#   (`specificBuildWithTriggering: true`) and `source`s build_vars.env before
+#   the manifest rewrite and the ArgoCD sync, so the deployed version can never
+#   drift from the build's.
+#
+# TAG mode — run the pipeline manually and pick a `<tag_prefix>-v*` TAG in the
+#   run dialog's branch/tag selector. Build.SourceBranch is then
+#   `refs/tags/<tag_prefix>-v<semver>`; the version comes from the ref name and
+#   no build artifact is involved. The image built at CI time is the immutable
+#   release artifact — nothing is rebuilt — so the pipeline checks the image
+#   exists in DOCR before touching any manifest. That also catches a tag whose
+#   build died after the tag was pushed (see mockup-docker-template.yaml).
+#   This is how a mockup is rolled back: rerun the deploy on the previous tag.
+#
+# Either mode then rewrites `version: "…"` in bms-chart/<env>/<service>.yaml,
+# commits and pushes that to the k8s repo, and `argocd app sync`s
+# `<env>-<service>-argo-app`. On main/tag runs the manifest value is the bare
+# semver ("1.2.3"); on branch runs it is `<branch>-<sha>`.
+#
+# There is no IMAGE_VERSION rewrite here, unlike the shared template: the
+# mockups have no `env:` block. The version reaches the page at build time
+# (VITE_APP_VERSION → @mockups/version-badge), not from the pod.
+
+parameters:
+    - name: environment
+      displayName: Environment to deploy to (already resolved by the caller)
+      type: string
+      values:
+          - dev
+          - testing
+          - staging
+          - production
+    - name: service_name
+      displayName: Image / ArgoCD service name (mockups-<what-it-is>)
+      type: string
+    - name: tag_prefix
+      displayName: Git tag prefix (tags are <tag_prefix>-v<semver>)
+      type: string
+
+variables:
+    - group: qwipo-global
+
+jobs:
+    - deployment: deploy_job
+      displayName: update argocd manifest, sync app
+
+      pool:
+          name: Xavica-Qwipo
+
+      environment: ${{ parameters.environment }}
+
+      strategy:
+          runOnce:
+              deploy:
+                  steps:
+                      # this job never reads the app source, only git metadata,
+                      # so check out no working files
+                      - checkout: self
+                        fetchDepth: 1
+                        fetchTags: false
+                        fetchFilter: blob:none
+                        sparseCheckoutPatterns: '!/*'
+
+                      - task: CmdLine@2
+                        displayName: set common variables
+                        inputs:
+                            script: |
+                                if [ -z "$TARGET_REPO_URL" ] || [ -z "$TARGET_REPO_BRANCH" ] || [ -z "$TARGET_PATH_PREFIX" ]; then
+                                  echo "One or more required TARGET_* variables are not set. Aborting."
+                                  exit 1
+                                fi
+
+                                SERVICE_NAME='${{ parameters.service_name }}'
+                                IMAGE_NAME=$DOCR_NAME/$SERVICE_NAME
+
+                                echo "##vso[task.setvariable variable=SERVICE_NAME]$SERVICE_NAME"
+                                echo "##vso[task.setvariable variable=IMAGE_NAME]$IMAGE_NAME"
+
+                                echo "##vso[task.setvariable variable=CONTAINER_REGISTRY_URL]$CONTAINER_REGISTRY_URL"
+                                echo "##vso[task.setvariable variable=DOCR_NAME]$DOCR_NAME"
+                                echo "##vso[task.setvariable variable=DOCR_CI_USER]$DOCR_CI_USER"
+                                echo "##vso[task.setvariable variable=DOCR_CI_PAT]$DOCR_CI_PAT"
+
+                                echo "##vso[task.setvariable variable=GITOPS_GIT_USER]$GITOPS_GIT_USER"
+                                echo "##vso[task.setvariable variable=GITOPS_GIT_EMAIL]$GITOPS_GIT_EMAIL"
+
+                                echo "##vso[task.setvariable variable=TARGET_REPO_URL]$TARGET_REPO_URL"
+                                echo "##vso[task.setvariable variable=TARGET_REPO_BRANCH]$TARGET_REPO_BRANCH"
+                                echo "##vso[task.setvariable variable=TARGET_PATH_PREFIX]$TARGET_PATH_PREFIX"
+
+                                echo "##vso[task.setvariable variable=DEPLOY_ENVIRONMENT]$DEPLOY_ENVIRONMENT"
+
+                                echo "##vso[task.setvariable variable=REQUESTOR]$REQUESTOR"
+                                echo "##vso[task.setvariable variable=REQUESTOR_ID]$REQUESTOR_ID"
+                                echo "##vso[task.setvariable variable=REQUESTOR_EMAIL]$REQUESTOR_EMAIL"
+
+                                echo "##vso[task.setvariable variable=ARGOCD_URL]$ARGOCD_URL"
+                                echo "##vso[task.setvariable variable=ARGOCD_USERNAME]$ARGOCD_USERNAME"
+                                echo "##vso[task.setvariable variable=ARGOCD_PASSWORD]$ARGOCD_PASSWORD"
+                        env:
+                            CONTAINER_REGISTRY_URL: $(CONTAINER_REGISTRY_URL)
+                            DOCR_NAME: $(DOCR_NAME)
+                            DOCR_CI_USER: $(DOCR_CI_USER)
+                            DOCR_CI_PAT: $(DOCR_CI_PAT)
+
+                            GITOPS_GIT_USER: $(GITOPS_GIT_USER)
+                            GITOPS_GIT_EMAIL: $(GITOPS_GIT_EMAIL)
+
+                            TARGET_REPO_URL: $(TARGET_REPO_URL)
+                            TARGET_REPO_BRANCH: $(TARGET_REPO_BRANCH)
+                            TARGET_PATH_PREFIX: $(TARGET_PATH_PREFIX)
+
+                            DEPLOY_ENVIRONMENT: ${{ parameters.environment }}
+
+                            # A TAG-mode run has no triggering build, so
+                            # resources.pipeline.* would be empty — attribute
+                            # the deploy to whoever queued this run instead.
+                            ${{ if startsWith(variables['Build.SourceBranch'], format('refs/tags/{0}-v', parameters.tag_prefix)) }}:
+                                REQUESTOR: $(Build.RequestedFor)
+                                REQUESTOR_ID: $(Build.RequestedForId)
+                                REQUESTOR_EMAIL: $(Build.RequestedForEmail)
+                            ${{ else }}:
+                                REQUESTOR: $(resources.pipeline.buildPipeline.RequestedFor)
+                                REQUESTOR_ID: $(resources.pipeline.buildPipeline.RequestedForId)
+                                REQUESTOR_EMAIL: $(resources.pipeline.buildPipeline.RequestedForEmail)
+
+                            ARGOCD_URL: $(ARGOCD_URL)
+                            ARGOCD_USERNAME: $(ARGOCD_USERNAME)
+                            ARGOCD_PASSWORD: $(ARGOCD_PASSWORD)
+
+                      # Mode-specific: both branches end with build_vars.env
+                      # (SERVICE_NAME + IMAGE_GIT_DIGEST) at $(Pipeline.Workspace),
+                      # so everything after is mode-blind.
+                      - ${{ if startsWith(variables['Build.SourceBranch'], format('refs/tags/{0}-v', parameters.tag_prefix)) }}:
+                            - task: CmdLine@2
+                              displayName: derive version from tag, validate image exists in docr
+                              inputs:
+                                  script: |
+                                      set -e
+
+                                      TAG_PREFIX='${{ parameters.tag_prefix }}'
+                                      VERSION=$(echo "$(Build.SourceBranch)" | sed "s|^refs/tags/${TAG_PREFIX}-v||")
+                                      if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+                                        echo "##vso[task.logissue type=error]Ref $(Build.SourceBranch) is not a ${TAG_PREFIX}-v<major>.<minor>.<patch> tag."
+                                        exit 1
+                                      fi
+
+                                      echo $DOCR_CI_PAT | docker login -u $DOCR_CI_USER --password-stdin $CONTAINER_REGISTRY_URL
+                                      if ! docker manifest inspect "$IMAGE_NAME:$VERSION" > /dev/null 2>&1; then
+                                        echo "##vso[task.logissue type=error]$IMAGE_NAME:$VERSION not found in the registry — the build for tag ${TAG_PREFIX}-v$VERSION failed after tagging, or the image was pruned. Nothing was deployed."
+                                        exit 1
+                                      fi
+
+                                      cat <<EOT > $(Pipeline.Workspace)/build_vars.env
+                                      SERVICE_NAME=$SERVICE_NAME
+                                      IMAGE_GIT_DIGEST=$VERSION
+                                      EOT
+                      - ${{ else }}:
+                            - task: DownloadPipelineArtifact@2
+                              inputs:
+                                  buildType: 'specific'
+                                  project: '$(resources.pipeline.buildPipeline.projectId)'
+                                  specificBuildWithTriggering: true
+                                  buildVersionToDownload: 'specific'
+                                  pipelineId: '$(resources.pipeline.buildPipeline.runId)' # Build.BuildId
+                                  artifactName: 'drop'
+                                  itemPattern: '**/*'
+                                  targetPath: '$(Pipeline.Workspace)'
+
+                      - task: CmdLine@2
+                        displayName: update digest in argocd manifest
+                        inputs:
+                            script: |
+                                set -e
+
+                                source $(Pipeline.Workspace)/build_vars.env
+
+                                case "$DEPLOY_ENVIRONMENT" in
+                                    "dev")        TARGET_PATH_PREFIX="${TARGET_PATH_PREFIX}/dev" ;;
+                                    "testing")    TARGET_PATH_PREFIX="${TARGET_PATH_PREFIX}/testing" ;;
+                                    "staging")    TARGET_PATH_PREFIX="${TARGET_PATH_PREFIX}/staging" ;;
+                                    "production") TARGET_PATH_PREFIX="${TARGET_PATH_PREFIX}/production" ;;
+                                    *)            TARGET_PATH_PREFIX="${TARGET_PATH_PREFIX}/dev" ;;
+                                esac
+
+                                TARGET_FILE_NAME="${SERVICE_NAME}.yaml"
+                                TARGET_FILE_PATH="$TARGET_PATH_PREFIX/$TARGET_FILE_NAME"
+
+                                TMPDIR=$(mktemp -d)
+                                git clone --depth 1 --filter=blob:none --sparse \
+                                    --branch "$TARGET_REPO_BRANCH" "$TARGET_REPO_URL" "$TMPDIR/repo"
+                                cd "$TMPDIR/repo"
+
+                                # only the manifest we are about to patch, nothing else
+                                git sparse-checkout set --no-cone "/$TARGET_FILE_PATH"
+
+                                git config user.email "$GITOPS_GIT_EMAIL"
+                                git config user.name "$GITOPS_GIT_USER"
+
+                                TARGET_FILE="$PWD/$TARGET_FILE_PATH"
+                                if [ ! -f "$TARGET_FILE" ]; then
+                                    echo "Target file not found in $TARGET_REPO_BRANCH: $TARGET_FILE_PATH"
+                                    exit 1
+                                fi
+
+                                # `version:` selects the image this deployment runs. Its value
+                                # is exactly what the image was built with (APP_VERSION build
+                                # arg), so the badge in the page and the manifest always agree.
+                                sed -E -e "s/version: \".*\"/version: \"$IMAGE_GIT_DIGEST\"/g" \
+                                    "$TARGET_FILE" > "$TARGET_FILE.updated"
+                                mv "$TARGET_FILE.updated" "$TARGET_FILE"
+
+                                if git diff --quiet -- "$TARGET_FILE_PATH"; then
+                                    echo "No digest changes detected; nothing to commit."
+                                    exit 0
+                                fi
+
+                                git pull
+                                git add "$TARGET_FILE_PATH"
+                                git commit -m "$SERVICE_NAME:$IMAGE_GIT_DIGEST in $DEPLOY_ENVIRONMENT done by $REQUESTOR_EMAIL:$REQUESTOR_ID:$REQUESTOR"
+                                git push origin "HEAD:$TARGET_REPO_BRANCH"
+
+                                echo "Digest update pushed to $TARGET_REPO_URL (branch $TARGET_REPO_BRANCH)."
+
+                      - task: CmdLine@2
+                        displayName: sync argocd app
+                        inputs:
+                            script: |
+                                set -e
+
+                                source $(Pipeline.Workspace)/build_vars.env
+
+                                ARGO_CLI_VERSION=v3.1.8
+
+                                ARGO_APP_NAME=${DEPLOY_ENVIRONMENT}-${SERVICE_NAME}-argo-app
+
+                                curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/$ARGO_CLI_VERSION/argocd-linux-amd64
+                                sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+                                rm argocd-linux-amd64
+
+                                argocd login $ARGOCD_URL --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD
+
+                                echo "Triggering sync for app ${ARGO_APP_NAME}"
+                                argocd app sync ${ARGO_APP_NAME} --grpc-web --async
+
+                                echo "Waiting for app ${ARGO_APP_NAME} to become Healthy..."
+                                argocd app wait ${ARGO_APP_NAME} --health --operation --timeout 600
+
+                                echo "Final app status:"
+                                argocd app get ${ARGO_APP_NAME}

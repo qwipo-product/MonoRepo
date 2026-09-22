@@ -5,9 +5,13 @@ import { QtyStepper } from '@mockups/ui';
 const meta = {
   title: 'Primitives/QtyStepper',
   component: QtyStepper,
+  // `value` / `onChange` are required props, so Storybook's types demand args
+  // somewhere. The stories below are render-only and drive their own state,
+  // so these are never actually read.
+  args: { value: 1, onChange: () => {} },
 } satisfies Meta<typeof QtyStepper>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Neutral: Story = {
   render: () => {

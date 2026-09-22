@@ -5,9 +5,13 @@ import { ProductCard, type ProductCardProps } from '@mockups/components';
 const meta = {
   title: 'Components/ProductCard',
   component: ProductCard,
+  // `name` / `price` are required props, so Storybook's types demand args
+  // somewhere. The stories below render <Demo /> with their own props, so
+  // these are never actually read.
+  args: { name: 'Product', price: 0 },
 } satisfies Meta<typeof ProductCard>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 const base = {
   name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos',

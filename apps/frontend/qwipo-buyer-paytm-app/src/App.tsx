@@ -410,14 +410,11 @@ export default function App() {
           />
         );
       case 'kyc-success':
-        return (
-          <KycSuccessScreen
-            onPlaceOrder={() => {
-              setKycComplete(true);
-              go(shell === 'paytm' ? 'home' : 'listing');
-            }}
-          />
-        );
+        /* dev's screen is "KYC Submitted", not approved — review takes 24–48h
+           and ordering unlocks only afterwards. So submitting deliberately does
+           NOT set kycComplete; the Order Summary gate stays up, which is the
+           same rule stated twice. */
+        return <KycSuccessScreen onExplore={() => go(shell === 'paytm' ? 'home' : 'listing')} />;
       case 'home':
         return (
           <HomeScreen

@@ -5,9 +5,13 @@ import { Switch } from '@mockups/ui';
 const meta = {
   title: 'Primitives/Switch',
   component: Switch,
+  // Switch's `checked` / `onCheckedChange` are required props, so Storybook's
+  // types demand args somewhere. The stories below are render-only and drive
+  // their own state, so the args live here and are simply unused.
+  args: { checked: false, onCheckedChange: () => {} },
 } satisfies Meta<typeof Switch>;
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const Playground: Story = {
   render: () => {

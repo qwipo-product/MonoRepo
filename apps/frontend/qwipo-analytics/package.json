@@ -1,0 +1,38 @@
+{
+  "name": "@mockups/qwipo-analytics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Qwipo Analytics \u2014 DigiDukaan analytics pages and the Reports framework, desktop web. Dev port 5177.",
+  "scripts": {
+    "dev": "vite --port 5177",
+    "build": "vite build",
+    "preview": "vite preview --port 6177",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@mockups/components": "workspace:*",
+    "@mockups/design-tokens": "workspace:*",
+    "@mockups/types": "workspace:*",
+    "@mockups/ui": "workspace:*",
+    "@mockups/version-badge": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "eslint": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}
