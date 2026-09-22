@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
@@ -60,6 +60,7 @@ import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
+import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -78,7 +79,7 @@ import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/pla
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
+  'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
@@ -135,9 +136,6 @@ function readInitialScreen(): ScreenId {
   return s;
 }
 
-// Shared cart model (self-contained mock) — resolves the seller for View Items.
-const CART = buildCart();
-
 export default function App() {
   const { isDark, toggleTheme } = useTheme();
   const [screen, setScreen] = useState<ScreenId>(readInitialScreen);
@@ -159,7 +157,18 @@ export default function App() {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
+  // Live quantities from the Product List / Reorder screens — starts empty,
+  // so the cart opens with nothing in it; the buyer adding a quantity there
+  // is the only thing that ever puts something in the cart. Single source of
+  // truth: Cart Summary reads this too, so whatever gets added there shows up.
   const [qty, setQty] = useState<Record<string, number>>({});
+  // Live quantities + chosen vendor from the Wholesaler List — a separate pool
+  // (wp-ids, not p-ids), same pattern.
+  const [wholesaleQty, setWholesaleQty] = useState<Record<string, number>>({});
+  const [wholesaleVendor, setWholesaleVendor] = useState<Record<string, string>>({});
+  // The live cart, rebuilt whenever any of the above changes — every screen
+  // that shows cart contents reads from this one computed value.
+  const CART = useMemo(() => buildCart(qty, wholesaleQty, wholesaleVendor), [qty, wholesaleQty, wholesaleVendor]);
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   // Any order list → the one shared Order Details, with a per-source back target.
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
@@ -255,8 +264,12 @@ export default function App() {
   };
 
   const setLineQty = (id: string, n: number) => setQty((q) => ({ ...q, [id]: Math.max(0, n) }));
-  const cartCount = Object.values(qty).reduce((n, q) => n + q, 0);
-  const cartTotal = PRODUCTS.reduce((s, p) => s + p.price * (qty[p.id] ?? 0), 0);
+  const setWholesaleLineQty = (id: string, n: number) => setWholesaleQty((q) => ({ ...q, [id]: Math.max(0, n) }));
+  const setWholesaleVendorFor = (id: string, vendorId: string) => setWholesaleVendor((v) => ({ ...v, [id]: vendorId }));
+  const cartCount =
+    Object.values(qty).reduce((n, q) => n + q, 0) + Object.values(wholesaleQty).reduce((n, q) => n + q, 0);
+  // Same total the cart itself adds up to — one source of truth.
+  const cartTotal = CART.grandTotal;
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
   const galleryProduct = galleryId ? productById(galleryId) ?? null : null;
   // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
@@ -471,9 +484,32 @@ export default function App() {
           />
         );
       case 'wholesaler-products':
-        return <WholesalerProductsScreen applied={listApplied} onBack={() => go(listBackTo)} onSearch={() => go('global-search')} onGoToCart={() => go('cart')} />;
+        return (
+          <WholesalerProductsScreen
+            applied={listApplied}
+            qty={wholesaleQty}
+            onSetQty={setWholesaleLineQty}
+            vendorSel={wholesaleVendor}
+            onSetVendor={setWholesaleVendorFor}
+            onBack={() => go(listBackTo)}
+            onSearch={() => go('global-search')}
+            onGoToCart={() => go('cart')}
+          />
+        );
       case 'wholesaler-units':
-        return <WholesalerProductsScreen initialSheet applied={listApplied} onBack={() => go(listBackTo)} onSearch={() => go('global-search')} onGoToCart={() => go('cart')} />;
+        return (
+          <WholesalerProductsScreen
+            initialSheet
+            applied={listApplied}
+            qty={wholesaleQty}
+            onSetQty={setWholesaleLineQty}
+            vendorSel={wholesaleVendor}
+            onSetVendor={setWholesaleVendorFor}
+            onBack={() => go(listBackTo)}
+            onSearch={() => go('global-search')}
+            onGoToCart={() => go('cart')}
+          />
+        );
       case 'storefront':
         return <StorefrontScreen distributor={selectedDistributor} onBack={() => go(storefrontBackTo)} onNavigate={go} />;
       case 'listing':
@@ -482,6 +518,7 @@ export default function App() {
             applied={listApplied}
             onBack={() => go(listBackTo)}
             onSearch={() => go('global-search')}
+            onOffers={() => go('offer-skus')}
             qty={qty}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
@@ -491,9 +528,22 @@ export default function App() {
             cartTotal={cartTotal}
           />
         );
+      case 'offer-skus':
+        return (
+          <OffersSchemesSkusScreen
+            onBack={() => go('listing')}
+            qty={qty}
+            onSetQty={setLineQty}
+            onOpenSheet={setSheetId}
+            onGoToCart={() => go('cart')}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+          />
+        );
       case 'cart':
         return (
           <CartScreen
+            cart={CART}
             onBack={() => go('home')}
             onCheckout={() => setAlertsOpen(true)}
             onViewItems={(sellerId) => {
@@ -519,6 +569,7 @@ export default function App() {
       case 'order-summary':
         return (
           <OrderSummaryScreen
+            cart={CART}
             onBack={() => go('cart')}
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
@@ -530,7 +581,7 @@ export default function App() {
           />
         );
       case 'coupons':
-        return <CouponsScreen onBack={() => go('cart')} onApply={() => go('cart')} />;
+        return <CouponsScreen cart={CART} onBack={() => go('cart')} onApply={() => go('cart')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
@@ -767,6 +818,7 @@ export default function App() {
 
           <CartAlertsSheet
             open={alertsOpen}
+            sellers={CART.sellers}
             onClose={() => setAlertsOpen(false)}
             onProceed={() => {
               setAlertsOpen(false);

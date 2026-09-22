@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, Plus, Truck, X, ShoppingCart } from 'lucide-react';
 import { Button, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
@@ -26,6 +26,12 @@ export function ViewItemsScreen({
   onItemTap: (productId: string) => void;
 }) {
   const [rawItems, setItems] = useState(seller.items);
+  // The buyer's own removals (via `remove` below) live only in this local
+  // state — but if the underlying cart changes seller.items while this
+  // screen stays mounted (e.g. a scheme's free line appears because a
+  // quantity changed elsewhere), pick that up too, instead of showing a
+  // stale snapshot from whenever the screen first opened.
+  useEffect(() => setItems(seller.items), [seller.items]);
   // Totals derive from this too, so the empty demo zeroes them out as well.
   const items = useEmptyable(rawItems);
 
@@ -196,6 +202,14 @@ export function ViewItemsScreen({
                   priceWhenAdded={item.priceWhenAdded}
                   delta={item.priceDelta}
                 />
+                {/* a Slab/Combo scheme that's live on this line — the ₹
+                    amount, not just the % label, so it's the same thing the
+                    total actually reflects */}
+                {item.offerTags?.map((t) => (
+                  <div key={t.label} className="mt-1 text-xs font-medium text-success-foreground">
+                    {t.label} · −{formatInr(t.amount)}
+                  </div>
+                ))}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
                     Qty ×{item.quantity}

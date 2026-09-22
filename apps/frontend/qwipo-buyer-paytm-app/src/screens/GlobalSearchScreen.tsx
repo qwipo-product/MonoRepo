@@ -5,6 +5,7 @@ import { useEmptyDemo } from '../review/demoState';
 import { formatInr } from '@mockups/components';
 import { SearchField } from '../components/SearchField';
 import { PRODUCTS } from '../data/products';
+import { offerNameSuffix } from '../data/coupons';
 import { BRANDS, DIST_CATEGORIES, WHOLESALER_CATEGORIES, type HomeCategory } from '../data/home';
 import type { Navigate } from '../nav';
 
@@ -178,6 +179,7 @@ export function GlobalSearchScreen({
                       </span>
                       <span className="min-w-0 flex-1 text-sm leading-snug text-foreground line-clamp-2">
                         <Highlight text={p.name} q={q} />
+                        {offerNameSuffix(p.id)}
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block whitespace-nowrap text-[11px] leading-snug text-foreground-secondary">

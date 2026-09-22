@@ -18,6 +18,10 @@ const HISTORY: { id: string; lastOrdered: string; timesOrdered: number }[] = [
   { id: 'p4', lastOrdered: '2 weeks ago', timesOrdered: 5 },
   { id: 'p5', lastOrdered: '3 weeks ago', timesOrdered: 4 },
   { id: 'p8', lastOrdered: '1 month ago', timesOrdered: 3 },
+  // p3 (Fortune Besan) is wholesaler-sourced like the rest of this list and
+  // carries two live offers (Case Bonus, Combo with p10) — needs a reachable
+  // SKU screen now that the cart no longer seeds it in automatically.
+  { id: 'p3', lastOrdered: '5 days ago', timesOrdered: 8 },
 ];
 
 export const REORDER_ITEMS: ReorderItem[] = HISTORY.flatMap((h) => {

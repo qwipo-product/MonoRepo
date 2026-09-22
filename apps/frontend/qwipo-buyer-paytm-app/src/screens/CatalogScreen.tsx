@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
+import { ChevronLeft, Search, SlidersHorizontal, PackageOpen, BadgePercent } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
 import { PRODUCTS, type Product } from '../data/products';
+import { offerNameSuffix } from '../data/coupons';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
@@ -25,6 +26,7 @@ export function CatalogScreen({
   applied: appliedProp = [],
   onBack,
   onSearch,
+  onOffers,
   qty,
   onOpenSheet,
   onOpenGallery,
@@ -36,6 +38,8 @@ export function CatalogScreen({
   applied?: AppliedFilter[];
   onBack?: () => void;
   onSearch?: () => void;
+  /** "Which SKU has which offer" shortcut, one tap off this list. */
+  onOffers?: () => void;
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onOpenGallery?: (id: string) => void;
@@ -47,7 +51,7 @@ export function CatalogScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -72,6 +76,16 @@ export function CatalogScreen({
           <h1 className="text-base font-semibold leading-tight">Product List</h1>
           <p className="text-xs text-foreground-secondary">{items.length} products</p>
         </div>
+        {onOffers && (
+          <button
+            onClick={onOffers}
+            className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary active:scale-[0.98]"
+            aria-label="Offers and schemes"
+            title="Offers & Schemes"
+          >
+            <BadgePercent size={18} />
+          </button>
+        )}
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
         </button>
@@ -113,7 +127,7 @@ export function CatalogScreen({
           items.map((p) => (
             <ProductCard
               key={p.id}
-              name={p.name}
+              name={p.name + offerNameSuffix(p.id)}
               caseLabel={p.caseLabel}
               image={p.image}
               variants={p.variants}
@@ -126,7 +140,7 @@ export function CatalogScreen({
               onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
-              onDiscounts={() => setDiscountsOpen(true)}
+              onDiscounts={() => setDiscountsProductId(p.id)}
               subtotal={p.price * (qty[p.id] ?? 0)}
               subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={deliveryFooter(p.seller)}
@@ -160,7 +174,12 @@ export function CatalogScreen({
         onClose={() => setFilterOpen(false)}
       />
 
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={qty}
+        onClose={() => setDiscountsProductId(null)}
+      />
     </div>
   );
 }

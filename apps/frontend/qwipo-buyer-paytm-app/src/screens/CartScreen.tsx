@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { buildCart, type CartSeller } from '../data/cart';
+import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
@@ -11,19 +11,23 @@ import { useEmptyable } from '../review/demoState';
    self-contained (the Shop add-to-cart flow is owned by another dev). */
 
 export function CartScreen({
+  cart,
   onBack,
   onCheckout,
   onViewItems,
   onAddMore,
   onOpenCoupons,
 }: {
+  /** The live cart, built from the same qty the buyer picked on the Product
+   * List / Reorder / Wholesaler screens — App.tsx computes it once and shares
+   * it here, so this screen and Order Summary can never disagree. */
+  cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
   onOpenCoupons: () => void;
 }) {
-  const cart = useMemo(() => buildCart(), []);
   const { grandTotal, totalItems, anyBelow } = cart;
   const sellers = useEmptyable(cart.sellers);
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
