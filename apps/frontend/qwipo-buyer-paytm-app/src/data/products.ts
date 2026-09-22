@@ -200,6 +200,149 @@ export const PRODUCTS: Product[] = [
     seller: 'Vijaya Traders', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
     price: 135, mrp: 150, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
+
+  // ── Tata Consumer Products (TCPL) — real SKUs from TCP's own Salesforce
+  // scheme export (TCP-Schemes-Sample 2.xlsx), tagged to TCP's live Slab,
+  // BOGO (Flat with Multiples) and Flat Schemes. See data/tcpl.ts. Prices
+  // are invented (the export has trade payout %, not consumer price) but
+  // plausible.
+  {
+    id: 'p22', name: 'Tata Salt Black Salt - 100 g Sachet X 180 Nos', shortName: 'Tata Salt Black Salt Sachet',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 180 pc', caseSize: 180, image: '🧂',
+    variants: [{ id: '100g', label: '100 g' }, { id: '70g', label: '70 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '10% Margin',
+    price: 8.5, mrp: 10, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p23', name: 'Tata Salt Black Salt - 100 g Crusher X 30 Nos', shortName: 'Tata Salt Black Salt Crusher',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 30 pc', caseSize: 30, image: '🧂',
+    variants: [{ id: '100g', label: '100 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '11% Margin',
+    price: 82, mrp: 95, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p24', name: 'Soulfull Masala Oats+ Masala - 500 g Pack X 30 Nos', shortName: 'Soulfull Masala Oats+ (Masala)',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 30 pc', caseSize: 30, image: '🥣',
+    variants: [{ id: '500g', label: '500 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '13% Margin',
+    price: 155, mrp: 180, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p25', name: 'Soulfull Masala Oats+ Tomato - 500 g Pack X 30 Nos', shortName: 'Soulfull Masala Oats+ (Tomato)',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 30 pc', caseSize: 30, image: '🥣',
+    variants: [{ id: '500g', label: '500 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '13% Margin',
+    price: 155, mrp: 180, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p26', name: 'TT 1868 Tea Lovers Bliss Gift Box - 20 g X 6 Nos', shortName: 'TT 1868 Tea Lovers Bliss Gift Box',
+    category: 'Beverages', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🎁',
+    variants: [{ id: 'set6', label: 'Set of 6' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
+    price: 210, mrp: 250, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p27', name: 'TT 1868 Davos Assorted Gift Pack - 120 g X 6 Nos', shortName: 'TT 1868 Davos Assorted Gift Pack',
+    category: 'Beverages', caseLabel: 'Case: 6 pc', caseSize: 6, image: '🎁',
+    variants: [{ id: 'set6', label: 'Set of 6' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
+    price: 580, mrp: 650, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p28', name: 'Soulfull Ragi Bites Strawberry Wafer - 50 g X 24 Nos', shortName: 'Soulfull Ragi Bites Strawberry Wafer',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🍪',
+    variants: [{ id: '50g', label: '50 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 17, mrp: 20, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p29', name: 'Soulfull Ragi Bites Choco Wafer - 50 g X 24 Nos', shortName: 'Soulfull Ragi Bites Choco Wafer',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🍪',
+    variants: [{ id: '50g', label: '50 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 17, mrp: 20, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p30', name: 'Tata Salt Crystal - 20 kg (25 x 80 g Child Packs) X 10 Nos', shortName: 'Tata Salt Crystal 20 kg',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 10 pc', caseSize: 10, image: '🧂',
+    variants: [{ id: '20kg', label: '20 kg' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '8% Margin',
+    price: 190, mrp: 220, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+
+  // ── Offer-pattern coverage — one SKU per scheme type (BOGO, Freebie, Case
+  // Bonus, Combo, Slab), spread across the three sellers below, so every
+  // pattern has a demo beyond the TCPL set. See data/coupons.ts for the
+  // matching Offer entries — the cart starts empty, so which of these end up
+  // qualified vs. short is up to whatever quantity the buyer actually adds.
+  {
+    id: 'p31', name: 'Everest Garam Masala - 100 g Pack X 24 Nos', shortName: 'Everest Garam Masala',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🌶️',
+    variants: [{ id: '50g', label: '50 g' }, { id: '100g', label: '100 g' }],
+    seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '13% Margin',
+    price: 42, mrp: 48, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p32', name: 'Lifebuoy Handwash - 200 ml Bottle X 24 Nos', shortName: 'Lifebuoy Handwash',
+    category: 'Personal Care', caseLabel: 'Case: 24 pc', caseSize: 24, image: '🧴',
+    variants: [{ id: '200ml', label: '200 ml' }, { id: '500ml', label: '500 ml' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '14% Margin',
+    price: 65, mrp: 75, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p33', name: 'Tata Tea Gold - 1 kg Pack X 20 Nos', shortName: 'Tata Tea Gold',
+    category: 'Beverages', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🍵',
+    variants: [{ id: '250g', label: '250 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '10% Margin',
+    price: 480, mrp: 520, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p34', name: 'Vim Dishwash Bar - 300 g Pack X 36 Nos', shortName: 'Vim Dishwash Bar',
+    category: 'Personal Care', caseLabel: 'Case: 36 pc', caseSize: 36, image: '🧽',
+    variants: [{ id: '155g', label: '155 g' }, { id: '300g', label: '300 g' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '12% Margin',
+    price: 38, mrp: 44, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p35', name: 'Surf Excel Easy Wash Detergent - 1 kg Pack X 20 Nos', shortName: 'Surf Excel Easy Wash Detergent',
+    category: 'Personal Care', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🧺',
+    variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '11% Margin',
+    price: 118, mrp: 135, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    id: 'p36', name: 'Sunfeast Marie Gold Biscuits - 1 kg Pack X 12 Nos', shortName: 'Sunfeast Marie Gold Biscuits',
+    category: 'Snacks & Namkeen', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🍪',
+    variants: [{ id: '250g', label: '250 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
+    price: 92, mrp: 105, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    // Stacked — BOGO + Slab together, so one card shows two live scheme
+    // states at once instead of the usual one.
+    id: 'p37', name: 'Colgate Strong Teeth Toothpaste - 200 g Pack X 12 Nos', shortName: 'Colgate Strong Teeth Toothpaste',
+    category: 'Personal Care', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🪥',
+    variants: [{ id: '100g', label: '100 g' }, { id: '200g', label: '200 g' }],
+    seller: 'Karnataka Soaps & Detergents', source: 'distributor', delivery: 'Free Delivery', margin: '13% Margin',
+    price: 88, mrp: 100, deliveryDay: 'Fri (Beat day)', mov: 500,
+  },
+  {
+    // Stacked — Freebie + Case Bonus together.
+    id: 'p38', name: 'Tata Sampann Toor Dal - 1 kg Pack X 12 Nos', shortName: 'Tata Sampann Toor Dal',
+    category: 'Dals & Pulses', caseLabel: 'Case: 12 pc', caseSize: 12, image: '🫘',
+    variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '10% Margin',
+    price: 148, mrp: 168, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    // The kitchen-sink SKU — BOGO + Freebie + Case Bonus + Slab + Combo
+    // (paired with Tata Salt Black Salt Sachet, p22) all live at once.
+    id: 'p39', name: 'Tata Salt Iodised - 1 kg Pack X 20 Nos', shortName: 'Tata Salt Iodised',
+    category: 'Masala & Seasoning', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🧂',
+    variants: [{ id: '1kg', label: '1 kg' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '9% Margin',
+    price: 24, mrp: 28, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);

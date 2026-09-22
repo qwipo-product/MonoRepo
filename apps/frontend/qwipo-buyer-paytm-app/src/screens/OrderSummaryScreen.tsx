@@ -1,7 +1,7 @@
 import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
 import { Button, InlineMessage } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { buildCart, type CartSeller } from '../data/cart';
+import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 
 /* Order Summary — read-only review before Place Order. One bill card per
@@ -12,12 +12,15 @@ import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 const brandOf = (name: string) => name.split(' ')[0];
 
 export function OrderSummaryScreen({
+  cart,
   onBack,
   onPlaceOrder,
   onViewItems,
   kycPending = false,
   onCompleteKyc,
 }: {
+  /** The live cart App.tsx built from the buyer's actual picked quantities. */
+  cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onPlaceOrder: () => void;
   onViewItems: (sellerId: string) => void;
@@ -25,7 +28,7 @@ export function OrderSummaryScreen({
   kycPending?: boolean;
   onCompleteKyc?: () => void;
 }) {
-  const { sellers, grandTotal } = buildCart();
+  const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.reduce((a, i) => a + i.quantity, 0), 0);
   const grandSavings = sellers.reduce((n, s) => n + s.savings, 0);

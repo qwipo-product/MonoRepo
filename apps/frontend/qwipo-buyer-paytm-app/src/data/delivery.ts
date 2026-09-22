@@ -37,6 +37,10 @@ export const DISTRIBUTOR_DELIVERY: Record<string, DistributorDelivery> = {
     options: [{ day: 'Tomorrow' }],
     freeDeliveryAt: 3000,
   },
+  'Tata Consumer Products': {
+    options: [{ day: 'Monday', beat: true, mov: 2000 }, { day: 'Tomorrow', mov: 3000 }],
+    freeDeliveryAt: 4000,
+  },
 };
 
 export const DEFAULT_DELIVERY: DistributorDelivery = {

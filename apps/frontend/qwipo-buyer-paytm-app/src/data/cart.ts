@@ -1,10 +1,13 @@
 import { PRODUCTS, type Product } from './products';
+import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from './wholesaler';
 import { deliveryFor, dayLabel } from './delivery';
+import { OFFERS } from './coupons';
 
-/* Self-contained cart mock. The Shop section (product list → selling-units →
-   add-to-cart) is owned by another developer, so Cart Summary carries its own
-   seeded lines and derives the multi-seller view here — it renders fully for
-   review without depending on the live add-to-cart flow.
+/* Cart Summary reads the SAME quantities the buyer picked on the Product List /
+   Reorder / Wholesaler List screens — `buildCart()` takes them as arguments
+   instead of a fixed seed, so adding something there shows up here too. The
+   cart opens empty (App.tsx's `qty` starts at `{}`) — everything in it is
+   something the buyer actually added.
 
    Each seller resolves to one of three retailer-facing states:
      • free  — at/above the free-delivery threshold  → ELIGIBLE · FREE DELIVERY
@@ -24,6 +27,13 @@ export const UNIT_WEIGHT_KG: Record<string, number> = {
   p8: 0.15, // Close Up 150 g
   p9: 0.1, // Dabur Red 100 g
   p10: 0.25, // Red Label Tea 250 g
+  p31: 0.1, // Everest Garam Masala 100 g
+  p32: 0.2, // Lifebuoy Handwash 200 ml
+  p33: 1, // Tata Tea Gold 1 kg
+  p34: 0.3, // Vim Dishwash Bar 300 g
+  p35: 1, // Surf Excel Detergent 1 kg
+  p36: 1, // Sunfeast Marie Gold Biscuits 1 kg
+  p37: 0.2, // Colgate Toothpaste 200 g
 };
 
 /** Minimum order WEIGHT (kg) per seller. 0 → no weight minimum. */
@@ -35,27 +45,6 @@ export const SELLER_MOW: Record<string, number> = {
 
 export const itemWeight = (item: CartItem): number =>
   item.quantity * (UNIT_WEIGHT_KG[item.product.id] ?? 0);
-
-export interface CartLine {
-  productId: string;
-  quantity: number;
-  /** Promotional free unit — shows a FREE badge and a ₹0 line. */
-  free?: boolean;
-}
-
-
-// Seeded to show all three states + a FREE item + a "+N more" rail.
-export const CART_LINES: CartLine[] = [
-  { productId: 'p1', quantity: 12 }, // Freedom Oil     — Sri Sai (distributor) → FREE seller
-  { productId: 'p1', quantity: 1, free: true }, // free promo unit
-  { productId: 'p2', quantity: 8 }, // Aashirvaad Atta  — Sri Sai
-  { productId: 'p3', quantity: 20 }, // Fortune Besan   — Omkar (wholesaler) → PAID seller (5 lines → +more)
-  { productId: 'p4', quantity: 6 }, // Maggi            — Omkar
-  { productId: 'p8', quantity: 4 }, // Close Up         — Omkar
-  { productId: 'p9', quantity: 3 }, // Dabur Red        — Omkar
-  { productId: 'p10', quantity: 2 }, // Red Label Tea   — Omkar
-  { productId: 'p5', quantity: 3 }, // Mysore Soap      — Karnataka (distributor) → BELOW MINIMUM
-];
 
 /* Price the buyer saw when the item went into the cart, for the lines that have
    since moved. Sellers re-rate stock daily, so a cart left overnight is the
@@ -78,6 +67,12 @@ export interface CartItem {
   priceDelta?: number;
   /** Delta across this whole line (priceDelta × quantity). */
   lineDelta?: number;
+  /** One entry per percentage scheme (Slab/Combo) currently discounting this
+   * line — the cart's answer to "or the discounted amount" for offers that
+   * don't pay out in free goods. A line can carry more than one (a SKU can
+   * stack a Slab and a Combo at once). Each `amount` is already folded into
+   * `lineTotal`; kept separately so the UI can show it as its own line. */
+  offerTags?: { label: string; amount: number }[];
 }
 
 export interface CartSeller {
@@ -122,7 +117,38 @@ export interface PriceChangeSummary {
   net: number;
 }
 
-export function buildCart(): {
+/** A WholesalerProduct + the vendor the buyer picked, in the same shape every
+ * other screen already reads (CartItem.product : Product) — so View Items,
+ * Order Summary, the Alerts sheet etc. need no wholesaler-specific branches. */
+function wholesaleAsProduct(wp: WholesalerProduct, vendor: WholesalerVendor): Product {
+  return {
+    id: wp.id,
+    name: wp.name,
+    shortName: wp.name,
+    category: wp.category,
+    caseLabel: wp.caseLabel,
+    caseSize: wp.caseSize,
+    image: wp.image,
+    variants: wp.variants,
+    seller: vendor.name,
+    source: 'wholesaler',
+    delivery: vendor.delivery,
+    margin: vendor.margin,
+    price: vendor.price,
+    mrp: vendor.mrp,
+    deliveryDay: vendor.delivery,
+    mov: 0,
+  };
+}
+
+export function buildCart(
+  /** Live quantities from the Product List / Reorder screens, keyed by product id. */
+  qty: Record<string, number>,
+  /** Live quantities from the Wholesaler List, keyed by wp-id. */
+  wholesaleQty: Record<string, number> = {},
+  /** Chosen vendor per wp-id; falls back to the cheapest. */
+  wholesaleVendor: Record<string, string> = {}
+): {
   sellers: CartSeller[];
   grandTotal: number;
   totalItems: number;
@@ -130,25 +156,77 @@ export function buildCart(): {
   priceChanges: PriceChangeSummary;
 } {
   const bySeller = new Map<string, CartItem[]>();
+  // Paid lines by product id, so the percentage-offer pass below can find and
+  // discount the exact line a Slab/Combo applies to.
+  const itemByProductId = new Map<string, CartItem>();
 
-  for (const line of CART_LINES) {
-    const product = PRODUCTS.find((p) => p.id === line.productId);
-    if (!product) continue;
-    const lineTotal = line.free ? 0 : product.price * line.quantity;
-    const was = line.free ? undefined : PRICE_WHEN_ADDED[product.id];
+  const addItem = (product: Product, quantity: number) => {
+    if (quantity <= 0) return;
+    const lineTotal = product.price * quantity;
+    const was = PRICE_WHEN_ADDED[product.id];
     const priceDelta = was != null ? product.price - was : undefined;
     const item: CartItem = {
       product,
-      quantity: line.quantity,
+      quantity,
       lineTotal,
-      free: !!line.free,
+      free: false,
       priceWhenAdded: was,
       priceDelta,
-      lineDelta: priceDelta != null ? priceDelta * line.quantity : undefined,
+      lineDelta: priceDelta != null ? priceDelta * quantity : undefined,
     };
     const arr = bySeller.get(product.seller) ?? [];
     arr.push(item);
     bySeller.set(product.seller, arr);
+    itemByProductId.set(product.id, item);
+  };
+
+  const addFreeItem = (product: Product, quantity: number) => {
+    if (quantity <= 0) return;
+    const item: CartItem = { product, quantity, lineTotal: 0, free: true };
+    const arr = bySeller.get(product.seller) ?? [];
+    arr.push(item);
+    bySeller.set(product.seller, arr);
+  };
+
+  for (const [productId, quantity] of Object.entries(qty)) {
+    const product = PRODUCTS.find((p) => p.id === productId);
+    if (product) addItem(product, quantity);
+  }
+  for (const [wpId, quantity] of Object.entries(wholesaleQty)) {
+    const wp = WHOLESALER_PRODUCTS.find((p) => p.id === wpId);
+    if (!wp) continue;
+    const vendorId = wholesaleVendor[wpId] ?? cheapestVendorId(wp);
+    const vendor = wp.vendors.find((v) => v.id === vendorId) ?? wp.vendors[0];
+    addItem(wholesaleAsProduct(wp, vendor), quantity);
+  }
+
+  // Percentage schemes (Slab/Combo) — once `needs` are met, take the % off the
+  // first `needs` line's total, right here in the cart, instead of leaving
+  // "15% Off" as a label the total never actually reflects.
+  for (const offer of OFFERS) {
+    if (!offer.automatic || !offer.discountPct) continue;
+    const needs = offer.needs ?? [];
+    const short = needs.some((n) => (qty[n.productId] ?? 0) < n.qty);
+    if (short || needs.length === 0) continue;
+    const target = itemByProductId.get(needs[0].productId);
+    if (!target) continue;
+    const amount = Math.round((target.lineTotal * offer.discountPct) / 100);
+    target.lineTotal -= amount;
+    target.offerTags = [
+      ...(target.offerTags ?? []),
+      { label: `${offer.discountPct}% Off — ${offer.label ?? 'Offer'}`, amount },
+    ];
+  }
+
+  // Promo free units — one per automatic Offer whose `needs` the cart actually
+  // meets, so "Applied automatically" on the Offers page always matches a real
+  // ₹0 line here, for BOTH the schemes and their free goods.
+  for (const offer of OFFERS) {
+    if (!offer.automatic || !offer.reward) continue;
+    const short = (offer.needs ?? []).some((n) => (qty[n.productId] ?? 0) < n.qty);
+    if (short) continue;
+    const product = PRODUCTS.find((p) => p.id === offer.reward!.productId);
+    if (product) addFreeItem(product, offer.reward.qty);
   }
 
   const sellers: CartSeller[] = [];
@@ -161,7 +239,10 @@ export function buildCart(): {
     const cfg = { mov, freeDeliveryAt: d.freeDeliveryAt, windows: d.options.map(dayLabel) };
     const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
     const savings = items.reduce(
-      (s, i) => s + (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)),
+      (s, i) =>
+        s +
+        (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)) +
+        (i.offerTags?.reduce((a, t) => a + t.amount, 0) ?? 0),
       0
     );
 

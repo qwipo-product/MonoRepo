@@ -29,24 +29,31 @@ const matchesApplied = (p: WholesalerProduct, a: AppliedFilter) =>
    line; the cheapest is tagged "Best". Add opens the selling-units sheet. */
 export function WholesalerProductsScreen({
   applied: appliedProp = [],
+  qty,
+  onSetQty,
+  vendorSel,
+  onSetVendor,
   onBack,
   onSearch,
   onGoToCart,
   initialSheet = false,
 }: {
   applied?: AppliedFilter[];
+  /** Live quantities, shared with Cart Summary — App.tsx owns this state. */
+  qty: Record<string, number>;
+  onSetQty: (id: string, n: number) => void;
+  vendorSel: Record<string, string>;
+  onSetVendor: (id: string, vendorId: string) => void;
   onBack: () => void;
   onSearch?: () => void;
   onGoToCart: () => void;
   initialSheet?: boolean;
 }) {
-  const [qty, setQty] = useState<Record<string, number>>({});
-  const [vendorSel, setVendorSel] = useState<Record<string, string>>({});
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
   const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -110,12 +117,12 @@ export function WholesalerProductsScreen({
               key={p.id}
               product={p}
               vendorId={vendorSel[p.id] ?? cheapestVendorId(p)}
-              onVendor={(vid) => setVendorSel((s) => ({ ...s, [p.id]: vid }))}
+              onVendor={(vid) => onSetVendor(p.id, vid)}
               qty={qty[p.id] ?? 0}
-              onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
+              onQty={(n) => onSetQty(p.id, Math.max(0, n))}
               onAdd={() => setSheetId(p.id)}
               onImageClick={() => setGalleryId(p.id)}
-              onDiscounts={() => setDiscountsOpen(true)}
+              onDiscounts={() => setDiscountsProductId(p.id)}
             />
           ))
         )}
@@ -126,7 +133,7 @@ export function WholesalerProductsScreen({
         vendor={sheetProduct ? vendorFor(sheetProduct) : null}
         cartTotal={cartTotal}
         onAdd={(pcs) => {
-          if (sheetId) setQty((s) => ({ ...s, [sheetId]: (s[sheetId] ?? 0) + pcs }));
+          if (sheetId) onSetQty(sheetId, (qty[sheetId] ?? 0) + pcs);
         }}
         onContinue={() => setSheetId(null)}
         onClose={() => setSheetId(null)}
@@ -162,7 +169,12 @@ export function WholesalerProductsScreen({
         onClose={() => setFilterOpen(false)}
       />
 
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={qty}
+        onClose={() => setDiscountsProductId(null)}
+      />
     </div>
   );
 }

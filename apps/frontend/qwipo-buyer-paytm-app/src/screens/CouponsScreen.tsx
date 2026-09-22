@@ -1,8 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { BadgePercent, Check, ChevronLeft, Plus } from 'lucide-react';
-import { Button, Card } from '@mockups/ui';
+import { useState, type ReactNode } from 'react';
+import { BadgePercent, Check, ChevronLeft, Plus, Tag } from 'lucide-react';
+import { Button, Card, EmptyState } from '@mockups/ui';
 import { OFFERS, resolveOffer, type ResolvedOffer } from '../data/coupons';
-import { buildCart } from '../data/cart';
+import type { buildCart } from '../data/cart';
 
 /* Apply Coupon — one list, Offers & schemes. Each card carries its own
    action, because the offers don't all behave the same way:
@@ -17,9 +17,27 @@ import { buildCart } from '../data/cart';
        the first.
 
    States are derived from the cart, not stored on the fixture, so the
-   shortfall on screen always matches the quantities in the cart. */
-export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply: () => void }) {
-  const cart = useMemo(() => buildCart(), []);
+   shortfall on screen always matches the quantities in the cart.
+
+   The list itself is scoped to the cart too: a scheme only shows up once at
+   least one of its SKUs has been added — this is "the offers applicable to
+   the SKUs currently in my cart", not the full catalog of every scheme any
+   seller runs. A whole-order coupon (not tied to a SKU) isn't scoped by
+   product, so it uses cart value instead: it stays off the list until the
+   cart is close to (within COUPON_NEAR_MISS) or past its minimum — a coupon
+   ₹4,000 out of reach isn't "applicable", so it doesn't clutter the list
+   with a permanently-locked card. */
+const COUPON_NEAR_MISS = 200;
+export function CouponsScreen({
+  cart,
+  onBack,
+  onApply,
+}: {
+  /** The live cart App.tsx built from the buyer's actual picked quantities. */
+  cart: ReturnType<typeof buildCart>;
+  onBack: () => void;
+  onApply: () => void;
+}) {
   const [appliedId, setAppliedId] = useState<string | null>(null);
 
   /** Units of a product in the cart, ignoring lines the seller gave free. */
@@ -29,8 +47,18 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
       0
     );
 
-  const resolved = OFFERS.map((o) => resolveOffer(o, qtyOf, cart.grandTotal, appliedId));
+  // Scoped to the cart: a scheme (`needs`) only shows once at least one of
+  // its SKUs is in the cart; a whole-order coupon shows once the cart is
+  // within reach of its minimum (or the buyer already applied it — Remove
+  // has to stay reachable even if the total dips back below afterwards).
+  const relevant = OFFERS.filter((o) => {
+    if (o.needs) return o.needs.some((n) => qtyOf(n.productId) > 0);
+    if (appliedId === o.id) return true;
+    return cart.grandTotal >= (o.minOrder ?? 0) - COUPON_NEAR_MISS;
+  });
+  const resolved = relevant.map((o) => resolveOffer(o, qtyOf, cart.grandTotal, appliedId));
   const appliedCount = resolved.filter((r) => r.state === 'auto' || r.state === 'applied').length;
+  const cartIsEmpty = cart.sellers.length === 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -46,18 +74,35 @@ export function CouponsScreen({ onBack, onApply }: { onBack: () => void; onApply
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
-        <h2 className="mb-2 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
-        <div className="space-y-3">
-          {resolved.map((r) => (
-            <OfferCard
-              key={r.offer.id}
-              resolved={r}
-              onApplyCoupon={() => setAppliedId(r.offer.id)}
-              onRemoveCoupon={() => setAppliedId(null)}
-              onAddItems={onBack}
-            />
-          ))}
-        </div>
+        {cartIsEmpty ? (
+          <EmptyState
+            icon={<Tag strokeWidth={1.75} />}
+            title="Your cart is empty"
+            description="Add products to your cart to see the offers that apply to them."
+            action={<Button onClick={onBack}>Browse products</Button>}
+          />
+        ) : resolved.length === 0 ? (
+          <EmptyState
+            icon={<Tag strokeWidth={1.75} />}
+            title="No offers on these items"
+            description="None of the products in your cart have a running scheme right now."
+          />
+        ) : (
+          <>
+            <h2 className="mb-2 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
+            <div className="space-y-3">
+              {resolved.map((r) => (
+                <OfferCard
+                  key={r.offer.id}
+                  resolved={r}
+                  onApplyCoupon={() => setAppliedId(r.offer.id)}
+                  onRemoveCoupon={() => setAppliedId(null)}
+                  onAddItems={onBack}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* sticky summary — the Apply action lives on the cards now, so the bar

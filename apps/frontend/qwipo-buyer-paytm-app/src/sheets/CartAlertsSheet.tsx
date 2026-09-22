@@ -2,7 +2,7 @@ import { useState, type ComponentType, type ReactNode } from 'react';
 import { AlertTriangle, ChevronDown, MapPin, Package, Plus, ShoppingCart, Store, Trash2, Scale } from 'lucide-react';
 import { Button, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { buildCart } from '../data/cart';
+import type { CartSeller } from '../data/cart';
 
 // Sections whose items can be removed individually via a Delete action.
 const DELETABLE = new Set(['unavailable', 'seller', 'location']);
@@ -40,16 +40,6 @@ interface AlertSection {
   label: string;
   rows: AlertRow[];
 }
-
-// MOV / MOW blockers derived from the shared cart mock, so the Alerts sheet
-// stays consistent with the Cart + View Items screens.
-const CART = buildCart();
-const MOV_FAILS: MovFail[] = CART.sellers
-  .filter((s) => s.status === 'below')
-  .map((s) => ({ seller: s.name, balance: s.unlockRemaining, mov: s.mov, deliveryBy: s.windows[0] ?? '—' }));
-const MOW_FAILS: MowFail[] = CART.sellers
-  .filter((s) => s.belowWeight)
-  .map((s) => ({ seller: s.name, weight: s.weight, mow: s.mow, weightRemaining: s.weightRemaining, deliveryBy: s.windows[0] ?? '—' }));
 
 const SECTIONS: AlertSection[] = [
   {
@@ -89,13 +79,23 @@ const SECTIONS: AlertSection[] = [
 
 export function CartAlertsSheet({
   open,
+  sellers,
   onClose,
   onProceed,
 }: {
   open: boolean;
+  /** The live cart's sellers — MOV/MOW blockers are derived from these on
+   * every render, so they stay in step with whatever's actually in the cart. */
+  sellers: CartSeller[];
   onClose: () => void;
   onProceed: () => void;
 }) {
+  const MOV_FAILS: MovFail[] = sellers
+    .filter((s) => s.status === 'below')
+    .map((s) => ({ seller: s.name, balance: s.unlockRemaining, mov: s.mov, deliveryBy: s.windows[0] ?? '—' }));
+  const MOW_FAILS: MowFail[] = sellers
+    .filter((s) => s.belowWeight)
+    .map((s) => ({ seller: s.name, weight: s.weight, mow: s.mow, weightRemaining: s.weightRemaining, deliveryBy: s.windows[0] ?? '—' }));
   const [sections, setSections] = useState<AlertSection[]>(SECTIONS);
   const removeRow = (sectionKey: string, title: string) =>
     setSections((prev) =>

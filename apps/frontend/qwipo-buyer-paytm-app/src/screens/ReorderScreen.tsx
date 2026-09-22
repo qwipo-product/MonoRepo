@@ -3,6 +3,7 @@ import { Search, SlidersHorizontal, ChevronLeft, History } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS } from '../data/reorder';
+import { offerNameSuffix } from '../data/coupons';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { deliveryFooter } from '../components/DeliveryFooter';
@@ -33,7 +34,7 @@ export function ReorderScreen({
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
 
   const items = useEmptyable(applyFilters(REORDER_ITEMS, filters, {
     id: (r) => r.product.id,
@@ -88,7 +89,7 @@ export function ReorderScreen({
                 <span>{r.timesOrdered}× before</span>
               </div>
               <ProductCard
-              name={r.product.name}
+              name={r.product.name + offerNameSuffix(r.product.id)}
               caseLabel={r.product.caseLabel}
               image={r.product.image}
               variants={r.product.variants}
@@ -103,7 +104,7 @@ export function ReorderScreen({
               qty={qty[r.product.id] ?? 0}
               onQty={(n) => onSetQty(r.product.id, n)}
               onAdd={() => onOpenSheet(r.product.id)}
-              onDiscounts={() => setDiscountsOpen(true)}
+              onDiscounts={() => setDiscountsProductId(r.product.id)}
               subtotal={r.product.price * (qty[r.product.id] ?? 0)}
               subtotalLabel={`Total (${qty[r.product.id] ?? 0} pcs)`}
               footer={deliveryFooter(r.product.seller)}
@@ -121,7 +122,12 @@ export function ReorderScreen({
         onClose={() => setFilterOpen(false)}
       />
 
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={qty}
+        onClose={() => setDiscountsProductId(null)}
+      />
     </div>
   );
 }

@@ -1,11 +1,22 @@
 import type { ComponentType } from 'react';
-import { ChevronDown, Gift, Percent, Truck } from 'lucide-react';
-import { Sheet, cn } from '@mockups/ui';
+import { ChevronDown, Check, Gift, Layers, Percent, Repeat, Tag } from 'lucide-react';
+import { Sheet, cn, EmptyState } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
+import { productById } from '../data/products';
+import { OFFERS as ALL_OFFERS, resolveOffer } from '../data/coupons';
+import { tcplOfferText, tcplSchemeFor } from '../data/tcpl';
 
-/* Offer & Schemes sheet — opened from a product card's "Discounts" button. Shows
-   the quantity price-slab (margin + unit price per case band) and the seller's
-   running offers as expandable rows. Self-contained demo content. */
+/* Offer & Schemes sheet — opened from a product card's "Discounts" button, the
+   "visit a SKU, see what offer applies to it" moment. Shows the quantity
+   price-slab (margin + unit price per case band) and this SKU's real schemes,
+   read live off the cart — the same Offer data data/coupons.ts feeds into the
+   cart and the Apply Offer page, so a card here never shows something the
+   cart doesn't. A SKU with no scheme says so plainly instead of padding the
+   list with generic offers that don't apply to it.
+
+   Tata Consumer Products' products carry a real TCP scheme (see data/tcpl.ts,
+   sourced from TCP's own Salesforce export) instead — its real numbers are
+   poured into this exact same card shape, not a new one. */
 
 interface Slab {
   qty: string;
@@ -19,39 +30,99 @@ const SLABS: Slab[] = [
   { qty: '1 - 2 Cases', margin: 12, price: 165 },
 ];
 
-interface Offer {
+interface CardOffer {
   icon: ComponentType<{ className?: string }>;
   tint: string;
   title: string;
   sub: string;
   detail: string;
+  /** Live state, for a scheme sourced from data/coupons.ts — absent on the
+   * TCP-detail card, which states its own "once you qualify" caveat inline. */
+  state?: 'auto' | 'needs-items';
 }
 
-const OFFERS: Offer[] = [
-  {
-    icon: Gift,
-    tint: 'bg-warning-subtle text-warning-foreground',
-    title: 'Buy 10 Cases Get 1 Free',
-    sub: 'On purchases of 16 Pcs/Case',
-    detail: 'Add 10 cases of this product and 1 case is added free at checkout.',
-  },
-  {
-    icon: Percent,
-    tint: 'bg-primary-soft text-primary',
-    title: '5% Off',
-    sub: 'Get 5% off on your order above ₹500 upto ₹100',
-    detail: 'Applies to the seller subtotal above ₹500. Maximum discount ₹100 per order.',
-  },
-  {
-    icon: Truck,
-    tint: 'bg-success-subtle text-success-foreground',
-    title: 'Free Delivery',
-    sub: 'Free shipping on orders above ₹3,000',
-    detail: "Delivery fee is waived once this seller's subtotal crosses ₹3,000.",
-  },
-];
+// Icon + tint per scheme label — one small map both the generic schemes below
+// and the TCP branch draw from, so a card never invents a new colour.
+const ICON: Record<string, ComponentType<{ className?: string }>> = {
+  Bogo: Gift,
+  Freebie: Gift,
+  'Case Bonus': Layers,
+  Slab: Percent,
+  Discount: Percent,
+  Combo: Repeat,
+};
+const TINT: Record<string, string> = {
+  Bogo: 'bg-warning-subtle text-warning-foreground',
+  Freebie: 'bg-warning-subtle text-warning-foreground',
+  'Case Bonus': 'bg-info-subtle text-info-foreground',
+  Slab: 'bg-info-subtle text-info-foreground',
+  Discount: 'bg-success-subtle text-success-foreground',
+  Combo: 'bg-primary-soft text-primary',
+};
+const DEFAULT_ICON = Tag;
+const DEFAULT_TINT = 'bg-muted text-foreground-secondary';
 
-export function DiscountsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Icon + tint per TCP scheme kind — same palette as above, so a TCP card
+// never introduces a new colour either.
+const TCP_ICON: Record<'slab' | 'bogo' | 'flat', ComponentType<{ className?: string }>> = {
+  slab: Layers,
+  bogo: Gift,
+  flat: Percent,
+};
+const TCP_TINT: Record<'slab' | 'bogo' | 'flat', string> = {
+  slab: 'bg-info-subtle text-info-foreground',
+  bogo: 'bg-warning-subtle text-warning-foreground',
+  flat: 'bg-primary-soft text-primary',
+};
+
+export function DiscountsSheet({
+  open,
+  onClose,
+  productId,
+  qty = {},
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Which product's card opened the sheet — picks its real scheme(s), if any. */
+  productId?: string | null;
+  /** Live cart quantities, so a scheme's card can say "Applied automatically"
+   * or "Add N more units" instead of a static description. */
+  qty?: Record<string, number>;
+}) {
+  const tcpScheme = productId ? tcplSchemeFor(productId) : undefined;
+  const product = productId ? productById(productId) : undefined;
+  const qtyOf = (id: string) => qty[id] ?? 0;
+
+  // Real SKU data poured into the same {icon, title, sub, detail} shape every
+  // card here uses — one card component, no separate one per source.
+  const offers: CardOffer[] = tcpScheme
+    ? (() => {
+        const t = tcplOfferText(tcpScheme, product?.shortName ?? 'this product');
+        return [
+          {
+            icon: TCP_ICON[tcpScheme.kind],
+            tint: TCP_TINT[tcpScheme.kind],
+            title: t.title,
+            sub: t.sub,
+            detail: `${t.save} — ${t.detail}`,
+          },
+        ];
+      })()
+    : ALL_OFFERS.filter((o) => o.needs?.some((n) => n.productId === productId)).map((o) => {
+        const r = resolveOffer(o, qtyOf, 0, null);
+        return {
+          icon: (o.label && ICON[o.label]) || DEFAULT_ICON,
+          tint: (o.label && TINT[o.label]) || DEFAULT_TINT,
+          title: o.benefit,
+          sub: o.scope,
+          detail:
+            r.state === 'auto'
+              ? 'Applied automatically — already active on this order.'
+              : (r.requirement ?? 'Applies automatically once the cart qualifies.'),
+          state: r.state === 'auto' ? 'auto' : 'needs-items',
+        };
+      });
+
   return (
     <Sheet
       open={open}
@@ -82,29 +153,43 @@ export function DiscountsSheet({ open, onClose }: { open: boolean; onClose: () =
         </div>
       </section>
 
-      {/* other offers */}
+      {/* this SKU's own offers — not a generic list, so an item with nothing
+          running says that plainly rather than padding the sheet */}
       <section className="mt-5">
         <h3 className="mb-2 text-sm font-semibold text-foreground">Other Offers</h3>
-        <div className="space-y-3">
-          {OFFERS.map((o) => (
-            <details
-              key={o.title}
-              className="group rounded-lg border border-border bg-card [&_summary::-webkit-details-marker]:hidden"
-            >
-              <summary className="flex cursor-pointer list-none items-center gap-3 p-3">
-                <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', o.tint)}>
-                  <o.icon className="h-5 w-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-foreground">{o.title}</span>
-                  <span className="block text-xs text-foreground-secondary">{o.sub}</span>
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="border-t border-border p-3 text-sm text-foreground-secondary">{o.detail}</div>
-            </details>
-          ))}
-        </div>
+        {offers.length === 0 ? (
+          <EmptyState
+            icon={<Tag strokeWidth={1.75} />}
+            title="No offers on this item"
+            description="There's no running scheme on this product right now."
+          />
+        ) : (
+          <div className="space-y-3">
+            {offers.map((o) => (
+              <details
+                key={o.title}
+                className="group rounded-lg border border-border bg-card [&_summary::-webkit-details-marker]:hidden"
+              >
+                <summary className="flex cursor-pointer list-none items-center gap-3 p-3">
+                  <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-lg', o.tint)}>
+                    <o.icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-foreground">{o.title}</span>
+                    <span className="block text-xs text-foreground-secondary">{o.sub}</span>
+                  </span>
+                  {o.state === 'auto' && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-success-subtle px-2 py-1 text-[11px] font-semibold text-success-foreground">
+                      <Check className="h-3 w-3" /> Applied
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="border-t border-border p-3 text-sm text-foreground-secondary">{o.detail}</div>
+              </details>
+            ))}
+          </div>
+        )}
       </section>
     </Sheet>
   );
