@@ -8,11 +8,19 @@ description: Gate — the definition-of-done checks for a mockup. Invoked by eve
 Nothing is done until this has run. Report each failure with its output,
 fix, re-run; report what passed and what you couldn't check.
 
-## 1. Lint, typecheck, build — scoped to the app
+## 1. Lockfile, lint, typecheck, build — scoped to the app
 
 ```bash
+bun install --frozen-lockfile                                # what every Dockerfile runs
 bunx turbo run lint typecheck build --filter=@mockups/<app>
 ```
+
+The frozen install is the gate Turbo doesn't run: it refuses when
+`bun.lock` disagrees with the `package.json` files on disk, and a Docker
+build refuses the same way. Red means a manifest was edited without an
+install (install, commit the lockfile with it) or the lockfile names a
+workspace this checkout doesn't have (step 4). Never delete the lockfile to
+turn it green.
 
 Not `bun run check`: `@mockups/qwipo-buyer-paytm-app#lint` has a known
 pre-existing failure (a stale `eslint-disable` for `jsx-a11y/no-autofocus`,
@@ -53,6 +61,20 @@ git status --short
 No stray `dist/` in a package, no `_to_delete/` folders, no placeholder
 copy ("Delete this screen"), no bare version in a `package.json`, no
 second token import or app-owned `@theme` block in an `index.css`.
+
+Two lines in that output are stops, not tidies:
+
+- `?? apps/<kit>/<something>/` or `?? packages/<something>/`. An untracked
+  folder with a `package.json` is already a workspace to `bun install`
+  (the root glob is `apps/*/*`, `packages/*`): the next install writes it
+  into `bun.lock` while the folder itself stays on one laptop, and every
+  other checkout's frozen install fails from then on. Either it's a mockup
+  — `new-mockup` / `import-mockup`, on its own branch — or it moves out of
+  the repo. Not "later".
+- ` M bun.lock` with no ` M …/package.json` beside it. The install above
+  already happened. Same cause: account for the folder, then `bun install`
+  once more and the lockfile drops it. That is fixing the cause, not
+  regenerating.
 
 ## Report
 

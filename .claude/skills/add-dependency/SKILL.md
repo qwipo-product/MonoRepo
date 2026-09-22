@@ -21,9 +21,14 @@ one-line diff, not fifteen.
    `catalog:` from the app. Never write a bare version in an app manifest —
    `html-to-image` in the buyer app is the one that slipped through and the
    reason this check exists.
-4. `bun install`. The lockfile updates and is committed with the change.
-   Never delete or regenerate `bun.lock` to get past an install error — if
-   it fails, a manifest is wrong; fix that.
+4. `bun install`. The lockfile updates and is committed with the change —
+   next to the `package.json` that caused it. That is the only lockfile
+   diff a branch should carry; a lockfile diff with no manifest diff is an
+   untracked folder under `apps/` being installed as a workspace (`verify`,
+   step 4). Never delete or regenerate `bun.lock` to get past an install
+   error — if it fails, a manifest is wrong; fix that. (An install that
+   *drops* a workspace which isn't on disk is the lockfile being corrected,
+   not regenerated — `git-doctor`.)
 5. If the package ships CSS (`leaflet/dist/leaflet.css`), import it in the
    app's `index.css` **after** the token import.
 

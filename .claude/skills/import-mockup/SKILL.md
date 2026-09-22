@@ -70,6 +70,13 @@ port spends a day on config instead of screens.
 - **Don't bring:** `.git`, lockfiles, `node_modules`, CI files, Dockerfile,
   `.env*`, test config, the source README. The deploy fileset is generated
   here (`deploy-mockup`); the README is rewritten from the brief.
+- **Don't park the export inside the repo first.** A raw export copied
+  under `apps/frontend/` ahead of the scaffold has its own `package.json`,
+  and the workspace glob makes it a workspace on the next `bun install` —
+  its `latest` ranges and its toolchain (Next.js, say) go into `bun.lock`
+  whether or not the folder is ever committed. Keep the source where it is
+  (the other clone, `~/Downloads/…`) and move files into the scaffold from
+  there.
 - **Path alias.** No app here uses `@/`. Rewrite `@/x` imports to relative
   paths (`sed` over `src/`) rather than adding an alias to one app.
 

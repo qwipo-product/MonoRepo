@@ -95,6 +95,17 @@ one laptop is the one exception, and even then say so.
 `bunx turbo run build --filter=@mockups/<app> --force` clears a stale Turbo
 cache.
 
+If that install also rewrites `bun.lock` — `git diff --stat bun.lock` —
+read the diff before calling it noise. A whole workspace block gone
+(`"apps/frontend/<name>": { … }` plus hundreds of resolved lines) for a
+folder that exists on no branch is the lockfile being corrected: someone
+installed with that folder sitting untracked on their laptop and committed
+the result. Commit the shrink, say why, push. Don't revert it — the "never
+regenerate `bun.lock`" rule is about deleting the file to dodge an error,
+not about this; reverting exactly this shrink is how the Sep 2026 lockfile
+breakage outlived its fix. The reverse — a workspace block *appearing* —
+means the untracked folder is on this laptop: `start-work`, step 1.
+
 ## "There are branches I don't recognise"
 
 `git branch -vv` shows which local branches track nothing (no

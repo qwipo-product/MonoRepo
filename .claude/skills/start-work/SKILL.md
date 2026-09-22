@@ -32,7 +32,12 @@ git switch -c <app>/<what> && git push -u origin HEAD  # 3. branch from it, trac
 Step 1 matters: switching branches with uncommitted edits either carries
 them along or refuses, and both surprise people. If the edits belong to
 this new work, they come along — say so. If they belong to something else,
-commit them there first.
+commit them there first. A `??` folder under `apps/` or `packages/` is
+neither: it's an app nobody committed, and `bun install` already treats it
+as a workspace — the next install writes it into `bun.lock` on whatever
+branch you're on, and the folder never follows. It gets its own branch
+through `new-mockup` or `import-mockup`, or it leaves the repo before you
+continue.
 
 `--ff-only` refuses rather than inventing a merge commit on `dev`. If it
 refuses, local `dev` has commits that aren't on origin — that's
@@ -51,6 +56,11 @@ Not `.`, not `#`, not `Update HomeScreen.tsx`, not `wip` — those are in
 the history already and nobody can find anything in them. Commit before any
 risky step (a merge, a big refactor, a branch switch). Push after each
 commit; an unpushed branch lives on one laptop.
+
+`bun.lock` goes in a commit only next to the `package.json` that changed
+it (`add-dependency`, a scaffold, a retire). A lockfile diff with no
+manifest diff is the untracked-folder case above — don't commit it; find
+the folder.
 
 ## Keep in sync
 
