@@ -26,17 +26,15 @@ const VIEW = 1000; // map grid is 0–1000 on both axes
 
 export function LocationPickerScreen({
   title = 'Select delivery location',
-  initialPlaceId,
   onBack,
   onConfirm,
 }: {
   title?: string;
-  initialPlaceId?: string;
   onBack: () => void;
   onConfirm: (place: Place) => void;
 }) {
   // Centre of the viewport in map coordinates — what the pin is pointing at.
-  const start = placeById(initialPlaceId ?? CURRENT_PLACE_ID);
+  const start = placeById(CURRENT_PLACE_ID);
   const [centre, setCentre] = useState({ x: start.x, y: start.y });
   const [query, setQuery] = useState('');
   const [dragging, setDragging] = useState(false);

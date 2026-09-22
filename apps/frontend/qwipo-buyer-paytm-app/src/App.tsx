@@ -169,7 +169,6 @@ export default function App() {
   const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
   // Location flow: map → address details → back to whoever started it.
   const [pickedPlace, setPickedPlace] = useState<Place>(() => placeById(CURRENT_PLACE_ID));
-  const [pickerStartId, setPickerStartId] = useState<string | undefined>(undefined);
   const [addressFlowFrom, setAddressFlowFrom] = useState<ScreenId>('sub:addresses');
   // Onboarding form — held here so picking a location doesn't wipe the rest.
   const [obLocation, setObLocation] = useState('');
@@ -334,9 +333,8 @@ export default function App() {
   /* Start the map → address-details flow. `from` is where Save returns to and
      where Back unwinds to, so the same two screens serve onboarding and
      Saved Addresses without either knowing about the other. */
-  const startLocationFlow = (from: ScreenId, useCurrent: boolean) => {
+  const startLocationFlow = (from: ScreenId) => {
     setAddressFlowFrom(from);
-    setPickerStartId(useCurrent ? CURRENT_PLACE_ID : undefined);
     go('location-picker');
   };
 
@@ -395,7 +393,7 @@ export default function App() {
               go(shell === 'paytm' ? 'home' : 'kyc-complete');
             }}
             location={obLocation}
-            onPickLocation={(useCurrent) => startLocationFlow('onboarding', useCurrent)}
+            onPickLocation={() => startLocationFlow('onboarding')}
             businessName={obBusinessName}
             onBusinessName={setObBusinessName}
             businessType={obBusinessType}
@@ -437,7 +435,7 @@ export default function App() {
             selectedId={deliveryAddressId}
             onSelect={setDeliveryAddressId}
             addresses={addresses}
-            onAddNew={() => startLocationFlow('sub:addresses', false)}
+            onAddNew={() => startLocationFlow('sub:addresses')}
           />
         );
       case 'global-search':
@@ -504,6 +502,7 @@ export default function App() {
               setScreen('view-items');
             }}
             onAddMore={() => go('listing')}
+            onOpenCoupons={() => go('coupons')}
           />
         );
       case 'view-items':
@@ -524,7 +523,6 @@ export default function App() {
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
             onCompleteKyc={() => go('kyc-complete')}
-            onOpenCoupons={() => go('coupons')}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
               setOrderItemsOpen(true);
@@ -532,7 +530,7 @@ export default function App() {
           />
         );
       case 'coupons':
-        return <CouponsScreen onBack={() => go('order-summary')} onApply={() => go('order-summary')} />;
+        return <CouponsScreen onBack={() => go('cart')} onApply={() => go('cart')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
@@ -641,7 +639,6 @@ export default function App() {
       case 'location-picker':
         return (
           <LocationPickerScreen
-            initialPlaceId={pickerStartId}
             onBack={() => go(addressFlowFrom)}
             onConfirm={(place) => {
               setPickedPlace(place);

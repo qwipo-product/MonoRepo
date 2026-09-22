@@ -1,13 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
-import { PriceChangeBanner } from '../components/PriceChange';
 import { useEmptyable } from '../review/demoState';
-
-/** kg with at most 2 decimals + unit (e.g. "0.45 kg", "25 kg"). */
-const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
@@ -19,14 +15,16 @@ export function CartScreen({
   onCheckout,
   onViewItems,
   onAddMore,
+  onOpenCoupons,
 }: {
   onBack: () => void;
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
+  onOpenCoupons: () => void;
 }) {
   const cart = useMemo(() => buildCart(), []);
-  const { grandTotal, totalItems, anyBelow, priceChanges } = cart;
+  const { grandTotal, totalItems, anyBelow } = cart;
   const sellers = useEmptyable(cart.sellers);
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
 
@@ -63,7 +61,24 @@ export function CartScreen({
       ) : (
         <>
           <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-            <PriceChangeBanner summary={priceChanges} />
+            {/* Apply coupon — first card in the list, so the offers are seen
+                before the buyer starts reading totals. */}
+            <button
+              onClick={onOpenCoupons}
+              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+                <Tag className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
+                <span className="block text-xs text-foreground-secondary">
+                  Offers available — tap to view &amp; apply
+                </span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
+            </button>
+
             {sellers.map((s) => (
               <SellerCard
                 key={s.id}
@@ -138,60 +153,20 @@ function SellerCard({
           </div>
         </div>
 
-        {/* MOV — below-minimum-value progress */}
-        {seller.status === 'below' && (
-          <div className="mt-2.5 rounded-lg bg-warning-subtle p-2.5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-xs font-semibold text-warning-foreground">
-                Add {formatInr(seller.unlockRemaining)} to meet minimum order value
-              </div>
-              <div className="shrink-0 text-[11px] tabular-nums text-warning-foreground">
-                {formatInr(seller.subtotal)} / {formatInr(seller.mov)}
-              </div>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-warning-border">
-              <div className="h-full rounded-full bg-warning" style={{ width: `${seller.progress}%` }} />
-            </div>
-            <div className="mt-1.5 text-[11px] text-foreground-secondary">
-              Minimum order value for this supplier is {formatInr(seller.mov)}
-            </div>
-          </div>
-        )}
-
-        {/* MOW — below-minimum-weight progress */}
-        {seller.belowWeight && (
-          <div className="mt-2.5 rounded-lg bg-warning-subtle p-2.5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="text-xs font-semibold text-warning-foreground">
-                Add {kg(seller.weightRemaining)} to meet minimum order weight
-              </div>
-              <div className="shrink-0 text-[11px] tabular-nums text-warning-foreground">
-                {kg(seller.weight)} / {kg(seller.mow)}
-              </div>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-warning-border">
-              <div className="h-full rounded-full bg-warning" style={{ width: `${seller.weightProgress}%` }} />
-            </div>
-            <div className="mt-1.5 text-[11px] text-foreground-secondary">
-              Minimum order weight for this supplier is {kg(seller.mow)}
-            </div>
-          </div>
-        )}
-
-        {/* delivery pill — only when nothing is blocking checkout */}
-        {!seller.blocked && (
-          <div className="mt-2.5">
-            {seller.status === 'free' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
-                <Truck className="h-3.5 w-3.5" /> Free delivery
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground-secondary">
-                <Truck className="h-3.5 w-3.5" /> Delivery {formatInr(seller.deliveryFee)}
-              </span>
-            )}
-          </div>
-        )}
+        {/* delivery pill — driven by the fee, not the status, so a seller
+            charging nothing reads "Free delivery" and matches what the
+            totals bar adds up. */}
+        <div className="mt-2.5">
+          {seller.deliveryFee === 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
+              <Truck className="h-3.5 w-3.5" /> Free delivery
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground-secondary">
+              <Truck className="h-3.5 w-3.5" /> Delivery {formatInr(seller.deliveryFee)}
+            </span>
+          )}
+        </div>
 
         {/* item thumbnail rail */}
         <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto">
@@ -221,9 +196,7 @@ function SellerCard({
           )}
         </div>
 
-        {/* delivery window — always shown (beat day + tomorrow options), even
-            while below MOV/MOW; the minimum only blocks checkout, not the
-            delivery-day choice. */}
+        {/* delivery window — beat day + tomorrow options */}
         <div className="mt-3">
           <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
           <SegmentedControl
@@ -233,18 +206,12 @@ function SellerCard({
           />
         </div>
 
-        {/* actions — same two slots on every card (View items · Add more).
-            Only the below-minimum Add-more takes colour emphasis, in its fixed
-            slot, so the buttons never reorder between cards. */}
+        {/* actions — same two slots on every card (View items · Add more) */}
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button fullWidth onClick={onViewItems}>
             View items
           </Button>
-          <Button
-            variant={seller.blocked ? 'warning' : 'secondary'}
-            fullWidth
-            onClick={onAddMore}
-          >
+          <Button variant="secondary" fullWidth onClick={onAddMore}>
             <Plus size={16} /> Add more
           </Button>
         </div>

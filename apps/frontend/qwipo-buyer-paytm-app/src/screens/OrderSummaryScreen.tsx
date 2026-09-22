@@ -1,4 +1,4 @@
-import { Banknote, ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
+import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
 import { Button, InlineMessage } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { buildCart, type CartSeller } from '../data/cart';
@@ -14,14 +14,12 @@ const brandOf = (name: string) => name.split(' ')[0];
 export function OrderSummaryScreen({
   onBack,
   onPlaceOrder,
-  onOpenCoupons,
   onViewItems,
   kycPending = false,
   onCompleteKyc,
 }: {
   onBack: () => void;
   onPlaceOrder: () => void;
-  onOpenCoupons: () => void;
   onViewItems: (sellerId: string) => void;
   /** First order waits on account verification. */
   kycPending?: boolean;
@@ -51,21 +49,6 @@ export function OrderSummaryScreen({
         {sellers.map((s) => (
           <SellerBill key={s.id} seller={s} onViewItems={() => onViewItems(s.id)} />
         ))}
-
-        {/* Apply coupon */}
-        <button
-          onClick={onOpenCoupons}
-          className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
-        >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-            <Tag className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
-            <span className="block text-xs text-foreground-secondary">Offers available — tap to view &amp; apply</span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-        </button>
 
         {/* Bill details */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
