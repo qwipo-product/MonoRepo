@@ -352,6 +352,18 @@ export interface ResolvedOffer {
  * and its terms follow. `offer.terms` overrides, for the rare condition the
  * offer's shape doesn't already imply.
  */
+/**
+ * Which seller runs this offer, from the SKUs it needs.
+ *
+ * `undefined` means it isn't a seller's scheme at all — a whole-order coupon
+ * is struck against the order, not against one seller's goods, so it belongs
+ * to no chip on the Apply Coupon filter.
+ */
+export function offerSeller(offer: Offer): string | undefined {
+  const first = offer.needs?.[0];
+  return first ? PRODUCTS.find((p) => p.id === first.productId)?.seller : undefined;
+}
+
 export function offerTerms(offer: Offer): string[] {
   if (offer.terms) return offer.terms;
   const out: string[] = ['Applicable only on eligible products from this seller.'];

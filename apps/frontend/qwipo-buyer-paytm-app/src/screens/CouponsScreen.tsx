@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { BadgePercent, CalendarClock, Check, ChevronDown, ChevronLeft, Plus, Tag } from 'lucide-react';
-import { Button, Card, EmptyState } from '@mockups/ui';
-import { OFFERS, offerTerms, resolveOffer, type ResolvedOffer } from '../data/coupons';
+import { Button, Card, Chip, EmptyState } from '@mockups/ui';
+import { OFFERS, offerSeller, offerTerms, resolveOffer, type ResolvedOffer } from '../data/coupons';
 import type { buildCart } from '../data/cart';
 
 /* Apply Coupon — one list, Offers & schemes. Each card carries its own
@@ -39,6 +39,8 @@ export function CouponsScreen({
   onApply: () => void;
 }) {
   const [appliedId, setAppliedId] = useState<string | null>(null);
+  /** null = the All chip. Otherwise a seller name. */
+  const [sellerFilter, setSellerFilter] = useState<string | null>(null);
 
   /** Units of a product in the cart, ignoring lines the seller gave free. */
   const qtyOf = (productId: string) =>
@@ -59,6 +61,23 @@ export function CouponsScreen({
   const resolved = relevant.map((o) => resolveOffer(o, qtyOf, cart.grandTotal, appliedId));
   const appliedCount = resolved.filter((r) => r.state === 'auto' || r.state === 'applied').length;
   const cartIsEmpty = cart.sellers.length === 0;
+
+  /* Offers split by the seller running them, in the order the cart lists its
+     sellers, so the chips read in the same order as the Cart Summary cards.
+     A whole-order coupon belongs to no seller, so it sits in its own group
+     ahead of them and is left out of the seller chips — filtering by
+     "Omkar Enterprises" shouldn't turn up a coupon struck against the order.
+
+     Only sellers that actually have an offer get a chip; one with nothing
+     running would filter to an empty list. */
+  const bySeller = cart.sellers
+    .map((s) => ({ seller: s.name, items: resolved.filter((r) => offerSeller(r.offer) === s.name) }))
+    .filter((g) => g.items.length > 0);
+  const orderWide = resolved.filter((r) => !offerSeller(r.offer));
+
+  const groups = sellerFilter
+    ? bySeller.filter((g) => g.seller === sellerFilter)
+    : [...(orderWide.length ? [{ seller: 'Your order', items: orderWide }] : []), ...bySeller];
 
   return (
     <div className="flex h-full flex-col">
@@ -89,18 +108,42 @@ export function CouponsScreen({
           />
         ) : (
           <>
-            <h2 className="mb-2 text-sm font-semibold text-foreground">Offers &amp; schemes</h2>
-            <div className="space-y-3">
-              {resolved.map((r) => (
-                <OfferCard
-                  key={r.offer.id}
-                  resolved={r}
-                  onApplyCoupon={() => setAppliedId(r.offer.id)}
-                  onRemoveCoupon={() => setAppliedId(null)}
-                  onAddItems={onBack}
-                />
+            {/* seller filter — All, then every seller in the cart that has an
+                offer running. Scrolls sideways rather than wrapping, so the
+                row stays one line however many sellers the cart has. */}
+            <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4">
+              <Chip selected={sellerFilter === null} onClick={() => setSellerFilter(null)}>
+                All
+              </Chip>
+              {bySeller.map((g) => (
+                <Chip
+                  key={g.seller}
+                  selected={sellerFilter === g.seller}
+                  onClick={() => setSellerFilter(g.seller)}
+                >
+                  {g.seller}
+                </Chip>
               ))}
             </div>
+
+            {groups.map((g) => (
+              <section key={g.seller} className="mb-4 last:mb-0">
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-secondary">
+                  {g.seller}
+                </h2>
+                <div className="space-y-3">
+                  {g.items.map((r) => (
+                    <OfferCard
+                      key={r.offer.id}
+                      resolved={r}
+                      onApplyCoupon={() => setAppliedId(r.offer.id)}
+                      onRemoveCoupon={() => setAppliedId(null)}
+                      onAddItems={onBack}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
           </>
         )}
       </div>
