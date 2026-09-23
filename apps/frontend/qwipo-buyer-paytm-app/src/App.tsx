@@ -65,7 +65,7 @@ import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
-import { buildCart } from './data/cart';
+import { buildCart, INITIAL_QTY } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
 import {
   ADDRESSES,
@@ -161,7 +161,7 @@ export default function App() {
   // so the cart opens with nothing in it; the buyer adding a quantity there
   // is the only thing that ever puts something in the cart. Single source of
   // truth: Cart Summary reads this too, so whatever gets added there shows up.
-  const [qty, setQty] = useState<Record<string, number>>({});
+  const [qty, setQty] = useState<Record<string, number>>(INITIAL_QTY);
   // Live quantities + chosen vendor from the Wholesaler List — a separate pool
   // (wp-ids, not p-ids), same pattern.
   const [wholesaleQty, setWholesaleQty] = useState<Record<string, number>>({});

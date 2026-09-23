@@ -34,6 +34,7 @@ export const UNIT_WEIGHT_KG: Record<string, number> = {
   p35: 1, // Surf Excel Detergent 1 kg
   p36: 1, // Sunfeast Marie Gold Biscuits 1 kg
   p37: 0.2, // Colgate Toothpaste 200 g
+  p40: 0.1, // Parle-G Gold 100 g
 };
 
 /** Minimum order WEIGHT (kg) per seller. 0 → no weight minimum. */
@@ -41,6 +42,36 @@ export const SELLER_MOW: Record<string, number> = {
   'Sri Sai Krishna Traders': 25, // ~53 kg in cart → cleared
   'Omkar Enterprises': 25, // ~13 kg in cart → MOW alert (MOV is fine → MOW only)
   'Karnataka Soaps & Detergents': 5, // ~0.45 kg → MOW alert (also below MOV → both)
+};
+
+/* What the cart starts with.
+ *
+ * The cart is built from the buyer's own picked quantities, so an empty one
+ * means every offer screen opens empty too and there's nothing to walk a
+ * stakeholder through. These seed it with SKUs across three sellers, chosen
+ * so that every kind of scheme AND both of its states are on screen at once:
+ *
+ *   p1  × 16  Sri Sai   Bogo ...................... qualifies
+ *   p2  ×  8  Sri Sai   Freebie ................... qualifies
+ *   p40 × 12  Sri Sai   Freebie (needs 24) ........ short → Add Items
+ *                       — and the SKU with no price slab
+ *   p3  × 20  Omkar     Case Bonus (needs 50) ..... short → Add Items
+ *   p10 ×  2  Omkar     Combo with p3 ............. qualifies
+ *                       — Omkar's ₹5,000 minimum is unmet, so the cart's
+ *                         minimum-order-value bar shows on that card
+ *   p39 × 20  Tata      Bogo + Freebie ............ qualify
+ *                       Case Bonus, Slab, Combo ... short
+ *
+ * Nothing depends on these being present — clear the cart and every screen
+ * still behaves, it just has less to show.
+ */
+export const INITIAL_QTY: Record<string, number> = {
+  p1: 16,
+  p2: 8,
+  p40: 12,
+  p3: 20,
+  p10: 2,
+  p39: 20,
 };
 
 export const itemWeight = (item: CartItem): number =>

@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { ChevronDown, Check, Gift, Layers, Percent, Repeat, Tag } from 'lucide-react';
 import { Sheet, cn, EmptyState } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
-import { productById } from '../data/products';
+import { productById, priceSlabsFor } from '../data/products';
 import { OFFERS as ALL_OFFERS, resolveOffer } from '../data/coupons';
 import { tcplOfferText, tcplSchemeFor } from '../data/tcpl';
 
@@ -17,18 +17,6 @@ import { tcplOfferText, tcplSchemeFor } from '../data/tcpl';
    Tata Consumer Products' products carry a real TCP scheme (see data/tcpl.ts,
    sourced from TCP's own Salesforce export) instead — its real numbers are
    poured into this exact same card shape, not a new one. */
-
-interface Slab {
-  qty: string;
-  margin: number;
-  price: number;
-}
-
-const SLABS: Slab[] = [
-  { qty: '> 5 Cases', margin: 17, price: 153.45 },
-  { qty: '3 - 4 Cases', margin: 14, price: 160.05 },
-  { qty: '1 - 2 Cases', margin: 12, price: 165 },
-];
 
 interface CardOffer {
   icon: ComponentType<{ className?: string }>;
@@ -89,6 +77,7 @@ export function DiscountsSheet({
    * or "Add N more units" instead of a static description. */
   qty?: Record<string, number>;
 }) {
+  const slabs = priceSlabsFor(productId);
   const tcpScheme = productId ? tcplSchemeFor(productId) : undefined;
   const product = productId ? productById(productId) : undefined;
   const qtyOf = (id: string) => qty[id] ?? 0;
@@ -130,8 +119,15 @@ export function DiscountsSheet({
       icon={<Percent size={18} />}
       title="Offer & Schemes"
       subtitle="Please review the following before proceeding"
+      /* Every SKU opens the same size sheet, whatever it has to show: a floor
+         of 40% so a lone offer doesn't produce a stub, a ceiling of 70% so a
+         stacked SKU doesn't swallow the screen. Past that the body scrolls,
+         expanded accordions included — Sheet's body is the scroller. */
+      className="min-h-[40%] max-h-[70%]"
     >
-      {/* quantity price slab */}
+      {/* quantity price slab — always the top section, and dropped entirely
+          on a SKU the distributor rates at one flat price */}
+      {slabs.length > 0 && (
       <section>
         <h3 className="mb-2 text-sm font-semibold text-foreground">Quantity Price Slab</h3>
         <div className="overflow-hidden rounded-lg border border-border">
@@ -140,7 +136,7 @@ export function DiscountsSheet({
             <span>Margin %</span>
             <span className="text-right">Unit Price</span>
           </div>
-          {SLABS.map((s) => (
+          {slabs.map((s) => (
             <div
               key={s.qty}
               className="grid grid-cols-3 items-center border-t border-border px-3 py-3.5 text-sm"
@@ -152,11 +148,14 @@ export function DiscountsSheet({
           ))}
         </div>
       </section>
+      )}
 
       {/* this SKU's own offers — not a generic list, so an item with nothing
           running says that plainly rather than padding the sheet */}
-      <section className="mt-5">
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Other Offers</h3>
+      <section className={slabs.length > 0 ? 'mt-5' : undefined}>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">
+          {slabs.length > 0 ? 'Other Offers' : 'Offers'}
+        </h3>
         {offers.length === 0 ? (
           <EmptyState
             icon={<Tag strokeWidth={1.75} />}

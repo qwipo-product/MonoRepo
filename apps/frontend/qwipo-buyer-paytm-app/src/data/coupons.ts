@@ -43,6 +43,13 @@ export interface Offer {
    * total, so "15% Off" is money actually off the order, not just a label.
    * Mutually exclusive with `reward` — a scheme pays out one or the other. */
   discountPct?: number;
+  /** Last day the offer runs — shown when the card is expanded. */
+  expires?: string;
+  /** Conditions beyond the headline. Left unset on almost every offer:
+   * `offerTerms()` below writes them from the offer's own numbers, so a
+   * term can't drift out of step with the rule it describes. Set this only
+   * for a condition the shape of the offer doesn't already state. */
+  terms?: string[];
 }
 
 /* Written against the demo cart: 12 × Freedom Oil, 8 × Aashirvaad Atta,
@@ -52,6 +59,7 @@ export interface Offer {
 export const OFFERS: Offer[] = [
   {
     id: 'save5',
+    expires: '15 Oct 2026',
     label: '5% Off',
     benefit: 'Get 5% off',
     scope: 'on your order above ₹500 upto ₹100',
@@ -60,6 +68,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: 'oil-case',
+    expires: '31 Oct 2026',
     label: 'Bogo',
     benefit: 'Buy 10 Cases Get 1 Free',
     scope: 'on Freedom Refined Sunflower Oil',
@@ -69,6 +78,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: 'atta-freebie',
+    expires: '30 Nov 2026',
     label: 'Freebie',
     benefit: 'Buy 8 units → Get 1 FREE',
     scope: 'on Aashirvaad Atta',
@@ -78,6 +88,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: 'besan-bonus',
+    expires: '15 Nov 2026',
     label: 'Case Bonus',
     benefit: 'Buy 50 units → Get 5 FREE',
     scope: 'on Fortune Besan',
@@ -87,6 +98,7 @@ export const OFFERS: Offer[] = [
   },
   {
     id: 'besan-combo',
+    expires: '31 Dec 2026',
     label: 'Combo',
     benefit: '15% Off',
     scope: 'on Fortune Besan when bought together with Red Label Tea',
@@ -110,6 +122,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p22', qty: 900 }], // 5 cases × 180 pcs/case
     discountPct: 4.5,
     id: 'tcp-black-salt',
+    expires: '20 Oct 2026',
   },
   {
     label: 'Slab',
@@ -119,6 +132,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p24', qty: 4 }], // ≈ ₹500 (the lowest tier) at ₹155/pc
     discountPct: 15, // flat rate for the demo — the real scheme is a multi-tier "up to"
     id: 'tcp-masala-oats',
+    expires: '30 Nov 2026',
   },
   {
     label: 'Wafer Bogo',
@@ -128,6 +142,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p28', qty: 24 }], // 1 case
     reward: { productId: 'p28', qty: 24 }, // 1 free case = 24 pcs
     id: 'tcp-wafer-bogo-strawberry',
+    expires: '15 Dec 2026',
   },
 
   /* ── Offer-pattern coverage — one SKU per scheme type below (see
@@ -144,6 +159,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p31', qty: 24 }],
     reward: { productId: 'p31', qty: 24 },
     id: 'everest-garam-masala-bogo',
+    expires: '31 Oct 2026',
   },
   {
     label: 'Freebie',
@@ -153,6 +169,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p32', qty: 6 }],
     reward: { productId: 'p32', qty: 1 },
     id: 'lifebuoy-handwash-freebie',
+    expires: '30 Nov 2026',
   },
   {
     label: 'Case Bonus',
@@ -162,6 +179,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p33', qty: 20 }],
     reward: { productId: 'p33', qty: 2 },
     id: 'tata-tea-gold-bonus',
+    expires: '10 Nov 2026',
   },
   {
     // A flat, single-tier % off — the plain "Discount" pattern, distinct from
@@ -173,6 +191,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p20', qty: 5 }],
     discountPct: 10,
     id: 'himalaya-facewash-discount',
+    expires: '31 Dec 2026',
   },
   {
     label: 'Combo',
@@ -185,6 +204,7 @@ export const OFFERS: Offer[] = [
     ],
     discountPct: 10, // applied to Vim Dishwash Bar's line
     id: 'vim-surf-combo',
+    expires: '25 Oct 2026',
   },
   {
     label: 'Slab',
@@ -194,6 +214,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p36', qty: 60 }], // 5 cases × 12 pcs/case
     discountPct: 6,
     id: 'sunfeast-marie-gold-slab',
+    expires: '30 Nov 2026',
   },
   {
     label: 'Bogo',
@@ -203,6 +224,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p37', qty: 12 }],
     reward: { productId: 'p37', qty: 12 },
     id: 'colgate-toothpaste-bogo',
+    expires: '15 Dec 2026',
   },
   {
     label: 'Slab',
@@ -212,6 +234,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p37', qty: 60 }], // 5 cases × 12 pcs/case
     discountPct: 7, // stacks with the Bogo above on the same SKU
     id: 'colgate-toothpaste-slab',
+    expires: '31 Oct 2026',
   },
   {
     label: 'Freebie',
@@ -221,6 +244,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p38', qty: 8 }],
     reward: { productId: 'p38', qty: 1 },
     id: 'tata-sampann-toor-dal-freebie',
+    expires: '20 Nov 2026',
   },
   {
     label: 'Case Bonus',
@@ -231,6 +255,7 @@ export const OFFERS: Offer[] = [
     reward: { productId: 'p38', qty: 4 },
     // stacks with the Freebie above on the same SKU
     id: 'tata-sampann-toor-dal-bonus',
+    expires: '31 Dec 2026',
   },
   {
     label: 'Bogo',
@@ -240,6 +265,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p39', qty: 20 }],
     reward: { productId: 'p39', qty: 20 },
     id: 'tata-salt-iodised-bogo',
+    expires: '15 Nov 2026',
   },
   {
     label: 'Freebie',
@@ -249,6 +275,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p39', qty: 6 }],
     reward: { productId: 'p39', qty: 1 },
     id: 'tata-salt-iodised-freebie',
+    expires: '30 Nov 2026',
   },
   {
     label: 'Case Bonus',
@@ -258,6 +285,19 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p39', qty: 50 }],
     reward: { productId: 'p39', qty: 5 },
     id: 'tata-salt-iodised-bonus',
+    expires: '31 Dec 2026',
+  },
+  {
+    // Parle-G has a scheme but no quantity price slab (see products.ts) — the
+    // SKU that exercises the Discounts sheet with only one section in it.
+    label: 'Freebie',
+    benefit: 'Buy 24 units → Get 2 FREE',
+    scope: 'on Parle-G Gold Biscuits',
+    automatic: true,
+    needs: [{ productId: 'p40', qty: 24 }],
+    reward: { productId: 'p40', qty: 2 },
+    id: 'parle-g-gold-freebie',
+    expires: '25 Nov 2026',
   },
   {
     label: 'Slab',
@@ -267,6 +307,7 @@ export const OFFERS: Offer[] = [
     needs: [{ productId: 'p39', qty: 100 }], // 5 cases × 20 pcs/case
     discountPct: 12,
     id: 'tata-salt-iodised-slab',
+    expires: '31 Oct 2026',
   },
   {
     label: 'Combo',
@@ -279,6 +320,7 @@ export const OFFERS: Offer[] = [
     ],
     discountPct: 10,
     id: 'tata-salt-iodised-combo',
+    expires: '15 Dec 2026',
   },
 ];
 
@@ -300,6 +342,52 @@ export interface ResolvedOffer {
   state: OfferState;
   /** "Add 30 more units of Fortune Besan" — set on `needs-items` / `locked`. */
   requirement?: string;
+}
+
+/**
+ * The conditions shown when an offer card is expanded.
+ *
+ * Written from the offer's own fields rather than stored alongside them, so a
+ * term can never contradict the rule it describes — change a scheme's `needs`
+ * and its terms follow. `offer.terms` overrides, for the rare condition the
+ * offer's shape doesn't already imply.
+ */
+/**
+ * Which seller runs this offer, from the SKUs it needs.
+ *
+ * `undefined` means it isn't a seller's scheme at all — a whole-order coupon
+ * is struck against the order, not against one seller's goods, so it belongs
+ * to no chip on the Apply Coupon filter.
+ */
+export function offerSeller(offer: Offer): string | undefined {
+  const first = offer.needs?.[0];
+  return first ? PRODUCTS.find((p) => p.id === first.productId)?.seller : undefined;
+}
+
+export function offerTerms(offer: Offer): string[] {
+  if (offer.terms) return offer.terms;
+  const out: string[] = ['Applicable only on eligible products from this seller.'];
+
+  for (const n of offer.needs ?? []) {
+    out.push(`Needs ${n.qty} ${n.qty === 1 ? 'unit' : 'units'} of ${shortName(n.productId)} in the cart.`);
+  }
+  if (offer.minOrder) {
+    out.push(`Minimum order value of \u20b9${offer.minOrder.toLocaleString('en-IN')}.`);
+  }
+  if (offer.reward) {
+    out.push(
+      `Free goods (${offer.reward.qty} \u00d7 ${shortName(offer.reward.productId)}) are added to the same seller's order at \u20b90.`
+    );
+  }
+  if (offer.discountPct) {
+    out.push(`${offer.discountPct}% comes off the qualifying line, not the whole order.`);
+  }
+  out.push(
+    offer.automatic
+      ? 'Applies automatically \u2014 no code to enter, and it comes off again if the cart stops qualifying.'
+      : 'One coupon per order. Applying another replaces this one.'
+  );
+  return out;
 }
 
 const shortName = (id: string) => PRODUCTS.find((p) => p.id === id)?.shortName ?? 'this product';
