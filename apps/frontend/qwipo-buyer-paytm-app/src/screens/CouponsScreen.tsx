@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { BadgePercent, CalendarClock, Check, ChevronDown, ChevronLeft, Plus, Tag } from 'lucide-react';
-import { Button, Card, Chip, EmptyState } from '@mockups/ui';
-import { OFFERS, offerSeller, offerTerms, resolveOffer, type ResolvedOffer } from '../data/coupons';
+import { BadgePercent, CalendarClock, Check, ChevronDown, ChevronLeft, Copy, Plus, Search, Tag, X } from 'lucide-react';
+import { Button, Card, Chip, EmptyState, Input } from '@mockups/ui';
+import { OFFERS, offerDetails, offerSeller, resolveOffer, type ResolvedOffer } from '../data/coupons';
 import type { buildCart } from '../data/cart';
 
 /* Apply Coupon — one list, Offers & schemes. Each card carries its own
@@ -41,6 +41,7 @@ export function CouponsScreen({
   const [appliedId, setAppliedId] = useState<string | null>(null);
   /** null = the All chip. Otherwise a seller name. */
   const [sellerFilter, setSellerFilter] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   /** Units of a product in the cart, ignoring lines the seller gave free. */
   const qtyOf = (productId: string) =>
@@ -70,10 +71,23 @@ export function CouponsScreen({
 
      Only sellers that actually have an offer get a chip; one with nothing
      running would filter to an empty list. */
+  /* Search runs ahead of the seller split, so the chips and the box compose:
+     a query narrows the list, and the chips then narrow it again. Matching
+     the headline as well as the code means typing "besan" works when the
+     buyer half-remembers the product rather than the code. */
+  const q = query.trim().toLowerCase();
+  const searched = q
+    ? resolved.filter((r) =>
+        [r.offer.code, r.offer.label, r.offer.benefit, r.offer.scope]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q))
+      )
+    : resolved;
+
   const bySeller = cart.sellers
-    .map((s) => ({ seller: s.name, items: resolved.filter((r) => offerSeller(r.offer) === s.name) }))
+    .map((s) => ({ seller: s.name, items: searched.filter((r) => offerSeller(r.offer) === s.name) }))
     .filter((g) => g.items.length > 0);
-  const orderWide = resolved.filter((r) => !offerSeller(r.offer));
+  const orderWide = searched.filter((r) => !offerSeller(r.offer));
 
   const groups = sellerFilter
     ? bySeller.filter((g) => g.seller === sellerFilter)
@@ -108,6 +122,29 @@ export function CouponsScreen({
           />
         ) : (
           <>
+            {/* code search — sits above the chips and narrows what they then
+                filter, so the two work together rather than fighting */}
+            <div className="relative mb-2.5">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-secondary" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search coupon code"
+                aria-label="Search coupon code"
+                className="pl-9 pr-9"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-muted text-foreground-secondary"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
             {/* seller filter — All, then every seller in the cart that has an
                 offer running. Scrolls sideways rather than wrapping, so the
                 row stays one line however many sellers the cart has. */}
@@ -125,6 +162,15 @@ export function CouponsScreen({
                 </Chip>
               ))}
             </div>
+
+            {groups.length === 0 ? (
+              <EmptyState
+                icon={<Search strokeWidth={1.75} />}
+                title="No offers match"
+                description={`Nothing here matches “${query}”. Try a different code or clear the search.`}
+                action={<Button onClick={() => setQuery('')}>Clear search</Button>}
+              />
+            ) : null}
 
             {groups.map((g) => (
               <section key={g.seller} className="mb-4 last:mb-0">
@@ -192,17 +238,52 @@ function OfferCard({
   onAddItems: () => void;
 }) {
   const { offer, state, requirement } = resolved;
-  const terms = offerTerms(offer);
+  const details = offerDetails(offer);
+  const [copied, setCopied] = useState(false);
+  /* Nothing configured beyond the headline and no end date → nothing to open,
+     so the card doesn't pretend to be an accordion. */
+  const expandable = !!offer.expires || details.length > 0;
+
+  const copyCode = async (e: React.MouseEvent) => {
+    // inside <summary>, so stop the click toggling the accordion open
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(offer.code);
+    } catch {
+      // clipboard blocked (no permission, insecure context) — the code is on
+      // screen either way, so say it copied rather than failing loudly
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
+  };
 
   return (
     <Card className="overflow-hidden">
       <details className="group [&_summary::-webkit-details-marker]:hidden">
-        <summary className="flex cursor-pointer list-none items-start gap-2.5 p-3">
+        <summary
+          className={`flex list-none items-start gap-2.5 p-3 ${expandable ? 'cursor-pointer' : ''}`}
+        >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
             <BadgePercent className="h-4 w-4" />
           </span>
 
           <span className="min-w-0 flex-1">
+            {/* the seller's published code — tap to copy */}
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={copyCode}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') copyCode(e as unknown as React.MouseEvent);
+              }}
+              aria-label={`Copy coupon code ${offer.code}`}
+              className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-primary bg-primary-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary"
+            >
+              {offer.code}
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </span>
+
             <span className="block text-sm leading-snug">
               {offer.label && <span className="font-medium text-primary">“{offer.label}” </span>}
               <span className="font-semibold text-foreground">{offer.benefit}</span>{' '}
@@ -213,9 +294,14 @@ function OfferCard({
             )}
           </span>
 
-          <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
+          {expandable && (
+            <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
+          )}
         </summary>
 
+        {/* what the seller configured for this offer, and nothing else — no
+            heading over it, because these are the offer's own details rather
+            than a block of terms */}
         <div className="border-t border-border px-3 py-2.5">
           {offer.expires && (
             <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
@@ -223,17 +309,16 @@ function OfferCard({
               Valid till {offer.expires}
             </p>
           )}
-          <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-foreground-secondary">
-            Terms &amp; conditions
-          </p>
-          <ul className="mt-1 space-y-1">
-            {terms.map((t) => (
-              <li key={t} className="flex gap-1.5 text-xs leading-relaxed text-foreground-secondary">
-                <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-border" />
-                {t}
-              </li>
-            ))}
-          </ul>
+          {details.length > 0 && (
+            <ul className={offer.expires ? 'mt-2 space-y-1' : 'space-y-1'}>
+              {details.map((d) => (
+                <li key={d} className="flex gap-1.5 text-xs leading-relaxed text-foreground-secondary">
+                  <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-border" />
+                  {d}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </details>
 
