@@ -188,7 +188,14 @@ against that file. Known traps:
 - `.env*` is stripped deliberately — never bake environment files into an image.
 - `bun install --frozen-lockfile` fails rather than resolving a different tree.
   If it fails, `bun.lock` genuinely disagrees with the `package.json` files.
-  **Fix the cause — never delete or regenerate `bun.lock` or `flake.lock`.**
+  Two causes. A manifest edited without an install: install, commit the
+  lockfile with it. Or the lockfile names a workspace the repo doesn't have
+  — compare `grep -n '^    "apps/' bun.lock` with `ls -d apps/*/*` — because
+  someone installed with an untracked folder under `apps/` and committed
+  the lockfile; `bun install` on any checkout without that folder produces
+  the corrected lockfile, and that is what to commit. **Fix the cause —
+  never delete or regenerate `bun.lock` or `flake.lock` to dodge the
+  error.**
 
 ---
 

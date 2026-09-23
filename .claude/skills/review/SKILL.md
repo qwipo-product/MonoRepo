@@ -20,6 +20,23 @@ git diff origin/dev...HEAD -- . ':!bun.lock'
 git log --oneline origin/dev..HEAD
 ```
 
+`bun.lock` is left out of the read, not out of the check. Before the pass:
+
+```bash
+git diff --stat origin/dev...HEAD -- bun.lock package.json '**/package.json'
+```
+
+If `bun.lock` moved, a `package.json` moved with it — an `add-dependency`,
+a scaffold, a retire. A lockfile diff on its own is a stop, not a tidy: it
+means `bun install` ran on a laptop with a folder under `apps/` or
+`packages/` that isn't in the commit, and the workspace glob wrote it into
+the lockfile. Find the folder (`git status --short` shows it as `??`), then
+either bring it in properly (`new-mockup` / `import-mockup`, its own
+branch) or move it out of the repo and `bun install` once — the lockfile
+drops it. An uncommitted Next.js export under `apps/frontend/` is how the
+cart commit of Sep 2026 broke every deploy's frozen install; this check is
+why.
+
 ## Look for
 
 1. **Things in the wrong place.** Screens under `screens/` (or `pages/` +
@@ -59,6 +76,8 @@ If a finding starts with "it would be cleaner to…", drop it.
 
 ## Do, then hand back
 
+- A lone lockfile change (above) ends the pass until the folder is
+  accounted for; nothing else here matters while it's there.
 - Fix the mechanical findings (1, 2, 3, 5, 8) directly on the branch and
   commit them as one `Tidy: <app> — <what>` commit.
 - List the judgement calls (4 when it needs a new token, 6, 7) for the user
