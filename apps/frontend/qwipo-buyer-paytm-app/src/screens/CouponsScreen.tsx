@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { BadgePercent, Check, ChevronLeft, Plus, Tag } from 'lucide-react';
+import { BadgePercent, CalendarClock, Check, ChevronDown, ChevronLeft, Plus, Tag } from 'lucide-react';
 import { Button, Card, EmptyState } from '@mockups/ui';
-import { OFFERS, resolveOffer, type ResolvedOffer } from '../data/coupons';
+import { OFFERS, offerTerms, resolveOffer, type ResolvedOffer } from '../data/coupons';
 import type { buildCart } from '../data/cart';
 
 /* Apply Coupon — one list, Offers & schemes. Each card carries its own
@@ -126,9 +126,17 @@ export function CouponsScreen({
   );
 }
 
-/* One card for every offer. The headline is a single sentence built from three
-   pieces — the scheme name in quotes, the benefit, and what it applies to —
-   so a long combo rule wraps as prose instead of as a stack of labels. */
+/* One card per offer, in two halves.
+
+   The top half is an accordion, the same <details> pattern the product
+   list's Discounts sheet uses: collapsed it shows only what the offer is —
+   the scheme name, the benefit, what it applies to, and anything still
+   missing. Expanded it adds the conditions and the date it runs out, which
+   nobody needs while scanning a list.
+
+   The action sits UNDER the accordion, outside <details>, because everything
+   after a <summary> is hidden when collapsed — and Apply / Remove / Applied
+   has to stay reachable without opening the card first. */
 function OfferCard({
   resolved,
   onApplyCoupon,
@@ -141,29 +149,56 @@ function OfferCard({
   onAddItems: () => void;
 }) {
   const { offer, state, requirement } = resolved;
+  const terms = offerTerms(offer);
 
   return (
-    <Card className="p-4">
-      <div className="flex gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-          <BadgePercent className="h-5 w-5" />
-        </span>
+    <Card className="overflow-hidden">
+      <details className="group [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-start gap-2.5 p-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+            <BadgePercent className="h-4 w-4" />
+          </span>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-sm leading-snug">
-            {offer.label && <span className="font-medium text-primary">“{offer.label}” </span>}
-            <span className="font-semibold text-foreground">{offer.benefit}</span>{' '}
-            <span className="font-medium text-primary">{offer.scope}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm leading-snug">
+              {offer.label && <span className="font-medium text-primary">“{offer.label}” </span>}
+              <span className="font-semibold text-foreground">{offer.benefit}</span>{' '}
+              <span className="font-medium text-primary">{offer.scope}</span>
+            </span>
+            {requirement && (
+              <span className="mt-1 block text-xs font-medium text-warning-foreground">{requirement}</span>
+            )}
+          </span>
+
+          <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-foreground-secondary transition-transform group-open:rotate-180" />
+        </summary>
+
+        <div className="border-t border-border px-3 py-2.5">
+          {offer.expires && (
+            <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+              <CalendarClock className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
+              Valid till {offer.expires}
+            </p>
+          )}
+          <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-foreground-secondary">
+            Terms &amp; conditions
           </p>
-          <p className="mt-1 text-xs text-foreground-secondary">Applicable only for eligible products</p>
-          {requirement && <p className="mt-1 text-xs font-medium text-warning-foreground">{requirement}</p>}
+          <ul className="mt-1 space-y-1">
+            {terms.map((t) => (
+              <li key={t} className="flex gap-1.5 text-xs leading-relaxed text-foreground-secondary">
+                <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-border" />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
+      </details>
 
-      {/* action — centred under the copy, one per state. A scheme the seller
-          applied is stated, not offered; a coupon the buyer chose can be taken
-          back off, so it carries Remove beside it. */}
-      <div className="mt-3 flex items-center justify-center gap-2">
+      {/* action — one per state, on its own row so it reads the same whether
+          the card above it is open or shut. A scheme the seller applied is
+          stated, not offered; a coupon the buyer chose can be taken back off,
+          so it carries Remove beside it. */}
+      <div className="flex items-center justify-center gap-2 border-t border-border px-3 py-2">
         {state === 'auto' ? (
           <AppliedPill>Applied automatically</AppliedPill>
         ) : state === 'applied' ? (
@@ -174,12 +209,12 @@ function OfferCard({
             </Button>
           </>
         ) : state === 'needs-items' ? (
-          <Button className="px-8" onClick={onAddItems}>
+          <Button size="sm" className="px-8" onClick={onAddItems}>
             <Plus className="h-4 w-4" />
             Add Items
           </Button>
         ) : (
-          <Button className="px-10" disabled={state === 'locked'} onClick={onApplyCoupon}>
+          <Button size="sm" className="px-10" disabled={state === 'locked'} onClick={onApplyCoupon}>
             Apply
           </Button>
         )}
@@ -191,7 +226,7 @@ function OfferCard({
 /** The green "this is on" chip, shared by both applied states. */
 function AppliedPill({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-success-subtle px-3 py-1.5 text-xs font-semibold text-success-foreground">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-success-subtle px-2.5 py-1 text-xs font-semibold text-success-foreground">
       <Check className="h-3.5 w-3.5" />
       {children}
     </span>
