@@ -3,6 +3,7 @@ import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } fr
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
+import { BrandTile } from '../components/BrandTile';
 import {
   HERO_BANNERS,
   DISTRIBUTORS,
@@ -158,14 +159,12 @@ export function HomeScreen({
               <SectionHeader title="All Brands" onSeeAll={() => onNavigate('distributors-list', { tab: 'brands' })} />
               <div className="grid grid-cols-4 gap-3 px-4">
                 {BRANDS.slice(0, 8).map((b) => (
-                  <button
+                  <BrandTile
                     key={b.id}
+                    name={b.name}
+                    logo={b.logo}
                     onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
-                    className="flex flex-col items-center gap-1.5"
-                  >
-                    <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
-                    <div className="w-full truncate text-center text-xs">{b.name}</div>
-                  </button>
+                  />
                 ))}
               </div>
             </section>
@@ -223,14 +222,12 @@ export function HomeScreen({
               <SectionHeader title="All Brands" onSeeAll={() => onNavigate('wholesaler-categories', { tab: 'brands' })} />
               <div className="grid grid-cols-4 gap-3 px-4">
                 {BRANDS.slice(0, 8).map((b) => (
-                  <button
+                  <BrandTile
                     key={b.id}
+                    name={b.name}
+                    logo={b.logo}
                     onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
-                    className="flex flex-col items-center gap-1.5"
-                  >
-                    <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
-                    <div className="w-full truncate text-center text-xs">{b.name}</div>
-                  </button>
+                  />
                 ))}
               </div>
             </section>
