@@ -143,8 +143,6 @@ export function CatalogScreen({
               onAdd={() => onOpenSheet(p.id)}
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}
-              subtotal={p.price * (qty[p.id] ?? 0)}
-              subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={deliveryFooter(p.seller)}
             />
           ))

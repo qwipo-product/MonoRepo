@@ -76,8 +76,6 @@ export function OffersSchemesSkusScreen({
               onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onDiscounts={() => setDiscountsProductId(p.id)}
-              subtotal={p.price * (qty[p.id] ?? 0)}
-              subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={deliveryFooter(p.seller)}
             />
           ))

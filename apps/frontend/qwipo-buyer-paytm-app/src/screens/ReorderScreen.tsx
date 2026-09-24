@@ -105,8 +105,6 @@ export function ReorderScreen({
               onQty={(n) => onSetQty(r.product.id, n)}
               onAdd={() => onOpenSheet(r.product.id)}
               onDiscounts={() => setDiscountsProductId(r.product.id)}
-              subtotal={r.product.price * (qty[r.product.id] ?? 0)}
-              subtotalLabel={`Total (${qty[r.product.id] ?? 0} pcs)`}
               footer={deliveryFooter(r.product.seller)}
               />
             </div>
