@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, BadgeCheck, SearchX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SearchX } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
-import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { SearchField } from '../components/SearchField';
@@ -144,12 +143,8 @@ export function SellerBrowseScreen({
                   aria-label={`Open ${d.name} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
-                  <BrandLogo src={d.logo} alt={d.name} className="h-12 w-12 shrink-0 rounded-lg border border-border" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{d.name}</span>
-                    <span className="mt-0.5 flex items-center gap-1 text-xs text-success-foreground">
-                      <BadgeCheck className="h-3.5 w-3.5 shrink-0" /> Verified seller
-                    </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                    {d.name}
                   </span>
                   <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
