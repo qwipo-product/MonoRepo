@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
@@ -350,16 +350,43 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
-  // Manual swipe only — no auto-advance.
+  /* True while a finger is down on the rail, so a tick can't yank the banner
+     out from under a swipe in progress. */
+  const dragging = useRef(false);
+
   const onScroll = () => {
     const el = ref.current;
     if (el) setI(Math.round(el.scrollLeft / el.clientWidth));
   };
+
+  /* Advance every 3s, last wrapping back to first.
+
+     The next index is read from the rail's own scrollLeft rather than from
+     `i`, so a tick after a manual swipe carries on from where the buyer left
+     it instead of from where the timer thought it was.
+
+     Skipped entirely when the OS asks for reduced motion — a banner that
+     moves on its own is the exact thing that setting is about. */
+  useEffect(() => {
+    if (banners.length < 2) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    const id = window.setInterval(() => {
+      const el = ref.current;
+      if (!el || dragging.current) return;
+      const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
+      el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [banners.length]);
   return (
     <div className="px-4">
       <div
         ref={ref}
         onScroll={onScroll}
+        onPointerDown={() => (dragging.current = true)}
+        onPointerUp={() => (dragging.current = false)}
+        onPointerCancel={() => (dragging.current = false)}
         className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg"
       >
         {banners.map((b, j) => (
