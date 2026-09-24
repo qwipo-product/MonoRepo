@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
@@ -84,11 +84,15 @@ export function HomeScreen({
           <button
             onClick={() => onNavigate('sub:addresses')}
             aria-label="Change delivery address"
-            className="flex w-[100%] items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1 text-xs active:scale-[0.98]"
+            /* Sized to the address, not to the row: `w-fit` lets a short one
+               keep the pill short, `max-w-full` stops a long one running past
+               the search bar below, and the name truncates only once it has
+               actually run out of room. */
+            className="flex w-fit max-w-full items-center gap-1.5 rounded-lg bg-primary-soft px-3 py-1 text-xs active:scale-[0.98]"
           >
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="shrink-0 text-primary">Deliver to</span>
-            <span className="min-w-0 flex-1 truncate text-left font-medium text-foreground">
+            <span className="min-w-0 truncate text-left font-medium text-foreground">
               {deliveryLabel}
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground-secondary" />
@@ -134,7 +138,12 @@ export function HomeScreen({
               <div className={rail}>
                 {distributors.map((d) => (
                   <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
-                    <BrandLogo src={d.logo} alt={d.title} className="h-28 w-28 rounded-lg border border-border shadow-sm" />
+                    <BrandLogo
+                      src={d.logo}
+                      alt={d.title}
+                      className="h-28 w-28 rounded-lg border border-border shadow-sm"
+                      imgClassName="p-0 scale-110"
+                    />
                     <div className="truncate text-sm font-medium">{d.title}</div>
                     <div className="truncate text-xs text-foreground-secondary">{d.short}</div>
                   </button>
@@ -338,19 +347,70 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
   );
 }
 
+/** How long each banner holds before the rail advances. The active dot's
+ *  fill runs for exactly this long, so the bar reaching its end and the
+ *  banner moving are the same moment. */
+const ADVANCE_MS = 3000;
+
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
-  // Manual swipe only — no auto-advance.
+  /* True while a finger is down on the rail, so a tick can't yank the banner
+     out from under a swipe in progress. */
+  const dragging = useRef(false);
+  /** The growing part of the active dot. */
+  const fill = useRef<HTMLSpanElement>(null);
+  /* Reduced motion turns the whole thing off — both the movement and the bar
+     counting down to it. Read once: it decides what the dots even render as. */
+  const [autoplay] = useState(
+    () => banners.length > 1 && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
+
   const onScroll = () => {
     const el = ref.current;
     if (el) setI(Math.round(el.scrollLeft / el.clientWidth));
   };
+
+  /* Advance every 3s, last wrapping back to first.
+
+     The next index is read from the rail's own scrollLeft rather than from
+     `i`, so a tick after a manual swipe carries on from where the buyer left
+     it instead of from where the timer thought it was.
+
+     Skipped entirely when the OS asks for reduced motion — a banner that
+     moves on its own is the exact thing that setting is about. */
+  useEffect(() => {
+    if (!autoplay) return;
+    const id = window.setInterval(() => {
+      const el = ref.current;
+      if (!el || dragging.current) return;
+      const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
+      el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
+    }, ADVANCE_MS);
+    return () => window.clearInterval(id);
+  }, [autoplay, banners.length]);
+
+  /* Restart the fill whenever the banner changes: snap it back to empty with
+     no transition, force the reset to land, then let it grow across the hold.
+     Driven here rather than by a CSS animation so it restarts on a manual
+     swipe too, not only on a tick. */
+  useEffect(() => {
+    const el = fill.current;
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.width = '0%';
+    void el.offsetWidth;
+    el.style.transition = `width ${ADVANCE_MS}ms linear`;
+    el.style.width = '100%';
+  }, [i]);
   return (
     <div className="px-4">
       <div
         ref={ref}
         onScroll={onScroll}
+        onPointerDown={() => (dragging.current = true)}
+        onPointerUp={() => (dragging.current = false)}
+        onPointerCancel={() => (dragging.current = false)}
         className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg"
       >
         {banners.map((b, j) => (
@@ -363,8 +423,19 @@ function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => 
         {banners.map((_, j) => (
           <span
             key={j}
-            className={cn('h-1.5 rounded-full transition-all', j === i ? 'w-4 bg-primary' : 'w-1.5 bg-foreground-secondary/30')}
-          />
+            className={cn(
+              'h-1.5 overflow-hidden rounded-full transition-all',
+              j === i
+                ? autoplay
+                  ? 'w-6 bg-primary/25' // track the fill runs along
+                  : 'w-6 bg-primary'
+                : 'w-1.5 bg-foreground-secondary/30'
+            )}
+          >
+            {j === i && autoplay && (
+              <span ref={fill} className="block h-full w-0 rounded-full bg-primary" />
+            )}
+          </span>
         ))}
       </div>
     </div>

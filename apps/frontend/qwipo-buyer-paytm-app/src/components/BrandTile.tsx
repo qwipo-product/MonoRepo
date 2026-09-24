@@ -27,7 +27,17 @@ export function BrandTile({
       aria-label={ariaLabel ?? name}
       className={cn('rounded-lg border border-border bg-card p-1.5 active:scale-[0.98]', className)}
     >
-      <BrandLogo src={logo} alt={name} className="aspect-square w-full rounded" imgClassName="p-1" />
+      {/* No inset, and a little scale on top. The logo files are square
+          300x300 but the mark inside them only fills 66-87% — the rest is
+          whitespace baked into the PNG — so padding on our side just shrank
+          it further. The widest mark measures 87%, so 1.1x still leaves it
+          inside the plate; the plate clips anyway. */}
+      <BrandLogo
+        src={logo}
+        alt={name}
+        className="aspect-square w-full rounded"
+        imgClassName="p-0 scale-110"
+      />
       <span className="mt-1 block truncate text-center text-[11px] text-foreground">{name}</span>
     </button>
   );

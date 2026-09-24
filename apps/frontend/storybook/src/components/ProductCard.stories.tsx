@@ -47,11 +47,11 @@ function Demo(props: Partial<ProductCardProps>) {
 }
 
 export const Distributor: Story = {
-  render: () => <Demo seller="Sri Sai Krishna Traders" source="distributor" delivery="Free Delivery" />,
+  render: () => <Demo seller="Sri Sai Krishna Traders" delivery="Free Delivery" />,
 };
 
 export const Wholesaler: Story = {
-  render: () => <Demo seller="Omkar Enterprises" source="wholesaler" delivery="Delivery by Tomorrow" />,
+  render: () => <Demo seller="Omkar Enterprises" delivery="Delivery by Tomorrow" />,
 };
 
 export const InCart: Story = {
@@ -63,7 +63,7 @@ export const InCart: Story = {
         <ProductCard
           {...(base as ProductCardProps)}
           seller="Sri Sai Krishna Traders"
-          source="distributor"
+         
           delivery="Free Delivery"
           selectedVariant={variant}
           onSelectVariant={setVariant}

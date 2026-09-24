@@ -66,7 +66,6 @@ export function OffersSchemesSkusScreen({
               selectedVariant={variant[p.id] ?? p.variants[0].id}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [p.id]: id }))}
               seller={p.seller}
-              source={p.source}
               margin={p.margin}
               price={p.price}
               mrp={p.mrp}
