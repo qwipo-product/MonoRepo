@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { Button, Chip, Sheet } from '@mockups/ui';
+import { Button, Chip, QtyStepper, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { packTiers, type Product } from '../data/products';
 import { PackTierRow } from './PackTierRow';
@@ -11,13 +11,19 @@ import { PackTierRow } from './PackTierRow';
 export function AddToCartSheet({
   product,
   cartTotal,
+  qty,
   onAdd,
+  onSetQty,
   onContinue,
   onClose,
 }: {
   product: Product | null;
   cartTotal: number;
+  /** Pieces of this product already in the cart — the sheet opens showing it. */
+  qty: number;
   onAdd: (pcs: number) => void;
+  /** Set the absolute quantity, so the sheet can take a line back to zero. */
+  onSetQty: (pcs: number) => void;
   onContinue: () => void;
   onClose: () => void;
 }) {
@@ -85,6 +91,23 @@ export function AddToCartSheet({
         </div>
         <div className="ml-auto text-sm font-semibold text-success-foreground">{product.margin}</div>
       </div>
+
+      {/* What's already in the cart for this product, and the one control that
+          can take it back out. The tier rows below add packs, and each keeps
+          its own count for this visit — they can't show a running total,
+          because 13 pcs isn't any whole number of 8s or 16s. This row is the
+          truth, and it's the same quantity the product card steps. */}
+      {qty > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary bg-primary-soft p-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-primary-soft-foreground">In your cart</div>
+            <div className="text-sm font-semibold tabular-nums text-foreground">
+              {qty} {qty === 1 ? 'pc' : 'pcs'} · {formatInr(product.price * qty)}
+            </div>
+          </div>
+          <QtyStepper value={qty} onChange={onSetQty} min={0} tone="soft" className="shrink-0 bg-card" />
+        </div>
+      )}
 
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">

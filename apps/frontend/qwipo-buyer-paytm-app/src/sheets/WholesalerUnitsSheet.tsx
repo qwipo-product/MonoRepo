@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Store } from 'lucide-react';
-import { Button, Chip, Sheet } from '@mockups/ui';
+import { Button, Chip, QtyStepper, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import { packTiers } from '../data/products';
 import { cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from '../data/wholesaler';
@@ -14,14 +14,20 @@ export function WholesalerUnitsSheet({
   product,
   vendor,
   cartTotal,
+  qty,
   onAdd,
+  onSetQty,
   onContinue,
   onClose,
 }: {
   product: WholesalerProduct | null;
   vendor: WholesalerVendor | null;
   cartTotal: number;
+  /** Pieces of this product already in the cart — the sheet opens showing it. */
+  qty: number;
   onAdd: (pcs: number) => void;
+  /** Set the absolute quantity, so the sheet can take a line back to zero. */
+  onSetQty: (pcs: number) => void;
   onContinue: () => void;
   onClose: () => void;
 }) {
@@ -81,6 +87,20 @@ export function WholesalerUnitsSheet({
       />
 
       {/* pack tiers */}
+      {/* What's already in the cart for this product — and the one control
+          that can take it back out. Matches the distributor sheet. */}
+      {qty > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary bg-primary-soft p-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-primary-soft-foreground">In your cart</div>
+            <div className="text-sm font-semibold tabular-nums text-foreground">
+              {qty} {qty === 1 ? 'pc' : 'pcs'} · {formatInr(sel.price * qty)}
+            </div>
+          </div>
+          <QtyStepper value={qty} onChange={onSetQty} min={0} tone="soft" className="shrink-0 bg-card" />
+        </div>
+      )}
+
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
           <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={sel.price} onDelta={onAdd} />

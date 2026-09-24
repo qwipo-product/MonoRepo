@@ -184,7 +184,7 @@ export function ProductCard({
       <div className="mt-3 flex items-center gap-2">
         {onDiscounts && (
           <div className="flex-1">
-            <Button variant="soft" className="w-full font-medium" onClick={onDiscounts}>
+            <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
               Discounts
               <ChevronDownIcon />
             </Button>
@@ -192,21 +192,39 @@ export function ProductCard({
         )}
         <div className="flex-1">
           {qty > 0 ? (
-            // Whole control opens the selling-units sheet (the qty editor) —
-            // tapping anywhere (− , value, +) triggers it, so it's one button,
-            // not an inline stepper.
-            <button
-              type="button"
-              onClick={onAdd}
-              aria-label="Edit quantity"
-              className="flex h-11 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
-            >
-              <span className="text-lg font-medium leading-none">−</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
-              <span className="text-lg font-medium leading-none">+</span>
-            </button>
+            /* A real stepper: − and + change the quantity here, on the card,
+               and the count runs to 0 to take the line back out. The number
+               between them still opens the selling-units sheet, for picking a
+               pack rather than nudging one at a time. Both write to the same
+               quantity the sheet does, so card and sheet always agree. */
+            <div className="flex h-10 w-full items-center rounded-md bg-primary-soft px-1 text-primary-soft-foreground">
+              <button
+                type="button"
+                onClick={() => onQty?.(Math.max(0, qty - 1))}
+                aria-label={`Remove one ${name}`}
+                className="grid h-8 w-9 shrink-0 place-items-center rounded text-lg font-medium leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-70"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={onAdd}
+                aria-label={`Edit quantity for ${name}`}
+                className="min-w-0 flex-1 text-sm font-semibold tabular-nums text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-70"
+              >
+                {qty}
+              </button>
+              <button
+                type="button"
+                onClick={() => onQty?.(qty + 1)}
+                aria-label={`Add one more ${name}`}
+                className="grid h-8 w-9 shrink-0 place-items-center rounded text-lg font-medium leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-70"
+              >
+                +
+              </button>
+            </div>
           ) : (
-            <Button className="w-full" onClick={onAdd}>
+            <Button className="h-10 w-full" onClick={onAdd}>
               + Add
             </Button>
           )}

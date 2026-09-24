@@ -129,8 +129,12 @@ export function WholesalerProductsScreen({
         product={sheetProduct}
         vendor={sheetProduct ? vendorFor(sheetProduct) : null}
         cartTotal={cartTotal}
+        qty={sheetId ? (qty[sheetId] ?? 0) : 0}
         onAdd={(pcs) => {
           if (sheetId) onSetQty(sheetId, (qty[sheetId] ?? 0) + pcs);
+        }}
+        onSetQty={(pcs) => {
+          if (sheetId) onSetQty(sheetId, pcs);
         }}
         onContinue={() => setSheetId(null)}
         onClose={() => setSheetId(null)}
@@ -259,7 +263,7 @@ function VendorProductCard({
           {qty > 0 ? (
             <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
           ) : (
-            <Button className="w-full" onClick={onAdd}>
+            <Button className="h-10 w-full" onClick={onAdd}>
               + Add
             </Button>
           )}

@@ -812,8 +812,12 @@ export default function App() {
           <AddToCartSheet
             product={sheetProduct}
             cartTotal={cartTotal}
+            qty={sheetId ? (qty[sheetId] ?? 0) : 0}
             onAdd={(pcs) => {
               if (sheetId) setLineQty(sheetId, (qty[sheetId] ?? 0) + pcs);
+            }}
+            onSetQty={(pcs) => {
+              if (sheetId) setLineQty(sheetId, pcs);
             }}
             onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}
