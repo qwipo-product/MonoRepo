@@ -39,6 +39,27 @@ export interface ProductCardProps {
   className?: string;
 }
 
+/* Drawn here rather than pulled from an icon set: this package has no icon
+   dependency, and @mockups/ui draws its own the same way. A real glyph sits on
+   the text baseline, which the "⌄" character never did. */
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 function Thumb({ image, name }: { image?: string; name: string }) {
   const isUrl = !!image && /^https?:\/\//.test(image);
   // Fixed square — equal width and height.
@@ -162,9 +183,12 @@ export function ProductCard({
           stepper, so the row never reflows. */}
       <div className="mt-3 flex items-center gap-2">
         {onDiscounts && (
-          <Button variant="soft" className="flex-1" onClick={onDiscounts}>
-            Discounts ⌄
-          </Button>
+          <div className="flex-1">
+            <Button variant="soft" className="w-full font-medium" onClick={onDiscounts}>
+              Discounts
+              <ChevronDownIcon />
+            </Button>
+          </div>
         )}
         <div className="flex-1">
           {qty > 0 ? (
@@ -175,7 +199,7 @@ export function ProductCard({
               type="button"
               onClick={onAdd}
               aria-label="Edit quantity"
-              className="flex h-9 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
+              className="flex h-11 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
             >
               <span className="text-lg font-medium leading-none">−</span>
               <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
