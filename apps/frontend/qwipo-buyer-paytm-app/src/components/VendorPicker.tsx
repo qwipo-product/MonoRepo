@@ -2,9 +2,9 @@ import { cn } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { WholesalerVendor } from '../data/wholesaler';
 
-/* Choose-vendor picker — labelled header + horizontal rail of selectable vendor
-   cards (price · name · fee), cheapest tagged "Best". Shared by the wholesaler
-   product card and the selling-units sheet so both use one design. */
+/* Choose-vendor picker — labelled header + a selectable tile per vendor
+   (price · name), cheapest tagged "Best". Shared by the wholesaler product card
+   and the selling-units sheet so both use one design. */
 export function VendorPicker({
   vendors,
   value,
@@ -55,11 +55,11 @@ export function VendorPicker({
                   Best
                 </span>
               )}
-              <div className="text-base font-bold tabular-nums">{formatInr(vn.price)}</div>
-              <div className="truncate text-sm font-semibold">{vn.name}</div>
-              <div className={cn('type-caption', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
-                {vn.fee}
-              </div>
+              {/* Two lines only: what it costs and who from. The per-kg
+                  logistics charge came off — it's a term of the order, not
+                  something to weigh while picking between vendors. */}
+              <div className="text-sm font-bold tabular-nums">{formatInr(vn.price)}</div>
+              <div className="truncate text-xs font-medium">{vn.name}</div>
             </button>
           );
         })}
