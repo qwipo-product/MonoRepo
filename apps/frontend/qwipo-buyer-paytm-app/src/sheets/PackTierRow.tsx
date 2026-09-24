@@ -3,21 +3,28 @@ import { Button, QtyStepper } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 
 /* One pack-tier row inside a selling-units sheet. Tapping "+ Add" swaps the
-   button for a − Qty + stepper; the chosen pack count stays with this tier
-   (local state) and each change reports the piece delta to the cart via
-   `onDelta`. Shared by the distributor and wholesaler unit sheets. */
+   button for a − Qty + stepper, and each change reports the piece delta to the
+   cart via `onDelta`.
+
+   `initialPacks` is what this tier already accounts for in the cart, worked out
+   by the sheet when it opens — so reopening a product shows the packs that are
+   in it and they can be stepped back down, including to none. Shared by the
+   distributor and wholesaler unit sheets. */
 export function PackTierRow({
   label,
   pcs,
   unitPrice,
+  initialPacks = 0,
   onDelta,
 }: {
   label: string;
   pcs: number;
   unitPrice: number;
+  /** Packs of this tier already in the cart when the sheet opened. */
+  initialPacks?: number;
   onDelta: (deltaPcs: number) => void;
 }) {
-  const [packs, setPacks] = useState(0);
+  const [packs, setPacks] = useState(initialPacks);
   const set = (next: number) => {
     onDelta((next - packs) * pcs);
     setPacks(next);

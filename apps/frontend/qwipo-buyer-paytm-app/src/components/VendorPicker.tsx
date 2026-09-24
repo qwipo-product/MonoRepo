@@ -2,9 +2,9 @@ import { cn } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { WholesalerVendor } from '../data/wholesaler';
 
-/* Choose-vendor picker — labelled header + horizontal rail of selectable vendor
-   cards (price · name · fee), cheapest tagged "Best". Shared by the wholesaler
-   product card and the selling-units sheet so both use one design. */
+/* Choose-vendor picker — labelled header + a selectable tile per vendor
+   (price · name), cheapest tagged "Best". Shared by the wholesaler product card
+   and the selling-units sheet so both use one design. */
 export function VendorPicker({
   vendors,
   value,
@@ -24,7 +24,13 @@ export function VendorPicker({
         <span className="text-xs font-medium text-foreground">Choose vendor</span>
         <span className="text-xs text-foreground-secondary">{vendors.length} options</span>
       </div>
-      <div className="no-scrollbar flex gap-2 overflow-x-auto" role="radiogroup" aria-label="Vendor">
+      {/* Two vendors is the common case and they fill the row; more than that
+          and the row scrolls rather than shrinking the tiles to nothing. */}
+      <div
+        className={cn('no-scrollbar gap-2', vendors.length <= 2 ? 'grid grid-cols-2' : 'flex overflow-x-auto')}
+        role="radiogroup"
+        aria-label="Vendor"
+      >
         {vendors.map((vn) => {
           const on = vn.id === value;
           return (
@@ -34,7 +40,8 @@ export function VendorPicker({
               aria-checked={on}
               onClick={() => onChange(vn.id)}
               className={cn(
-                'relative w-40 shrink-0 rounded-lg border p-2.5 text-left transition-colors',
+                'relative rounded-lg border p-2.5 text-left transition-colors',
+                vendors.length <= 2 ? 'min-w-0' : 'w-40 shrink-0',
                 on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'
               )}
             >
@@ -48,11 +55,11 @@ export function VendorPicker({
                   Best
                 </span>
               )}
-              <div className="type-caption font-bold tabular-nums">{formatInr(vn.price)}</div>
-              <div className="truncate type-caption font-medium">{vn.name}</div>
-              <div className={cn('type-caption', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
-                Fee: {vn.fee}
-              </div>
+              {/* Two lines only: what it costs and who from. The per-kg
+                  logistics charge came off — it's a term of the order, not
+                  something to weigh while picking between vendors. */}
+              <div className="text-sm font-bold tabular-nums">{formatInr(vn.price)}</div>
+              <div className="truncate text-xs font-medium">{vn.name}</div>
             </button>
           );
         })}

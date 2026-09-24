@@ -84,10 +84,21 @@ export function CouponsScreen({
       )
     : resolved;
 
+  /* Which seller an offer belongs to is answered by the CART, not the
+     catalogue: a wholesale SKU's seller is whichever vendor the buyer picked
+     for it, which only the cart knows. The static lookup is the fallback for
+     an offer whose SKU isn't in the cart at all. */
+  const sellerOf = (r: (typeof resolved)[number]) => {
+    const first = r.offer.needs?.[0]?.productId;
+    if (!first) return undefined;
+    const holder = cart.sellers.find((s) => s.items.some((i) => i.product.id === first));
+    return holder?.name ?? offerSeller(r.offer);
+  };
+
   const bySeller = cart.sellers
-    .map((s) => ({ seller: s.name, items: searched.filter((r) => offerSeller(r.offer) === s.name) }))
+    .map((s) => ({ seller: s.name, items: searched.filter((r) => sellerOf(r) === s.name) }))
     .filter((g) => g.items.length > 0);
-  const orderWide = searched.filter((r) => !offerSeller(r.offer));
+  const orderWide = searched.filter((r) => !sellerOf(r));
 
   const groups = sellerFilter
     ? bySeller.filter((g) => g.seller === sellerFilter)

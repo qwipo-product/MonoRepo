@@ -21,13 +21,11 @@ const BRAND_OPTIONS = [...new Set(REORDER_ITEMS.map((r) => brandOf(r.product.sho
 export function ReorderScreen({
   qty,
   onOpenSheet,
-  onSetQty,
   onSearch,
   onBack,
 }: {
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
-  onSetQty: (id: string, n: number) => void;
   onSearch?: () => void;
   onBack?: () => void;
 }) {
@@ -102,11 +100,8 @@ export function ReorderScreen({
               price={r.product.price}
               mrp={r.product.mrp}
               qty={qty[r.product.id] ?? 0}
-              onQty={(n) => onSetQty(r.product.id, n)}
               onAdd={() => onOpenSheet(r.product.id)}
               onDiscounts={() => setDiscountsProductId(r.product.id)}
-              subtotal={r.product.price * (qty[r.product.id] ?? 0)}
-              subtotalLabel={`Total (${qty[r.product.id] ?? 0} pcs)`}
               footer={deliveryFooter(r.product.seller)}
               />
             </div>

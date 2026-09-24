@@ -19,7 +19,6 @@ import { deliveryFooter } from '../components/DeliveryFooter';
 export function OffersSchemesSkusScreen({
   onBack,
   qty,
-  onSetQty,
   onOpenSheet,
   onGoToCart,
   cartCount,
@@ -27,7 +26,6 @@ export function OffersSchemesSkusScreen({
 }: {
   onBack: () => void;
   qty: Record<string, number>;
-  onSetQty: (id: string, n: number) => void;
   onOpenSheet: (id: string) => void;
   onGoToCart: () => void;
   cartCount: number;
@@ -67,15 +65,14 @@ export function OffersSchemesSkusScreen({
               variants={p.variants}
               selectedVariant={variant[p.id] ?? p.variants[0].id}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [p.id]: id }))}
+              seller={p.seller}
+              source={p.source}
               margin={p.margin}
               price={p.price}
               mrp={p.mrp}
               qty={qty[p.id] ?? 0}
-              onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onDiscounts={() => setDiscountsProductId(p.id)}
-              subtotal={p.price * (qty[p.id] ?? 0)}
-              subtotalLabel={`Total (${qty[p.id] ?? 0} pcs)`}
               footer={deliveryFooter(p.seller)}
             />
           ))

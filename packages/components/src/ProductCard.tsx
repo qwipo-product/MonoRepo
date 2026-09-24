@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 import { Badge, Button, Card, Chip, cn } from '@mockups/ui';
-import { PriceLabel, formatInr } from './PriceLabel';
+import { PriceLabel } from './PriceLabel';
 
 export interface PackPill {
   id: string;
@@ -27,27 +27,43 @@ export interface ProductCardProps {
   price: number;
   mrp?: number;
   priceSuffix?: string;
-  /** When > 0, the Add button is replaced by a QtyStepper. */
+  /** When > 0, the Add button is replaced by the quantity control. */
   qty?: number;
-  onQty?: (n: number) => void;
   onAdd?: () => void;
   /** Tap the thumbnail to open an image gallery. Falls back to onAdd if unset. */
   onImageClick?: () => void;
   onDiscounts?: () => void;
-  /** Line total (selling price × selected qty). Shows a Total row when > 0. */
-  subtotal?: number;
-  /** Label for the total row, e.g. "Total (12 pcs)". */
-  subtotalLabel?: string;
   /** Optional footer strip (e.g. delivery day + MOV). */
   footer?: React.ReactNode;
   className?: string;
+}
+
+/* Drawn here rather than pulled from an icon set: this package has no icon
+   dependency, and @mockups/ui draws its own the same way. A real glyph sits on
+   the text baseline, which the "⌄" character never did. */
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
 }
 
 function Thumb({ image, name }: { image?: string; name: string }) {
   const isUrl = !!image && /^https?:\/\//.test(image);
   // Fixed square — equal width and height.
   return (
-    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-4xl">
+    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
       {isUrl ? (
         <img src={image} alt={name} className="h-full w-full object-contain" />
       ) : (
@@ -72,12 +88,9 @@ export function ProductCard({
   mrp,
   priceSuffix = '/pc',
   qty = 0,
-  onQty,
   onAdd,
   onImageClick,
   onDiscounts,
-  subtotal,
-  subtotalLabel = 'Total',
   footer,
   className,
 }: ProductCardProps) {
@@ -143,9 +156,11 @@ export function ProductCard({
         <div className="mt-2.5 space-y-0.5">
           {(seller || source) && (
             <div className="flex items-center gap-2">
-              {seller && <span className="text-sm text-foreground">{seller}</span>}
+              {seller && (
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">{seller}</span>
+              )}
               {source && (
-                <Badge variant={source === 'distributor' ? 'info' : 'warning'}>
+                <Badge variant={source === 'distributor' ? 'info' : 'warning'} className="shrink-0">
                   {source === 'distributor' ? 'Distributor' : 'Wholesaler'}
                 </Badge>
               )}
@@ -161,45 +176,41 @@ export function ProductCard({
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
 
-      {/* actions — Discounts + Add/Qty keep fixed widths so the row never
-          reflows when qty changes (Add ⇄ stepper swap inside a fixed box). */}
+      {/* actions — Discounts and Add split the row evenly. Both halves are
+          flex-1, and the Add half keeps its width when qty turns it into the
+          stepper, so the row never reflows. */}
       <div className="mt-3 flex items-center gap-2">
         {onDiscounts && (
-          <Button variant="soft" className="flex-1" onClick={onDiscounts}>
-            Discounts ⌄
-          </Button>
+          <div className="flex-1">
+            <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
+              Discounts
+              <ChevronDownIcon />
+            </Button>
+          </div>
         )}
-        <div className={onDiscounts ? 'w-28 shrink-0' : 'flex-1'}>
+        <div className="flex-1">
           {qty > 0 ? (
-            // Whole control opens the selling-units sheet (the qty editor) —
-            // tapping anywhere (− , value, +) triggers it, so it's one button,
-            // not an inline stepper.
+            /* One control, not a stepper: every quantity change goes through
+               the selling-units sheet, so the pack the buyer picked is never
+               silently turned into a loose count. − and + are affordances
+               that open it, the same as tapping the number. */
             <button
               type="button"
               onClick={onAdd}
-              aria-label="Edit quantity"
-              className="flex h-9 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
+              aria-label={`Edit quantity for ${name}`}
+              className="flex h-10 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
             >
-              <span className="text-lg font-medium leading-none">−</span>
+              <span aria-hidden className="text-lg font-medium leading-none">−</span>
               <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
-              <span className="text-lg font-medium leading-none">+</span>
+              <span aria-hidden className="text-lg font-medium leading-none">+</span>
             </button>
           ) : (
-            <Button className="w-full" onClick={onAdd}>
+            <Button className="h-10 w-full" onClick={onAdd}>
               + Add
             </Button>
           )}
         </div>
       </div>
-
-      {subtotal != null && subtotal > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-            {subtotalLabel}
-          </span>
-          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(subtotal)}</span>
-        </div>
-      )}
 
       {footer && (
         <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-foreground-secondary">

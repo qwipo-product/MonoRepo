@@ -4,6 +4,7 @@ import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
+import { deliveryFooter } from '../components/DeliveryFooter';
 import { SearchField } from '../components/SearchField';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
 import { useEmptyable } from '../review/demoState';
@@ -154,14 +155,39 @@ export function SellerBrowseScreen({
                   <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
                 </button>
-                <div className="no-scrollbar flex gap-3 overflow-x-auto border-t border-border px-3 py-2.5">
-                  {brands.slice(0, 6).map((b) => (
-                    <BrandLogo
+                {/* delivery day(s) + the MOV for each — the same rows the
+                    product cards carry, from the one delivery source, so a
+                    seller's terms read identically wherever they appear */}
+                <div className="border-t border-border px-3 py-2.5 text-xs text-foreground-secondary">
+                  <div className="mb-1">Delivery by</div>
+                  {deliveryFooter(d.name)}
+                </div>
+
+                {/* the seller's brands — scrolls sideways, and each one opens
+                    that brand's list scoped to THIS seller, since that's the
+                    list the buyer means from inside a seller's card */}
+                <div className="no-scrollbar flex gap-2.5 overflow-x-auto border-t border-border px-3 py-2.5">
+                  {brands.map((b) => (
+                    <button
                       key={b.id}
-                      src={b.logo}
-                      alt={b.name}
-                      className="h-10 w-10 shrink-0 rounded-full border border-border"
-                    />
+                      onClick={() =>
+                        onNavigate(productListId, {
+                          applied: [
+                            { type: 'brand', value: b.name },
+                            { type: 'distributor', value: d.name },
+                          ],
+                          backTo: selfId,
+                          tab: 'sellers',
+                        })
+                      }
+                      aria-label={`${b.name} from ${d.name}`}
+                      className="w-18 shrink-0 rounded-lg border border-border bg-card p-1.5 active:scale-[0.98]"
+                    >
+                      <BrandLogo src={b.logo} alt={b.name} className="h-11 w-full rounded" />
+                      <span className="mt-1 block truncate text-center text-[11px] text-foreground">
+                        {b.name}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
