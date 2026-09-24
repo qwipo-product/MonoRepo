@@ -227,13 +227,19 @@ export function buildCart(
     addItem(wholesaleAsProduct(wp, vendor), quantity);
   }
 
+  /* Schemes are checked against BOTH catalogues. A wholesale line is a cart
+     line like any other — it just came from a vendor rather than a
+     distributor — so its quantity has to count toward a scheme's `needs` or
+     a wholesale offer could never fire. */
+  const allQty: Record<string, number> = { ...qty, ...wholesaleQty };
+
   // Percentage schemes (Slab/Combo) — once `needs` are met, take the % off the
   // first `needs` line's total, right here in the cart, instead of leaving
   // "15% Off" as a label the total never actually reflects.
   for (const offer of OFFERS) {
     if (!offer.automatic || !offer.discountPct) continue;
     const needs = offer.needs ?? [];
-    const short = needs.some((n) => (qty[n.productId] ?? 0) < n.qty);
+    const short = needs.some((n) => (allQty[n.productId] ?? 0) < n.qty);
     if (short || needs.length === 0) continue;
     const target = itemByProductId.get(needs[0].productId);
     if (!target) continue;
@@ -250,10 +256,19 @@ export function buildCart(
   // ₹0 line here, for BOTH the schemes and their free goods.
   for (const offer of OFFERS) {
     if (!offer.automatic || !offer.reward) continue;
-    const short = (offer.needs ?? []).some((n) => (qty[n.productId] ?? 0) < n.qty);
+    const short = (offer.needs ?? []).some((n) => (allQty[n.productId] ?? 0) < n.qty);
     if (short) continue;
-    const product = PRODUCTS.find((p) => p.id === offer.reward!.productId);
-    if (product) addFreeItem(product, offer.reward.qty);
+    const rewardId = offer.reward.productId;
+    const product = PRODUCTS.find((p) => p.id === rewardId);
+    if (product) {
+      addFreeItem(product, offer.reward.qty);
+      continue;
+    }
+    // wholesale reward — priced at the vendor the buyer picked for that SKU
+    const wp = WHOLESALER_PRODUCTS.find((w) => w.id === rewardId);
+    if (!wp) continue;
+    const v = wp.vendors.find((x) => x.id === (wholesaleVendor[rewardId] ?? cheapestVendorId(wp))) ?? wp.vendors[0];
+    addFreeItem(wholesaleAsProduct(wp, v), offer.reward.qty);
   }
 
   const sellers: CartSeller[] = [];

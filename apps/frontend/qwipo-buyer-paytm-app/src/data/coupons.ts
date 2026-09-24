@@ -10,6 +10,7 @@
 //   • coupons  — the buyer chooses to apply, and can only hold one at a time.
 
 import { PRODUCTS } from './products';
+import { WHOLESALER_PRODUCTS } from './wholesaler';
 
 /** One product requirement inside a scheme. */
 export interface OfferNeed {
@@ -350,6 +351,53 @@ export const OFFERS: Offer[] = [
     code: 'SALTCOMBO10',
     expires: '15 Dec 2026',
   },
+  /* Wholesale SKUs run schemes too. Same shape as the distributor ones —
+     the cart checks both catalogues, so these fire off wholesale quantities
+     and pay out in real ₹0 lines like any other. */
+  {
+    label: 'Bogo',
+    benefit: 'Buy 1 Case Get 1 Free',
+    scope: 'on Refined Sunflower Oil',
+    automatic: true,
+    needs: [{ productId: 'wp1', qty: 16 }],
+    reward: { productId: 'wp1', qty: 16 },
+    id: 'ws-oil-bogo',
+    code: 'WSOILBOGO',
+    expires: '30 Nov 2026',
+  },
+  {
+    label: 'Case Bonus',
+    benefit: 'Buy 40 units → Get 4 FREE',
+    scope: 'on Fortune Besan',
+    automatic: true,
+    needs: [{ productId: 'wp2', qty: 40 }],
+    reward: { productId: 'wp2', qty: 4 },
+    id: 'ws-besan-bonus',
+    code: 'WSBESAN40',
+    expires: '15 Dec 2026',
+  },
+  {
+    label: 'Slab',
+    benefit: '8% Off',
+    scope: 'on 2+ cases of Red Label Tea',
+    automatic: true,
+    needs: [{ productId: 'wp3', qty: 80 }],
+    discountPct: 8,
+    id: 'ws-tea-slab',
+    code: 'WSTEA8',
+    expires: '31 Oct 2026',
+  },
+  {
+    label: 'Freebie',
+    benefit: 'Buy 24 units → Get 2 FREE',
+    scope: 'on Maggi 2-Minute Noodles',
+    automatic: true,
+    needs: [{ productId: 'wp4', qty: 24 }],
+    reward: { productId: 'wp4', qty: 2 },
+    id: 'ws-maggi-freebie',
+    code: 'WSMAGGI24',
+    expires: '30 Nov 2026',
+  },
 ];
 
 /** Every card is in exactly one of these. */
@@ -418,7 +466,10 @@ export function offerDetails(offer: Offer): string[] {
   return out;
 }
 
-const shortName = (id: string) => PRODUCTS.find((p) => p.id === id)?.shortName ?? 'this product';
+const shortName = (id: string) =>
+  PRODUCTS.find((p) => p.id === id)?.shortName ??
+  WHOLESALER_PRODUCTS.find((w) => w.id === id)?.name ??
+  'this product';
 
 /**
  * Work out what a card should show, given the cart.

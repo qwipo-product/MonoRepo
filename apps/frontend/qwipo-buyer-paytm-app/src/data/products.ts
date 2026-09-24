@@ -377,8 +377,11 @@ const DEFAULT_SLABS: PriceSlab[] = [
 /** SKUs sold at a flat price, with no quantity slab. */
 const NO_PRICE_SLAB = new Set<string>(['p40']);
 
+/* Wholesale SKUs (wp-ids) are rated per vendor — the vendor tiles ARE the
+   price ladder — so they have no slab of their own. Without this they'd fall
+   through to the distributor default and show a different seller's numbers. */
 export const priceSlabsFor = (id?: string | null): PriceSlab[] =>
-  !id || NO_PRICE_SLAB.has(id) ? [] : DEFAULT_SLABS;
+  !id || id.startsWith('wp') || NO_PRICE_SLAB.has(id) ? [] : DEFAULT_SLABS;
 
 /** Pack tiers offered in the selling-units sheet: single, half-case, full case. */
 /**

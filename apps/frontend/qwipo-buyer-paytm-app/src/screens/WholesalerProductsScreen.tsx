@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
 import { Badge, Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
 import { PriceLabel, formatInr } from '@mockups/components';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorPicker } from '../components/VendorPicker';
+import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -52,6 +53,7 @@ export function WholesalerProductsScreen({
   const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -118,6 +120,7 @@ export function WholesalerProductsScreen({
               onVendor={(vid) => onSetVendor(p.id, vid)}
               qty={qty[p.id] ?? 0}
               onQty={(n) => onSetQty(p.id, Math.max(0, n))}
+              onDiscounts={() => setDiscountsProductId(p.id)}
               onAdd={() => setSheetId(p.id)}
               onImageClick={() => setGalleryId(p.id)}
             />
@@ -158,6 +161,13 @@ export function WholesalerProductsScreen({
         </div>
       )}
 
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={{ ...qty }}
+        onClose={() => setDiscountsProductId(null)}
+      />
+
       <FiltersSheet
         open={filterOpen}
         value={filters}
@@ -177,6 +187,7 @@ function VendorProductCard({
   onQty,
   onAdd,
   onImageClick,
+  onDiscounts,
 }: {
   product: WholesalerProduct;
   vendorId: string;
@@ -185,6 +196,7 @@ function VendorProductCard({
   onQty: (n: number) => void;
   onAdd: () => void;
   onImageClick: () => void;
+  onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
   const cheapest = cheapestVendorId(product);
@@ -252,10 +264,16 @@ function VendorProductCard({
         <PriceLabel price={selected.price} suffix="/pc" size="lg" />
       </div>
 
-      {/* Add stands alone, right-aligned — a wholesale line's terms are the
-          vendor tiles above, so there's no Discounts button to pair it with. */}
-      <div className="mt-3 flex justify-end">
-        <div className="w-32">
+      {/* Discounts + Add, the same even split the distributor card uses —
+          wholesale SKUs run schemes too, so the sheet has something to say. */}
+      <div className="mt-3 flex items-center gap-2">
+        <div className="flex-1">
+          <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
+            Discounts
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1">
           {qty > 0 ? (
             <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
           ) : (
