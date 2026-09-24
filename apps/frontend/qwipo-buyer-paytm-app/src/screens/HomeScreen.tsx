@@ -137,15 +137,22 @@ export function HomeScreen({
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
                 {distributors.map((d) => (
-                  <button key={d.id} onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })} className="flex w-28 shrink-0 flex-col gap-1.5 text-center">
+                  <button
+                    key={d.id}
+                    onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })}
+                    className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
+                  >
+                    {/* The plate keeps its own frame inside the card, the way a
+                        brand tile does — the card is what holds the mark and the
+                        two lines together. */}
                     <BrandLogo
                       src={d.logo}
                       alt={d.title}
-                      className="h-28 w-28 rounded-lg border border-border shadow-sm"
+                      className="aspect-square w-full rounded border border-border"
                       imgClassName="p-0 scale-110"
                     />
-                    <div className="truncate text-sm font-medium">{d.title}</div>
-                    <div className="truncate text-xs text-foreground-secondary">{d.short}</div>
+                    <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
+                    <div className="truncate text-[11px] text-foreground-secondary">{d.name}</div>
                   </button>
                 ))}
               </div>
