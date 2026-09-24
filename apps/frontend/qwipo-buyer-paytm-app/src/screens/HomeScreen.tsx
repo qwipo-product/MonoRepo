@@ -6,7 +6,7 @@ import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
 import { CarouselDots } from '../components/CarouselDots';
 import { useAutoAdvance } from '../components/useAutoAdvance';
-import { PreviouslyOrderedRail } from '../components/PreviouslyOrderedRail';
+import { ProductTeaserRail } from '../components/ProductTeaserRail';
 import {
   HERO_BANNERS,
   DISTRIBUTORS,
@@ -19,6 +19,7 @@ import {
   type HomeOffer,
 } from '../data/home';
 import { previouslyOrdered } from '../data/reorder';
+import { trendingNearby } from '../data/trending';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
@@ -46,6 +47,10 @@ export function HomeScreen({
      never surfaces a wholesaler line, or the other way round. */
   const prevOrderedDistributor = previouslyOrdered('distributor');
   const prevOrderedWholesaler = previouslyOrdered('wholesaler');
+  /* What the neighbourhood is buying, as opposed to what this buyer bought —
+     same rail, ranked on orders placed in the delivering pincode. */
+  const trendingDistributor = trendingNearby('distributor');
+  const trendingWholesaler = trendingNearby('wholesaler');
   const wholesalerL1 = WHOLESALER_L1;
   const distAvailable = availability !== 'wholesalers' && distributors.length > 0;
   const wholeAvailable = availability !== 'distributors' && wholesalerL1.length > 0;
@@ -172,7 +177,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder', { source: 'distributor' })}
                 />
-                <PreviouslyOrderedRail
+                <ProductTeaserRail
                   items={prevOrderedDistributor}
                   onOpen={() => onNavigate('reorder', { source: 'distributor' })}
                 />
@@ -205,6 +210,19 @@ export function HomeScreen({
                 ))}
               </div>
             </section>
+
+            {trendingDistributor.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Trending Products"
+                  onSeeAll={() => onNavigate('listing', { backTo: 'home' })}
+                />
+                <ProductTeaserRail
+                  items={trendingDistributor}
+                  onOpen={() => onNavigate('listing', { backTo: 'home' })}
+                />
+              </section>
+            )}
           </>
         ) : (
           <>
@@ -233,7 +251,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder', { source: 'wholesaler' })}
                 />
-                <PreviouslyOrderedRail
+                <ProductTeaserRail
                   items={prevOrderedWholesaler}
                   onOpen={() => onNavigate('reorder', { source: 'wholesaler' })}
                 />
@@ -281,6 +299,19 @@ export function HomeScreen({
                 ))}
               </div>
             </section>
+
+            {trendingWholesaler.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Trending Products"
+                  onSeeAll={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                />
+                <ProductTeaserRail
+                  items={trendingWholesaler}
+                  onOpen={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                />
+              </section>
+            )}
           </>
         )}
       </div>
