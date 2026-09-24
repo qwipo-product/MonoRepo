@@ -67,9 +67,17 @@ export const BRANDS: HomeBrand[] = [
 ];
 
 // Level-1 category tiles shown at the top of the Wholesaler feed.
-export const WHOLESALER_L1: HomeCategory[] = [
-  { id: 'l1-groceries', name: 'Groceries', image: '/home-category-cards/groceries.png' },
-  { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png' },
+/* The wholesale catalogue hangs off two level-1 groups. Each one opens its
+   own screen listing the categories underneath it — they are separate trades,
+   and a buyer restocking shampoo isn't looking through rice. */
+export type WholesalerL1 = 'Groceries' | 'FMCG';
+export interface WholesalerCategory extends HomeCategory {
+  l1: WholesalerL1;
+}
+
+export const WHOLESALER_L1: (HomeCategory & { l1: WholesalerL1 })[] = [
+  { id: 'l1-groceries', name: 'Groceries', image: '/home-category-cards/groceries.png', l1: 'Groceries' },
+  { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png', l1: 'FMCG' },
 ];
 
 export interface HomeOffer {
@@ -88,11 +96,18 @@ export const WHOLESALER_OFFERS: HomeOffer[] = [
   { id: 'o3', headline: '25% OFF', brand: 'Aashirvaad', sub: 'Whole Wheat Atta', emoji: '🌾', tone: 'success' },
 ];
 
-export const WHOLESALER_CATEGORIES: HomeCategory[] = [
-  { id: 'w1', name: 'Cooking Oils & Ghee', image: '/wholesaler-category-images/Cooking Oils & Ghee.png' },
-  { id: 'w2', name: 'Rice & Rice Products', image: '/wholesaler-category-images/Rice & Rice Products.png' },
-  { id: 'w3', name: 'Dals & Pulses', image: '/wholesaler-category-images/Dals & Pulses.png' },
-  { id: 'w4', name: 'Sugar & Spices', image: '/wholesaler-category-images/Sugar & Spices.png' },
-  { id: 'w5', name: 'Dry Fruits', image: '/wholesaler-category-images/Dry Fruits.png' },
-  { id: 'w6', name: 'Beverages', image: '/wholesaler-category-images/Beverages.png' },
+export const WHOLESALER_CATEGORIES: WholesalerCategory[] = [
+  { id: 'w1', l1: 'Groceries', name: 'Cooking Oils & Ghee', image: '/wholesaler-category-images/Cooking Oils & Ghee.png' },
+  { id: 'w2', l1: 'Groceries', name: 'Rice & Rice Products', image: '/wholesaler-category-images/Rice & Rice Products.png' },
+  { id: 'w3', l1: 'Groceries', name: 'Dals & Pulses', image: '/wholesaler-category-images/Dals & Pulses.png' },
+  { id: 'w4', l1: 'Groceries', name: 'Sugar & Spices', image: '/wholesaler-category-images/Sugar & Spices.png' },
+  { id: 'w5', l1: 'Groceries', name: 'Dry Fruits', image: '/wholesaler-category-images/Dry Fruits.png' },
+  { id: 'w6', l1: 'FMCG', name: 'Beverages', image: '/wholesaler-category-images/Beverages.png' },
+  { id: 'w7', l1: 'FMCG', name: 'Snacks & Namkeen', image: '/wholesaler-category-images/Biscuits, Snacks & Namkeen.png' },
+  { id: 'w8', l1: 'FMCG', name: 'Personal Care', image: '/wholesaler-category-images/Personal Care.png' },
+  { id: 'w9', l1: 'FMCG', name: 'Cleaning & Household', image: '/wholesaler-category-images/Cleaning & Household.png' },
 ];
+
+/** The categories under one level-1 group — what its own screen lists. */
+export const wholesalerCategoriesIn = (l1: WholesalerL1) =>
+  WHOLESALER_CATEGORIES.filter((c) => c.l1 === l1);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
+import type { ScreenId } from '../review/screenIndex';
 import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
 import { CarouselDots } from '../components/CarouselDots';
@@ -17,11 +18,19 @@ import {
   WHOLESALER_OFFERS,
   type HomeCategory,
   type HomeOffer,
+  type WholesalerL1,
 } from '../data/home';
 import { previouslyOrdered } from '../data/reorder';
 import { trendingNearby } from '../data/trending';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+
+/* Each level-1 group has its own screen: Groceries and FMCG are separate
+   trades, so the two lists never share a page. */
+const L1_SCREEN: Record<WholesalerL1, ScreenId> = {
+  Groceries: 'wholesaler-groceries',
+  FMCG: 'wholesaler-fmcg',
+};
 
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
@@ -233,7 +242,7 @@ export function HomeScreen({
                 {wholesalerL1.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
+                    onClick={() => onNavigate(L1_SCREEN[c.l1], { backTo: 'home' })}
                     className="flex flex-col gap-2"
                   >
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">

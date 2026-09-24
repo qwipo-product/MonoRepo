@@ -42,6 +42,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'home', label: 'Home Page' },
       { id: 'distributors-list', label: 'Distributors' },
       { id: 'wholesaler-categories', label: 'Wholesalers' },
+      { id: 'wholesaler-groceries', label: 'Wholesalers \u00b7 Groceries' },
+      { id: 'wholesaler-fmcg', label: 'Wholesalers \u00b7 FMCG' },
       { id: 'global-search', label: 'Global Search' },
     ],
   },
