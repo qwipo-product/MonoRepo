@@ -1,6 +1,6 @@
 // ProductCard — the single product card. Merges the app's near-duplicate
 // ProductCard + ShopProductCard by composition: Card + Chip (pack pills) +
-// Badge (margin / source) + PriceLabel + QtyStepper + Button. Distributor vs
+// Badge (margin / seller) + PriceLabel + QtyStepper + Button. Distributor vs
 // wholesaler, in-cart vs not, discounts — all props, not separate cards.
 
 import * as React from 'react';
@@ -22,7 +22,6 @@ export interface ProductCardProps {
   onSelectVariant?: (id: string) => void;
   seller?: string;
   delivery?: string;
-  source?: 'distributor' | 'wholesaler';
   margin?: string;
   price: number;
   mrp?: number;
@@ -82,7 +81,6 @@ export function ProductCard({
   onSelectVariant,
   seller,
   delivery,
-  source,
   margin,
   price,
   mrp,
@@ -151,24 +149,7 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* seller line (+ optional source badge), then delivery line */}
-      {(seller || delivery || source) && (
-        <div className="mt-2.5 space-y-0.5">
-          {(seller || source) && (
-            <div className="flex items-center gap-2">
-              {seller && (
-                <span className="min-w-0 truncate text-sm font-semibold text-foreground">{seller}</span>
-              )}
-              {source && (
-                <Badge variant={source === 'distributor' ? 'info' : 'warning'} className="shrink-0">
-                  {source === 'distributor' ? 'Distributor' : 'Wholesaler'}
-                </Badge>
-              )}
-            </div>
-          )}
-          {delivery && <span className="block text-sm text-success-foreground">{delivery}</span>}
-        </div>
-      )}
+      {delivery && <div className="mt-2.5 text-sm text-success-foreground">{delivery}</div>}
 
       {/* margin + price */}
       <div className="mt-3 flex items-end justify-between gap-3">
@@ -212,9 +193,24 @@ export function ProductCard({
         </div>
       </div>
 
-      {footer && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-foreground-secondary">
-          {footer}
+      {/* who it's from, then when it comes — both under the rule, below the
+          actions. The seller wears the badge the Distributor label used to:
+          which of the two it is follows from the list you're on, but WHICH
+          seller doesn't, so that's the part worth stating. */}
+      {(seller || footer) && (
+        <div className="mt-3 border-t border-border pt-2">
+          {seller && (
+            <Badge variant="info" className="max-w-full truncate">
+              {seller}
+            </Badge>
+          )}
+          {footer && (
+            <div
+              className={`flex items-center justify-between text-xs text-foreground-secondary${seller ? ' mt-1.5' : ''}`}
+            >
+              {footer}
+            </div>
+          )}
         </div>
       )}
     </Card>
