@@ -200,6 +200,9 @@ export default function App() {
   // Filter/back context carried into product lists, storefront, and browse tabs.
   const [listApplied, setListApplied] = useState<AppliedFilter[]>([]);
   const [listBackTo, setListBackTo] = useState<ScreenId>('home');
+  /* Which browse tab the buyer left, so Back puts them back on it. Without
+     this, opening a brand from a seller's card returns to Categories. */
+  const [listBackTab, setListBackTab] = useState<BrowseTab | undefined>(undefined);
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
@@ -307,6 +310,7 @@ export default function App() {
     if (id === 'distributor-units') {
       setListApplied([]);
       setListBackTo('home');
+      setListBackTab(undefined);
       setScreen('listing');
       setSheetId(PRODUCTS[0].id);
       return;
@@ -332,6 +336,7 @@ export default function App() {
     if (PRODUCT_LISTS.has(baseScreenOf(id))) {
       setListApplied(opts?.applied ?? []);
       setListBackTo(opts?.backTo ?? 'home');
+      setListBackTab(opts?.tab as BrowseTab | undefined);
     }
     // Only overwrite on a real entry (home rail / browse); a list→storefront
     // bounce carries no backTo and should keep the original target.
@@ -491,7 +496,7 @@ export default function App() {
             onSetQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            onBack={() => go(listBackTo)}
+            onBack={() => go(listBackTo, { tab: listBackTab })}
             onSearch={() => go('global-search')}
             onGoToCart={() => go('cart')}
           />
@@ -505,7 +510,7 @@ export default function App() {
             onSetQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            onBack={() => go(listBackTo)}
+            onBack={() => go(listBackTo, { tab: listBackTab })}
             onSearch={() => go('global-search')}
             onGoToCart={() => go('cart')}
           />
@@ -516,7 +521,7 @@ export default function App() {
         return (
           <CatalogScreen
             applied={listApplied}
-            onBack={() => go(listBackTo)}
+            onBack={() => go(listBackTo, { tab: listBackTab })}
             onSearch={() => go('global-search')}
             onOffers={() => go('offer-skus')}
             qty={qty}
