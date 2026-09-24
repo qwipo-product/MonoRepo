@@ -24,7 +24,13 @@ export function VendorPicker({
         <span className="text-xs font-medium text-foreground">Choose vendor</span>
         <span className="text-xs text-foreground-secondary">{vendors.length} options</span>
       </div>
-      <div className="no-scrollbar flex gap-2 overflow-x-auto" role="radiogroup" aria-label="Vendor">
+      {/* Two vendors is the common case and they fill the row; more than that
+          and the row scrolls rather than shrinking the tiles to nothing. */}
+      <div
+        className={cn('no-scrollbar gap-2', vendors.length <= 2 ? 'grid grid-cols-2' : 'flex overflow-x-auto')}
+        role="radiogroup"
+        aria-label="Vendor"
+      >
         {vendors.map((vn) => {
           const on = vn.id === value;
           return (
@@ -34,7 +40,8 @@ export function VendorPicker({
               aria-checked={on}
               onClick={() => onChange(vn.id)}
               className={cn(
-                'relative w-40 shrink-0 rounded-lg border p-2.5 text-left transition-colors',
+                'relative rounded-lg border p-2.5 text-left transition-colors',
+                vendors.length <= 2 ? 'min-w-0' : 'w-40 shrink-0',
                 on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'
               )}
             >
@@ -48,10 +55,10 @@ export function VendorPicker({
                   Best
                 </span>
               )}
-              <div className="type-caption font-bold tabular-nums">{formatInr(vn.price)}</div>
-              <div className="truncate type-caption font-medium">{vn.name}</div>
+              <div className="text-base font-bold tabular-nums">{formatInr(vn.price)}</div>
+              <div className="truncate text-sm font-semibold">{vn.name}</div>
               <div className={cn('type-caption', on ? 'text-primary-foreground/80' : 'text-foreground-secondary')}>
-                Fee: {vn.fee}
+                {vn.fee}
               </div>
             </button>
           );

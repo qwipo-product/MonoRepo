@@ -6,7 +6,6 @@ import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '.
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorPicker } from '../components/VendorPicker';
-import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -53,7 +52,6 @@ export function WholesalerProductsScreen({
   const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -122,7 +120,6 @@ export function WholesalerProductsScreen({
               onQty={(n) => onSetQty(p.id, Math.max(0, n))}
               onAdd={() => setSheetId(p.id)}
               onImageClick={() => setGalleryId(p.id)}
-              onDiscounts={() => setDiscountsProductId(p.id)}
             />
           ))
         )}
@@ -168,13 +165,6 @@ export function WholesalerProductsScreen({
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />
-
-      <DiscountsSheet
-        open={!!discountsProductId}
-        productId={discountsProductId}
-        qty={qty}
-        onClose={() => setDiscountsProductId(null)}
-      />
     </div>
   );
 }
@@ -187,7 +177,6 @@ function VendorProductCard({
   onQty,
   onAdd,
   onImageClick,
-  onDiscounts,
 }: {
   product: WholesalerProduct;
   vendorId: string;
@@ -196,7 +185,6 @@ function VendorProductCard({
   onQty: (n: number) => void;
   onAdd: () => void;
   onImageClick: () => void;
-  onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
   const cheapest = cheapestVendorId(product);
@@ -211,7 +199,7 @@ function VendorProductCard({
           type="button"
           onClick={onImageClick}
           aria-label={`View images of ${product.name}`}
-          className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-muted text-4xl active:scale-[0.98]"
+          className="grid h-24 w-24 shrink-0 place-items-center rounded-lg border border-border bg-card text-4xl active:scale-[0.98]"
         >
           {product.image}
         </button>
@@ -243,21 +231,31 @@ function VendorProductCard({
         cheapestId={cheapest}
       />
 
-      {/* selected vendor: margin + delivery date + price (with discount) */}
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <Badge variant="success">{selected.margin}</Badge>
-          <div className="text-sm text-success-foreground">{selected.delivery}</div>
-        </div>
-        <PriceLabel price={selected.price} mrp={selected.mrp} suffix="/pc" size="lg" />
+      {/* The chosen vendor's terms, read across two rows: when it arrives
+          against what it lists at, then the margin against what it costs.
+          Splitting MRP off the price label puts each number beside the one it
+          qualifies — the distributor card stacks them instead, because it has
+          no vendor to choose and the delivery day lives in its footer. */}
+      <div className="mt-3 flex items-baseline justify-between gap-3">
+        <span className="min-w-0 truncate text-sm font-medium text-success-foreground">
+          {selected.delivery}
+        </span>
+        {selected.mrp > selected.price && (
+          <span className="shrink-0 text-xs text-foreground-secondary">
+            MRP <span className="line-through">{formatInr(selected.mrp)}</span>
+          </span>
+        )}
       </div>
 
-      {/* actions — fixed widths so the row never reflows when qty changes. */}
-      <div className="mt-3 flex items-center gap-2">
-        <Button variant="soft" className="flex-1" onClick={onDiscounts}>
-          Discounts ⌄
-        </Button>
-        <div className="w-28 shrink-0">
+      <div className="mt-2 flex items-end justify-between gap-3">
+        <Badge variant="success">{selected.margin}</Badge>
+        <PriceLabel price={selected.price} suffix="/pc" size="lg" />
+      </div>
+
+      {/* Add stands alone, right-aligned — a wholesale line's terms are the
+          vendor tiles above, so there's no Discounts button to pair it with. */}
+      <div className="mt-3 flex justify-end">
+        <div className="w-32">
           {qty > 0 ? (
             <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
           ) : (

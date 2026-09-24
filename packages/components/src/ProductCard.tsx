@@ -47,7 +47,7 @@ function Thumb({ image, name }: { image?: string; name: string }) {
   const isUrl = !!image && /^https?:\/\//.test(image);
   // Fixed square — equal width and height.
   return (
-    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-4xl">
+    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
       {isUrl ? (
         <img src={image} alt={name} className="h-full w-full object-contain" />
       ) : (
@@ -143,9 +143,11 @@ export function ProductCard({
         <div className="mt-2.5 space-y-0.5">
           {(seller || source) && (
             <div className="flex items-center gap-2">
-              {seller && <span className="text-sm text-foreground">{seller}</span>}
+              {seller && (
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">{seller}</span>
+              )}
               {source && (
-                <Badge variant={source === 'distributor' ? 'info' : 'warning'}>
+                <Badge variant={source === 'distributor' ? 'info' : 'warning'} className="shrink-0">
                   {source === 'distributor' ? 'Distributor' : 'Wholesaler'}
                 </Badge>
               )}
@@ -161,15 +163,16 @@ export function ProductCard({
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
 
-      {/* actions — Discounts + Add/Qty keep fixed widths so the row never
-          reflows when qty changes (Add ⇄ stepper swap inside a fixed box). */}
+      {/* actions — Discounts and Add split the row evenly. Both halves are
+          flex-1, and the Add half keeps its width when qty turns it into the
+          stepper, so the row never reflows. */}
       <div className="mt-3 flex items-center gap-2">
         {onDiscounts && (
           <Button variant="soft" className="flex-1" onClick={onDiscounts}>
             Discounts ⌄
           </Button>
         )}
-        <div className={onDiscounts ? 'w-28 shrink-0' : 'flex-1'}>
+        <div className="flex-1">
           {qty > 0 ? (
             // Whole control opens the selling-units sheet (the qty editor) —
             // tapping anywhere (− , value, +) triggers it, so it's one button,
