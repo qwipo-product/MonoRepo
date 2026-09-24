@@ -37,15 +37,14 @@ export function PackTierRow({
         <div className="text-sm font-semibold text-foreground">{label}</div>
         <div className="text-xs text-foreground-secondary">
           {pcs} {pcs === 1 ? 'Pc' : 'Pcs'}
-          {packs > 0 && (
-            <span className="font-medium text-foreground"> · {packs * pcs} pcs</span>
-          )}
         </div>
       </div>
       <div className="ml-auto text-right">
         <div className="text-xs tabular-nums text-foreground-secondary">{formatInr(unitPrice)}</div>
         <div className="text-sm font-bold tabular-nums text-foreground">{formatInr(unitPrice * pcs)}</div>
       </div>
+      {/* what this tier puts in the cart sits under the control that changes
+          it, rather than beside the pack size it isn't */}
       <div className="w-28 shrink-0">
         {packs > 0 ? (
           <QtyStepper value={packs} onChange={set} min={0} tone="soft" className="w-full" />
@@ -53,6 +52,11 @@ export function PackTierRow({
           <Button size="sm" className="w-full" onClick={() => set(1)}>
             + Add
           </Button>
+        )}
+        {packs > 0 && (
+          <div className="mt-1 text-center text-[11px] font-medium text-foreground">
+            {packs * pcs} pcs
+          </div>
         )}
       </div>
     </div>
