@@ -177,3 +177,6 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
 export function cheapestVendorId(p: WholesalerProduct): string {
   return p.vendors.reduce((a, b) => (b.price < a.price ? b : a)).id;
 }
+
+/** What the SKU costs at its cheapest vendor — what a list sorts and filters on. */
+export const minVendorPrice = (p: WholesalerProduct) => Math.min(...p.vendors.map((v) => v.price));
