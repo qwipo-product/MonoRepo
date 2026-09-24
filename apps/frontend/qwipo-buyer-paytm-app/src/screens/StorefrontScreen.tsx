@@ -112,8 +112,8 @@ export function StorefrontScreen({
                   onClick={() => openList({ type: 'category', value: c.name })}
                   className="flex w-28 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
-                  <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-white">
-                    <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-contain" />
+                  <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
+                    <img src={encodeURI(c.image)} alt={c.name} className="aspect-[400/268] w-full object-cover" />
                   </span>
                   <span className="w-full truncate text-center text-xs text-foreground">{c.name}</span>
                 </button>
