@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
+import type { ScreenId } from '../review/screenIndex';
 import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
 import { CarouselDots } from '../components/CarouselDots';
 import { useAutoAdvance } from '../components/useAutoAdvance';
-import { PreviouslyOrderedRail } from '../components/PreviouslyOrderedRail';
+import { ProductTeaserRail } from '../components/ProductTeaserRail';
 import {
   HERO_BANNERS,
   DISTRIBUTORS,
@@ -17,10 +18,19 @@ import {
   WHOLESALER_OFFERS,
   type HomeCategory,
   type HomeOffer,
+  type WholesalerL1,
 } from '../data/home';
 import { previouslyOrdered } from '../data/reorder';
+import { trendingNearby } from '../data/trending';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+
+/* Each level-1 group has its own screen: Groceries and FMCG are separate
+   trades, so the two lists never share a page. */
+const L1_SCREEN: Record<WholesalerL1, ScreenId> = {
+  Groceries: 'wholesaler-groceries',
+  FMCG: 'wholesaler-fmcg',
+};
 
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
@@ -46,6 +56,10 @@ export function HomeScreen({
      never surfaces a wholesaler line, or the other way round. */
   const prevOrderedDistributor = previouslyOrdered('distributor');
   const prevOrderedWholesaler = previouslyOrdered('wholesaler');
+  /* What the neighbourhood is buying, as opposed to what this buyer bought —
+     same rail, ranked on orders placed in the delivering pincode. */
+  const trendingDistributor = trendingNearby('distributor');
+  const trendingWholesaler = trendingNearby('wholesaler');
   const wholesalerL1 = WHOLESALER_L1;
   const distAvailable = availability !== 'wholesalers' && distributors.length > 0;
   const wholeAvailable = availability !== 'distributors' && wholesalerL1.length > 0;
@@ -172,7 +186,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder', { source: 'distributor' })}
                 />
-                <PreviouslyOrderedRail
+                <ProductTeaserRail
                   items={prevOrderedDistributor}
                   onOpen={() => onNavigate('reorder', { source: 'distributor' })}
                 />
@@ -205,6 +219,19 @@ export function HomeScreen({
                 ))}
               </div>
             </section>
+
+            {trendingDistributor.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Trending Products"
+                  onSeeAll={() => onNavigate('listing', { backTo: 'home' })}
+                />
+                <ProductTeaserRail
+                  items={trendingDistributor}
+                  onOpen={() => onNavigate('listing', { backTo: 'home' })}
+                />
+              </section>
+            )}
           </>
         ) : (
           <>
@@ -215,7 +242,7 @@ export function HomeScreen({
                 {wholesalerL1.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
+                    onClick={() => onNavigate(L1_SCREEN[c.l1], { backTo: 'home' })}
                     className="flex flex-col gap-2"
                   >
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
@@ -233,7 +260,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder', { source: 'wholesaler' })}
                 />
-                <PreviouslyOrderedRail
+                <ProductTeaserRail
                   items={prevOrderedWholesaler}
                   onOpen={() => onNavigate('reorder', { source: 'wholesaler' })}
                 />
@@ -281,6 +308,19 @@ export function HomeScreen({
                 ))}
               </div>
             </section>
+
+            {trendingWholesaler.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Trending Products"
+                  onSeeAll={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                />
+                <ProductTeaserRail
+                  items={trendingWholesaler}
+                  onOpen={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                />
+              </section>
+            )}
           </>
         )}
       </div>
@@ -340,7 +380,7 @@ function TabButton({
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => void }) {
   return (
     <div className="flex items-center justify-between px-4">
-      <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-sm font-medium text-foreground">{title}</h2>
       {onSeeAll && (
         <button onClick={onSeeAll} className="text-sm font-medium text-primary">
           See all

@@ -64,7 +64,7 @@ import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById, type Source } from './data/products';
-import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
+import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, wholesalerCategoriesIn, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart, INITIAL_QTY } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
 import {
@@ -80,7 +80,8 @@ const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
+  'distributors-list', 'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
+  'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'app-update', 'app-update-required', 'location-picker', 'address-details',
@@ -477,6 +478,25 @@ export default function App() {
             onNavigate={go}
           />
         );
+      // One screen per level-1 group, each listing only its own categories.
+      case 'wholesaler-groceries':
+      case 'wholesaler-fmcg': {
+        const l1 = screen === 'wholesaler-fmcg' ? 'FMCG' : 'Groceries';
+        const cats = wholesalerCategoriesIn(l1);
+        return (
+          <SellerBrowseScreen
+            title={l1}
+            subtitle={`${cats.length} categories`}
+            tabs={['categories']}
+            categories={cats}
+            brands={BRANDS}
+            productListId="wholesaler-products"
+            selfId={screen}
+            onBack={() => go('home')}
+            onNavigate={go}
+          />
+        );
+      }
       case 'wholesaler-categories':
         return (
           <SellerBrowseScreen

@@ -1,29 +1,34 @@
 import { Badge, Card } from '@mockups/ui';
 import { PriceLabel } from '@mockups/components';
-import type { RepeatBuy } from '../data/reorder';
+import type { ProductTeaser } from '../data/teaser';
 import { CarouselDots } from './CarouselDots';
 import { useAutoAdvance } from './useAutoAdvance';
 
-/* Previously Ordered — the buyer's repeat buys, two to a page, the pages
-   walking sideways on their own. A teaser, not the product list: no pack
-   pills and no Add, because the quantity always gets chosen on the Reorder
-   page or in the selling-units sheet, never from a home rail. */
+/* The Home product rail — two compact cards to a page, the pages walking
+   sideways on their own. Used by Previously Ordered and Trending Products,
+   which differ only in what they rank and where they lead. A teaser, not the
+   product list: no pack pills and no Add, because the quantity always gets
+   chosen on a product card or in the selling-units sheet, never from a Home
+   rail. */
 
-/** Two rows to a page, four pages at most — see `previouslyOrdered`. */
+/** Two rows to a page; the callers cap the list at four pages' worth. */
 const PER_PAGE = 2;
 const ADVANCE_MS = 5000;
 
-function PreviousItem({ item: p, onOpen }: { item: RepeatBuy; onOpen: () => void }) {
+function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: () => void }) {
   const isUrl = /^https?:\/\//.test(p.image);
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Reorder ${p.name}`}
+      aria-label={p.name}
       className="block w-full text-left active:scale-[0.99]"
     >
+      {/* The plate is as tall as the text column beside it (two lines of name
+          plus the price block), so the mark fills the card instead of
+          floating in the middle of it. */}
       <Card className="flex items-center gap-3 p-2.5">
-        <div className="grid h-18 w-18 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-3xl">
+        <div className="grid h-22 w-22 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
           {isUrl ? (
             <img src={p.image} alt="" className="h-full w-full object-contain" />
           ) : (
@@ -46,11 +51,11 @@ function PreviousItem({ item: p, onOpen }: { item: RepeatBuy; onOpen: () => void
   );
 }
 
-export function PreviouslyOrderedRail({
+export function ProductTeaserRail({
   items,
   onOpen,
 }: {
-  items: RepeatBuy[];
+  items: ProductTeaser[];
   onOpen: () => void;
 }) {
   const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
@@ -64,7 +69,7 @@ export function PreviouslyOrderedRail({
         {pages.map((page, j) => (
           <div key={j} className="w-full shrink-0 snap-start space-y-2 px-4">
             {page.map((it) => (
-              <PreviousItem key={it.id} item={it} onOpen={onOpen} />
+              <TeaserCard key={it.id} item={it} onOpen={onOpen} />
             ))}
           </div>
         ))}

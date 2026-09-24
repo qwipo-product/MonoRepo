@@ -84,13 +84,17 @@ export function SellerBrowseScreen({
           </div>
         </header>
 
-        <div className="px-4">
-          <SegmentedControl<BrowseTab>
-            options={tabs.map((t) => ({ value: t, label: TAB_LABEL[t] }))}
-            value={tab}
-            onChange={setTab}
-          />
-        </div>
+        {/* One tab is not a choice — the L1 category screens pass a single
+            tab and get the grid without a control above it. */}
+        {tabs.length > 1 && (
+          <div className="px-4">
+            <SegmentedControl<BrowseTab>
+              options={tabs.map((t) => ({ value: t, label: TAB_LABEL[t] }))}
+              value={tab}
+              onChange={setTab}
+            />
+          </div>
+        )}
 
         <div className="px-4 pb-3 pt-3">
           <SearchField value={query} onChange={setQuery} placeholder={PLACEHOLDER[tab]} />

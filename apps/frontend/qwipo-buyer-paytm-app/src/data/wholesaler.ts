@@ -171,6 +171,24 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
       { id: 'vasudha', name: 'Vasudha Wholesalers', price: 5000, mrp: 5600, margin: '14% Net Margin', delivery: 'Delivery by Wednesday', fee: '₹2/kg' },
     ],
   },
+  // Personal Care and Cleaning & Household are the FMCG group's own
+  // categories; the coverage rule above applies to them too.
+  {
+    id: 'wp17', name: 'Mysore Sandal Soap', category: 'Personal Care', brand: 'Mysore Sandal', caseLabel: 'Case: 72 pc', caseSize: 72, image: '🧼',
+    variants: [{ id: '75g', label: '75 g' }, { id: '150g', label: '150 g' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 38, mrp: 48, margin: '21% Net Margin', delivery: 'Delivery by Tomorrow', fee: '₹1/kg' },
+      { id: 'balaji', name: 'Balaji Traders', price: 40, mrp: 50, margin: '20% Net Margin', delivery: 'Delivery by Friday', fee: 'Free' },
+    ],
+  },
+  {
+    id: 'wp18', name: 'Surf Excel Easy Wash Detergent', category: 'Cleaning & Household', brand: 'Surf Excel', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🧺',
+    variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 Kg' }],
+    vendors: [
+      { id: 'omkar', name: 'Omkar Enterprises', price: 112, mrp: 135, margin: '17% Net Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },
+      { id: 'vasudha', name: 'Vasudha Wholesalers', price: 118, mrp: 140, margin: '16% Net Margin', delivery: 'Delivery by Wednesday', fee: '₹1/kg' },
+    ],
+  },
 ];
 
 /** Cheapest vendor id for a product (marked "Best"). */
