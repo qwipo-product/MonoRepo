@@ -27,7 +27,8 @@ const base = {
   margin: '12% Margin',
 };
 
-/* Stateful wrapper so variant selection + qty stepper are interactive. */
+/* Stateful wrapper so variant selection is interactive. Quantity is set by the
+   selling-units sheet in the app, so here onAdd just stands in for it. */
 function Demo(props: Partial<ProductCardProps>) {
   const [variant, setVariant] = useState('1l');
   const [qty, setQty] = useState(0);
@@ -39,8 +40,7 @@ function Demo(props: Partial<ProductCardProps>) {
         selectedVariant={variant}
         onSelectVariant={setVariant}
         qty={qty}
-        onQty={setQty}
-        onAdd={() => setQty(1)}
+        onAdd={() => setQty((n) => (n > 0 ? 0 : 1))}
       />
     </div>
   );
@@ -68,7 +68,7 @@ export const InCart: Story = {
           selectedVariant={variant}
           onSelectVariant={setVariant}
           qty={qty}
-          onQty={setQty}
+          onAdd={() => setQty((n) => (n > 0 ? 0 : 3))}
         />
       </div>
     );

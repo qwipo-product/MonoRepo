@@ -381,6 +381,27 @@ export const priceSlabsFor = (id?: string | null): PriceSlab[] =>
   !id || NO_PRICE_SLAB.has(id) ? [] : DEFAULT_SLABS;
 
 /** Pack tiers offered in the selling-units sheet: single, half-case, full case. */
+/**
+ * Split a piece count across pack tiers, biggest pack first.
+ *
+ * The cart stores pieces, not the packs they were bought as, so a sheet
+ * reopening on 13 pcs has to decide what to show: with tiers of 16/8/1 that's
+ * one 8 and five singles. Biggest-first matches how the buyer would have
+ * picked them, and any remainder lands on the 1-pc tier.
+ */
+export function splitIntoPacks(pcs: number, tiers: { id: string; pcs: number }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  let left = Math.max(0, pcs);
+  for (const t of [...tiers].sort((a, b) => b.pcs - a.pcs)) {
+    const n = Math.floor(left / t.pcs);
+    if (n > 0) {
+      out[t.id] = n;
+      left -= n * t.pcs;
+    }
+  }
+  return out;
+}
+
 export function packTiers(caseSize: number) {
   const half = Math.max(2, Math.round(caseSize / 2));
   const uniq = Array.from(new Set([1, half, caseSize])).filter((n) => n <= caseSize);

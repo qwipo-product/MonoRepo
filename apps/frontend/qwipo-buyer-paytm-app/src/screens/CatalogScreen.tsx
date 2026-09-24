@@ -30,7 +30,6 @@ export function CatalogScreen({
   qty,
   onOpenSheet,
   onOpenGallery,
-  onSetQty,
   onGoToCart,
   cartCount,
   cartTotal,
@@ -43,7 +42,6 @@ export function CatalogScreen({
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onOpenGallery?: (id: string) => void;
-  onSetQty: (id: string, n: number) => void;
   onGoToCart: () => void;
   cartCount: number;
   cartTotal: number;
@@ -139,7 +137,6 @@ export function CatalogScreen({
               price={p.price}
               mrp={p.mrp}
               qty={qty[p.id] ?? 0}
-              onQty={(n) => onSetQty(p.id, n)}
               onAdd={() => onOpenSheet(p.id)}
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}

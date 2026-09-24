@@ -527,7 +527,6 @@ export default function App() {
             qty={qty}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
-            onSetQty={setLineQty}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
             cartTotal={cartTotal}
@@ -538,7 +537,6 @@ export default function App() {
           <OffersSchemesSkusScreen
             onBack={() => go('listing')}
             qty={qty}
-            onSetQty={setLineQty}
             onOpenSheet={setSheetId}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
@@ -590,7 +588,7 @@ export default function App() {
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
-        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSetQty={setLineQty} onSearch={() => go('global-search')} onBack={() => go('home')} />;
+        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSearch={() => go('global-search')} onBack={() => go('home')} />;
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go(shell === 'paytm' ? 'home' : 'login')} salesperson={isSalesperson} />;
       case 'notifications':
@@ -811,13 +809,9 @@ export default function App() {
 
           <AddToCartSheet
             product={sheetProduct}
-            cartTotal={cartTotal}
             qty={sheetId ? (qty[sheetId] ?? 0) : 0}
             onAdd={(pcs) => {
               if (sheetId) setLineQty(sheetId, (qty[sheetId] ?? 0) + pcs);
-            }}
-            onSetQty={(pcs) => {
-              if (sheetId) setLineQty(sheetId, pcs);
             }}
             onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}

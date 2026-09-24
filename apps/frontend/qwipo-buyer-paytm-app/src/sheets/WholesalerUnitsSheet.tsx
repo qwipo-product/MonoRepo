@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Store } from 'lucide-react';
-import { Button, Chip, QtyStepper, Sheet } from '@mockups/ui';
+import { Button, Chip, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { packTiers } from '../data/products';
+import { packTiers, splitIntoPacks } from '../data/products';
 import { cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from '../data/wholesaler';
 import { PackTierRow } from './PackTierRow';
 import { VendorPicker } from '../components/VendorPicker';
@@ -13,21 +13,17 @@ import { VendorPicker } from '../components/VendorPicker';
 export function WholesalerUnitsSheet({
   product,
   vendor,
-  cartTotal,
   qty,
   onAdd,
-  onSetQty,
   onContinue,
   onClose,
 }: {
   product: WholesalerProduct | null;
   vendor: WholesalerVendor | null;
-  cartTotal: number;
-  /** Pieces of this product already in the cart — the sheet opens showing it. */
+  /** Pieces of THIS product in the cart — the footer totals the line at the
+   * chosen vendor's price, not the whole cart. */
   qty: number;
   onAdd: (pcs: number) => void;
-  /** Set the absolute quantity, so the sheet can take a line back to zero. */
-  onSetQty: (pcs: number) => void;
   onContinue: () => void;
   onClose: () => void;
 }) {
@@ -50,9 +46,9 @@ export function WholesalerUnitsSheet({
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-              Total cart value
+              Total value
             </div>
-            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(cartTotal)}</div>
+            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(sel.price * qty)}</div>
           </div>
           <Button className="px-8" onClick={onContinue}>
             Continue
@@ -87,23 +83,16 @@ export function WholesalerUnitsSheet({
       />
 
       {/* pack tiers */}
-      {/* What's already in the cart for this product — and the one control
-          that can take it back out. Matches the distributor sheet. */}
-      {qty > 0 && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-primary bg-primary-soft p-3">
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-primary-soft-foreground">In your cart</div>
-            <div className="text-sm font-semibold tabular-nums text-foreground">
-              {qty} {qty === 1 ? 'pc' : 'pcs'} · {formatInr(sel.price * qty)}
-            </div>
-          </div>
-          <QtyStepper value={qty} onChange={onSetQty} min={0} tone="soft" className="shrink-0 bg-card" />
-        </div>
-      )}
-
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
-          <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={sel.price} onDelta={onAdd} />
+          <PackTierRow
+            key={t.id}
+            label={t.label}
+            pcs={t.pcs}
+            unitPrice={sel.price}
+            initialPacks={splitIntoPacks(qty, tiers)[t.id] ?? 0}
+            onDelta={onAdd}
+          />
         ))}
       </div>
     </Sheet>
