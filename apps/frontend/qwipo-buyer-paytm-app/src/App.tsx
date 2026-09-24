@@ -112,7 +112,7 @@ const baseScreenOf = (id: ScreenId): ScreenId => {
 for (const id of [...BUILT]) BUILT.add(EMPTY_PREFIX + id);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
-const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'profile', 'storefront']);
+const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'sub:help', 'profile', 'storefront']);
 
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
@@ -211,6 +211,9 @@ export default function App() {
      and back — leaving the wholesaler tab and pressing Back returns to the
      wholesaler tab. */
   const [homeTab, setHomeTab] = useState<'distributors' | 'wholesalers'>('distributors');
+  /* Contact Us is both an Account row and a bottom-nav tab, so Back has to go
+     wherever it was opened from. */
+  const [helpBackTo, setHelpBackTo] = useState<ScreenId>('profile');
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
   /* Set when Reorder is opened from a Home rail, cleared when it's opened
      from the bottom nav — that entry carries no opts and shows everything. */
@@ -352,6 +355,7 @@ export default function App() {
     if (id === 'storefront' && opts?.backTo) setStorefrontBackTo(opts.backTo);
     if (id === 'storefront' && opts?.distributor) setSelectedDistributor(opts.distributor);
     if (id === 'reorder') setReorderSource(opts?.source);
+    if (id === 'sub:help') setHelpBackTo(opts?.backTo ?? 'profile');
     if (id === 'distributors-list' || id === 'wholesaler-categories') {
       setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
@@ -673,7 +677,7 @@ export default function App() {
       case 'sub:language':
         return <LanguageScreen onBack={() => go('profile')} />;
       case 'sub:help':
-        return <ContactUsScreen onBack={() => go('profile')} />;
+        return <ContactUsScreen onBack={() => go(helpBackTo)} />;
       case 'sub:terms':
         return <TermsScreen onBack={() => go('profile')} />;
 
@@ -835,7 +839,11 @@ export default function App() {
             paytmHeader={view !== 'paytm-launcher' && view !== 'paytm-search'}
             bottomNav={
               ROOT_SCREENS.has(view) ? (
-                <BottomNav active={screen} cartCount={cartCount} onNavigate={go} />
+                <BottomNav
+                  active={screen}
+                  cartCount={cartCount}
+                  onNavigate={(id) => go(id, id === 'sub:help' ? { backTo: 'home' } : undefined)}
+                />
               ) : undefined
             }
           >
