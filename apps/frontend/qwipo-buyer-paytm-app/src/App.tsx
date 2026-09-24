@@ -206,6 +206,11 @@ export default function App() {
   const [listBackTab, setListBackTab] = useState<BrowseTab | undefined>(undefined);
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
+  /* Which side of Home the buyer is shopping. It lives here, not in
+     HomeScreen, so it survives every trip out to a list or a category screen
+     and back — leaving the wholesaler tab and pressing Back returns to the
+     wholesaler tab. */
+  const [homeTab, setHomeTab] = useState<'distributors' | 'wholesalers'>('distributors');
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
   /* Set when Reorder is opened from a Home rail, cleared when it's opened
      from the bottom nav — that entry carries no opts and shows everything. */
@@ -440,6 +445,8 @@ export default function App() {
         return (
           <HomeScreen
             onNavigate={go}
+            tab={homeTab}
+            onTabChange={setHomeTab}
             availability={
               screen === 'empty:home-distributors'
                 ? 'wholesalers'

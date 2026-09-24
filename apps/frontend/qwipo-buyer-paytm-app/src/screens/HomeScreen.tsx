@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
@@ -35,16 +34,23 @@ const L1_SCREEN: Record<WholesalerL1, ScreenId> = {
 export function HomeScreen({
   deliveryLabel = 'Sri Venkateswara Kirana Store',
   availability = 'both',
+  tab,
+  onTabChange,
   onNavigate,
   salesperson = false,
 }: {
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
+  /* Which side the buyer is shopping. App.tsx holds it rather than this
+     screen, so coming back from a wholesale category — or from anywhere else
+     the buyer drilled into — lands on the tab they left from, not on
+     Distributors again. */
+  tab: 'distributors' | 'wholesalers';
+  onTabChange: (tab: 'distributors' | 'wholesalers') => void;
   onNavigate: Navigate;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
   salesperson?: boolean;
 }) {
-  const [tab, setTab] = useState<'distributors' | 'wholesalers'>('distributors');
 
   // Availability at the selected address decides which tabs are open. The
   // unavailable one shows "Coming Soon"; the active tab always resolves to an
@@ -138,14 +144,14 @@ export function HomeScreen({
             disabled={!distAvailable}
             img="/home-category-cards/distributors.png"
             label="Authorized Distributors"
-            onClick={() => setTab('distributors')}
+            onClick={() => onTabChange('distributors')}
           />
           <TabButton
             active={effectiveTab === 'wholesalers'}
             disabled={!wholeAvailable}
             img="/home-category-cards/wholesalers.png"
             label="Wholesalers"
-            onClick={() => setTab('wholesalers')}
+            onClick={() => onTabChange('wholesalers')}
           />
         </div>
       </div>
