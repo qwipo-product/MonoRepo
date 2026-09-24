@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, BadgeCheck, SearchX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SearchX } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
-import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { SearchField } from '../components/SearchField';
@@ -117,8 +116,14 @@ export function SellerBrowseScreen({
                 onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
-                <span className="aspect-[2/1] w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
-                  <img src={encodeURI(c.image)} alt="" className="h-full w-full object-cover" />
+                {/* The tile takes its proportions from the shot itself —
+                    400x268 — set on the IMAGE rather than the plate, because
+                    the plate's 1px border sizes into its aspect and left the
+                    picture a hairline short down each side. A literal 400px
+                    wide would overflow a 390px phone, so the grid sets the
+                    width and the ratio sets the height from it. */}
+                <span className="w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
+                  <img src={encodeURI(c.image)} alt="" className="aspect-[400/268] w-full object-cover" />
                 </span>
                 <span className="truncate px-0.5 text-center text-sm font-medium text-foreground">{c.name}</span>
               </button>
@@ -144,12 +149,8 @@ export function SellerBrowseScreen({
                   aria-label={`Open ${d.name} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
-                  <BrandLogo src={d.logo} alt={d.name} className="h-12 w-12 shrink-0 rounded-lg border border-border" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{d.name}</span>
-                    <span className="mt-0.5 flex items-center gap-1 text-xs text-success-foreground">
-                      <BadgeCheck className="h-3.5 w-3.5 shrink-0" /> Verified seller
-                    </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                    {d.name}
                   </span>
                   <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
@@ -157,8 +158,10 @@ export function SellerBrowseScreen({
                 {/* delivery day(s) + the MOV for each — the same rows the
                     product cards carry, from the one delivery source, so a
                     seller's terms read identically wherever they appear */}
-                <div className="border-t border-border px-3 py-2.5 text-xs text-foreground-secondary">
-                  <div className="mb-1">Delivery by</div>
+                <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                    Delivery by
+                  </div>
                   {deliveryFooter(d.name)}
                 </div>
 
