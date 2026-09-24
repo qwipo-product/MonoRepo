@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Badge, Button, Card, Chip, QtyStepper } from '@mockups/ui';
-import { PriceLabel, formatInr } from '@mockups/components';
+import { ProductImage, PriceLabel, formatInr } from '@mockups/components';
 import { cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
 import { VendorPicker } from './VendorPicker';
 
@@ -46,7 +46,7 @@ export function VendorProductCard({
           aria-label={`View images of ${product.name}`}
           className="grid h-24 w-24 shrink-0 place-items-center rounded-lg border border-border bg-card text-4xl active:scale-[0.98]"
         >
-          {product.image}
+          <ProductImage image={product.images?.[variant] ?? product.image} alt={product.name} />
         </button>
         <div className="min-w-0 flex-1">
           <button

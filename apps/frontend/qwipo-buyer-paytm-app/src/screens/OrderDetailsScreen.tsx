@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronLeft, MapPin, Copy, Check, BadgePercent, Gift } from 'lucide-react';
-import { StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
+import { ProductImage, StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
 import type { Order } from '../data/orders';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 import { formatDate } from '../date';
@@ -136,7 +136,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
             {order.items.map((item, i) => (
               <div key={i} className="flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
                 <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
-                  {item.image}
+                  <ProductImage image={item.image} alt={item.name} />
                   {item.free && (
                     <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
                       FREE

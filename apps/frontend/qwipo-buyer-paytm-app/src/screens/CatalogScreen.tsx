@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal, PackageOpen, BadgePercent } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
-import { PRODUCTS, type Product } from '../data/products';
+import { PRODUCTS, defaultVariantId, skuFor, type Product } from '../data/products';
 import { offerNameSuffix } from '../data/coupons';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
@@ -122,26 +122,30 @@ export function CatalogScreen({
             }
           />
         ) : (
-          items.map((p) => (
+          items.map((p) => {
+            const selected = variant[p.id] ?? defaultVariantId(p);
+            const sku = skuFor(p, selected);
+            return (
             <ProductCard
               key={p.id}
               name={p.name + offerNameSuffix(p.id)}
               caseLabel={p.caseLabel}
-              image={p.image}
+              image={sku.image}
               variants={p.variants}
-              selectedVariant={variant[p.id] ?? p.variants[0].id}
+              selectedVariant={selected}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [p.id]: id }))}
               seller={p.seller}
-              margin={p.margin}
-              price={p.price}
-              mrp={p.mrp}
+              margin={sku.margin}
+              price={sku.price}
+              mrp={sku.mrp}
               qty={qty[p.id] ?? 0}
               onAdd={() => onOpenSheet(p.id)}
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}
               footer={deliveryFooter(p.seller)}
             />
-          ))
+            );
+          })
         )}
       </div>
 

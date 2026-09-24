@@ -6,6 +6,7 @@
 import * as React from 'react';
 import { Badge, Button, Card, Chip, cn } from '@mockups/ui';
 import { PriceLabel } from './PriceLabel';
+import { ProductImage } from './ProductImage';
 
 export interface PackPill {
   id: string;
@@ -59,15 +60,10 @@ function ChevronDownIcon() {
 }
 
 function Thumb({ image, name }: { image?: string; name: string }) {
-  const isUrl = !!image && /^https?:\/\//.test(image);
   // Fixed square — equal width and height.
   return (
     <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
-      {isUrl ? (
-        <img src={image} alt={name} className="h-full w-full object-contain" />
-      ) : (
-        <span aria-hidden>{image ?? '📦'}</span>
-      )}
+      <ProductImage image={image} alt={name} />
     </div>
   );
 }

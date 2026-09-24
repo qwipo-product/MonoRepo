@@ -1,5 +1,5 @@
 import { Badge, Card } from '@mockups/ui';
-import { PriceLabel } from '@mockups/components';
+import { PriceLabel, ProductImage } from '@mockups/components';
 import type { ProductTeaser } from '../data/teaser';
 import { CarouselDots } from './CarouselDots';
 import { useAutoAdvance } from './useAutoAdvance';
@@ -16,7 +16,6 @@ const PER_PAGE = 2;
 const ADVANCE_MS = 5000;
 
 function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: () => void }) {
-  const isUrl = /^https?:\/\//.test(p.image);
   return (
     <button
       type="button"
@@ -29,11 +28,7 @@ function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: () => vo
           floating in the middle of it. */}
       <Card className="flex items-center gap-3 p-2.5">
         <div className="grid h-22 w-22 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
-          {isUrl ? (
-            <img src={p.image} alt="" className="h-full w-full object-contain" />
-          ) : (
-            <span aria-hidden>{p.image}</span>
-          )}
+          <ProductImage image={p.image} alt={p.name} />
         </div>
         <div className="min-w-0 flex-1">
           {/* Always two lines tall, so the two cards on a page line up whether

@@ -1,6 +1,6 @@
 import { ShoppingBag } from 'lucide-react';
 import { Button, Sheet } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { ProductImage, formatInr } from '@mockups/components';
 import type { CartItem, CartSeller } from '../data/cart';
 
 /* Order Summary · View Items — read-only bottom sheet listing every line in one
@@ -53,7 +53,7 @@ function ItemRow({ item }: { item: CartItem }) {
   return (
     <div className="flex gap-3 rounded-lg border border-border p-3">
       <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
-        {product.image}
+        <ProductImage image={product.image} alt={product.name} />
         {free && (
           <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
             FREE

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
 
@@ -196,7 +196,7 @@ function SellerCard({
           {shown.map((item, i) => (
             <div key={`${item.product.id}-${i}`} className="flex w-16 shrink-0 flex-col items-center">
               <div className="relative grid h-16 w-16 place-items-center rounded-lg border border-border bg-card text-2xl">
-                {item.product.image}
+                <ProductImage image={item.product.image} alt={item.product.name} />
                 {item.free && (
                   <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
                     FREE

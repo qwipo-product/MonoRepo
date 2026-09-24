@@ -2,6 +2,18 @@ import type { PackPill } from '@mockups/components';
 
 export type Source = 'distributor' | 'wholesaler';
 
+/* One pack of a SKU: its own shot and its own economics. Freedom Oil is the
+   first product photographed per pack, so picking 5 L has to change the
+   picture, the MRP and the selling price together — a pack is a different
+   thing to buy, not a label on the same one. Products without this fall back
+   to the one picture and the one price they carry. */
+export interface VariantSku {
+  image: string;
+  price: number;
+  mrp: number;
+  margin: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -22,16 +34,49 @@ export interface Product {
   mrp: number;
   deliveryDay: string;
   mov: number;
+  /** Per-pack shot and price, keyed by the pack pill's id. */
+  skus?: Record<string, VariantSku>;
+  /* The pack the product is listed at, when that isn't the first pill. The
+     pills read smallest-first, but the name, the price above and the cart all
+     speak about the 1 L pouch, so that's the one a card opens on. */
+  defaultVariant?: string;
 }
+
+/** The pack a card opens on. */
+export const defaultVariantId = (p: Product) => p.defaultVariant ?? p.variants[0].id;
+
+/** What the card shows for the pack in hand — the product's own figures when
+ *  that pack isn't priced separately. */
+export const skuFor = (p: Product, variantId?: string): VariantSku => {
+  const sku = variantId ? p.skus?.[variantId] : undefined;
+  return sku ?? { image: p.image, price: p.price, mrp: p.mrp, margin: p.margin };
+};
 
 // Inline mock data — a real build would pull these from @mockups/mock-data.
 export const PRODUCTS: Product[] = [
   {
     id: 'p1', name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos', shortName: 'Freedom Refined Sunflower Oil',
-    category: 'Cooking Oils & Ghee', caseLabel: 'Case: 16 pc', caseSize: 16, image: '🛢️',
-    variants: [{ id: '1l', label: '1 L' }, { id: '5l', label: '5 L' }, { id: '15kg', label: '15 kg' }],
+    category: 'Cooking Oils & Ghee', caseLabel: 'Case: 16 pc', caseSize: 16,
+    image: '/product-images/freedom/1l-pouch.png',
+    variants: [
+      { id: '500ml-pouch', label: '500 ml Pouch' }, { id: '500ml-bottle', label: '500 ml Bottle' },
+      { id: '1l-pouch', label: '1 L Pouch' }, { id: '1l-bottle', label: '1 L Bottle' },
+      { id: '5l', label: '5 L' }, { id: '10l', label: '10 L' }, { id: '15l', label: '15 L' },
+    ],
     seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '12% Net Margin',
     price: 165, mrp: 185, deliveryDay: 'Fri (Beat day)', mov: 500,
+    defaultVariant: '1l-pouch',
+    /* The 1 L pouch is the pack the product is listed at, so its figures match
+       the ones above — the cart and the order fixtures are priced on it. */
+    skus: {
+      '500ml-pouch': { image: '/product-images/freedom/500ml-pouch.png', price: 86, mrp: 95, margin: '11% Net Margin' },
+      '500ml-bottle': { image: '/product-images/freedom/500ml-bottle.png', price: 95, mrp: 105, margin: '11% Net Margin' },
+      '1l-pouch': { image: '/product-images/freedom/1l-pouch.png', price: 165, mrp: 185, margin: '12% Net Margin' },
+      '1l-bottle': { image: '/product-images/freedom/1l-bottle.png', price: 178, mrp: 199, margin: '12% Net Margin' },
+      '5l': { image: '/product-images/freedom/5l.png', price: 805, mrp: 890, margin: '13% Net Margin' },
+      '10l': { image: '/product-images/freedom/10l.png', price: 1590, mrp: 1750, margin: '13% Net Margin' },
+      '15l': { image: '/product-images/freedom/15l.png', price: 2390, mrp: 2650, margin: '14% Net Margin' },
+    },
   },
   {
     id: 'p2', name: 'Aashirvaad Atta - 10 kg Bag X 4 Nos', shortName: 'Aashirvaad Atta',
