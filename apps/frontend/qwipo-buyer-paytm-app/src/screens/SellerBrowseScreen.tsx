@@ -109,16 +109,12 @@ export function SellerBrowseScreen({
             }
           />
         ) : tab === 'categories' ? (
-          /* One tile per row: 300px is wider than half the phone, so a
-             two-column grid could never reach it. `max-w` rather than a fixed
-             width, so the tile still fits a narrow device instead of
-             overflowing — on anything from ~330px up it lands on 300 × 150. */
-          <div className="grid grid-cols-1 justify-items-center gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {catList.map((c) => (
               <button
                 key={c.id}
                 onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
-                className="flex w-full max-w-[300px] flex-col gap-2 text-left active:scale-[0.99]"
+                className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
                 {/* 2:1 plate, white in both themes: the category shots are
                     product groups photographed on white, so a white plate
