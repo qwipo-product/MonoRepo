@@ -1,6 +1,6 @@
 import { Badge, Card } from '@mockups/ui';
 import { PriceLabel } from '@mockups/components';
-import type { ReorderItem } from '../data/reorder';
+import type { RepeatBuy } from '../data/reorder';
 import { CarouselDots } from './CarouselDots';
 import { useAutoAdvance } from './useAutoAdvance';
 
@@ -13,14 +13,13 @@ import { useAutoAdvance } from './useAutoAdvance';
 const PER_PAGE = 2;
 const ADVANCE_MS = 5000;
 
-function PreviousItem({ item, onOpen }: { item: ReorderItem; onOpen: () => void }) {
-  const p = item.product;
+function PreviousItem({ item: p, onOpen }: { item: RepeatBuy; onOpen: () => void }) {
   const isUrl = /^https?:\/\//.test(p.image);
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`Reorder ${p.shortName}`}
+      aria-label={`Reorder ${p.name}`}
       className="block w-full text-left active:scale-[0.99]"
     >
       <Card className="flex items-center gap-3 p-2.5">
@@ -51,7 +50,7 @@ export function PreviouslyOrderedRail({
   items,
   onOpen,
 }: {
-  items: ReorderItem[];
+  items: RepeatBuy[];
   onOpen: () => void;
 }) {
   const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
@@ -65,7 +64,7 @@ export function PreviouslyOrderedRail({
         {pages.map((page, j) => (
           <div key={j} className="w-full shrink-0 snap-start space-y-2 px-4">
             {page.map((it) => (
-              <PreviousItem key={it.product.id} item={it} onOpen={onOpen} />
+              <PreviousItem key={it.id} item={it} onOpen={onOpen} />
             ))}
           </div>
         ))}
