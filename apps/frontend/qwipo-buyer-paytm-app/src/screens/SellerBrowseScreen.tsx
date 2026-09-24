@@ -4,6 +4,7 @@ import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
+import { BrandTile } from '../components/BrandTile';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { SearchField } from '../components/SearchField';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
@@ -126,14 +127,12 @@ export function SellerBrowseScreen({
         ) : tab === 'brands' ? (
           <div className="grid grid-cols-4 gap-3">
             {brandList.map((b) => (
-              <button
+              <BrandTile
                 key={b.id}
+                name={b.name}
+                logo={b.logo}
                 onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }], backTo: selfId })}
-                className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
-              >
-                <BrandLogo src={b.logo} alt={b.name} className="h-16 w-16 rounded-full border border-border shadow-sm" />
-                <span className="w-full truncate text-center text-xs text-foreground">{b.name}</span>
-              </button>
+              />
             ))}
           </div>
         ) : (
@@ -168,8 +167,12 @@ export function SellerBrowseScreen({
                     list the buyer means from inside a seller's card */}
                 <div className="no-scrollbar flex gap-2.5 overflow-x-auto border-t border-border px-3 py-2.5">
                   {brands.map((b) => (
-                    <button
+                    <BrandTile
                       key={b.id}
+                      name={b.name}
+                      logo={b.logo}
+                      ariaLabel={`${b.name} from ${d.name}`}
+                      className="w-18 shrink-0"
                       onClick={() =>
                         onNavigate(productListId, {
                           applied: [
@@ -180,14 +183,7 @@ export function SellerBrowseScreen({
                           tab: 'sellers',
                         })
                       }
-                      aria-label={`${b.name} from ${d.name}`}
-                      className="w-18 shrink-0 rounded-lg border border-border bg-card p-1.5 active:scale-[0.98]"
-                    >
-                      <BrandLogo src={b.logo} alt={b.name} className="h-11 w-full rounded" />
-                      <span className="mt-1 block truncate text-center text-[11px] text-foreground">
-                        {b.name}
-                      </span>
-                    </button>
+                    />
                   ))}
                 </div>
               </div>

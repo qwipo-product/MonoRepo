@@ -3,7 +3,7 @@ import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { Navigate } from '../nav';
 import type { AppliedFilter } from '../data/filters';
-import { BrandLogo } from '../components/BrandLogo';
+import { BrandTile } from '../components/BrandTile';
 import { DIST_CATEGORIES, BRANDS, type Distributor } from '../data/home';
 import { PRODUCTS } from '../data/products';
 import { deliveryFor, dayLabel } from '../data/delivery';
@@ -128,14 +128,12 @@ export function StorefrontScreen({
             <h2 className="text-base font-semibold text-foreground">Top brands</h2>
             <div className="grid grid-cols-4 gap-3">
               {myBrands.map((b) => (
-                <button
+                <BrandTile
                   key={b.id}
+                  name={b.name}
+                  logo={b.logo}
                   onClick={() => openList({ type: 'brand', value: b.name })}
-                  className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
-                >
-                  <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
-                  <span className="w-full truncate text-center text-xs text-foreground">{b.name}</span>
-                </button>
+                />
               ))}
             </div>
           </section>
