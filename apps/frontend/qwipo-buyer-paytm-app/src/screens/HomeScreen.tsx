@@ -181,8 +181,8 @@ export function HomeScreen({
                     onClick={() => onNavigate('wholesaler-categories', { tab: 'categories' })}
                     className="flex flex-col gap-2"
                   >
-                    <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
-                      <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
+                    <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-white">
+                      <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-contain" />
                     </span>
                     <div className="text-center text-sm font-medium">{c.name}</div>
                   </button>
@@ -330,8 +330,8 @@ function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }
 function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex w-28 shrink-0 flex-col items-center gap-1.5">
-      <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
-        <img src={encodeURI(cat.image)} alt={cat.name} className="h-full w-full object-cover" />
+      <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-white">
+        <img src={encodeURI(cat.image)} alt={cat.name} className="h-full w-full object-contain" />
       </span>
       <div className="w-full truncate text-center text-xs">{cat.name}</div>
     </button>

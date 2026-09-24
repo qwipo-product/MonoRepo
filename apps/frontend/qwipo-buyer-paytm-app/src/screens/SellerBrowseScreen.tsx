@@ -116,8 +116,12 @@ export function SellerBrowseScreen({
                 onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
-                <span className="aspect-[2/1] w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
-                  <img src={encodeURI(c.image)} alt="" className="h-full w-full object-cover" />
+                {/* 2:1 plate, white in both themes: the category shots are
+                    product groups photographed on white, so a white plate
+                    hides the letterboxing a 3:2 image leaves in a 2:1 box —
+                    the same reason BrandLogo keeps a white plate. */}
+                <span className="aspect-[2/1] w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+                  <img src={encodeURI(c.image)} alt="" className="h-full w-full object-contain" />
                 </span>
                 <span className="truncate px-0.5 text-center text-sm font-medium text-foreground">{c.name}</span>
               </button>
