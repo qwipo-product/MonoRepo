@@ -347,12 +347,24 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
   );
 }
 
+/** How long each banner holds before the rail advances. The active dot's
+ *  fill runs for exactly this long, so the bar reaching its end and the
+ *  banner moving are the same moment. */
+const ADVANCE_MS = 3000;
+
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [i, setI] = useState(0);
   /* True while a finger is down on the rail, so a tick can't yank the banner
      out from under a swipe in progress. */
   const dragging = useRef(false);
+  /** The growing part of the active dot. */
+  const fill = useRef<HTMLSpanElement>(null);
+  /* Reduced motion turns the whole thing off — both the movement and the bar
+     counting down to it. Read once: it decides what the dots even render as. */
+  const [autoplay] = useState(
+    () => banners.length > 1 && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
 
   const onScroll = () => {
     const el = ref.current;
@@ -368,17 +380,29 @@ function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => 
      Skipped entirely when the OS asks for reduced motion — a banner that
      moves on its own is the exact thing that setting is about. */
   useEffect(() => {
-    if (banners.length < 2) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-
+    if (!autoplay) return;
     const id = window.setInterval(() => {
       const el = ref.current;
       if (!el || dragging.current) return;
       const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
       el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
-    }, 3000);
+    }, ADVANCE_MS);
     return () => window.clearInterval(id);
-  }, [banners.length]);
+  }, [autoplay, banners.length]);
+
+  /* Restart the fill whenever the banner changes: snap it back to empty with
+     no transition, force the reset to land, then let it grow across the hold.
+     Driven here rather than by a CSS animation so it restarts on a manual
+     swipe too, not only on a tick. */
+  useEffect(() => {
+    const el = fill.current;
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.width = '0%';
+    void el.offsetWidth;
+    el.style.transition = `width ${ADVANCE_MS}ms linear`;
+    el.style.width = '100%';
+  }, [i]);
   return (
     <div className="px-4">
       <div
@@ -399,8 +423,19 @@ function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => 
         {banners.map((_, j) => (
           <span
             key={j}
-            className={cn('h-1.5 rounded-full transition-all', j === i ? 'w-4 bg-primary' : 'w-1.5 bg-foreground-secondary/30')}
-          />
+            className={cn(
+              'h-1.5 overflow-hidden rounded-full transition-all',
+              j === i
+                ? autoplay
+                  ? 'w-6 bg-primary/25' // track the fill runs along
+                  : 'w-6 bg-primary'
+                : 'w-1.5 bg-foreground-secondary/30'
+            )}
+          >
+            {j === i && autoplay && (
+              <span ref={fill} className="block h-full w-0 rounded-full bg-primary" />
+            )}
+          </span>
         ))}
       </div>
     </div>
