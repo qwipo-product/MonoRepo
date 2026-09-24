@@ -27,7 +27,7 @@ export function BrandTile({
       aria-label={ariaLabel ?? name}
       className={cn('rounded-lg border border-border bg-card p-1.5 active:scale-[0.98]', className)}
     >
-      <BrandLogo src={logo} alt={name} className="h-11 w-full rounded" />
+      <BrandLogo src={logo} alt={name} className="aspect-square w-full rounded" />
       <span className="mt-1 block truncate text-center text-[11px] text-foreground">{name}</span>
     </button>
   );
