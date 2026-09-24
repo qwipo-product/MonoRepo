@@ -1,6 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
-import { formatInrExact } from '@mockups/components';
+import { ProductImage, formatInrExact } from '@mockups/components';
 import { OrderListCard } from '../../components/OrderListCard';
 import { buildOrder, statusFromLabel, type Order } from '../../data/orders';
 import { CUSTOMER_ORDERS, RECOMMENDATIONS } from '../../data/salesperson';
@@ -68,7 +68,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
         <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">Suggested reorder</div>
         {reco.products.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-background-subtle text-xl">{p.image}</span>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-background-subtle text-xl"><ProductImage image={p.image} alt={p.name} /></span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-foreground">{p.name}</div>
               <div className="mt-0.5 text-xs text-foreground-secondary">{p.pack} · Qty {p.qty}</div>

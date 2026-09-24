@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Plus, Truck, X, ShoppingCart } from 'lucide-react';
 import { Button, EmptyState } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { ProductImage, formatInr } from '@mockups/components';
 import { itemWeight, type CartSeller } from '../data/cart';
 import { PriceChangeBanner, PriceChangeTag } from '../components/PriceChange';
 import { useEmptyable } from '../review/demoState';
@@ -154,7 +154,7 @@ export function ViewItemsScreen({
 
               {item.free ? (
                 <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
-                  {item.product.image}
+                  <ProductImage image={item.product.image} alt={item.product.name} />
                   <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
                     FREE
                   </span>
@@ -165,7 +165,7 @@ export function ViewItemsScreen({
                   aria-label={`Edit ${item.product.shortName}`}
                   className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl active:scale-[0.98]"
                 >
-                  {item.product.image}
+                  <ProductImage image={item.product.image} alt={item.product.name} />
                 </button>
               )}
 

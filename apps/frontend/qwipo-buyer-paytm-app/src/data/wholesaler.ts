@@ -28,16 +28,26 @@ export interface WholesalerProduct {
   caseSize: number;
   image: string;
   variants: { id: string; label: string }[];
+  /* Per-pack shot, keyed by variant id. Only the price moves with the vendor
+     here, not with the pack, so this carries pictures and nothing else. */
+  images?: Record<string, string>;
   vendors: WholesalerVendor[];
 }
 
 export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
   {
-    id: 'wp1', name: 'Refined Sunflower Oil', category: 'Cooking Oils & Ghee', brand: 'Freedom', caseLabel: 'Case: 16 pc', caseSize: 16, image: '🛢️',
+    id: 'wp1', name: 'Refined Sunflower Oil', category: 'Cooking Oils & Ghee', brand: 'Freedom', caseLabel: 'Case: 16 pc', caseSize: 16,
+    image: '/product-images/freedom/1l-pouch.png',
     variants: [
       { id: '1l', label: '1 Ltr' }, { id: '500ml', label: '500 ml' },
       { id: '5l', label: '5 Ltr' }, { id: '15kg', label: '15 Kg' },
     ],
+    images: {
+      '1l': '/product-images/freedom/1l-pouch.png',
+      '500ml': '/product-images/freedom/500ml-pouch.png',
+      '5l': '/product-images/freedom/5l.png',
+      '15kg': '/product-images/freedom/15l.png',
+    },
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 158, mrp: 185, margin: '14% Net Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },
       { id: 'balaji', name: 'Balaji Traders', price: 172, mrp: 190, margin: '9% Net Margin', delivery: 'Delivery by Friday', fee: '₹1/kg' },

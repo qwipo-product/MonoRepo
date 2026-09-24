@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, BadgePercent } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard, formatInr } from '@mockups/components';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS, defaultVariantId, skuFor } from '../data/products';
 import { offerNameSuffix, offerLabelsFor } from '../data/coupons';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { deliveryFooter } from '../components/DeliveryFooter';
@@ -56,25 +56,29 @@ export function OffersSchemesSkusScreen({
             description="Check back once a seller has a scheme live."
           />
         ) : (
-          items.map((p) => (
+          items.map((p) => {
+            const selected = variant[p.id] ?? defaultVariantId(p);
+            const sku = skuFor(p, selected);
+            return (
             <ProductCard
               key={p.id}
               name={p.name + offerNameSuffix(p.id)}
               caseLabel={p.caseLabel}
-              image={p.image}
+              image={sku.image}
               variants={p.variants}
-              selectedVariant={variant[p.id] ?? p.variants[0].id}
+              selectedVariant={selected}
               onSelectVariant={(id) => setVariant((v) => ({ ...v, [p.id]: id }))}
               seller={p.seller}
-              margin={p.margin}
-              price={p.price}
-              mrp={p.mrp}
+              margin={sku.margin}
+              price={sku.price}
+              mrp={sku.mrp}
               qty={qty[p.id] ?? 0}
               onAdd={() => onOpenSheet(p.id)}
               onDiscounts={() => setDiscountsProductId(p.id)}
               footer={deliveryFooter(p.seller)}
             />
-          ))
+            );
+          })
         )}
       </div>
 

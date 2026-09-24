@@ -3,7 +3,7 @@ import { Search, SlidersHorizontal, ChevronLeft, History } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS, WHOLESALE_REORDER_ITEMS } from '../data/reorder';
-import type { Source } from '../data/products';
+import { defaultVariantId, skuFor, type Source } from '../data/products';
 import { cheapestVendorId, minVendorPrice, type WholesalerProduct } from '../data/wholesaler';
 import { offerNameSuffix } from '../data/coupons';
 import { FiltersSheet } from '../sheets/FiltersSheet';
@@ -164,28 +164,32 @@ export function ReorderScreen({
             </div>
           ))
         ) : (
-          distItems.map((r) => (
+          distItems.map((r) => {
+            const selected = variant[r.product.id] ?? defaultVariantId(r.product);
+            const sku = skuFor(r.product, selected);
+            return (
             <div key={r.product.id} className="space-y-1.5">
               <HistoryLine lastOrdered={r.lastOrdered} timesOrdered={r.timesOrdered} />
               <ProductCard
                 name={r.product.name + offerNameSuffix(r.product.id)}
                 caseLabel={r.product.caseLabel}
-                image={r.product.image}
+                image={sku.image}
                 variants={r.product.variants}
-                selectedVariant={variant[r.product.id] ?? r.product.variants[0].id}
+                selectedVariant={selected}
                 onSelectVariant={(id) => setVariant((v) => ({ ...v, [r.product.id]: id }))}
                 seller={r.product.seller}
                 delivery={r.product.delivery}
-                margin={r.product.margin}
-                price={r.product.price}
-                mrp={r.product.mrp}
+                margin={sku.margin}
+                price={sku.price}
+                mrp={sku.mrp}
                 qty={qty[r.product.id] ?? 0}
                 onAdd={() => onOpenSheet(r.product.id)}
                 onDiscounts={() => setDiscountsProductId(r.product.id)}
                 footer={deliveryFooter(r.product.seller)}
               />
             </div>
-          ))
+            );
+          })
         )}
       </div>
 

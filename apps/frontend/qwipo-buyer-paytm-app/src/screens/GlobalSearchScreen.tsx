@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid } from 'lucide-react';
 import { EmptyState, cn } from '@mockups/ui';
 import { useEmptyDemo } from '../review/demoState';
-import { formatInr } from '@mockups/components';
+import { ProductImage, formatInr } from '@mockups/components';
 import { SearchField } from '../components/SearchField';
 import { PRODUCTS } from '../data/products';
 import { offerNameSuffix } from '../data/coupons';
@@ -175,7 +175,7 @@ export function GlobalSearchScreen({
                       )}
                     >
                       <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-lg">
-                        {p.image}
+                        <ProductImage image={p.image} alt={p.name} />
                       </span>
                       <span className="min-w-0 flex-1 text-sm leading-snug text-foreground line-clamp-2">
                         <Highlight text={p.name} q={q} />
