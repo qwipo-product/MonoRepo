@@ -3,6 +3,7 @@ import { Search, SlidersHorizontal, ChevronLeft, History } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { REORDER_ITEMS } from '../data/reorder';
+import type { Source } from '../data/products';
 import { offerNameSuffix } from '../data/coupons';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
@@ -16,15 +17,17 @@ import { useEmptyable } from '../review/demoState';
    Root tab screen, so cart lives in the bottom nav — no in-screen cart strip. */
 
 const brandOf = (name: string) => name.split(' ')[0];
-const BRAND_OPTIONS = [...new Set(REORDER_ITEMS.map((r) => brandOf(r.product.shortName)))];
 
 export function ReorderScreen({
   qty,
+  source,
   onOpenSheet,
   onSearch,
   onBack,
 }: {
   qty: Record<string, number>;
+  /** Arrived from a Home rail — show only that side of the catalogue. */
+  source?: Source;
   onOpenSheet: (id: string) => void;
   onSearch?: () => void;
   onBack?: () => void;
@@ -34,7 +37,9 @@ export function ReorderScreen({
   const [filterOpen, setFilterOpen] = useState(false);
   const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
 
-  const items = useEmptyable(applyFilters(REORDER_ITEMS, filters, {
+  const sourced = source ? REORDER_ITEMS.filter((r) => r.product.source === source) : REORDER_ITEMS;
+  const brandOptions = [...new Set(sourced.map((r) => brandOf(r.product.shortName)))];
+  const items = useEmptyable(applyFilters(sourced, filters, {
     id: (r) => r.product.id,
     brand: (r) => brandOf(r.product.shortName),
     price: (r) => r.product.price,
@@ -53,7 +58,9 @@ export function ReorderScreen({
         </button>
         <div className="min-w-0 flex-1">
           <h1 className="text-base font-semibold leading-tight">Reorder</h1>
-          <p className="text-xs text-foreground-secondary">{items.length} items you buy often</p>
+          <p className="text-xs text-foreground-secondary">
+            {[items.length, source, 'items you buy often'].filter(Boolean).join(' ')}
+          </p>
         </div>
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
@@ -111,7 +118,7 @@ export function ReorderScreen({
       <FiltersSheet
         open={filterOpen}
         value={filters}
-        brands={BRAND_OPTIONS}
+        brands={brandOptions}
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />

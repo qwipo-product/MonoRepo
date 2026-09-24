@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import { BrandLogo } from '../components/BrandLogo';
 import { BrandTile } from '../components/BrandTile';
+import { CarouselDots } from '../components/CarouselDots';
+import { useAutoAdvance } from '../components/useAutoAdvance';
+import { PreviouslyOrderedRail } from '../components/PreviouslyOrderedRail';
 import {
   HERO_BANNERS,
   DISTRIBUTORS,
@@ -15,6 +18,7 @@ import {
   type HomeCategory,
   type HomeOffer,
 } from '../data/home';
+import { previouslyOrdered } from '../data/reorder';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
@@ -38,6 +42,10 @@ export function HomeScreen({
   // serve: block the tab and mark it Coming Soon, rather than opening it onto an
   // empty page. The other tab becomes the active one.
   const distributors = DISTRIBUTORS;
+  /* Repeat buys, one rail per side of the catalogue — a distributor tab
+     never surfaces a wholesaler line, or the other way round. */
+  const prevOrderedDistributor = previouslyOrdered('distributor');
+  const prevOrderedWholesaler = previouslyOrdered('wholesaler');
   const wholesalerL1 = WHOLESALER_L1;
   const distAvailable = availability !== 'wholesalers' && distributors.length > 0;
   const wholeAvailable = availability !== 'distributors' && wholesalerL1.length > 0;
@@ -158,6 +166,19 @@ export function HomeScreen({
               </div>
             </section>
 
+            {prevOrderedDistributor.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Previously Ordered"
+                  onSeeAll={() => onNavigate('reorder', { source: 'distributor' })}
+                />
+                <PreviouslyOrderedRail
+                  items={prevOrderedDistributor}
+                  onOpen={() => onNavigate('reorder', { source: 'distributor' })}
+                />
+              </section>
+            )}
+
             <section className="space-y-3">
               <SectionHeader title="Categories" onSeeAll={() => onNavigate('distributors-list', { tab: 'categories' })} />
               <div className={rail}>
@@ -205,6 +226,19 @@ export function HomeScreen({
                 ))}
               </div>
             </section>
+
+            {prevOrderedWholesaler.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader
+                  title="Previously Ordered"
+                  onSeeAll={() => onNavigate('reorder', { source: 'wholesaler' })}
+                />
+                <PreviouslyOrderedRail
+                  items={prevOrderedWholesaler}
+                  onOpen={() => onNavigate('reorder', { source: 'wholesaler' })}
+                />
+              </section>
+            )}
 
             {/* Exclusive offers — promo KPIs */}
             <section className="space-y-3">
@@ -360,91 +394,17 @@ function CategoryTile({ cat, onClick }: { cat: HomeCategory; onClick: () => void
 const ADVANCE_MS = 3000;
 
 function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [i, setI] = useState(0);
-  /* True while a finger is down on the rail, so a tick can't yank the banner
-     out from under a swipe in progress. */
-  const dragging = useRef(false);
-  /** The growing part of the active dot. */
-  const fill = useRef<HTMLSpanElement>(null);
-  /* Reduced motion turns the whole thing off — both the movement and the bar
-     counting down to it. Read once: it decides what the dots even render as. */
-  const [autoplay] = useState(
-    () => banners.length > 1 && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  );
-
-  const onScroll = () => {
-    const el = ref.current;
-    if (el) setI(Math.round(el.scrollLeft / el.clientWidth));
-  };
-
-  /* Advance every 3s, last wrapping back to first.
-
-     The next index is read from the rail's own scrollLeft rather than from
-     `i`, so a tick after a manual swipe carries on from where the buyer left
-     it instead of from where the timer thought it was.
-
-     Skipped entirely when the OS asks for reduced motion — a banner that
-     moves on its own is the exact thing that setting is about. */
-  useEffect(() => {
-    if (!autoplay) return;
-    const id = window.setInterval(() => {
-      const el = ref.current;
-      if (!el || dragging.current) return;
-      const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % banners.length;
-      el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
-    }, ADVANCE_MS);
-    return () => window.clearInterval(id);
-  }, [autoplay, banners.length]);
-
-  /* Restart the fill whenever the banner changes: snap it back to empty with
-     no transition, force the reset to land, then let it grow across the hold.
-     Driven here rather than by a CSS animation so it restarts on a manual
-     swipe too, not only on a tick. */
-  useEffect(() => {
-    const el = fill.current;
-    if (!el) return;
-    el.style.transition = 'none';
-    el.style.width = '0%';
-    void el.offsetWidth;
-    el.style.transition = `width ${ADVANCE_MS}ms linear`;
-    el.style.width = '100%';
-  }, [i]);
+  const { index, autoplay, fillRef, railProps } = useAutoAdvance(banners.length, ADVANCE_MS);
   return (
     <div className="px-4">
-      <div
-        ref={ref}
-        onScroll={onScroll}
-        onPointerDown={() => (dragging.current = true)}
-        onPointerUp={() => (dragging.current = false)}
-        onPointerCancel={() => (dragging.current = false)}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg"
-      >
+      <div {...railProps} className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg">
         {banners.map((b, j) => (
           <button key={j} onClick={onOpen} aria-label="Open offers" className="w-full shrink-0 snap-start">
             <img src={encodeURI(b)} alt="" className="h-40 w-full object-cover" />
           </button>
         ))}
       </div>
-      <div className="mt-2 flex justify-center gap-1.5">
-        {banners.map((_, j) => (
-          <span
-            key={j}
-            className={cn(
-              'h-1.5 overflow-hidden rounded-full transition-all',
-              j === i
-                ? autoplay
-                  ? 'w-6 bg-primary/25' // track the fill runs along
-                  : 'w-6 bg-primary'
-                : 'w-1.5 bg-foreground-secondary/30'
-            )}
-          >
-            {j === i && autoplay && (
-              <span ref={fill} className="block h-full w-0 rounded-full bg-primary" />
-            )}
-          </span>
-        ))}
-      </div>
+      <CarouselDots count={banners.length} index={index} autoplay={autoplay} fillRef={fillRef} />
     </div>
   );
 }
