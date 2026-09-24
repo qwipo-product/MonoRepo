@@ -1,12 +1,13 @@
-import { Home, RotateCcw, ShoppingCart } from 'lucide-react';
+import { Home, RotateCcw, Headset, ShoppingCart } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 
-/* Buyer-shell bottom tab bar (Home · Reorder · Cart). Shown only on root
-   screens; pushed/detail screens carry their own header instead. */
+/* Buyer-shell bottom tab bar (Home · Reorder · Contact us · Cart). Shown only
+   on root screens; pushed/detail screens carry their own header instead. */
 const TABS = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'reorder', icon: RotateCcw, label: 'Reorder' },
+  { id: 'sub:help', icon: Headset, label: 'Contact us' },
   { id: 'cart', icon: ShoppingCart, label: 'Cart' },
 ] as const;
 
@@ -20,7 +21,7 @@ export function BottomNav({
   onNavigate: (id: ScreenId) => void;
 }) {
   return (
-    <nav className="grid flex-shrink-0 grid-cols-3 border-t border-border bg-card pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+    <nav className="grid flex-shrink-0 grid-cols-4 border-t border-border bg-card pb-[max(0.25rem,env(safe-area-inset-bottom))]">
       {TABS.map(({ id, icon: Icon, label }) => (
         <button
           key={id}
