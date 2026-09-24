@@ -152,8 +152,10 @@ export function SellerBrowseScreen({
                 {/* delivery day(s) + the MOV for each — the same rows the
                     product cards carry, from the one delivery source, so a
                     seller's terms read identically wherever they appear */}
-                <div className="border-t border-border px-3 py-2.5 text-xs text-foreground-secondary">
-                  <div className="mb-1">Delivery by</div>
+                <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                    Delivery by
+                  </div>
                   {deliveryFooter(d.name)}
                 </div>
 
