@@ -63,7 +63,7 @@ import { ReorderScreen } from './screens/ReorderScreen';
 import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
-import { PRODUCTS, productById } from './data/products';
+import { PRODUCTS, productById, type Source } from './data/products';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart, INITIAL_QTY } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
@@ -206,6 +206,9 @@ export default function App() {
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
+  /* Set when Reorder is opened from a Home rail, cleared when it's opened
+     from the bottom nav — that entry carries no opts and shows everything. */
+  const [reorderSource, setReorderSource] = useState<Source | undefined>(undefined);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -342,6 +345,7 @@ export default function App() {
     // bounce carries no backTo and should keep the original target.
     if (id === 'storefront' && opts?.backTo) setStorefrontBackTo(opts.backTo);
     if (id === 'storefront' && opts?.distributor) setSelectedDistributor(opts.distributor);
+    if (id === 'reorder') setReorderSource(opts?.source);
     if (id === 'distributors-list' || id === 'wholesaler-categories') {
       setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
@@ -588,7 +592,7 @@ export default function App() {
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':
-        return <ReorderScreen qty={qty} onOpenSheet={setSheetId} onSearch={() => go('global-search')} onBack={() => go('home')} />;
+        return <ReorderScreen qty={qty} source={reorderSource} onOpenSheet={setSheetId} onSearch={() => go('global-search')} onBack={() => go('home')} />;
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go(shell === 'paytm' ? 'home' : 'login')} salesperson={isSalesperson} />;
       case 'notifications':
