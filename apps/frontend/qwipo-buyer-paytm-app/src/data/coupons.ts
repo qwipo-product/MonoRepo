@@ -73,6 +73,22 @@ export const OFFERS: Offer[] = [
     minOrder: 500,
   },
   {
+    // Whole-order like save5 above — no `needs`, so it isn't any one
+    // seller's scheme, and no `minOrder`, so it's available regardless of
+    // cart size. The condition it's actually gated on (paying by cash) isn't
+    // something the cart can evaluate — same gap the ONDC spec itself flags
+    // for "Early Payment / Cash Discount": explained at the payment step at
+    // checkout, no scheme payload for it. This card represents the buyer
+    // opting in; checkout is where it'd actually be enforced.
+    id: 'cash-payment-3off',
+    code: 'CASH3',
+    expires: '31 Dec 2026',
+    label: '3% Off',
+    benefit: 'Get 3% off',
+    scope: 'when you pay cash on delivery',
+    automatic: false,
+  },
+  {
     id: 'oil-case',
     code: 'OILBOGO10',
     expires: '31 Oct 2026',
