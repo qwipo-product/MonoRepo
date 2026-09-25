@@ -619,7 +619,14 @@ export default function App() {
           />
         );
       case 'coupons':
-        return <CouponsScreen cart={CART} onBack={() => go('cart')} onApply={() => go('cart')} />;
+        return (
+          <CouponsScreen
+            cart={CART}
+            onBack={() => go('cart')}
+            onApply={() => go('cart')}
+            onOpenProduct={setSheetId}
+          />
+        );
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
       case 'reorder':

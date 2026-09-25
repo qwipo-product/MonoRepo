@@ -434,6 +434,10 @@ export interface ResolvedOffer {
   state: OfferState;
   /** "Add 30 more units of Fortune Besan" — set on `needs-items` / `locked`. */
   requirement?: string;
+  /** The SKU that's short, when `state` is `needs-items` — the id "Add Items"
+   * opens, so the button goes straight to the product it's actually asking
+   * for rather than back to a generic list. */
+  shortfallProductId?: string;
 }
 
 /**
@@ -507,6 +511,7 @@ export function resolveOffer(
       offer,
       state: 'needs-items',
       requirement: `Add ${short.qty - qtyOf(short.productId)} more units of ${shortName(short.productId)}`,
+      shortfallProductId: short.productId,
     };
   }
 

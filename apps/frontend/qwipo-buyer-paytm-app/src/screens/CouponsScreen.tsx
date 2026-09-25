@@ -32,11 +32,16 @@ export function CouponsScreen({
   cart,
   onBack,
   onApply,
+  onOpenProduct,
 }: {
   /** The live cart App.tsx built from the buyer's actual picked quantities. */
   cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onApply: () => void;
+  /** "Add Items" opens this exact SKU's add-to-cart sheet, right over this
+   * screen — the same sheet every product card opens — instead of just
+   * sending the buyer back to a list they'd have to find it in again. */
+  onOpenProduct: (productId: string) => void;
 }) {
   const [appliedId, setAppliedId] = useState<string | null>(null);
   /** null = the All chip. Otherwise a seller name. */
@@ -200,7 +205,12 @@ export function CouponsScreen({
                     seller={g.seller === 'Your order' ? undefined : g.seller}
                     onApplyCoupon={() => setAppliedId(r.offer.id)}
                     onRemoveCoupon={() => setAppliedId(null)}
-                    onAddItems={onBack}
+                    // Go straight to the SKU that's short, not just back to
+                    // the cart — falls back to onBack on the off chance a
+                    // needs-items card somehow carries no shortfall id.
+                    onAddItems={() =>
+                      r.shortfallProductId ? onOpenProduct(r.shortfallProductId) : onBack()
+                    }
                   />
                 ))}
               </section>
