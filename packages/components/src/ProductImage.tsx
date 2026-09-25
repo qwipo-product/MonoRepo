@@ -17,7 +17,23 @@ export interface ProductImageProps {
 
 export function ProductImage({ image, alt = '', className }: ProductImageProps) {
   if (isProductPhoto(image)) {
-    return <img src={encodeURI(image!)} alt={alt} className={cn('h-full w-full object-contain', className)} />;
+    /* The picture goes in a box of its own rather than straight into the
+       plate. The plates centre their content, and an <img> carries an
+       intrinsic aspect ratio, so it ignores a stretch and a percentage height
+       has nothing definite to resolve against — a tall pack (the 1 L bottle
+       is over three times its frame) grew past the plate and was clipped. A
+       plain span has no ratio of its own, so it does take the plate's size,
+       and the picture fills it absolutely: contained, centred, edge to edge
+       on whichever side runs out first. */
+    return (
+      <span className="relative block h-full w-full self-stretch justify-self-stretch">
+        <img
+          src={encodeURI(image!)}
+          alt={alt}
+          className={cn('absolute inset-0 h-full w-full object-contain', className)}
+        />
+      </span>
+    );
   }
   return <span aria-hidden>{image ?? '📦'}</span>;
 }
