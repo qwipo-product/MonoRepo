@@ -351,7 +351,7 @@ function OfferCard({
           so it carries Remove beside it. */}
       <div className="flex items-center justify-center gap-2 border-t border-border px-3 py-2">
         {state === 'auto' ? (
-          <AppliedPill>Applied automatically</AppliedPill>
+          <AppliedPill>Applied</AppliedPill>
         ) : state === 'applied' ? (
           <>
             <AppliedPill>Applied</AppliedPill>
