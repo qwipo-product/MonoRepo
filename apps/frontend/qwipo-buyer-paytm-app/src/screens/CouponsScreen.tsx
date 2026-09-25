@@ -183,23 +183,23 @@ export function CouponsScreen({
               />
             ) : null}
 
+            {/* No heading per group any more — each card names its own seller
+                now (see OfferCard), so the heading was saying the same thing
+                twice. The extra gap between <section>s (vs. the tighter
+                space-y-3 between cards inside one) is what now marks a new
+                seller starting, instead of a label. */}
             {groups.map((g) => (
-              <section key={g.seller} className="mb-4 last:mb-0">
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground-secondary">
-                  {g.seller}
-                </h2>
-                <div className="space-y-3">
-                  {g.items.map((r) => (
-                    <OfferCard
-                      key={r.offer.id}
-                      resolved={r}
-                      seller={g.seller}
-                      onApplyCoupon={() => setAppliedId(r.offer.id)}
-                      onRemoveCoupon={() => setAppliedId(null)}
-                      onAddItems={onBack}
-                    />
-                  ))}
-                </div>
+              <section key={g.seller} className="mb-5 last:mb-0 space-y-3">
+                {g.items.map((r) => (
+                  <OfferCard
+                    key={r.offer.id}
+                    resolved={r}
+                    seller={g.seller}
+                    onApplyCoupon={() => setAppliedId(r.offer.id)}
+                    onRemoveCoupon={() => setAppliedId(null)}
+                    onAddItems={onBack}
+                  />
+                ))}
               </section>
             ))}
           </>
