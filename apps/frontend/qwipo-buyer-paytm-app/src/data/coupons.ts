@@ -176,10 +176,10 @@ export const OFFERS: Offer[] = [
 
   /* ── Offer-pattern coverage — one SKU per scheme type below (see
      data/products.ts p31–p39), plus two SKUs stacking two patterns and one
-     flagship SKU carrying all five at once. Written against the demo cart
-     the same way the block above is: most qualify out of the box, one
-     (Sunfeast Marie Gold's Slab) is left short so the "needs-items" state
-     still has a live example. */
+     flagship SKU carrying four at once. Written against the demo cart the
+     same way the block above is: most qualify out of the box, one (Sunfeast
+     Marie Gold's Slab) is left short so the "needs-items" state still has a
+     live example. */
   {
     label: 'Bogo',
     benefit: 'Buy 1 Case Get 1 Free',
@@ -295,17 +295,6 @@ export const OFFERS: Offer[] = [
     id: 'tata-sampann-toor-dal-bonus',
     code: 'TOORDAL40',
     expires: '31 Dec 2026',
-  },
-  {
-    label: 'Bogo',
-    benefit: 'Buy 1 Case Get 1 Free',
-    scope: 'on Tata Salt Iodised',
-    automatic: true,
-    needs: [{ productId: 'p39', qty: 20 }],
-    reward: { productId: 'p39', qty: 20 },
-    id: 'tata-salt-iodised-bogo',
-    code: 'SALTBOGO',
-    expires: '15 Nov 2026',
   },
   {
     label: 'Freebie',

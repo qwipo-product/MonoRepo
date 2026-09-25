@@ -380,8 +380,10 @@ export const PRODUCTS: Product[] = [
     price: 148, mrp: 168, deliveryDay: 'Mon (Beat day)', mov: 2000,
   },
   {
-    // The kitchen-sink SKU — BOGO + Freebie + Case Bonus + Slab + Combo
-    // (paired with Tata Salt Black Salt Sachet, p22) all live at once.
+    // The kitchen-sink SKU — Freebie + Case Bonus + Slab + Combo (paired
+    // with Tata Salt Black Salt Sachet, p22) all live at once. Its Bogo was
+    // dropped — it and the Freebie both fired off the same 20-unit line,
+    // which read as a duplicate rather than two schemes stacking.
     id: 'p39', name: 'Tata Salt Iodised - 1 kg Pack X 20 Nos', shortName: 'Tata Salt Iodised',
     category: 'Masala & Seasoning', caseLabel: 'Case: 20 pc', caseSize: 20, image: '🧂',
     variants: [{ id: '1kg', label: '1 kg' }],
