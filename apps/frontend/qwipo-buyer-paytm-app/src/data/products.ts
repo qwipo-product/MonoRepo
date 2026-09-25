@@ -401,6 +401,25 @@ export const PRODUCTS: Product[] = [
     seller: 'Sri Sai Krishna Traders', source: 'distributor', delivery: 'Free Delivery', margin: '8% Net Margin',
     price: 10, mrp: 12, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
+
+  // ── Two more Tata Consumer Products SKUs, on purpose without QPS — p30
+  // (Tata Salt Crystal) is the only SKU that carries it, since QPS is real
+  // TCP data run on that one product specifically, not a default every TCP
+  // SKU gets. These two run other schemes instead, for the contrast.
+  {
+    id: 'p41', name: 'Tata Coffee Grand - 200 g Jar X 24 Nos', shortName: 'Tata Coffee Grand',
+    category: 'Beverages', caseLabel: 'Case: 24 pc', caseSize: 24, image: '☕',
+    variants: [{ id: '100g', label: '100 g' }, { id: '200g', label: '200 g' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '11% Net Margin',
+    price: 195, mrp: 225, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
+  {
+    id: 'p42', name: 'Tata Sampann Chana Dal - 1 kg Pack X 15 Nos', shortName: 'Tata Sampann Chana Dal',
+    category: 'Dals & Pulses', caseLabel: 'Case: 15 pc', caseSize: 15, image: '🫘',
+    variants: [{ id: '500g', label: '500 g' }, { id: '1kg', label: '1 kg' }],
+    seller: 'Tata Consumer Products', source: 'distributor', delivery: 'Free Delivery', margin: '10% Net Margin',
+    price: 132, mrp: 150, deliveryDay: 'Mon (Beat day)', mov: 2000,
+  },
 ];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);

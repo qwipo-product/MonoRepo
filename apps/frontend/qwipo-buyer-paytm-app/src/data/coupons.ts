@@ -356,6 +356,32 @@ export const OFFERS: Offer[] = [
     code: 'SALTCOMBO10',
     expires: '15 Dec 2026',
   },
+  // Two more Tata Consumer Products SKUs — deliberately no QPS (see
+  // data/products.ts p41/p42): they run other schemes instead, so a demo can
+  // show QPS is real TCP data on one specific SKU (p30), not a default every
+  // TCP product carries.
+  {
+    label: 'Freebie',
+    benefit: 'Buy 12 units → Get 1 FREE',
+    scope: 'on Tata Coffee Grand',
+    automatic: true,
+    needs: [{ productId: 'p41', qty: 12 }],
+    reward: { productId: 'p41', qty: 1 },
+    id: 'tata-coffee-grand-freebie',
+    code: 'COFFEE12',
+    expires: '31 Dec 2026',
+  },
+  {
+    label: 'Discount',
+    benefit: '8% Off',
+    scope: 'on 6+ units of Tata Sampann Chana Dal',
+    automatic: true,
+    needs: [{ productId: 'p42', qty: 6 }],
+    discountPct: 8,
+    id: 'tata-chana-dal-discount',
+    code: 'CHANADAL8',
+    expires: '30 Nov 2026',
+  },
   /* Wholesale SKUs run schemes too. Same shape as the distributor ones —
      the cart checks both catalogues, so these fire off wholesale quantities
      and pay out in real ₹0 lines like any other. */
