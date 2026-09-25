@@ -194,7 +194,10 @@ export function CouponsScreen({
                   <OfferCard
                     key={r.offer.id}
                     resolved={r}
-                    seller={g.seller}
+                    // "Your order" isn't a seller — a whole-order coupon has
+                    // none, so its cards skip the label rather than naming a
+                    // seller that isn't really who's offering it.
+                    seller={g.seller === 'Your order' ? undefined : g.seller}
                     onApplyCoupon={() => setAppliedId(r.offer.id)}
                     onRemoveCoupon={() => setAppliedId(null)}
                     onAddItems={onBack}
@@ -246,9 +249,10 @@ function OfferCard({
   onAddItems,
 }: {
   resolved: ResolvedOffer;
-  /** The seller heading this card sits under — repeated on the card itself
-   * so it still reads correctly scrolled mid-list, away from its heading. */
-  seller: string;
+  /** Which seller runs this offer — repeated on the card itself so it still
+   * reads correctly scrolled mid-list. Undefined for a whole-order coupon:
+   * it isn't any seller's own offer, so the card names none. */
+  seller: string | undefined;
   onApplyCoupon: () => void;
   onRemoveCoupon: () => void;
   onAddItems: () => void;
@@ -285,12 +289,13 @@ function OfferCard({
           </span>
 
           <span className="min-w-0 flex-1">
-            {/* which seller this offer belongs to — same name as the section
-                heading above, repeated here so the card still reads correctly
-                once you've scrolled past the heading */}
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-foreground-secondary">
-              {seller}
-            </span>
+            {/* which seller this offer belongs to — omitted for a whole-order
+                coupon, which isn't really any seller's own offer */}
+            {seller && (
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-foreground-secondary">
+                {seller}
+              </span>
+            )}
 
             {/* the seller's published code — tap to copy */}
             <span
