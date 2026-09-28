@@ -1,4 +1,4 @@
-import { Bell, User, MapPin, ChevronDown, Search, ArrowRight, ClipboardList } from 'lucide-react';
+import { Bell, User, MapPin, ChevronDown, Search, ClipboardList } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import type { ScreenId } from '../review/screenIndex';
@@ -396,29 +396,17 @@ function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => vo
   );
 }
 
-const OFFER_TONE: Record<HomeOffer['tone'], string> = {
-  primary: 'bg-primary-soft text-primary',
-  success: 'bg-success-subtle text-success-foreground',
-  warning: 'bg-warning-subtle text-warning-foreground',
-};
-
+/* The promotion is the artwork — no type of ours on top of it, so the tile is
+   the picture and nothing else. Square, the size the tiles already were. */
 function OfferCard({ offer, onClick }: { offer: HomeOffer; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={cn('flex h-30 w-30 shrink-0 flex-col rounded-lg p-3 text-left', OFFER_TONE[offer.tone])}
+      aria-label={offer.label}
+      className="h-30 w-30 shrink-0 overflow-hidden rounded-lg active:scale-[0.98]"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-base font-bold leading-tight">{offer.headline}</div>
-        <div className="shrink-0 text-2xl leading-none">{offer.emoji}</div>
-      </div>
-      <div className="mt-auto">
-        <div className="text-sm font-semibold text-foreground">{offer.brand}</div>
-        <div className="truncate text-xs text-foreground-secondary">{offer.sub}</div>
-        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold">
-          Shop now <ArrowRight className="h-3.5 w-3.5" />
-        </span>
-      </div>
+      <img src={encodeURI(offer.image)} alt="" className="h-full w-full object-cover" />
     </button>
   );
 }
