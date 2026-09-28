@@ -80,20 +80,31 @@ export const WHOLESALER_L1: (HomeCategory & { l1: WholesalerL1 })[] = [
   { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png', l1: 'FMCG' },
 ];
 
+/* An exclusive offer is artwork, the way a hero banner is — a promotion is
+   something a brand designs, not a headline the app sets in its own type.
+   `label` is what a screen reader reads and never appears on screen; `brand`
+   is what the tap filters the wholesale list by, so it has to match a brand
+   the catalogue actually carries. */
 export interface HomeOffer {
   id: string;
-  headline: string;
+  image: string;
+  label: string;
   brand: string;
-  sub: string;
-  emoji: string;
-  tone: 'primary' | 'success' | 'warning';
 }
 
-// Exclusive-offer promo cards (Wholesaler feed).
+/* Exclusive-offer promo cards (Wholesaler feed). Eight of them, so the rail
+   runs well past the edge of the screen and reads as something to scroll —
+   three tiles barely filled the width and looked like the whole list. Each
+   brand here carries wholesale stock, so no banner opens an empty list. */
 export const WHOLESALER_OFFERS: HomeOffer[] = [
-  { id: 'o1', headline: 'UP TO 30% OFF', brand: 'Tata Sampann', sub: 'Premium Quality Staples', emoji: '🌾', tone: 'warning' },
-  { id: 'o2', headline: 'SAVE ₹150', brand: 'Surf Excel', sub: 'Stain-Free Clean', emoji: '🧼', tone: 'primary' },
-  { id: 'o3', headline: '25% OFF', brand: 'Aashirvaad', sub: 'Whole Wheat Atta', emoji: '🌾', tone: 'success' },
+  { id: 'o1', image: '/offer-banners/tata-30.svg', label: 'Tata — up to 30% off premium staples', brand: 'Tata' },
+  { id: 'o2', image: '/offer-banners/surf-excel-150.svg', label: 'Surf Excel — save ₹150 on every case', brand: 'Surf Excel' },
+  { id: 'o3', image: '/offer-banners/aashirvaad-25.svg', label: 'Aashirvaad — 25% off whole wheat atta', brand: 'Aashirvaad' },
+  { id: 'o4', image: '/offer-banners/freedom-25.svg', label: 'Freedom — extra ₹25 off per 15 L tin', brand: 'Freedom' },
+  { id: 'o5', image: '/offer-banners/red-label-bogo.svg', label: 'Red Label — buy 10 cases, get 1 free', brand: 'Red Label' },
+  { id: 'o6', image: '/offer-banners/grb-18.svg', label: 'GRB — flat 18% off pure cow ghee', brand: 'GRB' },
+  { id: 'o7', image: '/offer-banners/maggi-12.svg', label: 'Maggi — flat 12% off cases of 24', brand: 'Maggi' },
+  { id: 'o8', image: '/offer-banners/madhur-200.svg', label: 'Madhur — save ₹200 on bulk sugar', brand: 'Madhur' },
 ];
 
 export const WHOLESALER_CATEGORIES: WholesalerCategory[] = [
