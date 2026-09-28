@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Madhur, save 200 rupees on bulk sugar">
+  <defs>
+    <linearGradient id="md-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#C2410C"/>
+    </linearGradient>
+    <clipPath id="md-clip"><rect width="240" height="240" rx="16"/></clipPath>
+  </defs>
+  <g clip-path="url(#md-clip)">
+    <rect width="240" height="240" fill="url(#md-bg)"/>
+    <circle cx="204" cy="206" r="74" fill="#FFFFFF" opacity="0.10"/>
+    <circle cx="28" cy="16" r="44" fill="#FFFFFF" opacity="0.08"/>
+    <g opacity="0.22" fill="#FFFFFF">
+      <rect x="180" y="46" width="22" height="16" rx="3"/>
+      <rect x="200" y="62" width="22" height="16" rx="3"/>
+      <rect x="184" y="78" width="22" height="16" rx="3"/>
+    </g>
+
+    <text x="20" y="40" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="13" font-weight="700" letter-spacing="1.6" fill="#FFFFFF" opacity="0.85">MADHUR</text>
+
+    <text x="20" y="98" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="19" font-weight="600" fill="#FFFFFF" opacity="0.9">SAVE</text>
+    <text x="20" y="150" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="52" font-weight="800" fill="#FFFFFF">&#8377;200</text>
+
+    <text x="20" y="176" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="14" font-weight="500" fill="#FFFFFF" opacity="0.88">On bulk sugar</text>
+
+    <g transform="translate(20 194)">
+      <rect width="116" height="28" rx="14" fill="#FFFFFF"/>
+      <text x="16" y="19" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+            font-size="13" font-weight="700" fill="#C2410C">Shop now</text>
+      <path d="M94 14h8m-3-3.5 3.5 3.5-3.5 3.5" stroke="#C2410C" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+</svg>

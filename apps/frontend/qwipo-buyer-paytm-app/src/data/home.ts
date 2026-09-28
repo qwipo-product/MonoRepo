@@ -92,11 +92,19 @@ export interface HomeOffer {
   brand: string;
 }
 
-// Exclusive-offer promo cards (Wholesaler feed).
+/* Exclusive-offer promo cards (Wholesaler feed). Eight of them, so the rail
+   runs well past the edge of the screen and reads as something to scroll —
+   three tiles barely filled the width and looked like the whole list. Each
+   brand here carries wholesale stock, so no banner opens an empty list. */
 export const WHOLESALER_OFFERS: HomeOffer[] = [
   { id: 'o1', image: '/offer-banners/tata-30.svg', label: 'Tata — up to 30% off premium staples', brand: 'Tata' },
   { id: 'o2', image: '/offer-banners/surf-excel-150.svg', label: 'Surf Excel — save ₹150 on every case', brand: 'Surf Excel' },
   { id: 'o3', image: '/offer-banners/aashirvaad-25.svg', label: 'Aashirvaad — 25% off whole wheat atta', brand: 'Aashirvaad' },
+  { id: 'o4', image: '/offer-banners/freedom-25.svg', label: 'Freedom — extra ₹25 off per 15 L tin', brand: 'Freedom' },
+  { id: 'o5', image: '/offer-banners/red-label-bogo.svg', label: 'Red Label — buy 10 cases, get 1 free', brand: 'Red Label' },
+  { id: 'o6', image: '/offer-banners/grb-18.svg', label: 'GRB — flat 18% off pure cow ghee', brand: 'GRB' },
+  { id: 'o7', image: '/offer-banners/maggi-12.svg', label: 'Maggi — flat 12% off cases of 24', brand: 'Maggi' },
+  { id: 'o8', image: '/offer-banners/madhur-200.svg', label: 'Madhur — save ₹200 on bulk sugar', brand: 'Madhur' },
 ];
 
 export const WHOLESALER_CATEGORIES: WholesalerCategory[] = [
