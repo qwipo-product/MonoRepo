@@ -40,7 +40,9 @@ export function PriceLabel({
       <span
         className={cn(
           'font-bold tabular-nums text-foreground',
-          size === 'lg' ? 'text-lg' : 'text-sm'
+          // 16px, not 18: the selling price is the number that matters on a
+          // card, but at 18 it shouted over everything around it.
+          size === 'lg' ? 'text-base' : 'text-sm'
         )}
       >
         {inr(price)}

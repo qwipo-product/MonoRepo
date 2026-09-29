@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Badge, Button, Card, Chip, QtyStepper } from '@mockups/ui';
 import { ProductImage, PriceLabel, formatInr } from '@mockups/components';
-import { cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
+import type { WholesalerProduct } from '../data/wholesaler';
 import { VendorPicker } from './VendorPicker';
 
 /* The wholesale product card. Unlike the distributor card, the same SKU is
@@ -32,7 +32,6 @@ export function VendorProductCard({
   onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
-  const cheapest = cheapestVendorId(product);
   const selected = product.vendors.find((v) => v.id === vendorId) ?? product.vendors[0];
 
   return (
@@ -73,7 +72,6 @@ export function VendorProductCard({
         vendors={product.vendors}
         value={vendorId}
         onChange={onVendor}
-        cheapestId={cheapest}
       />
 
       {/* The chosen vendor's terms, read across two rows: when it arrives

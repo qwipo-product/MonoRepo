@@ -25,7 +25,7 @@ const matchesApplied = (p: WholesalerProduct, a: AppliedFilter) =>
 
 /* Wholesaler Product List — replica of the distributor list, but each product
    is offered by MULTIPLE vendors (price + fee). The buyer selects a vendor per
-   line; the cheapest is tagged "Best". Add opens the selling-units sheet. */
+   line. Add opens the selling-units sheet. */
 export function WholesalerProductsScreen({
   applied: appliedProp = [],
   qty,
