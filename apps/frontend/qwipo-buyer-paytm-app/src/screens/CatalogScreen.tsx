@@ -10,6 +10,7 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { useEmptyable } from '../review/demoState';
+import { useMarketingPromotions } from '../hooks/useMarketingRelay';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
@@ -62,6 +63,10 @@ export function CatalogScreen({
     brand: (p) => brandOf(p.shortName),
     price: (p) => p.price,
   }));
+
+  // Live product-list banners published from the marketing platform.
+  const marketingPromotions = useMarketingPromotions();
+  const productListBanner = marketingPromotions.find((p) => p.surface === 'product_list' && p.asset_data_url);
   const activeFilters = countActiveFilters(filters);
 
   /* What the buyer asked for, in their words: the brand or category they
@@ -114,6 +119,13 @@ export function CatalogScreen({
       <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+        {productListBanner && (
+          <img
+            src={productListBanner.asset_data_url}
+            alt={productListBanner.display_name}
+            className="aspect-square w-full rounded-lg object-cover"
+          />
+        )}
         {items.length === 0 ? (
           <EmptyState
             icon={<PackageOpen strokeWidth={1.75} />}

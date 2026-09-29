@@ -1,14 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, Bell, BellOff } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
-import { NOTIFICATIONS, type AppNotification } from '../data/notifications';
+import { NOTIFICATIONS, type AppNotification, type NotificationType } from '../data/notifications';
 import { useEmptyable } from '../review/demoState';
+import { useMarketingNotifications } from '../hooks/useMarketingRelay';
+
+// Marketing-platform categories don't map 1:1 onto this app's four-way type —
+// this is the closest reasonable fit for how each shows up in the feed.
+const CATEGORY_TO_TYPE: Record<string, NotificationType> = {
+  promotional: 'promo',
+  schemes: 'promo',
+  operational: 'system',
+  system: 'system',
+  credit_payments: 'system',
+};
 
 /* Notifications — a single feed. Each card can be marked read on tap, or all at
    once from the header. */
 export function NotificationsScreen({ onBack }: { onBack: () => void }) {
   const source = useEmptyable(NOTIFICATIONS);
   const [notifs, setNotifs] = useState<AppNotification[]>(source);
+
+  // Live notifications published from the marketing platform — merged in
+  // ahead of the static set, newest first, deduped by id across polls.
+  const marketingNotifications = useMarketingNotifications();
+  useEffect(() => {
+    if (marketingNotifications.length === 0) return;
+    setNotifs((list) => {
+      const knownIds = new Set(list.map((n) => n.id));
+      const incoming = marketingNotifications
+        .filter((n) => !knownIds.has(n.id))
+        .map<AppNotification>((n) => ({
+          id: n.id,
+          type: CATEGORY_TO_TYPE[n.category] ?? 'system',
+          title: n.title,
+          body: n.body,
+          time: new Date(n.created_at).toLocaleString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }),
+          unread: true,
+        }));
+      return incoming.length > 0 ? [...incoming, ...list] : list;
+    });
+  }, [marketingNotifications]);
 
   const unread = notifs.filter((n) => n.unread).length;
 

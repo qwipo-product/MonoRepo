@@ -21,6 +21,7 @@ import {
 } from '../data/home';
 import { previouslyOrdered } from '../data/reorder';
 import { trendingNearby } from '../data/trending';
+import { useMarketingPromotions } from '../hooks/useMarketingRelay';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
@@ -70,6 +71,14 @@ export function HomeScreen({
   const distAvailable = availability !== 'wholesalers' && distributors.length > 0;
   const wholeAvailable = availability !== 'distributors' && wholesalerL1.length > 0;
   const effectiveTab = !distAvailable ? 'wholesalers' : !wholeAvailable ? 'distributors' : tab;
+
+  // Live promotions published from the marketing platform — home-carousel
+  // banners with an uploaded creative go first, ahead of the static set.
+  const marketingPromotions = useMarketingPromotions();
+  const liveBanners = marketingPromotions
+    .filter((promotion) => promotion.surface === 'home_carousel' && promotion.asset_data_url)
+    .map((promotion) => promotion.asset_data_url!);
+  const banners = [...liveBanners, ...HERO_BANNERS];
 
   return (
     <div className="no-scrollbar flex h-full flex-col overflow-y-auto">
@@ -157,7 +166,7 @@ export function HomeScreen({
       </div>
 
       <div className="mt-4 space-y-6">
-        <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
+        <BannerCarousel banners={banners} onOpen={() => onNavigate('listing')} />
 
         {effectiveTab === 'distributors' ? (
           <>
