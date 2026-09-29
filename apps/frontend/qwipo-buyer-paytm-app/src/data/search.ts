@@ -37,10 +37,13 @@ const words = (s: string) => (normalise(s) ? normalise(s).split(' ') : []);
 
 /* A query word matches a catalogue word by PREFIX, never mid-word: "dal"
    finds Dal and Dals and leaves Mysore Sandal alone, which matching anywhere
-   in the string does not. Two-letter words have to match exactly, so "ol"
-   doesn't drag in Olive, and single letters match nothing at all. */
-const wordMatches = (q: string, w: string) =>
-  q.length <= 1 ? false : q.length === 2 ? w === q : w.startsWith(q);
+   in the string does not.
+
+   Two letters is enough to start matching — a buyer who has typed "to" is
+   after Toor Dal and shouldn't have to finish the word to see it. A single
+   letter still matches nothing: every product begins with some letter, so
+   the first one narrows nothing. */
+const wordMatches = (q: string, w: string) => q.length > 1 && w.startsWith(q);
 
 /* Hinglish and vernacular are out of scope for this phase. They're listed
    rather than inferred, because some of them are one edit from a real word —
