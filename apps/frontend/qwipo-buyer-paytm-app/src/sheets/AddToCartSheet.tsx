@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
-import { packTiers, splitIntoPacks, type Product } from '../data/products';
+import { defaultVariantId, packTiers, skuFor, splitIntoPacks, type Product } from '../data/products';
 import { PackTierRow } from './PackTierRow';
 
 // Distributor selling-units sheet (screen 14). Content mirrors the source:
@@ -30,7 +30,11 @@ export function AddToCartSheet({
   const tiers = packTiers(product.caseSize);
   // What's in the cart, expressed as packs of these tiers.
   const inCart = splitIntoPacks(qty, tiers);
-  const activeVariant = variant || product.variants[0].id;
+  /* The pack on show, and its own picture and price. The cards already read
+     these per pack; the sheet was still quoting the product's base figures,
+     so Freedom opened on the 500 ml pouch priced like a 1 L one. */
+  const activeVariant = variant || defaultVariantId(product);
+  const sku = skuFor(product, activeVariant);
 
   return (
     <Sheet
@@ -46,7 +50,7 @@ export function AddToCartSheet({
               Total value
             </div>
             <div className="text-lg font-bold tabular-nums text-foreground">
-              {formatInr(product.price * qty)}
+              {formatInr(sku.price * qty)}
             </div>
           </div>
           <Button className="px-8" onClick={onContinue}>
@@ -58,7 +62,7 @@ export function AddToCartSheet({
       {/* product header */}
       <div className="flex items-center gap-3">
         <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-2xl ring-2 ring-warning/70">
-          <ProductImage image={product.image} alt={product.name} />
+          <ProductImage image={sku.image} alt={product.name} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">{product.shortName}</div>
@@ -82,14 +86,14 @@ export function AddToCartSheet({
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
           <div className="text-sm font-medium tabular-nums text-foreground-secondary line-through">
-            {formatInr(product.mrp)}
+            {formatInr(sku.mrp)}
           </div>
         </div>
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
-          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(product.price)}</div>
+          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(sku.price)}</div>
         </div>
-        <div className="ml-auto text-sm font-semibold text-success-foreground">{product.margin}</div>
+        <div className="ml-auto text-sm font-semibold text-success-foreground">{sku.margin}</div>
       </div>
 
       {/* pack tiers */}
@@ -99,7 +103,7 @@ export function AddToCartSheet({
             key={t.id}
             label={t.label}
             pcs={t.pcs}
-            unitPrice={product.price}
+            unitPrice={sku.price}
             initialPacks={inCart[t.id] ?? 0}
             onDelta={onAdd}
           />
