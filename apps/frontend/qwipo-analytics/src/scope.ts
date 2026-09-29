@@ -3,6 +3,7 @@
 // silently reset the user's selections.
 import { createContext, useContext } from 'react';
 import { ALL, type Filters } from './components/filters';
+import { DEFAULT_SCOPE, type BuyerScope } from './data/buyer';
 
 export const ScopeContext = createContext<{ f: Filters; setF: (f: Filters) => void }>({
   f: ALL,
@@ -10,3 +11,12 @@ export const ScopeContext = createContext<{ f: Filters; setF: (f: Filters) => vo
 });
 
 export const useScope = () => useContext(ScopeContext);
+
+// Buyer-side scope — date range + State / City / Distributor, shared by the
+// DigiDukaan · Buyer pages so moving between them keeps the selection.
+export const BuyerScopeContext = createContext<{ s: BuyerScope; setS: (s: BuyerScope) => void }>({
+  s: DEFAULT_SCOPE,
+  setS: () => {},
+});
+
+export const useBuyerScope = () => useContext(BuyerScopeContext);

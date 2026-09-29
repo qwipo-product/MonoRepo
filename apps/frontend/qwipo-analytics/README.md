@@ -21,6 +21,23 @@ http://localhost:5177
 - **Reports** — one table; Run, History and Schedule drawers that reuse the
   dashboard's filter controls.
 
+### DigiDukaan · Buyer (sales team)
+
+Data from the buyer-app database — Telangana, Maharashtra, Rajasthan.
+Its own scope bar (dd-mm-yyyy range + State / City / Distributor) shared by
+the three pages; one generated world in `src/data/buyer.ts`, so every number
+agrees across pages.
+
+- **Sales dashboard** — summary cards, Distributors and customer-wise Orders
+  tables, each with its own Export (CSV).
+- **BA performance** — target vs achievement, coverage, beat share, today's
+  orders, attention tiles; BA drawer with beats and a call list.
+- **Customers** — the outlet database: beat, BA, mapped + discoverable
+  distributors, KYC, Active / Dormant / Never ordered; customer drawer.
+
+Reports is split the same way: DigiDukaan · Seller, Ops (Logistics),
+DigiDukaan · Buyer (`#reports/<seller|ops|buyer>`).
+
 One app-wide scope bar (Date range, Company, City, Distributor) that
 survives navigation; entity filters live in a right-side panel, the date
 range in its own popover.
