@@ -5,8 +5,12 @@ import Sales from './screens/Sales';
 import Distributors from './screens/Distributors';
 import Customers from './screens/Customers';
 import Reports from './screens/Reports';
+import BuyerSales from './screens/BuyerSales';
+import BuyerBA from './screens/BuyerBA';
+import BuyerCustomers from './screens/BuyerCustomers';
 import { ALL, type Filters } from './components/filters';
-import { ScopeContext } from './scope';
+import { BuyerScopeContext, ScopeContext } from './scope';
+import { DEFAULT_SCOPE, type BuyerScope } from './data/buyer';
 import type { Page } from './nav';
 
 // Hash holds the page and an optional drill segment, e.g. #sales/overdue —
@@ -19,6 +23,7 @@ const fromHash = () => {
 export default function App() {
   const [route, setRoute] = useState(fromHash);
   const [scope, setScope] = useState<Filters>(ALL);
+  const [buyerScope, setBuyerScope] = useState<BuyerScope>(DEFAULT_SCOPE);
   useEffect(() => {
     const onHash = () => setRoute(fromHash());
     window.addEventListener('hashchange', onHash);
@@ -28,7 +33,8 @@ export default function App() {
 
   return (
     <ScopeContext.Provider value={{ f: scope, setF: setScope }}>
-      <Shell page={route.page} onNavigate={go}>
+    <BuyerScopeContext.Provider value={{ s: buyerScope, setS: setBuyerScope }}>
+      <Shell page={route.page} drill={route.drill} onNavigate={go}>
         {route.page === 'overview' ? (
           <Overview go={go} />
         ) : route.page === 'sales' ? (
@@ -37,12 +43,19 @@ export default function App() {
           <Distributors go={go} />
         ) : route.page === 'customers' ? (
           <Customers go={go} />
+        ) : route.page === 'buyer-sales' ? (
+          <BuyerSales />
+        ) : route.page === 'buyer-ba' ? (
+          <BuyerBA go={go} />
+        ) : route.page === 'buyer-customers' ? (
+          <BuyerCustomers key={route.drill ?? ''} drill={route.drill} />
         ) : route.page === 'reports' ? (
-          <Reports go={go} drill={route.drill} />
+          <Reports key={route.drill ?? ''} go={go} drill={route.drill} />
         ) : (
           <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
         )}
       </Shell>
+    </BuyerScopeContext.Provider>
     </ScopeContext.Provider>
   );
 }
