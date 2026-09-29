@@ -43,9 +43,12 @@ export function PackTierRow({
         <div className="text-xs tabular-nums text-foreground-secondary">{formatInr(unitPrice)}</div>
         <div className="text-sm font-bold tabular-nums text-foreground">{formatInr(unitPrice * pcs)}</div>
       </div>
-      {/* what this tier puts in the cart sits under the control that changes
-          it, rather than beside the pack size it isn't */}
-      <div className="w-28 shrink-0">
+      {/* Narrow enough that "+ Add" isn't swimming in its own button, wide
+          enough for the stepper that replaces it — one width for both, so the
+          row doesn't reflow when a tier goes into the cart. What this tier
+          puts in the cart sits under the control that changes it, rather than
+          beside the pack size it isn't. */}
+      <div className="w-22 shrink-0">
         {packs > 0 ? (
           <QtyStepper value={packs} onChange={set} min={0} tone="soft" className="w-full" />
         ) : (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Badge, Button, Card, Chip, QtyStepper } from '@mockups/ui';
 import { ProductImage, PriceLabel, formatInr } from '@mockups/components';
-import { cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
+import type { WholesalerProduct } from '../data/wholesaler';
 import { VendorPicker } from './VendorPicker';
 
 /* The wholesale product card. Unlike the distributor card, the same SKU is
@@ -32,7 +32,6 @@ export function VendorProductCard({
   onDiscounts: () => void;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
-  const cheapest = cheapestVendorId(product);
   const selected = product.vendors.find((v) => v.id === vendorId) ?? product.vendors[0];
 
   return (
@@ -73,7 +72,6 @@ export function VendorProductCard({
         vendors={product.vendors}
         value={vendorId}
         onChange={onVendor}
-        cheapestId={cheapest}
       />
 
       {/* The chosen vendor's terms, read across two rows: when it arrives
@@ -97,35 +95,25 @@ export function VendorProductCard({
         <PriceLabel price={selected.price} suffix="/pc" size="lg" />
       </div>
 
-      {/* Discounts + Add, the same even split the distributor card uses —
-          wholesale SKUs run schemes too, so the sheet has something to say. */}
-      <div className="mt-3 flex items-center gap-2">
-        <div className="flex-1">
-          <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
-            Discounts
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex-1">
+      {/* Discounts + Add, laid out as on the distributor card — each as wide
+          as its own contents, one to each end, 40px tall in either state.
+          Wholesale SKUs run schemes too, so the sheet has something to say. */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <Button variant="soft" className="h-10 font-medium" onClick={onDiscounts}>
+          Discounts
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+        <div>
           {qty > 0 ? (
-            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
+            <QtyStepper value={qty} onChange={onQty} tone="soft" className="h-10" />
           ) : (
-            <Button className="h-10 w-full" onClick={onAdd}>
+            <Button className="h-10" onClick={onAdd}>
               + Add
             </Button>
           )}
         </div>
       </div>
 
-      {/* total for the selected qty */}
-      {qty > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-            Total ({qty} pcs)
-          </span>
-          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(selected.price * qty)}</span>
-        </div>
-      )}
     </Card>
   );
 }

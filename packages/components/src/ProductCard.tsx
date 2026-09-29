@@ -153,19 +153,20 @@ export function ProductCard({
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
 
-      {/* actions — Discounts and Add split the row evenly. Both halves are
-          flex-1, and the Add half keeps its width when qty turns it into the
-          stepper, so the row never reflows. */}
-      <div className="mt-3 flex items-center gap-2">
-        {onDiscounts && (
-          <div className="flex-1">
-            <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
-              Discounts
-              <ChevronDownIcon />
-            </Button>
-          </div>
+      {/* actions — each button is as wide as what's in it, Discounts on the
+          left and Add on the right, rather than two halves of a row. Both are
+          40px tall in every state, so nothing grows or shrinks when a product
+          goes into the cart. */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        {onDiscounts ? (
+          <Button variant="soft" className="h-10 font-medium" onClick={onDiscounts}>
+            Discounts
+            <ChevronDownIcon />
+          </Button>
+        ) : (
+          <span />
         )}
-        <div className="flex-1">
+        <div>
           {qty > 0 ? (
             /* One control, not a stepper: every quantity change goes through
                the selling-units sheet, so the pack the buyer picked is never
@@ -175,14 +176,14 @@ export function ProductCard({
               type="button"
               onClick={onAdd}
               aria-label={`Edit quantity for ${name}`}
-              className="flex h-10 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
+              className="flex h-10 items-center justify-center gap-4 rounded-md bg-primary-soft px-4 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
             >
               <span aria-hidden className="text-lg font-medium leading-none">−</span>
               <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
               <span aria-hidden className="text-lg font-medium leading-none">+</span>
             </button>
           ) : (
-            <Button className="h-10 w-full" onClick={onAdd}>
+            <Button className="h-10" onClick={onAdd}>
               + Add
             </Button>
           )}

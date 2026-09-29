@@ -3,7 +3,7 @@ import { Store } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import { packTiers, splitIntoPacks } from '../data/products';
-import { cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from '../data/wholesaler';
+import type { WholesalerProduct, WholesalerVendor } from '../data/wholesaler';
 import { PackTierRow } from './PackTierRow';
 import { VendorPicker } from '../components/VendorPicker';
 
@@ -79,7 +79,6 @@ export function WholesalerUnitsSheet({
         vendors={product.vendors}
         value={sel.id}
         onChange={setVendorId}
-        cheapestId={cheapestVendorId(product)}
       />
 
       {/* pack tiers */}
