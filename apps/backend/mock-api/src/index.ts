@@ -7,6 +7,14 @@ import {
   type CollectionName,
   type SingletonName,
 } from './collections';
+import {
+  addNotification,
+  addPromotion,
+  listNotifications,
+  listPromotions,
+  type RelayNotification,
+  type RelayPromotion,
+} from './marketing';
 
 /**
  * mock-api — the fake backend behind the mockups.
@@ -59,6 +67,34 @@ app.get('/', (c) =>
 );
 
 app.get('/health', (c) => c.json({ ok: true, uptime: process.uptime() }));
+
+// ── marketing relay ──────────────────────────────────────────────────────────
+// Live bridge between the marketing platform (creates) and the buyer app
+// (polls). See marketing.ts — this is the one stateful resource here.
+
+app.get('/api/marketing/promotions', (c) => c.json({ items: listPromotions() }));
+
+app.post('/api/marketing/promotions', async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (!body?.id || !body?.surface) {
+    return c.json({ error: 'id and surface are required' }, 400);
+  }
+  const promotion: RelayPromotion = { ...body, published_at: new Date().toISOString() };
+  addPromotion(promotion);
+  return c.json(promotion, 201);
+});
+
+app.get('/api/marketing/notifications', (c) => c.json({ items: listNotifications() }));
+
+app.post('/api/marketing/notifications', async (c) => {
+  const body = await c.req.json().catch(() => null);
+  if (!body?.id || !body?.title) {
+    return c.json({ error: 'id and title are required' }, 400);
+  }
+  const notification: RelayNotification = { ...body, created_at: body.created_at ?? new Date().toISOString() };
+  addNotification(notification);
+  return c.json(notification, 201);
+});
 
 // ── singletons ───────────────────────────────────────────────────────────────
 
