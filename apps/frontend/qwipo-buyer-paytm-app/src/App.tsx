@@ -483,9 +483,15 @@ export default function App() {
       case 'global-search':
         return (
           <GlobalSearchScreen
+            qty={qty}
+            wholesaleQty={wholesaleQty}
+            onSetWholesaleQty={setWholesaleLineQty}
+            vendorSel={wholesaleVendor}
+            onSetVendor={setWholesaleVendorFor}
             onBack={() => go('home')}
             onOpenSheet={setSheetId}
             onOpenWholesaleSheet={setWholesaleSheetId}
+            onOpenGallery={setGalleryId}
             onNavigate={go}
           />
         );

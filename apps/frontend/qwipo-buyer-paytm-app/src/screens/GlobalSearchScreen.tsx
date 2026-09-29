@@ -5,10 +5,15 @@ import {
 } from 'lucide-react';
 import { Badge, EmptyState, cn } from '@mockups/ui';
 import { useEmptyDemo } from '../review/demoState';
-import { ProductImage, formatInr } from '@mockups/components';
+import { ProductCard } from '@mockups/components';
 import { SearchField } from '../components/SearchField';
 import { BrandTile } from '../components/BrandTile';
 import { BRANDS } from '../data/home';
+import { productById, defaultVariantId, skuFor } from '../data/products';
+import { WHOLESALER_PRODUCTS, cheapestVendorId } from '../data/wholesaler';
+import { VendorProductCard } from '../components/VendorProductCard';
+import { deliveryFooter } from '../components/DeliveryFooter';
+import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { offerNameSuffix } from '../data/coupons';
 import { search, browse, suggest, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
 import type { Navigate } from '../nav';
@@ -66,15 +71,29 @@ function SourceBadge({ card }: { card: SearchCard }) {
 }
 
 export function GlobalSearchScreen({
+  qty = {},
+  wholesaleQty = {},
+  onSetWholesaleQty,
+  vendorSel = {},
+  onSetVendor,
   onBack,
   onOpenSheet,
   onOpenWholesaleSheet,
+  onOpenGallery,
   onNavigate,
 }: {
+  /* Results are the same cards the product lists show, so they need the same
+     live state: what's in the cart, and which vendor a wholesale line is on. */
+  qty?: Record<string, number>;
+  wholesaleQty?: Record<string, number>;
+  onSetWholesaleQty?: (id: string, n: number) => void;
+  vendorSel?: Record<string, string>;
+  onSetVendor?: (id: string, vendorId: string) => void;
   onBack: () => void;
   onOpenSheet: (id: string) => void;
   /** Wholesale cards open the vendor sheet instead of the distributor one. */
   onOpenWholesaleSheet?: (id: string) => void;
+  onOpenGallery?: (id: string) => void;
   onNavigate: Navigate;
 }) {
   const [query, setQuery] = useState('');
@@ -84,6 +103,8 @@ export function GlobalSearchScreen({
   /* Set by "search instead for" — the buyer has overruled the correction, so
      don't quietly apply it again. */
   const [asTyped, setAsTyped] = useState(false);
+  const [variant, setVariant] = useState<Record<string, string>>({});
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
 
   const emptyDemo = useEmptyDemo();
 
@@ -123,6 +144,59 @@ export function GlobalSearchScreen({
   const showZero = submitted === null && !query && !emptyDemo;
   const showSuggestions = submitted === null && !!query && !emptyDemo;
   const hasResults = !emptyDemo && !!result && result.cards.length > 0;
+
+  /* The card a result gets is the card its own list would give it — the
+     distributor card, or the wholesale one with its vendor picker — so a SKU
+     looks the same wherever it's found. The only addition is the pair of
+     labels above it saying which kind of seller this is and whose brand. */
+  const renderCard = (card: SearchCard) => {
+    const labels = <SourceBadge card={card} />;
+
+    if (card.source === 'wholesaler') {
+      const p = WHOLESALER_PRODUCTS.find((x) => x.id === card.id);
+      if (!p) return null;
+      return (
+        <VendorProductCard
+          key={card.id}
+          badge={labels}
+          product={p}
+          vendorId={vendorSel[p.id] ?? cheapestVendorId(p)}
+          onVendor={(vid) => onSetVendor?.(p.id, vid)}
+          qty={wholesaleQty[p.id] ?? 0}
+          onQty={(n) => onSetWholesaleQty?.(p.id, Math.max(0, n))}
+          onAdd={() => onOpenWholesaleSheet?.(p.id)}
+          onImageClick={() => onOpenWholesaleSheet?.(p.id)}
+        onDiscounts={() => setDiscountsProductId(p.id)}
+        />
+      );
+    }
+
+    const p = productById(card.id);
+    if (!p) return null;
+    const selected = variant[p.id] ?? defaultVariantId(p);
+    const sku = skuFor(p, selected);
+    return (
+      <ProductCard
+        key={card.id}
+        badge={labels}
+        name={p.name + offerNameSuffix(p.id)}
+        caseLabel={p.caseLabel}
+        image={sku.image}
+        variants={p.variants}
+        selectedVariant={selected}
+        onSelectVariant={(id) => setVariant((v) => ({ ...v, [p.id]: id }))}
+        seller={p.seller}
+        margin={sku.margin}
+        price={sku.price}
+        mrp={sku.mrp}
+        qty={qty[p.id] ?? 0}
+        onAdd={() => onOpenSheet(p.id)}
+        onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
+          onDiscounts={() => setDiscountsProductId(p.id)}
+        footer={deliveryFooter(p.seller)}
+      />
+    );
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -251,11 +325,17 @@ export function GlobalSearchScreen({
             )}
 
             {result.previouslyOrdered.length > 0 && (
-              <CardSection title="Previously Ordered" cards={result.previouslyOrdered} q={result.query} onOpenSheet={onOpenSheet} onOpenWholesaleSheet={onOpenWholesaleSheet} />
+              <section className="space-y-2">
+                <h2 className="px-1 text-sm font-medium text-foreground">Previously Ordered</h2>
+                <div className="space-y-3">{result.previouslyOrdered.map(renderCard)}</div>
+              </section>
             )}
 
             {result.more.length > 0 && (
-              <CardSection title="More Results" cards={result.more} q={result.query} onOpenSheet={onOpenSheet} onOpenWholesaleSheet={onOpenWholesaleSheet} />
+              <section className="space-y-2">
+                <h2 className="px-1 text-sm font-medium text-foreground">More Results</h2>
+                <div className="space-y-3">{result.more.map(renderCard)}</div>
+              </section>
             )}
           </div>
         ) : (
@@ -288,62 +368,14 @@ export function GlobalSearchScreen({
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function CardSection({
-  title,
-  cards,
-  q,
-  onOpenSheet,
-  onOpenWholesaleSheet,
-}: {
-  title: string;
-  cards: SearchCard[];
-  q: string;
-  onOpenSheet: (id: string) => void;
-  onOpenWholesaleSheet?: (id: string) => void;
-}) {
-  return (
-    <section className="space-y-2">
-      <h2 className="px-1 text-sm font-medium text-foreground">{title}</h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        {cards.map((c, idx) => (
-          <button
-            key={c.id}
-            onClick={() =>
-              c.source === 'wholesaler' && onOpenWholesaleSheet
-                ? onOpenWholesaleSheet(c.id)
-                : onOpenSheet(c.id)
-            }
-            className={cn(
-              'flex w-full items-start gap-3 px-3 py-2.5 text-left active:scale-[0.99]',
-              idx !== cards.length - 1 && 'border-b border-border-subtle'
-            )}
-          >
-            <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-md bg-muted text-lg">
-              <ProductImage image={c.image} alt={c.name} />
-            </span>
-            <span className="min-w-0 flex-1">
-              {/* who sells it and whose brand it is, before the name */}
-              <span className="flex flex-wrap items-center gap-1.5">
-                <SourceBadge card={c} />
-                <Badge variant="secondary">{c.brand}</Badge>
-              </span>
-              <span className="mt-1 block text-sm leading-snug text-foreground line-clamp-2">
-                <Highlight text={c.name} q={q} />
-                {offerNameSuffix(c.id)}
-              </span>
-              <span className="mt-0.5 block truncate text-[11px] text-foreground-secondary">{c.seller}</span>
-            </span>
-            <span className="shrink-0 pt-5 text-right">
-              <span className="block text-sm font-bold tabular-nums text-foreground">{formatInr(c.price)}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={{ ...qty, ...wholesaleQty }}
+        onClose={() => setDiscountsProductId(null)}
+      />
+    </div>
   );
 }
 
