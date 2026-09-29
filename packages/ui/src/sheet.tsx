@@ -38,6 +38,9 @@ export interface SheetProps {
   size?: 'auto' | 'tall';
   showHandle?: boolean;
   className?: string;
+  /* Override the body's own padding. The default suits a form; a sheet whose
+     content is one big picture wants it tighter so the picture can be wider. */
+  bodyClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -52,6 +55,7 @@ export function Sheet({
   size = 'auto',
   showHandle = true,
   className,
+  bodyClassName,
   children,
 }: SheetProps) {
   if (!open) return null;
@@ -100,7 +104,9 @@ export function Sheet({
           </div>
         )}
 
-        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+        <div className={cn('no-scrollbar min-h-0 flex-1 overflow-y-auto p-4', bodyClassName)}>
+          {children}
+        </div>
 
         {footer && (
           <div className="border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
