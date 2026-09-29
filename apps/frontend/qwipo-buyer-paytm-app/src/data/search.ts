@@ -196,22 +196,20 @@ function correctWord(w: string): string | undefined {
   return best;
 }
 
-/* A word that isn't in the catalogue but starts one — "shampo" for shampoo.
-   The search finds it either way, since words match by prefix; this is only so
-   the results can say which word they actually ran on. */
+/* A word that isn't in the catalogue but starts exactly one — "shampo" for
+   shampoo. Only ever ONE: "sun" starts sunflower, Sunfeast and Sunpure, and
+   picking one of those would quietly drop the other two from a search the
+   buyer hasn't finished typing. Where it is the only completion the result is
+   the same either way, and naming it just tells them what ran. */
 function completeWord(w: string): string | undefined {
   if (VOCAB.has(w) || w.length < 3) return undefined;
-  let best: string | undefined;
-  let bestScore = Infinity;
-  for (const [cand, freq] of VOCAB) {
+  let only: string | undefined;
+  for (const cand of VOCAB.keys()) {
     if (!cand.startsWith(w) || cand === w) continue;
-    const score = cand.length * 1000 - Math.min(freq, 999);
-    if (score < bestScore) {
-      bestScore = score;
-      best = cand;
-    }
+    if (only) return undefined; // more than one — leave the query alone
+    only = cand;
   }
-  return best;
+  return only;
 }
 
 /** Two catalogue words run together — "redlabel" → "red label". */
