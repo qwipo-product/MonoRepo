@@ -37,15 +37,23 @@ const words = (s: string) => (normalise(s) ? normalise(s).split(' ') : []);
 
 /* A query word matches a catalogue word by PREFIX, never mid-word: "dal"
    finds Dal and Dals and leaves Mysore Sandal alone, which matching anywhere
-   in the string does not. Two-letter words have to match exactly, so "ol"
-   doesn't drag in Olive, and single letters match nothing at all. */
-const wordMatches = (q: string, w: string) =>
-  q.length <= 1 ? false : q.length === 2 ? w === q : w.startsWith(q);
+   in the string does not.
+
+   Two letters is enough to start matching — a buyer who has typed "to" is
+   after Toor Dal and shouldn't have to finish the word to see it. A single
+   letter still matches nothing: every product begins with some letter, so
+   the first one narrows nothing. */
+const wordMatches = (q: string, w: string) => q.length > 1 && w.startsWith(q);
 
 /* Hinglish and vernacular are out of scope for this phase. They're listed
    rather than inferred, because some of them are one edit from a real word —
    "mung" from "moong" — and the spell-corrector would otherwise quietly turn
-   an unsupported query into a supported one. */
+   an unsupported query into a supported one.
+
+   A word here only counts as unsupported if the catalogue doesn't use it
+   itself: "atta" and "masala" are on the list as Hindi, and are also how
+   Aashirvaad Atta and Masala & Seasoning are actually spelt. Blocking those
+   outright lost two real searches — hence `unsupported`, not the raw set. */
 const NOT_SUPPORTED = new Set([
   'tel', 'chawal', 'namak', 'chai', 'sabun', 'mirchi', 'achar', 'mung', 'baal',
   'atta', 'cheeni', 'haldi', 'dhaniya', 'jeera', 'sarson', 'til', 'gud', 'doodh',
@@ -219,6 +227,9 @@ function splitWord(w: string): string | undefined {
 
 /* ── searching ──────────────────────────────────────────────────────────── */
 
+/** Vernacular the catalogue has no word of its own for. */
+const unsupported = (w: string) => NOT_SUPPORTED.has(w) && !VOCAB.has(w);
+
 const matches = (card: SearchCard, qs: string[]) => {
   const ws = cardWords.get(card) ?? [];
   return qs.every((q) => ws.some((w) => wordMatches(q, w)));
@@ -263,10 +274,8 @@ const EMPTY = (query: string, suggestion?: string): SearchResult => ({
   skuCount: 0,
 });
 
-function run(qs: string[], scope?: string) {
-  const pool = scope ? SEARCH_CARDS.filter((c) => c.category === scope) : SEARCH_CARDS;
-  return pool
-    .filter((c) => matches(c, qs))
+function run(qs: string[]) {
+  return SEARCH_CARDS.filter((c) => matches(c, qs))
     .sort((a, b) => score(b, qs) - score(a, qs) || a.name.localeCompare(b.name));
 }
 
@@ -287,18 +296,18 @@ function pairUp(cards: SearchCard[]) {
   return out;
 }
 
-export function search(raw: string, scope?: string, correct = true): SearchResult {
+export function search(raw: string, correct = true): SearchResult {
   const typed = normalise(raw);
   const qs = words(typed).filter((w) => w.length > 1);
   if (qs.length === 0) return EMPTY(raw);
-  if (qs.some((w) => NOT_SUPPORTED.has(w))) return EMPTY(raw);
+  if (qs.some(unsupported)) return EMPTY(raw);
 
   let used = qs;
   let correctedFrom: string | undefined;
 
-  if (correct && run(qs, scope).length === 0) {
+  if (correct && run(qs).length === 0) {
     const fixed = qs.map((w) => correctWord(w) ?? w);
-    if (fixed.join(' ') !== qs.join(' ') && run(fixed, scope).length > 0) {
+    if (fixed.join(' ') !== qs.join(' ') && run(fixed).length > 0) {
       used = fixed;
       correctedFrom = raw.trim();
     }
@@ -306,17 +315,17 @@ export function search(raw: string, scope?: string, correct = true): SearchResul
 
   if (!correctedFrom && correct) {
     const completed = used.map((w) => completeWord(w) ?? w);
-    if (completed.join(' ') !== used.join(' ') && run(completed, scope).length > 0) {
+    if (completed.join(' ') !== used.join(' ') && run(completed).length > 0) {
       used = completed;
       correctedFrom = raw.trim();
     }
   }
 
-  const hits = run(used, scope);
+  const hits = run(used);
   if (hits.length === 0) {
     // Nothing to show — but "redlabel" is one space away from something.
     const split = qs.map(splitWord).find(Boolean);
-    return EMPTY(raw, split && run(words(split), scope).length > 0 ? split : undefined);
+    return EMPTY(raw, split && run(words(split)).length > 0 ? split : undefined);
   }
 
   const ordered = pairUp(hits);
@@ -337,17 +346,12 @@ function split(ordered: SearchCard[]) {
   };
 }
 
-/** Everything in one category — what a category suggestion opens onto. */
-export function browse(scope: string): SearchResult {
-  const cards = pairUp(
-    SEARCH_CARDS.filter((c) => c.category === scope).sort((a, b) => a.name.localeCompare(b.name))
-  );
-  return { query: '', ...split(cards) };
-}
-
 /* ── suggestions ────────────────────────────────────────────────────────── */
 
-export type SuggestionKind = 'recent' | 'term' | 'category' | 'brand' | 'product';
+/* Wayfinding only. Products aren't suggested any more — the matching SKUs are
+   listed underneath as the cards themselves, so a buyer adds from the
+   suggestions view rather than searching first and adding after. */
+export type SuggestionKind = 'recent' | 'term' | 'category' | 'brand';
 
 export interface Suggestion {
   kind: SuggestionKind;
@@ -363,16 +367,11 @@ export function suggest(raw: string, recent: string[], terms: string[]): Suggest
   const take = (kind: SuggestionKind, items: string[], n: number): Suggestion[] =>
     Array.from(new Set(items.filter(hit))).slice(0, n).map((label) => ({ kind, label }));
 
-  const productNames = SEARCH_CARDS.filter((c) => c.source === 'distributor').map(
-    (c) => c.name.split(' - ')[0]
-  );
-
   const out = [
     ...take('recent', recent, 2),
     ...take('term', terms, 2),
-    ...take('category', CATEGORY_NAMES, 2),
-    ...take('brand', BRAND_NAMES, 2),
-    ...take('product', productNames, 5),
+    ...take('category', CATEGORY_NAMES, 3),
+    ...take('brand', BRAND_NAMES, 3),
   ];
   // De-dupe across kinds, then cap.
   const seen = new Set<string>();

@@ -35,6 +35,10 @@ export interface ProductCardProps {
   onDiscounts?: () => void;
   /** Optional footer strip (e.g. delivery day + MOV). */
   footer?: React.ReactNode;
+  /* Optional strip above the name — Global Search uses it to say whether this
+     is the distributor's card or a wholesaler's, since there the two sit in
+     one list and the card alone doesn't say. */
+  badge?: React.ReactNode;
   className?: string;
 }
 
@@ -86,10 +90,12 @@ export function ProductCard({
   onImageClick,
   onDiscounts,
   footer,
+  badge,
   className,
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
+      {badge && <div className="mb-2">{badge}</div>}
       {/* image (left) + info (right). items-stretch + aspect-square makes the
           image a square sized to the info column's height (name/case/pills).
           Image opens the gallery; the title opens the selling-units sheet —

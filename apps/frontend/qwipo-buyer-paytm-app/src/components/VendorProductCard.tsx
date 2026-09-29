@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Badge, Button, Card, Chip, QtyStepper } from '@mockups/ui';
 import { ProductImage, PriceLabel, formatInr } from '@mockups/components';
@@ -21,6 +21,7 @@ export function VendorProductCard({
   onAdd,
   onImageClick,
   onDiscounts,
+  badge,
 }: {
   product: WholesalerProduct;
   vendorId: string;
@@ -30,12 +31,15 @@ export function VendorProductCard({
   onAdd: () => void;
   onImageClick: () => void;
   onDiscounts: () => void;
+  /** Strip above the name — see ProductCard. */
+  badge?: ReactNode;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
   const selected = product.vendors.find((v) => v.id === vendorId) ?? product.vendors[0];
 
   return (
     <Card className="p-3">
+      {badge && <div className="mb-2">{badge}</div>}
       {/* image (left) + info (right); square image sized to the info column's
           height — same layout as the distributor card. Image opens the gallery. */}
       <div className="flex items-start gap-3">
