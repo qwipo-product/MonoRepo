@@ -95,22 +95,19 @@ export function VendorProductCard({
         <PriceLabel price={selected.price} suffix="/pc" size="lg" />
       </div>
 
-      {/* Discounts + Add, the same even split the distributor card uses —
-          wholesale SKUs run schemes too, so the sheet has something to say. */}
-      <div className="mt-3 flex items-center gap-2">
-        <div className="flex-1">
-          <Button variant="soft" className="h-10 w-full font-medium" onClick={onDiscounts}>
-            Discounts
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex-1">
+      {/* Discounts + Add, laid out as on the distributor card — each as wide
+          as its own contents, one to each end, 40px tall in either state.
+          Wholesale SKUs run schemes too, so the sheet has something to say. */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <Button variant="soft" className="h-10 font-medium" onClick={onDiscounts}>
+          Discounts
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+        <div>
           {qty > 0 ? (
-            /* Full width so the row matches Discounts beside it, contents
-               centred so they don't sit in the left half of it. */
-            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full justify-center" />
+            <QtyStepper value={qty} onChange={onQty} tone="soft" className="h-10" />
           ) : (
-            <Button className="h-10 w-full" onClick={onAdd}>
+            <Button className="h-10" onClick={onAdd}>
               + Add
             </Button>
           )}
