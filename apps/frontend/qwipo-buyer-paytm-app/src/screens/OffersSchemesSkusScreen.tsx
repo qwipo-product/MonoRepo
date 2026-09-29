@@ -20,6 +20,7 @@ export function OffersSchemesSkusScreen({
   onBack,
   qty,
   onOpenSheet,
+  onOpenGallery,
   onGoToCart,
   cartCount,
   cartTotal,
@@ -27,6 +28,7 @@ export function OffersSchemesSkusScreen({
   onBack: () => void;
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
+  onOpenGallery?: (id: string) => void;
   onGoToCart: () => void;
   cartCount: number;
   cartTotal: number;
@@ -74,6 +76,7 @@ export function OffersSchemesSkusScreen({
               mrp={sku.mrp}
               qty={qty[p.id] ?? 0}
               onAdd={() => onOpenSheet(p.id)}
+              onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}
               footer={deliveryFooter(p.seller)}
             />

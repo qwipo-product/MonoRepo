@@ -196,7 +196,7 @@ export function GlobalSearchScreen({
           qty={wholesaleQty[p.id] ?? 0}
           onQty={(n) => onSetWholesaleQty?.(p.id, Math.max(0, n))}
           onAdd={() => onOpenWholesaleSheet?.(p.id)}
-          onImageClick={() => onOpenWholesaleSheet?.(p.id)}
+          onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
         onDiscounts={() => setDiscountsProductId(p.id)}
         />
       );
