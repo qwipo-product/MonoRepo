@@ -294,7 +294,9 @@ export function GlobalSearchScreen({
                         <Highlight text={s.label} q={query.trim()} />
                       </span>
                       <span className="shrink-0 text-[10px] uppercase tracking-wide text-foreground-secondary">
-                        {s.kind === 'term' ? 'search' : s.kind}
+                        {/* The four kinds name themselves: recent, trending,
+                            category, brand. */}
+                        {s.kind === 'term' ? 'trending' : s.kind}
                       </span>
                       <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
                     </button>
