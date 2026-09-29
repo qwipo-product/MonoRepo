@@ -347,7 +347,10 @@ export function browse(scope: string): SearchResult {
 
 /* ── suggestions ────────────────────────────────────────────────────────── */
 
-export type SuggestionKind = 'recent' | 'term' | 'category' | 'brand' | 'product';
+/* Wayfinding only. Products aren't suggested any more — the matching SKUs are
+   listed underneath as the cards themselves, so a buyer adds from the
+   suggestions view rather than searching first and adding after. */
+export type SuggestionKind = 'recent' | 'term' | 'category' | 'brand';
 
 export interface Suggestion {
   kind: SuggestionKind;
@@ -363,16 +366,11 @@ export function suggest(raw: string, recent: string[], terms: string[]): Suggest
   const take = (kind: SuggestionKind, items: string[], n: number): Suggestion[] =>
     Array.from(new Set(items.filter(hit))).slice(0, n).map((label) => ({ kind, label }));
 
-  const productNames = SEARCH_CARDS.filter((c) => c.source === 'distributor').map(
-    (c) => c.name.split(' - ')[0]
-  );
-
   const out = [
     ...take('recent', recent, 2),
     ...take('term', terms, 2),
-    ...take('category', CATEGORY_NAMES, 2),
-    ...take('brand', BRAND_NAMES, 2),
-    ...take('product', productNames, 5),
+    ...take('category', CATEGORY_NAMES, 3),
+    ...take('brand', BRAND_NAMES, 3),
   ];
   // De-dupe across kinds, then cap.
   const seen = new Set<string>();

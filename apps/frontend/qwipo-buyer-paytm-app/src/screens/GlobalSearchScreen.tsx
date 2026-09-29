@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ChevronLeft, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid,
-  Search as SearchIcon, X, Store, Warehouse,
+  X, Store, Warehouse,
 } from 'lucide-react';
 import { Badge, EmptyState, cn } from '@mockups/ui';
 import { useEmptyDemo } from '../review/demoState';
@@ -15,7 +15,7 @@ import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { offerNameSuffix } from '../data/coupons';
-import { search, browse, suggest, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
+import { search, browse, suggest, normalise, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
 import type { Navigate } from '../nav';
 
 /* Global Search — one box, three states.
@@ -40,7 +40,6 @@ const SUGGESTION_ICON: Record<Suggestion['kind'], typeof Clock> = {
   term: TrendingUp,
   category: LayoutGrid,
   brand: Tag,
-  product: SearchIcon,
 };
 
 /** "red label" reads as a brand when it's offered back as one. */
@@ -133,6 +132,13 @@ export function GlobalSearchScreen({
        than running as a query. */
     () => (submitted === null ? suggest(query, recent, TRENDING) : []),
     [query, recent, submitted]
+  );
+
+  /* The matching SKUs while still typing. Same search, same cards: the buyer
+     can add straight from here instead of searching first. */
+  const live = useMemo(
+    () => (submitted === null && normalise(query).length >= 2 ? search(query, scope ?? undefined) : null),
+    [query, scope, submitted]
   );
 
   const result = useMemo(() => {
@@ -257,8 +263,9 @@ export function GlobalSearchScreen({
             <ChipSection title="Start with a category" items={CATEGORY_NAMES} onPick={openScope} />
           </div>
         ) : showSuggestions ? (
-          suggestions.length > 0 ? (
-            <div className="p-3">
+          suggestions.length > 0 || (live && live.cards.length > 0) ? (
+            <div className="space-y-4 p-3">
+              {suggestions.length > 0 && (
               <div className="overflow-hidden rounded-lg border border-border bg-card">
                 {suggestions.map((s) => {
                   const Icon = SUGGESTION_ICON[s.kind];
@@ -280,6 +287,14 @@ export function GlobalSearchScreen({
                   );
                 })}
               </div>
+              )}
+
+              {/* One list while typing, best match first — no sections. The
+                  point here is the closest thing to what's being typed, close
+                  enough to add without searching first. */}
+              {live && live.cards.length > 0 && (
+                <div className="space-y-3">{live.cards.map(renderCard)}</div>
+              )}
             </div>
           ) : (
             <div className="p-6 text-center text-sm text-foreground-secondary">
