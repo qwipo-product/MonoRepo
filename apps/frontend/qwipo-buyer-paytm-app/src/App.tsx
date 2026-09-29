@@ -42,6 +42,7 @@ import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
 import { AddToCartSheet } from './sheets/AddToCartSheet';
+import { WholesalerUnitsSheet } from './sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from './sheets/ProductImagesSheet';
 import { UpdateSheet } from './sheets/UpdateSheet';
 import { CartAlertsSheet } from './sheets/CartAlertsSheet';
@@ -64,6 +65,7 @@ import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById, type Source } from './data/products';
+import { WHOLESALER_PRODUCTS, cheapestVendorId } from './data/wholesaler';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, wholesalerCategoriesIn, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart, INITIAL_QTY } from './data/cart';
 import { ORDERS, type Order } from './data/orders';
@@ -218,6 +220,9 @@ export default function App() {
   /* Set when Reorder is opened from a Home rail, cleared when it's opened
      from the bottom nav — that entry carries no opts and shows everything. */
   const [reorderSource, setReorderSource] = useState<Source | undefined>(undefined);
+  /* A wholesale card in Global Search opens the vendor sheet, which until now
+     only existed inside the wholesale screens. */
+  const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -286,6 +291,9 @@ export default function App() {
   // Same total the cart itself adds up to — one source of truth.
   const cartTotal = CART.grandTotal;
   const sheetProduct = sheetId ? productById(sheetId) ?? null : null;
+  const wholesaleSheetProduct = wholesaleSheetId
+    ? WHOLESALER_PRODUCTS.find((p) => p.id === wholesaleSheetId) ?? null
+    : null;
   const galleryProduct = galleryId ? productById(galleryId) ?? null : null;
   // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
   const isSalesperson = role === 'salesperson' && shell === 'buyer';
@@ -473,7 +481,14 @@ export default function App() {
           />
         );
       case 'global-search':
-        return <GlobalSearchScreen onBack={() => go('home')} onOpenSheet={setSheetId} onNavigate={go} />;
+        return (
+          <GlobalSearchScreen
+            onBack={() => go('home')}
+            onOpenSheet={setSheetId}
+            onOpenWholesaleSheet={setWholesaleSheetId}
+            onNavigate={go}
+          />
+        );
       case 'distributors-list':
         return (
           <SellerBrowseScreen
@@ -866,6 +881,23 @@ export default function App() {
             }}
             onContinue={() => setSheetId(null)}
             onClose={() => setSheetId(null)}
+          />
+
+          <WholesalerUnitsSheet
+            product={wholesaleSheetProduct}
+            vendor={
+              wholesaleSheetProduct
+                ? wholesaleSheetProduct.vendors.find(
+                    (v) => v.id === (wholesaleVendor[wholesaleSheetProduct.id] ?? cheapestVendorId(wholesaleSheetProduct))
+                  ) ?? wholesaleSheetProduct.vendors[0]
+                : null
+            }
+            qty={wholesaleSheetId ? (wholesaleQty[wholesaleSheetId] ?? 0) : 0}
+            onAdd={(pcs) => {
+              if (wholesaleSheetId) setWholesaleLineQty(wholesaleSheetId, (wholesaleQty[wholesaleSheetId] ?? 0) + pcs);
+            }}
+            onContinue={() => setWholesaleSheetId(null)}
+            onClose={() => setWholesaleSheetId(null)}
           />
 
           <ProductImagesSheet product={galleryProduct} onClose={() => setGalleryId(null)} />

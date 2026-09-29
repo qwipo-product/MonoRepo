@@ -1,3 +1,4 @@
+import { EXTRA_WHOLESALE } from './catalogExtra';
 // Wholesaler products — unlike the distributor catalog, the same product is
 // offered by MULTIPLE vendors at different prices + delivery fees. The buyer
 // picks a vendor per line.
@@ -34,7 +35,7 @@ export interface WholesalerProduct {
   vendors: WholesalerVendor[];
 }
 
-export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
+const BASE_WHOLESALE: WholesalerProduct[] = [
   {
     id: 'wp1', name: 'Refined Sunflower Oil', category: 'Cooking Oils & Ghee', brand: 'Freedom', caseLabel: 'Case: 16 pc', caseSize: 16,
     image: '/product-images/freedom/1l-pouch.png',
@@ -200,6 +201,8 @@ export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [
     ],
   },
 ];
+
+export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [...BASE_WHOLESALE, ...EXTRA_WHOLESALE];
 
 /** Cheapest vendor id for a product (marked "Best"). */
 export function cheapestVendorId(p: WholesalerProduct): string {
