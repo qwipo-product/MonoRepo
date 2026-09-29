@@ -8,7 +8,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Section, Option, MultiSection } from './filterControls';
 import {
-  ALL, stateOptions, companyOptions, cityOptions, distributorOptions, totals, type Filters,
+  ALL, stateOptions, companyOptions, citiesFor, distributorOptions, totals, type Filters,
 } from './filters';
 import { DateField } from './DateField';
 
@@ -98,15 +98,15 @@ export function FilterPanel({
 
           <MultiSection
             label="State" unit="states" total={totals.states}
-            hint="More states appear as they onboard · cities narrow to the selected states"
+            hint="Telangana, Maharashtra, Rajasthan · cities narrow to the selected states"
             options={stateOptions} selected={draft.states}
             onChange={(states) => setDraft({ ...draft, states, cities: [], distributors: [] })}
           />
 
           <MultiSection
-            label="City" unit="cities" total={totals.cities}
+            label="City" unit="cities" total={citiesFor(draft.states).length}
             hint="From outlet GPS · 64 unresolved outlets excluded · changing city resets Distributor"
-            options={cityOptions} selected={draft.cities}
+            options={citiesFor(draft.states)} selected={draft.cities}
             onChange={(cities) => setDraft({ ...draft, cities, distributors: [] })}
           />
 

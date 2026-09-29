@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Truck } from 'lucide-react';
+import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Truck, UsersRound } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
-import { digiPages, opsPages, titles, type Page } from '../nav';
+import { buyerPages, digiPages, opsPages, reportSections, titles, type Page } from '../nav';
+import { reportDefs } from '../data/reports';
 
 interface Props {
   page: Page;
-  onNavigate: (p: Page) => void;
+  /** second hash segment — picks the Reports section */
+  drill?: string;
+  onNavigate: (p: string) => void;
   children: React.ReactNode;
 }
 
 function NavGroup({
-  icon, label, active, items, page, onNavigate,
+  icon, label, active, items, isActive, onNavigate,
 }: {
   icon: React.ReactNode; label: string; active: boolean;
-  items: { key: Page; label: string; disabled?: string }[];
-  page: Page; onNavigate: (p: Page) => void;
+  items: { key: string; label: string; disabled?: string }[];
+  isActive: (key: string) => boolean; onNavigate: (p: string) => void;
 }) {
   return (
     <div>
@@ -43,7 +46,7 @@ function NavGroup({
               onClick={() => onNavigate(it.key)}
               className={cn(
                 'type-caption rounded-md px-2.5 py-1 text-left hover:bg-primary-soft',
-                page === it.key ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'text-foreground-secondary'
+                isActive(it.key) ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'text-foreground-secondary'
               )}
             >
               {it.label}
@@ -55,14 +58,21 @@ function NavGroup({
   );
 }
 
-export function Shell({ page, onNavigate, children }: Props) {
+export function Shell({ page, drill, onNavigate, children }: Props) {
   const inDigi = digiPages.some((p) => p.key === page);
   const inOps = opsPages.some((p) => p.key === page);
+  const inBuyer = buyerPages.some((p) => p.key === page);
+  const isPage = (k: string) => page === k;
+  // Reports section: explicit in the hash, else seller (a run: drill resolves inside Reports).
+  const section = drill?.startsWith('run:')
+    ? reportDefs.find((d) => d.key === drill.slice(4).split(':')[0])?.domain ?? 'seller'
+    : reportSections.some((s) => s.key === drill) ? drill : 'seller';
   const [collapsed, setCollapsed] = useState(false);
   const rail = [
-    { icon: <LineChart size={18} />, label: 'DigiDukaan', active: inDigi },
+    { icon: <LineChart size={18} />, label: 'DigiDukaan · Seller', active: inDigi },
     { icon: <Truck size={18} />, label: 'Ops (Logistics)', active: inOps },
-    { icon: <FileText size={18} />, label: 'Reports', active: !inDigi && !inOps },
+    { icon: <UsersRound size={18} />, label: 'DigiDukaan · Buyer', active: inBuyer },
+    { icon: <FileText size={18} />, label: 'Reports', active: page === 'reports' },
     { icon: <Settings size={18} />, label: 'Settings', active: false },
   ];
   return (
@@ -98,19 +108,15 @@ export function Shell({ page, onNavigate, children }: Props) {
           </nav>
         ) : (
           <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-            <NavGroup icon={<LineChart size={18} />} label="DigiDukaan" active={inDigi} items={digiPages} page={page} onNavigate={onNavigate} />
-            <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} page={page} onNavigate={onNavigate} />
-            <button
-              type="button"
-              onClick={() => onNavigate('reports')}
-              className={cn(
-                'type-body flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-primary-soft',
-                page === 'reports' ? 'bg-primary-soft text-primary-soft-foreground font-medium' : 'text-foreground'
-              )}
-            >
-              <FileText size={18} />
-              Reports
-            </button>
+            <NavGroup icon={<LineChart size={18} />} label="DigiDukaan · Seller" active={inDigi} items={digiPages} isActive={isPage} onNavigate={onNavigate} />
+            <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} isActive={isPage} onNavigate={onNavigate} />
+            <NavGroup icon={<UsersRound size={18} />} label="DigiDukaan · Buyer" active={inBuyer} items={buyerPages} isActive={isPage} onNavigate={onNavigate} />
+            <NavGroup
+              icon={<FileText size={18} />} label="Reports" active={page === 'reports'}
+              items={reportSections.map((s) => ({ key: `reports/${s.key}`, label: s.label }))}
+              isActive={(k) => page === 'reports' && k === `reports/${section}`}
+              onNavigate={onNavigate}
+            />
             <div className="type-micro px-3 pt-2 text-foreground-tertiary">Administration</div>
             <div className="type-body flex items-center gap-3 px-3 py-2"><Settings size={18} />Settings</div>
           </nav>

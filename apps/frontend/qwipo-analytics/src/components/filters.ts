@@ -15,11 +15,18 @@ export interface Filters {
 
 export const ALL: Filters = { states: [], companies: [], cities: [], distributors: [], preset: 'Month to date' };
 
-export const totals = { states: 1, companies: 42, cities: 6, distributors: 18 };
+export const totals = { states: 3, companies: 42, cities: 14, distributors: 18 };
 
-export const stateOptions = ['Telangana'];
+export const stateOptions = ['Telangana', 'Maharashtra', 'Rajasthan'];
+export const citiesByState: Record<string, string[]> = {
+  Telangana: ['Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Sangareddy'],
+  Maharashtra: ['Pune', 'Mumbai', 'Nagpur', 'Nashik'],
+  Rajasthan: ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota'],
+};
+/** Cities for the selected states (all states when none selected). */
+export const citiesFor = (states: string[]) => (states.length ? states : stateOptions).flatMap((st) => citiesByState[st]);
 export const companyOptions = ['Fortune (AWL)', 'ITC', 'HUL', 'Parle', 'Britannia', 'Tata Consumer', 'Marico', 'Dabur'];
-export const cityOptions = ['Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Sangareddy'];
+export const cityOptions = citiesFor([]);
 export const distributorOptions = [
   'Sri Balaji Agencies', 'S R Enterprises', 'Vijaya Distributors',
   'Annapurna Traders', 'Lakshmi Agencies', 'Sai Krishna Agencies',

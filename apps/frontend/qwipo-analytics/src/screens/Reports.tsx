@@ -4,16 +4,17 @@
 // The Order Register also has a live paginated view (#reports/register).
 import { useState } from 'react';
 import { CalendarClock, ChevronLeft, ChevronRight, Download, History, Play, Search, SlidersHorizontal, X } from 'lucide-react';
-import { Badge, Button, Card, Input, cn, type BadgeProps } from '@mockups/ui';
+import { Badge, Button, Card, Input, SegmentedControl, cn, type BadgeProps } from '@mockups/ui';
 import { ScopeBar } from '../components/ScopeBar';
 import { reportDefs, runs, addRun, lastRunOf, schedules, setSchedule, scheduleLabel, type ReportDef, type Run } from '../data/reports';
 import { pageRows, stageLabel, type Stage, type OrderRow } from '../data/orderRows';
 import { DateField } from '../components/DateField';
 import { Section, Option, MultiSection } from '../components/filterControls';
-import { companyOptions, cityOptions, distributorOptions, stateOptions, totals, scopeChips, type Filters } from '../components/filters';
+import { companyOptions, citiesFor, distributorOptions, stateOptions, totals, scopeChips, type Filters } from '../components/filters';
+import { buyerDistributors } from '../data/buyer';
 import { Chip } from '../components/Chip';
 import { useScope } from '../scope';
-import type { Page } from '../nav';
+import { reportSections, type Page, type ReportDomain } from '../nav';
 
 const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
   Ready: 'success', Running: 'info', Failed: 'danger',
@@ -30,7 +31,13 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
   const [scheduling, setScheduling] = useState<ReportDef | null>(null);
   const [, bump] = useState(0); // re-render after addRun
   if (drill === 'register') return <Register go={go} />;
-  const closeRun = () => { setRunning(null); if (runMatch) go('reports'); };
+  // Section: #reports/<seller|ops|buyer>; a run: hand-off lands in its report's section.
+  const section: ReportDomain = runMatch
+    ? reportDefs.find((d) => d.key === runMatch[0])?.domain ?? 'seller'
+    : reportSections.find((s) => s.key === drill)?.key ?? 'seller';
+  const meta = reportSections.find((s) => s.key === section)!;
+  const defs = reportDefs.filter((d) => d.domain === section);
+  const closeRun = () => { setRunning(null); if (runMatch) go(`reports/${section}`); };
 
   return (
     <div className="flex flex-col gap-5">
@@ -48,6 +55,19 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
         <ScheduleDrawer def={scheduling} onClose={() => setScheduling(null)} onSaved={() => bump((n) => n + 1)} />
       )}
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl
+          className="w-auto"
+          options={reportSections.map((s) => ({
+            value: s.key,
+            label: <span className="whitespace-nowrap">{s.label} <span className="ml-1 text-foreground-tertiary tabular-nums">{reportDefs.filter((d) => d.domain === s.key).length}</span></span>,
+          }))}
+          value={section}
+          onChange={(v) => go(`reports/${v}`)}
+        />
+        <span className="type-caption text-foreground-secondary">Source: {meta.source}</span>
+      </div>
+
       <Card className="flex flex-col">
         <table className="w-full border-collapse">
           <thead>
@@ -60,12 +80,13 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
             </tr>
           </thead>
           <tbody className="type-caption">
-            {reportDefs.map((def) => {
+            {defs.map((def) => {
               const last = lastRunOf(def.key);
               return (
                 <tr key={def.key} className="border-t border-border-subtle">
                   <td className="py-2.5 pl-5 pr-3">
                     <span className="type-label">{def.name}</span>
+                    <span className="type-caption block max-w-[360px] text-foreground-tertiary">{def.desc}</span>
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-3">
                     {last ? (
@@ -91,6 +112,9 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
                       : <span className="text-foreground-tertiary">—</span>}
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-5 text-right">
+                    {def.page && (
+                      <Button variant="ghost" size="sm" className="mr-1.5 text-link" onClick={() => go(def.page!)}>Open live</Button>
+                    )}
                     <Button size="sm" onClick={() => setRunning(def)}><Play size={13} /> Run</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setHistory(def)}><History size={13} /> History</Button>
                     <Button variant="secondary" size="sm" className="ml-1.5" onClick={() => setScheduling(def)}><CalendarClock size={13} /> Schedule</Button>
@@ -122,6 +146,11 @@ function RunDrawer({ def, initialPicked, onClose, onDone, onHistory }: {
   const [cities, setCities] = useState<string[]>(f.cities);
   const [dists, setDists] = useState<string[]>(f.distributors);
   const [picked, setPicked] = useState<Record<string, string>>(initialPicked ?? {});
+  // Buyer reports list the buyer app's distributors, narrowed by State / City.
+  const geoCities = cities.length ? cities : citiesFor(states);
+  const distOptions = def.domain === 'buyer'
+    ? buyerDistributors.filter((d) => geoCities.includes(d.city)).map((d) => d.name)
+    : distributorOptions;
   const [done, setDone] = useState(false);
   const generate = () => {
     const extras = Object.entries(picked).filter(([, v]) => v !== 'All').map(([label, value]) => ({ label, value }));
@@ -204,16 +233,16 @@ function RunDrawer({ def, initialPicked, onClose, onDone, onHistory }: {
           )}
           {def.scope.includes('city') && (
             <MultiSection
-              label="City" unit="cities" total={totals.cities}
+              label="City" unit="cities" total={citiesFor(states).length}
               hint="From outlet GPS · 64 unresolved outlets excluded · changing city resets Distributor"
-              options={cityOptions} selected={cities} onChange={(v) => { setCities(v); setDists([]); }}
+              options={citiesFor(states)} selected={cities} onChange={(v) => { setCities(v); setDists([]); }}
             />
           )}
           {def.scope.includes('distributor') && (
             <MultiSection
-              label="Distributor" unit="distributors" total={totals.distributors} searchable
+              label="Distributor" unit="distributors" total={distOptions.length > 6 && def.domain !== 'buyer' ? totals.distributors : distOptions.length} searchable
               hint="Narrowed by the selected cities"
-              options={distributorOptions} selected={dists} onChange={setDists}
+              options={distOptions} selected={dists} onChange={setDists}
             />
           )}
 
