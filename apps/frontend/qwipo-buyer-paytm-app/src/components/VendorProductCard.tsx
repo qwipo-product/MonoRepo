@@ -106,7 +106,9 @@ export function VendorProductCard({
         </div>
         <div className="flex-1">
           {qty > 0 ? (
-            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
+            /* Full width so the row matches Discounts beside it, contents
+               centred so they don't sit in the left half of it. */
+            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full justify-center" />
           ) : (
             <Button className="h-10 w-full" onClick={onAdd}>
               + Add
@@ -115,15 +117,6 @@ export function VendorProductCard({
         </div>
       </div>
 
-      {/* total for the selected qty */}
-      {qty > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-            Total ({qty} pcs)
-          </span>
-          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(selected.price * qty)}</span>
-        </div>
-      )}
     </Card>
   );
 }

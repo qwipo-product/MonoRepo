@@ -175,7 +175,7 @@ export function ProductCard({
               type="button"
               onClick={onAdd}
               aria-label={`Edit quantity for ${name}`}
-              className="flex h-10 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
+              className="flex h-10 w-full items-center justify-center gap-4 rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
             >
               <span aria-hidden className="text-lg font-medium leading-none">−</span>
               <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
