@@ -64,6 +64,9 @@ export function WholesalerProductsScreen({
   }));
   const activeFilters = countActiveFilters(filters);
 
+  const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
+  const trail = applied.length ? ['All products', ...applied.map((a) => a.value)].join(' › ') : '';
+
   const vendorFor = (p: WholesalerProduct) => {
     const id = vendorSel[p.id] ?? cheapestVendorId(p);
     return p.vendors.find((v) => v.id === id) ?? p.vendors[0];
@@ -81,8 +84,12 @@ export function WholesalerProductsScreen({
           <ChevronLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold leading-tight">Product List</h1>
-          <p className="text-xs text-foreground-secondary">{products.length} products · multiple vendors</p>
+          {/* Named after what narrowed it, with the trail underneath — the same
+              as the distributor list, so arriving from search reads alike. */}
+          <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
+          <p className="truncate text-xs text-foreground-secondary">
+            {products.length} products · multiple vendors{trail ? ` · ${trail}` : ''}
+          </p>
         </div>
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />

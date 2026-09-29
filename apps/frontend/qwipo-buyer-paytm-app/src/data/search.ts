@@ -274,10 +274,8 @@ const EMPTY = (query: string, suggestion?: string): SearchResult => ({
   skuCount: 0,
 });
 
-function run(qs: string[], scope?: string) {
-  const pool = scope ? SEARCH_CARDS.filter((c) => c.category === scope) : SEARCH_CARDS;
-  return pool
-    .filter((c) => matches(c, qs))
+function run(qs: string[]) {
+  return SEARCH_CARDS.filter((c) => matches(c, qs))
     .sort((a, b) => score(b, qs) - score(a, qs) || a.name.localeCompare(b.name));
 }
 
@@ -298,7 +296,7 @@ function pairUp(cards: SearchCard[]) {
   return out;
 }
 
-export function search(raw: string, scope?: string, correct = true): SearchResult {
+export function search(raw: string, correct = true): SearchResult {
   const typed = normalise(raw);
   const qs = words(typed).filter((w) => w.length > 1);
   if (qs.length === 0) return EMPTY(raw);
@@ -307,9 +305,9 @@ export function search(raw: string, scope?: string, correct = true): SearchResul
   let used = qs;
   let correctedFrom: string | undefined;
 
-  if (correct && run(qs, scope).length === 0) {
+  if (correct && run(qs).length === 0) {
     const fixed = qs.map((w) => correctWord(w) ?? w);
-    if (fixed.join(' ') !== qs.join(' ') && run(fixed, scope).length > 0) {
+    if (fixed.join(' ') !== qs.join(' ') && run(fixed).length > 0) {
       used = fixed;
       correctedFrom = raw.trim();
     }
@@ -317,17 +315,17 @@ export function search(raw: string, scope?: string, correct = true): SearchResul
 
   if (!correctedFrom && correct) {
     const completed = used.map((w) => completeWord(w) ?? w);
-    if (completed.join(' ') !== used.join(' ') && run(completed, scope).length > 0) {
+    if (completed.join(' ') !== used.join(' ') && run(completed).length > 0) {
       used = completed;
       correctedFrom = raw.trim();
     }
   }
 
-  const hits = run(used, scope);
+  const hits = run(used);
   if (hits.length === 0) {
     // Nothing to show — but "redlabel" is one space away from something.
     const split = qs.map(splitWord).find(Boolean);
-    return EMPTY(raw, split && run(words(split), scope).length > 0 ? split : undefined);
+    return EMPTY(raw, split && run(words(split)).length > 0 ? split : undefined);
   }
 
   const ordered = pairUp(hits);
@@ -346,14 +344,6 @@ function split(ordered: SearchCard[]) {
     more: ordered.filter((c) => !boughtSkus.has(c.sku)),
     skuCount: new Set(ordered.map((c) => c.sku)).size,
   };
-}
-
-/** Everything in one category — what a category suggestion opens onto. */
-export function browse(scope: string): SearchResult {
-  const cards = pairUp(
-    SEARCH_CARDS.filter((c) => c.category === scope).sort((a, b) => a.name.localeCompare(b.name))
-  );
-  return { query: '', ...split(cards) };
 }
 
 /* ── suggestions ────────────────────────────────────────────────────────── */

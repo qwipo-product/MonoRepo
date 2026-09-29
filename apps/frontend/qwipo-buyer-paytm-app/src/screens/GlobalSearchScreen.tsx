@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ChevronLeft, Clock, TrendingUp, ArrowUpRight, PackageOpen, Tag, LayoutGrid,
-  X, Store, Warehouse,
+  Store, Warehouse,
 } from 'lucide-react';
 import { Badge, EmptyState, cn } from '@mockups/ui';
 import { useEmptyDemo } from '../review/demoState';
@@ -15,7 +15,7 @@ import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { offerNameSuffix } from '../data/coupons';
-import { search, browse, suggest, normalise, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
+import { search, suggest, normalise, SEARCH_CARDS, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
 import type { Navigate } from '../nav';
 
 /* Global Search — one box, three states.
@@ -113,7 +113,6 @@ export function GlobalSearchScreen({
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>(SEEDED_RECENT);
-  const [scope, setScope] = useState<string | null>(null);
   /* Set by "search instead for" — the buyer has overruled the correction, so
      don't quietly apply it again. */
   const [asTyped, setAsTyped] = useState(false);
@@ -133,13 +132,19 @@ export function GlobalSearchScreen({
     if (t) remember(t);
   };
 
-  const openScope = (category: string) => {
-    setScope(category);
-    setQuery('');
-    setSubmitted('');
+  /* A category opens its product list, the same way a brand does — the search
+     box stays global rather than narrowing to whatever was last tapped.
+     Which list depends on who stocks the category: some of them are only
+     carried wholesale. */
+  const openCategory = (category: string) => {
+    const onDistributor = SEARCH_CARDS.some(
+      (c) => c.source === 'distributor' && c.category === category
+    );
+    onNavigate(onDistributor ? 'listing' : 'wholesaler-products', {
+      applied: [{ type: 'category', value: category }],
+      backTo: 'global-search',
+    });
   };
-
-  const clearScope = () => setScope(null);
 
   const suggestions = useMemo(
     /* Terms are the trending searches only — category names come back as
@@ -152,15 +157,14 @@ export function GlobalSearchScreen({
   /* The matching SKUs while still typing. Same search, same cards: the buyer
      can add straight from here instead of searching first. */
   const live = useMemo(
-    () => (submitted === null && normalise(query).length >= 2 ? search(query, scope ?? undefined) : null),
-    [query, scope, submitted]
+    () => (submitted === null && normalise(query).length >= 2 ? search(query) : null),
+    [query, submitted]
   );
 
   const result = useMemo(() => {
     if (submitted === null) return null;
-    if (!submitted && scope) return browse(scope);
-    return search(submitted, scope ?? undefined, !asTyped);
-  }, [submitted, scope, asTyped]);
+    return search(submitted, !asTyped);
+  }, [submitted, asTyped]);
 
   const showZero = submitted === null && !query && !emptyDemo;
   const showSuggestions = submitted === null && !!query && !emptyDemo;
@@ -243,23 +247,12 @@ export function GlobalSearchScreen({
                 setQuery(v);
                 setSubmitted(null);
               }}
-              placeholder={scope ? `Search in ${scope}` : 'Search for products'}
+              placeholder="Search for products"
               autoFocus
             />
           </form>
         </div>
 
-        {/* what the search is narrowed to, and the way out of it */}
-        {scope && (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary-soft px-3 py-1 text-xs font-medium text-primary-soft-foreground">
-              {scope}
-              <button onClick={clearScope} aria-label={`Leave ${scope}`} className="active:scale-[0.98]">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          </div>
-        )}
       </header>
 
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle">
@@ -275,7 +268,7 @@ export function GlobalSearchScreen({
               />
             )}
             <ChipSection title="Trending searches" items={TRENDING} icon={TrendingUp} onPick={runSearch} accent />
-            <ChipSection title="Start with a category" items={CATEGORY_NAMES} onPick={openScope} />
+            <ChipSection title="Start with a category" items={CATEGORY_NAMES} onPick={openCategory} />
           </div>
         ) : showSuggestions ? (
           suggestions.length > 0 || (live && live.cards.length > 0) ? (
@@ -287,7 +280,7 @@ export function GlobalSearchScreen({
                   return (
                     <button
                       key={`${s.kind}:${s.label}`}
-                      onClick={() => (s.kind === 'category' ? openScope(s.label) : runSearch(s.label))}
+                      onClick={() => (s.kind === 'category' ? openCategory(s.label) : runSearch(s.label))}
                       className="flex w-full items-center gap-2.5 border-b border-border-subtle px-3 py-2.5 text-left last:border-0 active:scale-[0.99]"
                     >
                       <Icon className="h-4 w-4 shrink-0 text-foreground-secondary" />
@@ -382,14 +375,6 @@ export function GlobalSearchScreen({
                 className="mt-3 text-sm font-medium text-primary active:scale-[0.98]"
               >
                 Did you mean {titleCase(result.suggestion)}?
-              </button>
-            )}
-            {scope && (
-              <button
-                onClick={clearScope}
-                className="mt-3 text-sm font-medium text-primary active:scale-[0.98]"
-              >
-                Search all products
               </button>
             )}
             <div className="mt-8 w-full px-6">
