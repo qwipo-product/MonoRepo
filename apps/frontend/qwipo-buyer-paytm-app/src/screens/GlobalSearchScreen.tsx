@@ -177,7 +177,13 @@ export function GlobalSearchScreen({
   const renderCard = (card: SearchCard) => {
     const labels = <SourceBadge card={card} />;
 
-    if (card.source === 'wholesaler') {
+    /* Which CARD to draw follows the catalogue the product lives in, not the
+       kind of seller. A handful of distributor-catalogue SKUs are sold by a
+       wholesaler — they carry one seller and no vendor choice, so they take
+       the ordinary card and just wear the Wholesaler label. Keying this off
+       the label instead left those looking for a vendor card that doesn't
+       exist, and they rendered as nothing at all. */
+    if (card.id.startsWith('wp')) {
       const p = WHOLESALER_PRODUCTS.find((x) => x.id === card.id);
       if (!p) return null;
       return (
@@ -288,7 +294,9 @@ export function GlobalSearchScreen({
                         <Highlight text={s.label} q={query.trim()} />
                       </span>
                       <span className="shrink-0 text-[10px] uppercase tracking-wide text-foreground-secondary">
-                        {s.kind === 'term' ? 'search' : s.kind}
+                        {/* The four kinds name themselves: recent, trending,
+                            category, brand. */}
+                        {s.kind === 'term' ? 'trending' : s.kind}
                       </span>
                       <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
                     </button>
