@@ -1,4 +1,5 @@
 import type { PackPill } from '@mockups/components';
+import { EXTRA_PRODUCTS } from './catalogExtra';
 
 export type Source = 'distributor' | 'wholesaler';
 
@@ -53,7 +54,7 @@ export const skuFor = (p: Product, variantId?: string): VariantSku => {
 };
 
 // Inline mock data — a real build would pull these from @mockups/mock-data.
-export const PRODUCTS: Product[] = [
+const BASE_PRODUCTS: Product[] = [
   {
     id: 'p1', name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos', shortName: 'Freedom Refined Sunflower Oil',
     category: 'Cooking Oils & Ghee', caseLabel: 'Case: 16 pc', caseSize: 16,
@@ -400,6 +401,11 @@ export const PRODUCTS: Product[] = [
     price: 10, mrp: 12, deliveryDay: 'Fri (Beat day)', mov: 500,
   },
 ];
+
+/* The hand-written SKUs above, plus the generated catalogue depth that search
+   needs — see `catalogExtra`. One list from here down: nothing downstream
+   knows or cares which half a product came from. */
+export const PRODUCTS: Product[] = [...BASE_PRODUCTS, ...EXTRA_PRODUCTS];
 
 export const productById = (id: string) => PRODUCTS.find((p) => p.id === id);
 

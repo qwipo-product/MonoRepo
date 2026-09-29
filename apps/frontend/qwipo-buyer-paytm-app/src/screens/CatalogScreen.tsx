@@ -64,6 +64,11 @@ export function CatalogScreen({
   }));
   const activeFilters = countActiveFilters(filters);
 
+  /* What the buyer asked for, in their words: the brand or category they
+     tapped. Several filters read as a trail, most general first. */
+  const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
+  const trail = ['All products', ...applied.map((a) => a.value)].join(' › ');
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -71,8 +76,13 @@ export function CatalogScreen({
           <ChevronLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold leading-tight">Product List</h1>
-          <p className="text-xs text-foreground-secondary">{items.length} products</p>
+          {/* The list is named after what narrowed it — a brand, a category, a
+              seller — with the trail that got here underneath. Arriving with
+              nothing applied, it's just the product list. */}
+          <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
+          <p className="truncate text-xs text-foreground-secondary">
+            {items.length} products{trail ? ` · ${trail}` : ''}
+          </p>
         </div>
         {onOffers && (
           <button

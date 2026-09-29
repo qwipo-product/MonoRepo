@@ -37,6 +37,12 @@ const DISTRIBUTOR_HISTORY: History[] = [
   { id: 'p18', lastOrdered: '2 weeks ago', timesOrdered: 3 },
   { id: 'p36', lastOrdered: '1 month ago', timesOrdered: 2 },
   { id: 'p17', lastOrdered: '2 months ago', timesOrdered: 1 },
+  /* Oils and a dal from the generated catalogue, so a search for "oil" or
+     "toor dal" has something to put under Previously Ordered. */
+  { id: 'p101', lastOrdered: '5 days ago', timesOrdered: 8 },
+  { id: 'p113', lastOrdered: '2 weeks ago', timesOrdered: 6 },
+  { id: 'p119', lastOrdered: '3 weeks ago', timesOrdered: 4 },
+  { id: 'p141', lastOrdered: '1 week ago', timesOrdered: 5 },
 ];
 
 const WHOLESALE_HISTORY: History[] = [
