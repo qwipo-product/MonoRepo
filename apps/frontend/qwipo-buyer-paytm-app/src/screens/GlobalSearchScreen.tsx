@@ -148,8 +148,8 @@ export function GlobalSearchScreen({
 
   const suggestions = useMemo(
     /* Terms are the trending searches only — category names come back as
-       their own kind, and a category suggestion opens a scoped browse rather
-       than running as a query. */
+       their own kind, because tapping one opens that category's product list
+       rather than running as a query. */
     () => (submitted === null ? suggest(query, recent, TRENDING) : []),
     [query, recent, submitted]
   );
