@@ -67,7 +67,7 @@ export function CatalogScreen({
   /* What the buyer asked for, in their words: the brand or category they
      tapped. Several filters read as a trail, most general first. */
   const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
-  const trail = ['All products', ...applied.map((a) => a.value)].join(' › ');
+  const trail = applied.length ? ['All products', ...applied.map((a) => a.value)].join(' › ') : '';
 
   return (
     <div className="flex h-full flex-col">
