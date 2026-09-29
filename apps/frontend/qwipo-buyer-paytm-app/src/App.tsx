@@ -294,7 +294,11 @@ export default function App() {
   const wholesaleSheetProduct = wholesaleSheetId
     ? WHOLESALER_PRODUCTS.find((p) => p.id === wholesaleSheetId) ?? null
     : null;
-  const galleryProduct = galleryId ? productById(galleryId) ?? null : null;
+  /* Either catalogue: a wholesale card's picture opens the same gallery a
+     distributor card's does. */
+  const galleryProduct = galleryId
+    ? productById(galleryId) ?? WHOLESALER_PRODUCTS.find((p) => p.id === galleryId) ?? null
+    : null;
   // Salesperson persona is Qwipo-app-only; the Paytm mini surface is customer-only.
   const isSalesperson = role === 'salesperson' && shell === 'buyer';
 
@@ -594,6 +598,7 @@ export default function App() {
             onBack={() => go('listing')}
             qty={qty}
             onOpenSheet={setSheetId}
+            onOpenGallery={setGalleryId}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
             cartTotal={cartTotal}
@@ -653,6 +658,7 @@ export default function App() {
             onSetVendor={setWholesaleVendorFor}
             initialTab={reorderSource}
             onOpenSheet={setSheetId}
+            onOpenGallery={setGalleryId}
             onSearch={() => go('global-search')}
             onBack={() => go('home')}
           />

@@ -9,7 +9,6 @@ import { offerNameSuffix } from '../data/coupons';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
-import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
@@ -47,6 +46,7 @@ export function ReorderScreen({
   onSetVendor,
   initialTab,
   onOpenSheet,
+  onOpenGallery,
   onSearch,
   onBack,
 }: {
@@ -59,6 +59,8 @@ export function ReorderScreen({
   /** Which tab to open on — set when a Home rail's See all lands here. */
   initialTab?: Source;
   onOpenSheet: (id: string) => void;
+  /** Both tabs' pictures open the app's gallery, whichever catalogue they're from. */
+  onOpenGallery?: (id: string) => void;
   onSearch?: () => void;
   onBack?: () => void;
 }) {
@@ -68,7 +70,6 @@ export function ReorderScreen({
   const [filterOpen, setFilterOpen] = useState(false);
   const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [unitsId, setUnitsId] = useState<string | null>(null);
-  const [galleryId, setGalleryId] = useState<string | null>(null);
 
   /* Filters are per tab — the two catalogues barely share a brand, so a brand
      picked on one side would silently empty the other. */
@@ -159,7 +160,7 @@ export function ReorderScreen({
                 onQty={(n) => onSetWholesaleQty(r.product.id, Math.max(0, n))}
                 onDiscounts={() => setDiscountsProductId(r.product.id)}
                 onAdd={() => setUnitsId(r.product.id)}
-                onImageClick={() => setGalleryId(r.product.id)}
+                onImageClick={onOpenGallery ? () => onOpenGallery(r.product.id) : undefined}
               />
             </div>
           ))
@@ -184,6 +185,7 @@ export function ReorderScreen({
                 mrp={sku.mrp}
                 qty={qty[r.product.id] ?? 0}
                 onAdd={() => onOpenSheet(r.product.id)}
+                onImageClick={onOpenGallery ? () => onOpenGallery(r.product.id) : undefined}
                 onDiscounts={() => setDiscountsProductId(r.product.id)}
                 footer={deliveryFooter(r.product.seller)}
               />
@@ -210,11 +212,6 @@ export function ReorderScreen({
         }}
         onContinue={() => setUnitsId(null)}
         onClose={() => setUnitsId(null)}
-      />
-
-      <ProductImagesSheet
-        product={galleryId ? WHOLESALE_REORDER_ITEMS.find((r) => r.product.id === galleryId)?.product ?? null : null}
-        onClose={() => setGalleryId(null)}
       />
 
       {/* Both maps: a scheme can be worded against either catalogue, and the
