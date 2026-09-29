@@ -97,6 +97,7 @@ docs/handoffs/              specs handed to engineering (handoff)
 | `rirn` | 5173 | web | Retailer identity network — company discovery console |
 | `rirn-retailer` | 5176 | **mobile** | Retailer-facing RIRN pages for a buyer-app WebView |
 | `qwipo-analytics` | 5177 | mobile kit, desktop layout | DigiDukaan analytics console + Reports framework; predates the web kit (its README) |
+| `qwipo-marketing-platform` | 5178 | web | Promotions + notifications console; publishes live into the buyer app via `mock-api`'s relay (its README) |
 | `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
 | `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
 
