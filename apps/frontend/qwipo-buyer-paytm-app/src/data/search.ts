@@ -48,7 +48,12 @@ const wordMatches = (q: string, w: string) => q.length > 1 && w.startsWith(q);
 /* Hinglish and vernacular are out of scope for this phase. They're listed
    rather than inferred, because some of them are one edit from a real word —
    "mung" from "moong" — and the spell-corrector would otherwise quietly turn
-   an unsupported query into a supported one. */
+   an unsupported query into a supported one.
+
+   A word here only counts as unsupported if the catalogue doesn't use it
+   itself: "atta" and "masala" are on the list as Hindi, and are also how
+   Aashirvaad Atta and Masala & Seasoning are actually spelt. Blocking those
+   outright lost two real searches — hence `unsupported`, not the raw set. */
 const NOT_SUPPORTED = new Set([
   'tel', 'chawal', 'namak', 'chai', 'sabun', 'mirchi', 'achar', 'mung', 'baal',
   'atta', 'cheeni', 'haldi', 'dhaniya', 'jeera', 'sarson', 'til', 'gud', 'doodh',
@@ -222,6 +227,9 @@ function splitWord(w: string): string | undefined {
 
 /* ── searching ──────────────────────────────────────────────────────────── */
 
+/** Vernacular the catalogue has no word of its own for. */
+const unsupported = (w: string) => NOT_SUPPORTED.has(w) && !VOCAB.has(w);
+
 const matches = (card: SearchCard, qs: string[]) => {
   const ws = cardWords.get(card) ?? [];
   return qs.every((q) => ws.some((w) => wordMatches(q, w)));
@@ -294,7 +302,7 @@ export function search(raw: string, scope?: string, correct = true): SearchResul
   const typed = normalise(raw);
   const qs = words(typed).filter((w) => w.length > 1);
   if (qs.length === 0) return EMPTY(raw);
-  if (qs.some((w) => NOT_SUPPORTED.has(w))) return EMPTY(raw);
+  if (qs.some(unsupported)) return EMPTY(raw);
 
   let used = qs;
   let correctedFrom: string | undefined;

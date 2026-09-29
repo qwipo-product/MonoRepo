@@ -28,8 +28,23 @@ import type { Navigate } from '../nav';
    A card is one thing bought one way, so a SKU both channels carry appears
    twice: the distributor card, then its wholesale card directly beneath. */
 
-const TRENDING = ['Edible Oils & Ghee', 'Atta & Flours', 'Instant Noodles', 'Dals & Pulses'];
-const SEEDED_RECENT = ['Sunflower Oil', 'Aashirvaad Atta', 'Maggi', 'Besan'];
+/* Both lists are words the catalogue answers to. "Edible Oils & Ghee" and
+   "Instant Noodles" read well and found nothing — the categories here are
+   Cooking Oils & Ghee and Snacks & Namkeen — so a tap from the opening screen
+   landed on an empty result, which is the first thing anyone tries. Card
+   counts in comments are what each returns today. */
+const TRENDING = [
+  'Toor Dal',      // 12
+  'Mustard Oil',   // 10
+  'Cow Ghee',      // 4
+  'Tata Salt',     // 5
+];
+const SEEDED_RECENT = [
+  'Sunflower Oil', // 14
+  'Aashirvaad',    // 12
+  'Maggi',         // 2
+  'Besan',         // 2
+];
 
 /** Kept short: three rows of history, eight remembered. */
 const RECENT_SHOWN = 3;
