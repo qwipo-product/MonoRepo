@@ -843,7 +843,16 @@ export default function App() {
         onEmptyDemoChange={setEmptyDemo}
       />
 
-      <main ref={stageRef} className="grid h-full min-w-0 flex-1 place-items-center overflow-hidden">
+      {/* The padding is the frame's drop shadow's room. The stage clips what
+          it can't fit and the frame's own box stops at its edge, so without it
+          the shadow was sliced flat along the bottom. The shadow is
+          0 20px 32px -8px, which reaches 44px below the frame, 24px to each
+          side and 4px above; the scale below measures the padded box, so the
+          frame gives that room up rather than losing the shadow. */}
+      <main
+        ref={stageRef}
+        className="grid h-full min-w-0 flex-1 place-items-center overflow-hidden px-6 pb-11 pt-1"
+      >
         {/* Scaled stage: the frame renders at true device size, then scales
             down to fit — so media queries see the real device width. */}
         <div style={{ width: frame.w * frameScale, height: frame.h * frameScale }}>

@@ -14,7 +14,7 @@ export function RoleSwitcher({ value, onChange }: { value: Role; onChange: (r: R
           key={r}
           onClick={() => onChange(r)}
           className={cn(
-            'flex-1 whitespace-nowrap rounded-full px-3 py-1.5 capitalize transition-colors',
+            'flex-1 whitespace-nowrap rounded-full px-2 py-1.5 capitalize transition-colors',
             value === r ? 'bg-card font-medium text-foreground shadow-sm' : 'text-foreground-secondary'
           )}
         >
