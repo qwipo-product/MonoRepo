@@ -34,21 +34,35 @@ import type { Navigate } from '../nav';
    landed on an empty result, which is the first thing anyone tries. Card
    counts in comments are what each returns today. */
 const TRENDING = [
-  'Toor Dal',      // 12
-  'Mustard Oil',   // 10
-  'Cow Ghee',      // 4
-  'Tata Salt',     // 5
+  'Toor Dal',       // 12
+  'Sunflower Oil',  // 14
+  'Chana Dal',      // 12
+  'Mustard Oil',    // 10
+  'Groundnut Oil',  // 14
+  'Rice Bran Oil',  // 12
+  'Moong Dal',      // 10
+  'Masoor Dal',     // 10
+  'Tata Salt',      // 5
+  'Cow Ghee',       // 4
 ];
 const SEEDED_RECENT = [
-  'Sunflower Oil', // 14
-  'Aashirvaad',    // 12
-  'Maggi',         // 2
-  'Besan',         // 2
+  'Fortune',        // 24
+  'Aashirvaad',     // 12
+  'Freedom',        // 26
+  'Urad Dal',       // 10
+  'Tata Sampann',   // 10
+  'Saffola',        // 8
+  'Shampoo',        // 6
+  'Sona Masoori',   // 4
+  'Maggi',          // 2
+  'Besan',          // 2
 ];
 
-/** Kept short: three rows of history, eight remembered. */
-const RECENT_SHOWN = 3;
-const RECENT_KEPT = 8;
+/* Ten per section, two rows, scrolled sideways. Ten is what fits in one
+   comfortable drag and still leaves the results below the fold in reach —
+   more than that and the opening screen becomes the whole screen. */
+const CHIP_MAX = 10;
+const RECENT_KEPT = CHIP_MAX;
 
 const SUGGESTION_ICON: Record<Suggestion['kind'], typeof Clock> = {
   recent: Clock,
@@ -267,14 +281,18 @@ export function GlobalSearchScreen({
             {recent.length > 0 && (
               <ChipSection
                 title="Recent searches"
-                items={recent.slice(0, RECENT_SHOWN)}
+                items={recent.slice(0, CHIP_MAX)}
                 icon={Clock}
                 onPick={runSearch}
                 onClear={() => setRecent([])}
               />
             )}
             <ChipSection title="Trending searches" items={TRENDING} icon={TrendingUp} onPick={runSearch} accent />
-            <ChipSection title="Start with a category" items={CATEGORY_NAMES} onPick={openCategory} />
+            <ChipSection
+              title="Start with a category"
+              items={CATEGORY_NAMES.slice(0, CHIP_MAX)}
+              onPick={openCategory}
+            />
           </div>
         ) : showSuggestions ? (
           suggestions.length > 0 || (live && live.cards.length > 0) ? (
@@ -427,13 +445,21 @@ function ChipSection({
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      {/* Two rows filled column by column, scrolled sideways: ten chips stay
+          one drag away instead of wrapping into a wall that pushes the
+          results off the screen. */}
+      <div
+        className={cn(
+          'no-scrollbar grid auto-cols-max grid-flow-col gap-2 overflow-x-auto pb-1',
+          items.length > 1 && 'grid-rows-2'
+        )}
+      >
         {items.map((label) => (
           <button
             key={label}
             onClick={() => onPick(label)}
             className={cn(
-              'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs active:scale-[0.98]',
+              'flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs active:scale-[0.98]',
               accent
                 ? 'border-warning-border bg-warning-subtle text-warning-foreground'
                 : 'border-border bg-card text-foreground'
