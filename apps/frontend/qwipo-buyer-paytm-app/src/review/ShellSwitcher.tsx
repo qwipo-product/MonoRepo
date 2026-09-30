@@ -12,7 +12,7 @@ export function ShellSwitcher({ value, onChange }: { value: Shell; onChange: (s:
           key={s}
           onClick={() => onChange(s)}
           className={cn(
-            'flex-1 whitespace-nowrap rounded-full px-3 py-1.5 transition-colors',
+            'flex-1 whitespace-nowrap rounded-full px-2 py-1.5 transition-colors',
             value === s ? 'bg-card font-medium text-foreground shadow-sm' : 'text-foreground-secondary'
           )}
         >

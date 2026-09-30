@@ -52,8 +52,11 @@ export default function FlowIndex({
   const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return (
     <aside className="no-scrollbar max-h-dvh w-80 shrink-0 overflow-y-auto p-6">
+      {/* Two rows of controls, each a full-width pill plus the icon buttons
+          that belong with it. One row could not hold all four — the theme
+          toggle was pushed past the sidebar's edge and disappeared. */}
       <div className="flex items-center gap-2">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <ShellSwitcher value={shell} onChange={onShellChange} />
         </div>
         <button
@@ -76,6 +79,15 @@ export default function FlowIndex({
         >
           <PackageOpen size={16} />
         </button>
+      </div>
+
+      {/* persona + theme. The Paytm mini is customer-only, so there is no
+          persona pill there — the spacer keeps the toggle in the same place
+          on both surfaces. */}
+      <div className="mt-2 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          {shell !== 'paytm' && <RoleSwitcher value={role} onChange={onRoleChange} />}
+        </div>
         <button
           onClick={onToggleTheme}
           aria-label="Toggle theme"
@@ -89,13 +101,6 @@ export default function FlowIndex({
         <p className="mt-2 rounded-md border border-primary-soft bg-primary-soft px-2.5 py-1.5 text-xs text-primary">
           Empty-state mode: every list renders with no data.
         </p>
-      )}
-
-      {/* persona: Customer vs Salesperson (Qwipo app only — Paytm is customer-only) */}
-      {shell !== 'paytm' && (
-        <div className="mt-2">
-          <RoleSwitcher value={role} onChange={onRoleChange} />
-        </div>
       )}
 
       {/* device: pick a frame size + rotate, to review phone & tablet layouts */}
