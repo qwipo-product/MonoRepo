@@ -45,13 +45,21 @@ export function VendorPicker({
                 on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'
               )}
             >
-              {/* Two lines only: what it costs and who from. The per-kg
-                  logistics charge came off — it's a term of the order, not
-                  something to weigh while picking between vendors. A vendor's
-                  price sits below the card's own selling price in the
-                  hierarchy, so it's smaller than it too. */}
+              {/* What it costs, who from, and what they charge to bring it.
+                  The freight is part of choosing here: one vendor delivers
+                  free and the next charges by the kilo, which can outweigh a
+                  few rupees of difference on the price above it. It sits
+                  smallest of the three — a term of the deal, not the deal. */}
               <div className="text-xs font-bold tabular-nums">{formatInr(vn.price)}</div>
               <div className="max-w-40 truncate text-xs font-medium">{vn.name}</div>
+              <div
+                className={cn(
+                  'mt-0.5 text-[11px]',
+                  on ? 'text-primary-foreground/80' : 'text-foreground-secondary'
+                )}
+              >
+                {vn.fee === 'Free' ? 'Free delivery' : `Fee: ${vn.fee}`}
+              </div>
             </button>
           );
         })}
