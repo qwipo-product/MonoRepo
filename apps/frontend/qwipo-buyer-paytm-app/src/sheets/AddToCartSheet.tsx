@@ -61,7 +61,7 @@ export function AddToCartSheet({
     >
       {/* product header */}
       <div className="flex items-center gap-3">
-        <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-2xl ring-2 ring-warning/70">
+        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-3xl ring-2 ring-warning/70">
           <ProductImage image={sku.image} alt={product.name} />
         </div>
         <div className="min-w-0">
