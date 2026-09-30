@@ -10,4 +10,5 @@ export { StatusBadge, orderStatusMap, type StatusBadgeProps } from './StatusBadg
 export { PriceLabel, formatInr, formatInrExact, type PriceLabelProps } from './PriceLabel';
 export { ProductImage, isProductPhoto, type ProductImageProps } from './ProductImage';
 export { ProductCard, type ProductCardProps, type PackPill } from './ProductCard';
+export { QtyPill, type QtyPillProps } from './QtyPill';
 export { RankedRow, Columns, StackBar, HBars, Stat } from './charts';
