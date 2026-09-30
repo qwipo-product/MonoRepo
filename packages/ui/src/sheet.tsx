@@ -41,6 +41,9 @@ export interface SheetProps {
   /* Override the body's own padding. The default suits a form; a sheet whose
      content is one big picture wants it tighter so the picture can be wider. */
   bodyClassName?: string;
+  /* Same for the title row, for the same reason: the picture sheet wants the
+     heading to take less height so more of the sheet is the picture. */
+  headerClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -56,6 +59,7 @@ export function Sheet({
   showHandle = true,
   className,
   bodyClassName,
+  headerClassName,
   children,
 }: SheetProps) {
   if (!open) return null;
@@ -78,7 +82,7 @@ export function Sheet({
         {showHandle && <div className="mx-auto mt-2 h-1 w-9 rounded-full bg-muted" />}
 
         {(title || icon) && (
-          <div className="flex items-center gap-3 border-b border-border p-4">
+          <div className={cn('flex items-center gap-3 border-b border-border p-4', headerClassName)}>
             {icon && (
               <div
                 className={cn(

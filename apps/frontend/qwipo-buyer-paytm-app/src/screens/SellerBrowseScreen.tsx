@@ -166,7 +166,7 @@ export function SellerBrowseScreen({
                   <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
                     Delivery by
                   </div>
-                  {deliveryFooter(d.name)}
+                  {deliveryFooter(d.name, { boxed: true })}
                 </div>
 
                 {/* the seller's brands — scrolls sideways, and each one opens

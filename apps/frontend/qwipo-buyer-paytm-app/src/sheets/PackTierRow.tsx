@@ -30,9 +30,11 @@ export function PackTierRow({
     setPacks(next);
   };
 
+  /* No picture per row: every tier is the same product, so the same shot
+     repeated down the sheet said nothing — the pack size and the price are
+     what tell the tiers apart. The product's own picture is in the header. */
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-base">📦</div>
       <div className="min-w-0">
         <div className="text-sm font-semibold text-foreground">{label}</div>
         <div className="text-xs text-foreground-secondary">

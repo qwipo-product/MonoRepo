@@ -26,6 +26,10 @@ export interface Product {
   /** Pieces per case — drives the pack tiers in the selling-units sheet. */
   caseSize: number;
   image: string;
+  /* The pictures the gallery pages through, when a product has been shot from
+     more than one side. Five is as many as a card is expected to carry; a
+     product without this opens as its one picture. */
+  gallery?: string[];
   variants: PackPill[];
   seller: string;
   source: Source;
@@ -59,6 +63,16 @@ const BASE_PRODUCTS: Product[] = [
     id: 'p1', name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos', shortName: 'Freedom Refined Sunflower Oil',
     category: 'Cooking Oils & Ghee', caseLabel: 'Case: 16 pc', caseSize: 16,
     image: '/product-images/freedom/1l-pouch.png',
+    /* Freedom is the one SKU that has been photographed, so it is the one with
+       a real gallery: the pack it is listed at first, then the rest of the
+       range. Everything else opens as its single picture. */
+    gallery: [
+      '/product-images/freedom/1l-pouch.png',
+      '/product-images/freedom/1l-bottle.png',
+      '/product-images/freedom/500ml-pouch.png',
+      '/product-images/freedom/5l.png',
+      '/product-images/freedom/15l.png',
+    ],
     variants: [
       { id: '500ml-pouch', label: '500 ml Pouch' }, { id: '500ml-bottle', label: '500 ml Bottle' },
       { id: '1l-pouch', label: '1 L Pouch' }, { id: '1l-bottle', label: '1 L Bottle' },

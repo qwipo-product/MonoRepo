@@ -32,6 +32,10 @@ export interface WholesalerProduct {
   /* Per-pack shot, keyed by variant id. Only the price moves with the vendor
      here, not with the pack, so this carries pictures and nothing else. */
   images?: Record<string, string>;
+  /* The pictures the images sheet pages through — up to five, in the order a
+     buyer should see them. Separate from the map above, which answers "what
+     does THIS pack look like". */
+  gallery?: string[];
   vendors: WholesalerVendor[];
 }
 
@@ -42,6 +46,12 @@ const BASE_WHOLESALE: WholesalerProduct[] = [
     variants: [
       { id: '1l', label: '1 Ltr' }, { id: '500ml', label: '500 ml' },
       { id: '5l', label: '5 Ltr' }, { id: '15kg', label: '15 Kg' },
+    ],
+    gallery: [
+      '/product-images/freedom/1l-pouch.png',
+      '/product-images/freedom/500ml-pouch.png',
+      '/product-images/freedom/5l.png',
+      '/product-images/freedom/15l.png',
     ],
     images: {
       '1l': '/product-images/freedom/1l-pouch.png',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Plus, Truck, X, ShoppingCart } from 'lucide-react';
 import { Button, EmptyState } from '@mockups/ui';
-import { ProductImage, formatInr } from '@mockups/components';
+import { ProductImage, QtyPill, formatInr } from '@mockups/components';
 import { itemWeight, type CartSeller } from '../data/cart';
 import { PriceChangeBanner, PriceChangeTag } from '../components/PriceChange';
 import { useEmptyable } from '../review/demoState';
@@ -210,18 +210,30 @@ export function ViewItemsScreen({
                     {t.label} · −{formatInr(t.amount)}
                   </div>
                 ))}
+                {/* A paid line carries its count in the control itself, so the
+                    separate Qty badge would say it twice. A free line has no
+                    control — the buyer didn't put it there — so it keeps the
+                    badge as the only place its count appears. */}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
-                    Qty ×{item.quantity}
-                  </span>
                   {item.free ? (
-                    <span className="text-right text-xs text-foreground-secondary">
-                      Added by the offer
-                    </span>
+                    <>
+                      <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
+                        Qty ×{item.quantity}
+                      </span>
+                      <span className="text-right text-xs text-foreground-secondary">
+                        Added by the offer
+                      </span>
+                    </>
                   ) : (
-                    <Button size="sm" onClick={() => onItemTap(item.product.id)}>
-                      + Add
-                    </Button>
+                    <>
+                      <span />
+                      <QtyPill
+                        qty={item.quantity}
+                        onEdit={() => onItemTap(item.product.id)}
+                        label={item.product.shortName}
+                        className="h-9"
+                      />
+                    </>
                   )}
                 </div>
               </div>
