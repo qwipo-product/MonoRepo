@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "buyer-app",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev", "--filter=@mockups/qwipo-buyer-paytm-app"],
+      "port": 5175
+    },
+    {
       "name": "storybook-web",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook-web"],

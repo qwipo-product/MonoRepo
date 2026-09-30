@@ -133,9 +133,15 @@ const cardWords = new Map<SearchCard, string[]>(
   SEARCH_CARDS.map((c) => [c, words(`${c.name} ${c.brand} ${c.category}`)])
 );
 
+/* Deepest first. The opening screen shows the first ten of these, so the
+   order decides which two fall off — and a category with one product in it
+   is the worst thing to offer someone who has not searched yet. */
 export const CATEGORY_NAMES = Array.from(
   new Set([...DIST_CATEGORIES, ...WHOLESALER_CATEGORIES].map((c) => c.name))
-);
+).sort((a, b) => {
+  const depth = (name: string) => SEARCH_CARDS.filter((c) => c.category === name).length;
+  return depth(b) - depth(a);
+});
 
 /* ── spelling ───────────────────────────────────────────────────────────── */
 
