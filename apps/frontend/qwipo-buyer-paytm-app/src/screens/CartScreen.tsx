@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
-import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
+import { Button, SegmentedControl, EmptyState, cn } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
@@ -17,6 +17,7 @@ export function CartScreen({
   onViewItems,
   onAddMore,
   onOpenCoupons,
+  onItemTap,
 }: {
   /** The live cart, built from the same qty the buyer picked on the Product
    * List / Reorder / Wholesaler screens — App.tsx computes it once and shares
@@ -27,10 +28,14 @@ export function CartScreen({
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
   onOpenCoupons: () => void;
+  /** Opens one SKU's selling-units sheet from a seller card's strip. */
+  onItemTap?: (productId: string) => void;
 }) {
   const { grandTotal, totalItems, anyBelow } = cart;
   const sellers = useEmptyable(cart.sellers);
-  const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
+  /* What delivery actually costs: each wholesaler's per-kilo freight, plus
+     the flat fee a distributor charges under its free-delivery threshold. */
+  const deliveryFee = sellers.reduce((n, s) => n + (s.freight > 0 ? s.freight : s.deliveryFee), 0);
 
   return (
     <div className="flex h-full flex-col">
@@ -89,6 +94,7 @@ export function CartScreen({
                 seller={s}
                 onViewItems={() => onViewItems(s.id)}
                 onAddMore={() => onAddMore(s.id)}
+                onItemTap={onItemTap}
               />
             ))}
           </div>
@@ -124,15 +130,15 @@ function SellerCard({
   seller,
   onViewItems,
   onAddMore,
+  onItemTap,
 }: {
   seller: CartSeller;
   onViewItems: () => void;
   onAddMore: () => void;
+  /** Opens one SKU's selling-units sheet, straight from the strip. */
+  onItemTap?: (productId: string) => void;
 }) {
   const [win, setWin] = useState(seller.windows[0]);
-  const CAP = 3;
-  const shown = seller.items.slice(0, CAP);
-  const extra = seller.items.length - shown.length;
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -180,43 +186,58 @@ function SellerCard({
             charging nothing reads "Free delivery" and matches what the
             totals bar adds up. */}
         <div className="mt-2.5">
-          {seller.deliveryFee === 0 ? (
+          {(seller.freight > 0 ? seller.freight : seller.deliveryFee) === 0 ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-success-subtle px-2.5 py-1 text-xs font-medium text-success-foreground">
               <Truck className="h-3.5 w-3.5" /> Free delivery
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground-secondary">
-              <Truck className="h-3.5 w-3.5" /> Delivery {formatInr(seller.deliveryFee)}
+              <Truck className="h-3.5 w-3.5" /> Delivery{' '}
+              {formatInr(seller.freight > 0 ? seller.freight : seller.deliveryFee)}
             </span>
           )}
         </div>
 
         {/* item thumbnail rail */}
         <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto">
-          {shown.map((item, i) => (
-            <div key={`${item.product.id}-${i}`} className="flex w-16 shrink-0 flex-col items-center">
-              <div className="relative grid h-16 w-16 place-items-center rounded-lg border border-border bg-card text-2xl">
-                <ProductImage image={item.product.image} alt={item.product.name} />
-                {item.free && (
-                  <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    FREE
-                  </span>
+          {seller.items.map((item, i) => {
+            /* A free line was put there by an offer, so there is nothing to
+               edit — it stays a picture. Everything else opens its own
+               selling-units sheet, which is where quantity is changed. */
+            const Tile = item.free ? 'div' : 'button';
+            return (
+              <Tile
+                key={`${item.product.id}-${i}`}
+                {...(item.free
+                  ? {}
+                  : {
+                      onClick: () => onItemTap?.(item.product.id),
+                      'aria-label': `Edit ${item.product.shortName}`,
+                    })}
+                className={cn(
+                  'flex w-16 shrink-0 flex-col items-center',
+                  !item.free && 'active:scale-[0.98]'
                 )}
-              </div>
-              <div className="mt-1 text-[11px] text-foreground-secondary">×{item.quantity}</div>
-              <div className="text-[11px] font-medium tabular-nums text-foreground">
-                {formatInr(item.lineTotal)}
-              </div>
-            </div>
-          ))}
-          {extra > 0 && (
-            <button
-              onClick={onViewItems}
-              className="grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-dashed border-primary bg-primary-soft text-xs font-semibold text-primary active:scale-[0.98]"
-            >
-              +{extra} more
-            </button>
-          )}
+              >
+                <div className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
+                  <ProductImage image={item.product.image} alt={item.product.name} />
+                  {/* Across the top inside the tile, not hanging off it: the
+                      rail scrolls sideways and clipped whatever poked out, so
+                      the tag was being sliced. A full-width strip also stops
+                      it sitting on top of the product. */}
+                  {item.free && (
+                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
+                      Free
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 text-[11px] text-foreground-secondary">×{item.quantity}</div>
+                <div className="text-[11px] font-medium tabular-nums text-foreground">
+                  {formatInr(item.lineTotal)}
+                </div>
+              </Tile>
+            );
+          })}
         </div>
 
         {/* delivery window — beat day + tomorrow options */}

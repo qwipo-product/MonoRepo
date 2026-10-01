@@ -135,6 +135,8 @@ interface Kind {
   /** Pack the name is listed at, and the pieces in a case. */
   pack: string;
   caseSize: number;
+  /** What one of those packs weighs, in kg — wholesale freight is per kilo. */
+  unitKg: number;
   variants: { id: string; label: string }[];
 }
 
@@ -143,6 +145,7 @@ const OIL_KIND: Kind = {
   image: '🛢️',
   pack: '1 L Pouch',
   caseSize: 12,
+  unitKg: 1,
   variants: [
     { id: '1l-pouch', label: '1 L Pouch' },
     { id: '1l-bottle', label: '1 L Bottle' },
@@ -155,6 +158,7 @@ const DAL_KIND: Kind = {
   image: '🫘',
   pack: '1 kg Pack',
   caseSize: 12,
+  unitKg: 1,
   variants: [
     { id: '500g', label: '500 g' },
     { id: '1kg', label: '1 kg' },
@@ -166,6 +170,7 @@ const SHAMPOO_KIND: Kind = {
   image: '🧴',
   pack: '180 ml Bottle',
   caseSize: 24,
+  unitKg: 0.18,
   variants: [
     { id: '90ml', label: '90 ml' },
     { id: '180ml', label: '180 ml' },
@@ -177,6 +182,7 @@ const RICE_KIND: Kind = {
   image: '🍚',
   pack: '26 kg Bag',
   caseSize: 1,
+  unitKg: 26,
   variants: [
     { id: '10kg', label: '10 kg' },
     { id: '26kg', label: '26 kg' },
@@ -187,6 +193,7 @@ const FLOUR_KIND: Kind = {
   image: '🌾',
   pack: '1 kg Pack',
   caseSize: 10,
+  unitKg: 1,
   variants: [
     { id: '500g', label: '500 g' },
     { id: '1kg', label: '1 kg' },
@@ -245,6 +252,11 @@ const VENDORS = [
 /* The wholesale twin of each paired SKU. It carries the short name — the same
    name the distributor SKU is listed under before its pack suffix — which is
    what lets the two be shown as one thing bought two ways. */
+/** Category → kg per selling unit, for the generated wholesale twins. */
+const KIND_KG: Record<string, number> = Object.fromEntries(
+  GROUPS.map(({ kind }) => [kind.category, kind.unitKg])
+);
+
 export const EXTRA_WHOLESALE: WholesalerProduct[] = built
   .filter((b) => b.twin)
   .map(({ product }, i) => ({
@@ -254,6 +266,7 @@ export const EXTRA_WHOLESALE: WholesalerProduct[] = built
     brand: product.shortName.split(' ')[0],
     caseLabel: product.caseLabel,
     caseSize: product.caseSize,
+    unitKg: KIND_KG[product.category] ?? 1,
     image: product.image,
     variants: product.variants,
     vendors: [VENDORS[i % 3], VENDORS[(i + 1) % 3]].map((v, k) => ({
