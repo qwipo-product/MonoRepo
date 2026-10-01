@@ -166,14 +166,15 @@ export function SellerBrowseScreen({
                   <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
                 </button>
-                {/* delivery day(s) + the MOV for each — the same rows the
+                {/* delivery day(s) + the MOV for each — the same quiet rows the
                     product cards carry, from the one delivery source, so a
-                    seller's terms read identically wherever they appear */}
+                    seller's terms read identically wherever they appear. Only
+                    the label is brand-coloured, to head the block. */}
                 <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
-                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
                     Delivery by
                   </div>
-                  {deliveryFooter(d.name, { boxed: true })}
+                  {deliveryFooter(d.name)}
                 </div>
 
                 {/* the seller's brands — scrolls sideways, and each one opens

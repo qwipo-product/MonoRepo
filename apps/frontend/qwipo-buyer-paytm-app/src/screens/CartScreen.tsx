@@ -4,6 +4,7 @@ import { Button, SegmentedControl, EmptyState, cn } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
+import { isBeatDay } from '../data/delivery';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
@@ -279,7 +280,18 @@ function SellerCard({
 
         {/* delivery window — beat day + tomorrow options */}
         <div className="mt-3">
-          <div className="mb-1.5 text-xs text-foreground-secondary">Delivery by</div>
+          {/* A beat day is the day the van is in the area, not a promise the
+              goods arrive that morning — so it carries the window the seller
+              actually works to. A "Tomorrow" slot means tomorrow and needs
+              nothing said. */}
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs text-foreground-secondary">Delivery by</span>
+            {isBeatDay(win) && (
+              <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">
+                Delivered within 24–48 hrs
+              </span>
+            )}
+          </div>
           <SegmentedControl
             options={seller.windows.map((w) => ({ value: w, label: w }))}
             value={win}
