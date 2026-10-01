@@ -61,6 +61,15 @@ export const SELLER_MOW: Record<string, number> = {
  *                         minimum-order-value bar shows on that card
  *   p39 × 20  Tata      Bogo + Freebie ............ qualify
  *                       Case Bonus, Slab, Combo ... short
+ *   p5  ×  4  Karnataka a few bars of soap ........ under both minimums
+ *
+ * The four sellers also cover every combination of the two minimums, so the
+ * cart shows all of them side by side:
+ *
+ *   Sri Sai     ₹6,120 / 53 kg  — clears both ........ no bar
+ *   Omkar       no MOV, 13 kg   — weight only ........ weight bar
+ *   Tata        ₹480 of ₹2,000  — no MOW set ......... value bar
+ *   Karnataka   ₹168 / 0.6 kg   — under both ......... both bars
  *
  * Nothing depends on these being present — clear the cart and every screen
  * still behaves, it just has less to show.
@@ -72,6 +81,7 @@ export const INITIAL_QTY: Record<string, number> = {
   p3: 20,
   p10: 2,
   p39: 20,
+  p5: 4,
 };
 
 export const itemWeight = (item: CartItem): number =>

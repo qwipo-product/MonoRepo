@@ -31,7 +31,7 @@ export function CartScreen({
   /** Opens one SKU's selling-units sheet from a seller card's strip. */
   onItemTap?: (productId: string) => void;
 }) {
-  const { grandTotal, totalItems, anyBelow } = cart;
+  const { grandTotal, totalItems } = cart;
   const sellers = useEmptyable(cart.sellers);
   /* What delivery actually costs: each wholesaler's per-kilo freight, plus
      the flat fee a distributor charges under its free-delivery threshold. */
@@ -99,12 +99,9 @@ export function CartScreen({
             ))}
           </div>
 
+          {/* No blanket warning here: each seller's card now says exactly what
+              it is short of, which is the thing the buyer can act on. */}
           <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-            {anyBelow && (
-              <p className="mb-2 text-center text-xs text-warning-foreground">
-                Meet each seller’s minimum order to check out.
-              </p>
-            )}
             <div className="flex items-center justify-between gap-3">
               <div className="leading-tight">
                 <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
@@ -122,6 +119,45 @@ export function CartScreen({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Weight the way a seller quotes it: "25 kg", "12.5 kg". */
+const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
+
+/* A minimum this seller has not met yet — value or weight, same shape either
+   way. It leads with what is still missing, because that is the number the
+   buyer acts on; the threshold follows it for context.
+
+   Amber, not the brand blue: this is a condition standing between the buyer
+   and checkout, and blue reads as neutral progress. */
+function MinimumBar({
+  label,
+  have,
+  need,
+  format,
+}: {
+  label: string;
+  have: number;
+  need: number;
+  format: (n: number) => string;
+}) {
+  const pct = Math.min(100, Math.round((have / need) * 100));
+  return (
+    <div className="mt-2.5">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        {/* The label is the brand blue so the condition is legible at a
+            glance; the amber is saved for the number still outstanding. */}
+        <span className="font-medium text-primary">{label}</span>
+        <span className="tabular-nums">
+          <span className="font-semibold text-warning-foreground">Add {format(need - have)}</span>
+          <span className="text-foreground-secondary"> of {format(need)}</span>
+        </span>
+      </div>
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-warning" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
@@ -163,23 +199,24 @@ function SellerCard({
           </div>
         </div>
 
-        {/* minimum order value — one label, the seller's threshold, and a
-            bar. Only while the minimum is unmet: once it's cleared there is
-            no progress left to report, so the card says nothing. Deliberately
-            plain, since the totals bar already says checkout is blocked. */}
+        {/* What this seller still needs before they will ship. Only while a
+            minimum is unmet — once it's cleared there is no progress left to
+            report. Weight only appears for sellers who set one. */}
         {seller.mov > 0 && seller.subtotal < seller.mov && (
-          <div className="mt-2.5">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-foreground-secondary">Minimum order value</span>
-              <span className="font-medium tabular-nums text-foreground">{formatInr(seller.mov)}</span>
-            </div>
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.min(100, Math.round((seller.subtotal / seller.mov) * 100))}%` }}
-              />
-            </div>
-          </div>
+          <MinimumBar
+            label="Minimum order value"
+            have={seller.subtotal}
+            need={seller.mov}
+            format={formatInr}
+          />
+        )}
+        {seller.mow > 0 && seller.belowWeight && (
+          <MinimumBar
+            label="Minimum order weight"
+            have={seller.weight}
+            need={seller.mow}
+            format={kg}
+          />
         )}
 
         {/* delivery pill — driven by the fee, not the status, so a seller
