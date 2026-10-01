@@ -5,6 +5,7 @@ import { Field, controlClass } from '../../components/formbits';
 import { BusinessTypeField } from '../../components/BusinessTypeField';
 import { KycDocsStep } from '../../kyc/KycDocsStep';
 import type { KycFlow } from '../../kyc/useKycFlow';
+import { TermsAgree } from '../../components/TermsAgree';
 
 /* Complete KYC — the same two steps as before:
      1. Basic information
@@ -35,10 +36,6 @@ export function CompleteKycScreen({
   const [agreed, setAgreed] = useState(false);
   // Customer Name and Business Type are both required to move on.
   const step1Valid = name.trim() !== '' && businessType !== '';
-
-  const missing = (['photo', 'location', 'ownerId'] as const).filter(
-    (c) => !['accepted', 'review'].includes(flow.kyc.fields[c].status)
-  ).length;
 
   return (
     <div className="relative flex h-full flex-col bg-background text-foreground">
@@ -84,25 +81,18 @@ export function CompleteKycScreen({
             <BusinessTypeField required value={businessType} onChange={setBusinessType} />
           </>
         ) : (
-          <KycDocsStep flow={flow} agreed={agreed} onAgreedChange={setAgreed} onManualReview={onManualReview} />
+          <KycDocsStep flow={flow} onManualReview={onManualReview} />
         )}
       </div>
 
       <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        {step === 1 && !step1Valid && (
-          <p className="mb-2 text-center text-sm text-foreground-secondary">
-            {!name.trim() ? 'Enter your name to continue' : 'Select your Business Type to continue'}
-          </p>
-        )}
-        {step === 2 && (
-          <p className="mb-2 text-center text-sm text-foreground-secondary">
-            {missing > 0
-              ? `Add ${missing === 3 ? 'all 3' : missing} required ${missing === 1 ? 'item' : 'items'} marked *`
-              : !agreed
-                ? 'Tick “I agree” to register'
-                : 'All set — tap Register'}
-          </p>
-        )}
+        {/* No running commentary above the buttons: the fields are marked
+            required and the action is disabled until they are filled, which
+            says the same thing without a line that changes on every keystroke.
+
+            The terms sit here rather than at the end of the form — they gate
+            Register, so they belong next to it. */}
+        {step === 2 && <TermsAgree agreed={agreed} onChange={setAgreed} className="mb-3" />}
         <div className="flex gap-3">
           {step === 1 ? (
             <>
