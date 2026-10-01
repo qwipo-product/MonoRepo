@@ -1,4 +1,5 @@
 import { Bell, User, MapPin, ChevronDown, Search, ClipboardList } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import type { ScreenId } from '../review/screenIndex';
@@ -38,7 +39,10 @@ export function HomeScreen({
   onTabChange,
   onNavigate,
   salesperson = false,
+  notice,
 }: {
+  /** Account-level message above the banners (e.g. KYC Pending). */
+  notice?: ReactNode;
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
   /* Which side the buyer is shopping. App.tsx holds it rather than this
@@ -157,6 +161,7 @@ export function HomeScreen({
       </div>
 
       <div className="mt-4 space-y-6">
+        {notice && <div className="px-4">{notice}</div>}
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
         {effectiveTab === 'distributors' ? (
