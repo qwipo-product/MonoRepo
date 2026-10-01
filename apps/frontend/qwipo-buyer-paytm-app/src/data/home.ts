@@ -6,7 +6,6 @@ export interface Distributor {
   id: string;
   logo: string;
   title: string;
-  short: string;
   /** Full seller name — scopes the storefront + its product list (p.seller). */
   name: string;
 }
@@ -29,13 +28,13 @@ export const HERO_BANNERS = [
 ];
 
 export const DISTRIBUTORS: Distributor[] = [
-  { id: 'd1', logo: '/brand-logos/Freedon Oil.png', title: 'Freedom Oil', short: 'SSKT', name: 'Sri Sai Krishna Traders' },
-  { id: 'd2', logo: '/brand-logos/Aashirvaad.png', title: 'Aashirvaad Atta', short: 'KSDL', name: 'Karnataka Soaps & Detergents' },
-  { id: 'd3', logo: '/brand-logos/Sri Lalitha.png', title: 'Sona Masoori Rice', short: 'Annapurna', name: 'Annapurna Traders' },
-  { id: 'd4', logo: '/brand-logos/Cow.png', title: 'Cow Ghee', short: 'Sri Krishna', name: 'Sri Krishna Agencies' },
-  { id: 'd5', logo: '/brand-logos/MTR.png', title: 'MTR Masala', short: 'Balaji', name: 'Balaji Distributors' },
-  { id: 'd6', logo: '/brand-logos/Double Horse.png', title: 'Double Horse', short: 'Vijaya', name: 'Vijaya Traders' },
-  { id: 'd7', logo: '/brand-logos/Tata.png', title: 'Tata Salt & Tea', short: 'TCPL', name: 'Tata Consumer Products' },
+  { id: 'd1', logo: '/brand-logos/Freedon Oil.png', title: 'Freedom Oil', name: 'Sri Sai Krishna Traders' },
+  { id: 'd2', logo: '/brand-logos/Aashirvaad.png', title: 'Aashirvaad Atta', name: 'Karnataka Soaps & Detergents' },
+  { id: 'd3', logo: '/brand-logos/Sri Lalitha.png', title: 'Sona Masoori Rice', name: 'Annapurna Traders' },
+  { id: 'd4', logo: '/brand-logos/Cow.png', title: 'Cow Ghee', name: 'Sri Krishna Agencies' },
+  { id: 'd5', logo: '/brand-logos/MTR.png', title: 'MTR Masala', name: 'Balaji Distributors' },
+  { id: 'd6', logo: '/brand-logos/Double Horse.png', title: 'Double Horse', name: 'Vijaya Traders' },
+  { id: 'd7', logo: '/brand-logos/Tata.png', title: 'Tata Salt & Tea', name: 'Tata Consumer Products' },
 ];
 
 export const DIST_CATEGORIES: HomeCategory[] = [
