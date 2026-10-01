@@ -10,12 +10,16 @@ export function ShellChrome({
   shell,
   bottomNav,
   paytmHeader = true,
+  screenKey,
   children,
 }: {
   shell: Shell;
   bottomNav?: ReactNode;
   /** Hide the "« Paytm" mini-app bar on Paytm-native surfaces (launcher/search). */
   paytmHeader?: boolean;
+  /** Which screen is in the slot. Changing it replays the arrival animation,
+   *  so moving between screens reads as a move rather than a cut. */
+  screenKey?: string;
   children: ReactNode;
 }) {
   return (
@@ -38,7 +42,9 @@ export function ShellChrome({
         </>
       )}
 
-      <div className="min-h-0 flex-1">{children}</div>
+      <div key={screenKey} className="animate-screen min-h-0 flex-1">
+        {children}
+      </div>
       {bottomNav}
     </>
   );

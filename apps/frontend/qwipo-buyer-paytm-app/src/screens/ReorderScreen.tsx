@@ -141,7 +141,7 @@ export function ReorderScreen({
         </div>
       </div>
 
-      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+      <div key={tab} className="no-scrollbar animate-screen flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {count === 0 ? (
           <EmptyState
             icon={<History strokeWidth={1.75} />}
