@@ -17,6 +17,7 @@ export function OrderSummaryScreen({
   onPlaceOrder,
   onViewItems,
   kycPending = false,
+  kycUnderReview = false,
   onCompleteKyc,
 }: {
   /** The live cart App.tsx built from the buyer's actual picked quantities. */
@@ -26,6 +27,8 @@ export function OrderSummaryScreen({
   onViewItems: (sellerId: string) => void;
   /** First order waits on account verification. */
   kycPending?: boolean;
+  /** KYC is submitted and with our team (manual review) — nothing to do but wait. */
+  kycUnderReview?: boolean;
   onCompleteKyc?: () => void;
 }) {
   const { sellers, grandTotal } = cart;
@@ -105,7 +108,15 @@ export function OrderSummaryScreen({
       </div>
 
       <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-        {kycPending && (
+        {kycPending && kycUnderReview && (
+          <InlineMessage
+            className="mb-3"
+            variant="warning"
+            title="KYC Pending"
+            description="Your KYC is under review. You can place orders once it is approved."
+          />
+        )}
+        {kycPending && !kycUnderReview && (
           <InlineMessage
             className="mb-3"
             variant="warning"

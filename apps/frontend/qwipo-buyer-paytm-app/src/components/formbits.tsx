@@ -97,6 +97,7 @@ export const controlClass =
 /** Select-style control that opens a bottom Sheet of a simple text option list. */
 export function SelectField({
   label,
+  hideLabel,
   required,
   placeholder,
   value,
@@ -104,6 +105,9 @@ export function SelectField({
   onChange,
 }: {
   label: string;
+  /* Drop the label above the control where the placeholder already says what
+     to pick. The sheet the control opens still carries it as its title. */
+  hideLabel?: boolean;
   required?: boolean;
   placeholder: string;
   value: string;
@@ -111,8 +115,8 @@ export function SelectField({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  return (
-    <Field label={label} required={required}>
+  const control = (
+    <>
       <button type="button" onClick={() => setOpen(true)} className={cn(controlClass, 'justify-between')}>
         <span className={value ? 'text-foreground' : 'text-foreground-secondary'}>{value || placeholder}</span>
         <ChevronDown className="h-5 w-5 text-foreground-secondary" />
@@ -137,6 +141,13 @@ export function SelectField({
           ))}
         </div>
       </Sheet>
+    </>
+  );
+  return hideLabel ? (
+    control
+  ) : (
+    <Field label={label} required={required}>
+      {control}
     </Field>
   );
 }

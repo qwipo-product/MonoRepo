@@ -1,4 +1,5 @@
-import { ChevronLeft, Clock, Mail, Phone, MapPin, Headset } from 'lucide-react';
+import { ChevronLeft, Clock, Mail, Phone, MapPin } from 'lucide-react';
+import { CustomerCareCard } from '../components/CustomerCareCard';
 
 /* Account · Contact Us — support details + the shop's business advisor. */
 
@@ -7,7 +8,6 @@ const CONTACT = [
   { icon: <Mail className="h-4 w-4" />, label: 'Email Address', value: 'info@qwipo.com' },
 ];
 
-const CUSTOMER_CARE = '9121222836';
 const ADVISOR = { name: 'Vinodkumar Musku', phone: '9100466765' };
 
 export function ContactUsScreen({ onBack }: { onBack: () => void }) {
@@ -31,23 +31,9 @@ export function ContactUsScreen({ onBack }: { onBack: () => void }) {
           <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="mx-auto mt-3 hidden h-7 dark:block" />
         </div>
 
-        {/* Customer care leads, in the same card the advisor gets: a number you
-            ring is a call to make, not a detail to read, so it sits above the
-            timings and the address rather than inside that list. */}
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-foreground">Customer Care</h2>
-          <div className="mt-2.5 flex items-center gap-3">
-            <Headset className="h-5 w-5 shrink-0 text-foreground-secondary" />
-            <div className="min-w-0 flex-1 text-sm font-medium text-foreground">{CUSTOMER_CARE}</div>
-            <a
-              href={`tel:${CUSTOMER_CARE}`}
-              aria-label={`Call customer care on ${CUSTOMER_CARE}`}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground active:scale-[0.98]"
-            >
-              <Phone className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
+        {/* Customer care leads: it sits above the timings and the address
+            rather than inside that list. */}
+        <CustomerCareCard />
 
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           {CONTACT.map((c) => (
