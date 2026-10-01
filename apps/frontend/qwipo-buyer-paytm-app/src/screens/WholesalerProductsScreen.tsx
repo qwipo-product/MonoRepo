@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
-import { Button, EmptyState } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { EmptyState } from '@mockups/ui';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, minVendorPrice, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
@@ -11,6 +10,7 @@ import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { useEmptyable } from '../review/demoState';
+import { CartBar } from '../components/CartBar';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(WHOLESALER_PRODUCTS.map((p) => brandOf(p.name)))];
@@ -35,6 +35,9 @@ export function WholesalerProductsScreen({
   onBack,
   onSearch,
   onGoToCart,
+  cartCount,
+  cartTotal,
+  cartFreight,
   initialSheet = false,
 }: {
   applied?: AppliedFilter[];
@@ -46,6 +49,13 @@ export function WholesalerProductsScreen({
   onBack: () => void;
   onSearch?: () => void;
   onGoToCart: () => void;
+  /* The whole cart, both channels — the bar says "total cart value", and a
+     wholesale-only subtotal would have made it mean something different here
+     than on every other list. */
+  cartCount: number;
+  cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
   initialSheet?: boolean;
 }) {
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
@@ -72,8 +82,6 @@ export function WholesalerProductsScreen({
     return p.vendors.find((v) => v.id === id) ?? p.vendors[0];
   };
 
-  const cartCount = Object.values(qty).reduce((n, x) => n + x, 0);
-  const cartTotal = WHOLESALER_PRODUCTS.reduce((s, p) => s + vendorFor(p).price * (qty[p.id] ?? 0), 0);
 
   const sheetProduct = sheetId ? WHOLESALER_PRODUCTS.find((p) => p.id === sheetId) ?? null : null;
 
@@ -150,22 +158,7 @@ export function WholesalerProductsScreen({
         onClose={() => setGalleryId(null)}
       />
 
-      {cartCount > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
-              {cartCount} {cartCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
-            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
-              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
-            </div>
-          </div>
-          <Button className="px-8" onClick={onGoToCart}>
-            Go to cart
-          </Button>
-        </div>
-      )}
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
 
       <DiscountsSheet
         open={!!discountsProductId}

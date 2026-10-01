@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { ChevronLeft, BadgePercent } from 'lucide-react';
-import { EmptyState, Button } from '@mockups/ui';
-import { ProductCard, formatInr } from '@mockups/components';
+import { EmptyState } from '@mockups/ui';
+import { ProductCard } from '@mockups/components';
 import { PRODUCTS, defaultVariantId, skuFor } from '../data/products';
 import { offerNameSuffix, offerLabelsFor } from '../data/coupons';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { CartBar } from '../components/CartBar';
 
 /* Offers & Schemes SKU list — a shortcut one tap off Product List, for anyone
    (a demo, the product team walking a colleague through it) who needs to find
@@ -24,6 +25,7 @@ export function OffersSchemesSkusScreen({
   onGoToCart,
   cartCount,
   cartTotal,
+  cartFreight,
 }: {
   onBack: () => void;
   qty: Record<string, number>;
@@ -32,6 +34,8 @@ export function OffersSchemesSkusScreen({
   onGoToCart: () => void;
   cartCount: number;
   cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
 }) {
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
@@ -85,22 +89,7 @@ export function OffersSchemesSkusScreen({
         )}
       </div>
 
-      {cartCount > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
-              {cartCount} {cartCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
-            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
-              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
-            </div>
-          </div>
-          <Button className="px-8" onClick={onGoToCart}>
-            Go to cart
-          </Button>
-        </div>
-      )}
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
 
       <DiscountsSheet
         open={!!discountsProductId}
