@@ -691,10 +691,12 @@ export default function App() {
             cart={CART}
             onBack={goBack}
             onCheckout={() => setAlertsOpen(true)}
+            /* Through `go`, not setScreen: a navigation that sets the screen
+               itself never reaches the trail, so Back had no record of the
+               cart and skipped straight past it. */
             onViewItems={(sellerId) => {
-              setSheetId(null);
               setViewSellerId(sellerId);
-              setScreen('view-items');
+              go('view-items');
             }}
             onAddMore={() => go('listing')}
             onOpenCoupons={() => go('coupons')}
