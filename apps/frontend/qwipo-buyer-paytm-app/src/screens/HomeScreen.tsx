@@ -171,7 +171,7 @@ export function HomeScreen({
                 {distributors.map((d) => (
                   <button
                     key={d.id}
-                    onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })}
+                    onClick={() => onNavigate('storefront', { distributor: d })}
                     className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
                   >
                     {/* The plate keeps its own frame inside the card, the way a
@@ -210,7 +210,7 @@ export function HomeScreen({
                   <CategoryTile
                     key={c.id}
                     cat={c}
-                    onClick={() => onNavigate('listing', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'category', value: c.name }] })}
                   />
                 ))}
               </div>
@@ -224,7 +224,7 @@ export function HomeScreen({
                     key={b.id}
                     name={b.name}
                     logo={b.logo}
-                    onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }] })}
                   />
                 ))}
               </div>
@@ -234,11 +234,11 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Trending Products"
-                  onSeeAll={() => onNavigate('listing', { backTo: 'home' })}
+                  onSeeAll={() => onNavigate('listing')}
                 />
                 <ProductTeaserRail
                   items={trendingDistributor}
-                  onOpen={() => onNavigate('listing', { backTo: 'home' })}
+                  onOpen={() => onNavigate('listing')}
                 />
               </section>
             )}
@@ -252,7 +252,7 @@ export function HomeScreen({
                 {wholesalerL1.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => onNavigate(L1_SCREEN[c.l1], { backTo: 'home' })}
+                    onClick={() => onNavigate(L1_SCREEN[c.l1])}
                     className="flex flex-col gap-2"
                   >
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
@@ -285,7 +285,7 @@ export function HomeScreen({
                   <OfferCard
                     key={o.id}
                     offer={o}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: o.brand }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: o.brand }] })}
                   />
                 ))}
               </div>
@@ -299,7 +299,7 @@ export function HomeScreen({
                   <CategoryTile
                     key={c.id}
                     cat={c}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }] })}
                   />
                 ))}
               </div>
@@ -313,7 +313,7 @@ export function HomeScreen({
                     key={b.id}
                     name={b.name}
                     logo={b.logo}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }] })}
                   />
                 ))}
               </div>
@@ -323,11 +323,11 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Trending Products"
-                  onSeeAll={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                  onSeeAll={() => onNavigate('wholesaler-products')}
                 />
                 <ProductTeaserRail
                   items={trendingWholesaler}
-                  onOpen={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                  onOpen={() => onNavigate('wholesaler-products')}
                 />
               </section>
             )}

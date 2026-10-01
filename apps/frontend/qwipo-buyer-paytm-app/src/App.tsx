@@ -124,6 +124,36 @@ const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'whol
 // splash, because it launches from inside Paytm rather than cold-starting.
 const QWIPO_ONLY_SCREENS = new Set<ScreenId>(['splash']);
 
+/* One screen the buyer has been on, with the context that made it that screen.
+   Restoring an entry has to put the filters, the tab and the seller back too,
+   or Back lands on the right page showing the wrong thing. */
+interface TrailEntry {
+  screen: ScreenId;
+  applied: AppliedFilter[];
+  listTab?: BrowseTab;
+  browseTab?: BrowseTab;
+  distributor: Distributor;
+  seller: string | null;
+  source?: Source;
+}
+
+/** Long enough for any real path through the app, short enough to stay cheap. */
+const TRAIL_MAX = 24;
+
+/* Where Back goes when there is no trail — someone opened this screen directly
+   from the review gallery's sidebar, so there is no history to pop. Then Back
+   means "up one level", which is the best that can be said. */
+function fallbackBack(id: ScreenId): ScreenId {
+  if (id.startsWith('sub:') || id.startsWith('sp:')) return 'profile';
+  if (id === 'checkout' || id === 'coupons' || id === 'view-items') return 'cart';
+  if (id === 'otp') return 'login';
+  if (id === 'onboarding') return 'otp';
+  if (id === 'order-details') return 'my-orders';
+  if (id === 'address-details') return 'location-picker';
+  if (id === 'offer-skus' || id === 'storefront') return 'listing';
+  return 'home';
+}
+
 function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
   const s = params.get('screen');
@@ -173,9 +203,7 @@ export default function App() {
   // that shows cart contents reads from this one computed value.
   const CART = useMemo(() => buildCart(qty, wholesaleQty, wholesaleVendor), [qty, wholesaleQty, wholesaleVendor]);
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
-  // Any order list → the one shared Order Details, with a per-source back target.
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
-  const [detailsBackTo, setDetailsBackTo] = useState<ScreenId>('my-orders');
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
   // Saved addresses live here: adding one leaves Saved Addresses for the map.
   const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
@@ -202,20 +230,15 @@ export default function App() {
   const [role, setRole] = useState<Role>('customer');
   // Filter/back context carried into product lists, storefront, and browse tabs.
   const [listApplied, setListApplied] = useState<AppliedFilter[]>([]);
-  const [listBackTo, setListBackTo] = useState<ScreenId>('home');
   /* Which browse tab the buyer left, so Back puts them back on it. Without
      this, opening a brand from a seller's card returns to Categories. */
   const [listBackTab, setListBackTab] = useState<BrowseTab | undefined>(undefined);
-  const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   /* Which side of Home the buyer is shopping. It lives here, not in
      HomeScreen, so it survives every trip out to a list or a category screen
      and back — leaving the wholesaler tab and pressing Back returns to the
      wholesaler tab. */
   const [homeTab, setHomeTab] = useState<'distributors' | 'wholesalers'>('distributors');
-  /* Contact Us is both an Account row and a bottom-nav tab, so Back has to go
-     wherever it was opened from. */
-  const [helpBackTo, setHelpBackTo] = useState<ScreenId>('profile');
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
   /* Set when Reorder is opened from a Home rail, cleared when it's opened
      from the bottom nav — that entry carries no opts and shows everything. */
@@ -223,6 +246,16 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
+
+  /* Where the buyer has been, oldest first. Back pops this, so it returns them
+     to the screen they actually came from rather than to a target each screen
+     guessed for itself: the cart opened from a product list goes back to that
+     list, the cart opened from Home goes back to Home.
+
+     An entry carries the context that made its screen what it was, because an
+     id alone doesn't say which filters were applied, which tab was open or
+     which seller was being viewed — that context is what was being lost. */
+  const [trail, setTrail] = useState<TrailEntry[]>([]);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -305,7 +338,28 @@ export default function App() {
   // Navigate. `distributor-units` isn't a page — it's the sheet over the listing.
   const viewSeller = CART.sellers.find((s) => s.id === viewSellerId) ?? CART.sellers[0] ?? null;
 
+  /** The screen being left, with everything needed to rebuild it later. */
+  const snapshot = (): TrailEntry => ({
+    screen,
+    applied: listApplied,
+    listTab: listBackTab,
+    browseTab,
+    distributor: selectedDistributor,
+    seller: viewSellerId,
+    source: reorderSource,
+  });
+
   const go = (id: ScreenId, opts?: NavOpts) => {
+    /* Record the departure. Arriving somewhere already behind us unwinds to it
+       rather than stacking a second copy, so Home → Cart → Home leaves one
+       Home in the trail instead of a loop that Back walks forever. */
+    if (baseScreenOf(id) !== baseScreenOf(screen)) {
+      const leaving = snapshot();
+      setTrail((t) => {
+        const seen = t.findIndex((e) => baseScreenOf(e.screen) === baseScreenOf(id));
+        return seen >= 0 ? t.slice(0, seen) : [...t, leaving].slice(-TRAIL_MAX);
+      });
+    }
     setSheetId(null);
     setAlertsOpen(false);
     setOrderItemsOpen(false);
@@ -333,7 +387,6 @@ export default function App() {
     }
     if (id === 'distributor-units') {
       setListApplied([]);
-      setListBackTo('home');
       setListBackTab(undefined);
       setScreen('listing');
       setSheetId(PRODUCTS[0].id);
@@ -359,19 +412,37 @@ export default function App() {
     // Capture context for the destination (resets when navigated without opts).
     if (PRODUCT_LISTS.has(baseScreenOf(id))) {
       setListApplied(opts?.applied ?? []);
-      setListBackTo(opts?.backTo ?? 'home');
       setListBackTab(opts?.tab as BrowseTab | undefined);
     }
-    // Only overwrite on a real entry (home rail / browse); a list→storefront
-    // bounce carries no backTo and should keep the original target.
-    if (id === 'storefront' && opts?.backTo) setStorefrontBackTo(opts.backTo);
     if (id === 'storefront' && opts?.distributor) setSelectedDistributor(opts.distributor);
     if (id === 'reorder') setReorderSource(opts?.source);
-    if (id === 'sub:help') setHelpBackTo(opts?.backTo ?? 'profile');
     if (id === 'distributors-list' || id === 'wholesaler-categories') {
       setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
     setScreen(id);
+  };
+
+  /* Back: one behaviour for the whole app. Pop the last screen and put its
+     context back with it. With nothing to pop — a direct jump from the review
+     sidebar — fall back to the level above. */
+  const goBack = () => {
+    const prev = trail[trail.length - 1];
+    if (!prev) {
+      go(fallbackBack(baseScreenOf(screen)));
+      return;
+    }
+    setTrail((t) => t.slice(0, -1));
+    setSheetId(null);
+    setAlertsOpen(false);
+    setOrderItemsOpen(false);
+    setUpdateOpen(false);
+    setListApplied(prev.applied);
+    setListBackTab(prev.listTab);
+    setBrowseTab(prev.browseTab);
+    setSelectedDistributor(prev.distributor);
+    setViewSellerId(prev.seller);
+    setReorderSource(prev.source);
+    setScreen(prev.screen);
   };
 
   /* Start the map → address-details flow. `from` is where Save returns to and
@@ -382,10 +453,9 @@ export default function App() {
     go('location-picker');
   };
 
-  // Open the shared Order Details for any order, remembering where to return.
-  const openOrder = (order: Order, backTo: ScreenId) => {
+  // Open the shared Order Details for any order. Back is the trail's job now.
+  const openOrder = (order: Order) => {
     setDetailsOrder(order);
-    setDetailsBackTo(backTo);
     go('order-details');
   };
 
@@ -398,7 +468,7 @@ export default function App() {
       case 'paytm-launcher':
         return <PaytmLauncherScreen onSearch={() => go('paytm-search')} onOpenQwipo={() => go('paytm-welcome')} />;
       case 'paytm-search':
-        return <PaytmSearchScreen onBack={() => go('paytm-launcher')} onOpenQwipo={() => go('paytm-welcome')} />;
+        return <PaytmSearchScreen onBack={goBack} onOpenQwipo={() => go('paytm-welcome')} />;
       case 'paytm-welcome':
         return <PaytmWelcomeScreen onProceed={() => go('login')} />;
       case 'splash':
@@ -406,7 +476,7 @@ export default function App() {
       case 'login-error':
         return <LoginScreen demoError onNext={() => go('otp')} />;
       case 'otp-error':
-        return <OtpScreen demoError onBack={() => go('login')} onVerify={() => go('onboarding')} />;
+        return <OtpScreen demoError onBack={goBack} onVerify={() => go('onboarding')} />;
       case 'login':
         return (
           <LoginScreen
@@ -419,7 +489,7 @@ export default function App() {
       case 'otp':
         return (
           <OtpScreen
-            onBack={() => go('login')}
+            onBack={goBack}
             onVerify={() => {
               const isSp = loginPhone === SALESPERSON_PHONE;
               setRole(isSp ? 'salesperson' : 'customer');
@@ -430,7 +500,7 @@ export default function App() {
       case 'onboarding':
         return (
           <OnboardingScreen
-            onBack={() => go('otp')}
+            onBack={goBack}
             // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
             onProceed={() => {
               setKycComplete(false);
@@ -477,7 +547,7 @@ export default function App() {
       case 'sub:addresses':
         return (
           <SavedAddressesScreen
-            onBack={() => go('home')}
+            onBack={goBack}
             selectedId={deliveryAddressId}
             onSelect={setDeliveryAddressId}
             addresses={addresses}
@@ -492,11 +562,15 @@ export default function App() {
             onSetWholesaleQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            onBack={() => go('home')}
+            onBack={goBack}
             onOpenSheet={setSheetId}
             onOpenWholesaleSheet={setWholesaleSheetId}
             onOpenGallery={setGalleryId}
             onNavigate={go}
+            onGoToCart={() => go('cart')}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'distributors-list':
@@ -508,9 +582,9 @@ export default function App() {
             categories={DIST_CATEGORIES}
             brands={BRANDS}
             sellers={DISTRIBUTORS}
-            selfId="distributors-list"
             initialTab={browseTab}
-            onBack={() => go('home')}
+            onTabChange={setBrowseTab}
+            onBack={goBack}
             onNavigate={go}
           />
         );
@@ -527,8 +601,7 @@ export default function App() {
             categories={cats}
             brands={BRANDS}
             productListId="wholesaler-products"
-            selfId={screen}
-            onBack={() => go('home')}
+            onBack={goBack}
             onNavigate={go}
           />
         );
@@ -542,9 +615,9 @@ export default function App() {
             categories={WHOLESALER_CATEGORIES}
             brands={BRANDS}
             productListId="wholesaler-products"
-            selfId="wholesaler-categories"
             initialTab={browseTab}
-            onBack={() => go('home')}
+            onTabChange={setBrowseTab}
+            onBack={goBack}
             onNavigate={go}
           />
         );
@@ -556,9 +629,12 @@ export default function App() {
             onSetQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            onBack={() => go(listBackTo, { tab: listBackTab })}
+            onBack={goBack}
             onSearch={() => go('global-search')}
             onGoToCart={() => go('cart')}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'wholesaler-units':
@@ -570,18 +646,21 @@ export default function App() {
             onSetQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            onBack={() => go(listBackTo, { tab: listBackTab })}
+            onBack={goBack}
             onSearch={() => go('global-search')}
             onGoToCart={() => go('cart')}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'storefront':
-        return <StorefrontScreen distributor={selectedDistributor} onBack={() => go(storefrontBackTo)} onNavigate={go} />;
+        return <StorefrontScreen distributor={selectedDistributor} onBack={goBack} onNavigate={go} />;
       case 'listing':
         return (
           <CatalogScreen
             applied={listApplied}
-            onBack={() => go(listBackTo, { tab: listBackTab })}
+            onBack={goBack}
             onSearch={() => go('global-search')}
             onOffers={() => go('offer-skus')}
             qty={qty}
@@ -590,25 +669,27 @@ export default function App() {
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
             cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'offer-skus':
         return (
           <OffersSchemesSkusScreen
-            onBack={() => go('listing')}
+            onBack={goBack}
             qty={qty}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
             onGoToCart={() => go('cart')}
             cartCount={cartCount}
             cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'cart':
         return (
           <CartScreen
             cart={CART}
-            onBack={() => go('home')}
+            onBack={goBack}
             onCheckout={() => setAlertsOpen(true)}
             onViewItems={(sellerId) => {
               setSheetId(null);
@@ -617,13 +698,19 @@ export default function App() {
             }}
             onAddMore={() => go('listing')}
             onOpenCoupons={() => go('coupons')}
+            /* Which sheet depends on the catalogue the line came from — a
+               wholesale line is priced by vendor, so it opens the vendor
+               sheet rather than the distributor one. */
+            onItemTap={(id) =>
+              id.startsWith('wp') ? setWholesaleSheetId(id) : setSheetId(id)
+            }
           />
         );
       case 'view-items':
         return viewSeller ? (
           <ViewItemsScreen
             seller={viewSeller}
-            onBack={() => go('cart')}
+            onBack={goBack}
             onAddMore={() => go('listing')}
             onItemTap={(productId) => setSheetId(productId)}
           />
@@ -634,7 +721,7 @@ export default function App() {
         return (
           <OrderSummaryScreen
             cart={CART}
-            onBack={() => go('cart')}
+            onBack={goBack}
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
             onCompleteKyc={() => go('kyc-complete')}
@@ -645,9 +732,9 @@ export default function App() {
           />
         );
       case 'coupons':
-        return <CouponsScreen cart={CART} onBack={() => go('cart')} onApply={() => go('cart')} />;
+        return <CouponsScreen cart={CART} onBack={goBack} onApply={() => go('cart')} />;
       case 'order-confirmation':
-        return <OrderConfirmationScreen onBackToHome={() => go('home')} />;
+        return <OrderConfirmationScreen onBackToHome={goBack} />;
       case 'reorder':
         return (
           <ReorderScreen
@@ -660,19 +747,23 @@ export default function App() {
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
             onSearch={() => go('global-search')}
-            onBack={() => go('home')}
+            onBack={goBack}
+            onGoToCart={() => go('cart')}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+            cartFreight={CART.freightTotal}
           />
         );
       case 'profile':
         return <MyAccountScreen onNavigate={go} onSignOut={() => go(shell === 'paytm' ? 'home' : 'login')} salesperson={isSalesperson} />;
       case 'notifications':
-        return <NotificationsScreen onBack={() => go('profile')} />;
+        return <NotificationsScreen onBack={goBack} />;
       case 'sub:business-details':
-        return <BusinessDetailsScreen onBack={() => go('profile')} />;
+        return <BusinessDetailsScreen onBack={goBack} />;
       case 'sub:payment':
         return (
           <PaymentsScreen
-            onBack={() => go('profile')}
+            onBack={goBack}
             onOpenVendor={(id) => {
               setPaymentVendorId(id);
               go('sub:payment-orders');
@@ -683,7 +774,7 @@ export default function App() {
         return (
           <PaymentOrdersScreen
             vendorId={paymentVendorId}
-            onBack={() => go('sub:payment')}
+            onBack={goBack}
             onPay={(amount) => {
               setPayAmount(amount);
               go('sub:payment-gateways');
@@ -695,27 +786,27 @@ export default function App() {
           <PaymentGatewaysScreen
             vendorId={paymentVendorId}
             amount={payAmount}
-            onBack={() => go('sub:payment-orders')}
+            onBack={goBack}
             onDone={() => go('sub:payment')}
           />
         );
       case 'sub:credit':
-        return <CreditPartnersScreen onBack={() => go('profile')} />;
+        return <CreditPartnersScreen onBack={goBack} />;
       case 'sub:language':
-        return <LanguageScreen onBack={() => go('profile')} />;
+        return <LanguageScreen onBack={goBack} />;
       case 'sub:help':
-        return <ContactUsScreen onBack={() => go(helpBackTo)} />;
+        return <ContactUsScreen onBack={goBack} />;
       case 'sub:terms':
-        return <TermsScreen onBack={() => go('profile')} />;
+        return <TermsScreen onBack={goBack} />;
 
       // Salesperson features (login 9000000001) — surfaced in the customer app
       // via the Home task icon + My Account section.
       case 'sp:attendance':
-        return <AttendanceScreen onBack={() => go('profile')} />;
+        return <AttendanceScreen onBack={goBack} />;
       case 'sp:tasks':
         return (
           <TaskListScreen
-            onBack={() => go('profile')}
+            onBack={goBack}
             onOpenTask={(id) => {
               setTaskId(id);
               go('sp:task-details');
@@ -727,28 +818,28 @@ export default function App() {
           <TaskDetailsScreen
             initialTab={emptyView ? 'interaction' : 'info'}
             taskId={taskId}
-            onBack={() => go('sp:tasks')}
+            onBack={goBack}
             onCreateInteraction={(id) => {
               setTaskId(id);
               go('sp:create-interaction');
             }}
-            onOpenOrder={(o) => openOrder(o, 'sp:task-details')}
+            onOpenOrder={(o) => openOrder(o)}
           />
         );
       case 'sp:create-interaction':
         return (
-          <CreateInteractionScreen onBack={() => go('sp:task-details')} onDone={() => go('sp:task-details')} />
+          <CreateInteractionScreen onBack={goBack} onDone={() => go('sp:task-details')} />
         );
       case 'sp:performance':
-        return <PerformanceScreen onBack={() => go('profile')} />;
+        return <PerformanceScreen onBack={goBack} />;
       case 'sp:orders':
-        return <CustomerOrdersScreen onBack={() => go('profile')} onOpenOrder={(o) => openOrder(o, 'sp:orders')} />;
+        return <CustomerOrdersScreen onBack={goBack} onOpenOrder={(o) => openOrder(o)} />;
       case 'sp:switch-customer':
-        return <SwitchCustomerScreen onBack={() => go('profile')} onSwitch={() => go('home')} />;
+        return <SwitchCustomerScreen onBack={goBack} onSwitch={() => go('home')} />;
       case 'sp:customers':
         return (
           <CustomerListScreen
-            onBack={() => go('profile')}
+            onBack={goBack}
             onOpenCustomer={(id) => {
               setSpCustomerId(id);
               go('sp:customer-details');
@@ -759,15 +850,15 @@ export default function App() {
         return (
           <CustomerDetailsScreen
             customerId={spCustomerId}
-            onBack={() => go('sp:customers')}
-            onOpenOrder={(o) => openOrder(o, 'sp:customer-details')}
+            onBack={goBack}
+            onOpenOrder={(o) => openOrder(o)}
           />
         );
 
       case 'location-picker':
         return (
           <LocationPickerScreen
-            onBack={() => go(addressFlowFrom)}
+            onBack={goBack}
             onConfirm={(place) => {
               setPickedPlace(place);
               go('address-details');
@@ -778,7 +869,7 @@ export default function App() {
         return (
           <AddressDetailsScreen
             place={pickedPlace}
-            onBack={() => go('location-picker')}
+            onBack={goBack}
             onChangeLocation={() => go('location-picker')}
             saveLabel={addressFlowFrom === 'onboarding' ? 'Confirm location' : 'Save address'}
             onSave={(address) => {
@@ -797,18 +888,18 @@ export default function App() {
       case 'my-orders':
         return (
           <MyOrdersScreen
-            onBack={() => go('home')}
+            onBack={goBack}
             onStartShopping={() => go('listing')}
             onOpenDetails={(id) => {
               const o = ORDERS.find((x) => x.id === id) ?? ORDERS[0];
-              openOrder(o, 'my-orders');
+              openOrder(o);
             }}
           />
         );
       case 'order-details': {
         const order = detailsOrder ?? ORDERS[0];
         return order ? (
-          <OrderDetailsScreen order={order} onBack={() => go(detailsBackTo)} />
+          <OrderDetailsScreen order={order} onBack={goBack} />
         ) : (
           <Placeholder id={screen} />
         );
@@ -879,7 +970,7 @@ export default function App() {
                 <BottomNav
                   active={screen}
                   cartCount={cartCount}
-                  onNavigate={(id) => go(id, id === 'sub:help' ? { backTo: 'home' } : undefined)}
+                  onNavigate={go}
                 />
               ) : undefined
             }
