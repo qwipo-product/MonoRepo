@@ -95,7 +95,7 @@ export function AiAlert({
     <div role="alert" className="overflow-hidden rounded-lg border-2 border-error-border bg-card shadow-sm">
       <div className="flex items-center gap-3 bg-error-subtle px-4 py-3">
         <Mark ok={false} />
-        <h2 className="min-w-0 flex-1 text-lg font-bold leading-tight text-error-foreground">{title}</h2>
+        <h2 className="min-w-0 flex-1 text-base font-semibold leading-tight text-error-foreground">{title}</h2>
       </div>
       {art && (
         <div className="relative border-b border-border">
@@ -112,7 +112,7 @@ export function AiAlert({
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-foreground-secondary">Problem</div>
-            <p className="text-base font-semibold leading-snug text-foreground">{why}</p>
+            <p className="text-sm font-semibold leading-snug text-foreground">{why}</p>
           </div>
         </div>
         <div className="flex items-start gap-3">
@@ -121,7 +121,7 @@ export function AiAlert({
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-foreground-secondary">How to fix</div>
-            {fix && <p className="text-base leading-snug text-foreground">{fix}</p>}
+            {fix && <p className="text-sm leading-snug text-foreground">{fix}</p>}
             {steps && steps.length > 0 && (
               <ol className="mt-2 space-y-2">
                 {steps.map((s, i) => (
@@ -129,7 +129,7 @@ export function AiAlert({
                     <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                       {i + 1}
                     </span>
-                    <span className="pt-0.5 text-base leading-snug text-foreground">{s}</span>
+                    <span className="pt-0.5 text-sm leading-snug text-foreground">{s}</span>
                   </li>
                 ))}
               </ol>
@@ -205,13 +205,13 @@ export function DeleteConfirm({
         <span className="grid h-16 w-16 place-items-center rounded-full bg-error-subtle text-error">
           <Trash2 className="h-8 w-8" />
         </span>
-        <h2 className="mt-3 text-xl font-bold">Delete this {what}?</h2>
-        <p className="mt-1 text-base text-foreground-secondary">You will need to add it again.</p>
+        <h2 className="mt-3 text-base font-semibold">Delete this {what}?</h2>
+        <p className="mt-1 text-sm text-foreground-secondary">You will need to add it again.</p>
         <div className="mt-5 grid w-full grid-cols-2 gap-3">
-          <Button variant="secondary" size="lg" onClick={onCancel}>
+          <Button variant="secondary" fullWidth onClick={onCancel}>
             No, Keep
           </Button>
-          <Button variant="destructive" size="lg" onClick={onConfirm}>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>
             Yes, Delete
           </Button>
         </div>

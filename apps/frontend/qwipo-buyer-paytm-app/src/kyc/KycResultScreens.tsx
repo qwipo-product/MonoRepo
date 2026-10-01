@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Bell, Check, Clock, Search, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { Bell, Clock, Search, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { KycFooter, Mark } from './kycBits';
+import { CustomerCareCard } from '../components/CustomerCareCard';
+import { TermsAgree } from '../components/TermsAgree';
 import { CRITERIA, MAX_ATTEMPTS } from './kycData';
 
 /* The two KYC outcome screens: KYC Active (AI accepted all three) and
@@ -59,7 +61,9 @@ export function KycManualReviewScreen({
   const [agreed, setAgreed] = useState(false);
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
-      <div className="no-scrollbar flex flex-1 flex-col items-center overflow-y-auto px-6 py-8 text-center">
+      {/* justify-center, the same as KYC Active: an outcome screen centres its
+          content rather than stacking it at the top over empty space. */}
+      <div className="no-scrollbar flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-8 text-center">
         <div className="grid h-20 w-20 place-items-center rounded-full bg-warning-subtle text-warning">
           <Clock size={38} strokeWidth={2.2} />
         </div>
@@ -82,11 +86,13 @@ export function KycManualReviewScreen({
           </NextStep>
           <NextStep icon={<Bell className="h-4 w-4" />}>We will notify you as soon as your KYC is approved</NextStep>
         </div>
+
+        {/* Support sits with the content, not in the footer: it is something
+            to reach for while reading this screen, not the action that leaves
+            it. Same card the account's Contact Us shows. */}
+        <CustomerCareCard className="mt-4 w-full" />
       </div>
       <KycFooter>
-        <Button variant="secondary" className="w-full">
-          Call Customer Support
-        </Button>
         {remaining > 0 && onFinishKyc ? (
           <>
             <p className="text-center text-sm text-foreground-secondary">
@@ -98,25 +104,7 @@ export function KycManualReviewScreen({
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setAgreed((a) => !a)}
-              aria-pressed={agreed}
-              className="flex items-start gap-3 text-left"
-            >
-              <span
-                className={`mt-0.5 grid h-6 w-6 flex-shrink-0 place-items-center rounded border-2 ${
-                  agreed ? 'border-primary bg-primary text-primary-foreground' : 'border-border-strong'
-                }`}
-              >
-                {agreed && <Check className="h-4 w-4" strokeWidth={3} />}
-              </span>
-              <span className="text-sm text-foreground-secondary">
-                I have read &amp; agree to the{' '}
-                <a className="font-medium text-primary underline underline-offset-2">Terms of Use</a> and{' '}
-                <a className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>
-              </span>
-            </button>
+            <TermsAgree agreed={agreed} onChange={setAgreed} />
             <Button size="lg" className="w-full" disabled={!agreed} onClick={onContinue}>
               Continue to Application
             </Button>

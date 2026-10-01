@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Camera, Check, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
+import { Camera, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
 import { Field, SelectField, controlClass } from '../components/formbits';
 import { IdCardArt, PinMapArt, ShopPhotoArt } from './KycArt';
@@ -22,7 +22,7 @@ import type { FieldStatus, KycFlow } from './useKycFlow';
    mandatory fields that AI checks the moment they're added:
 
      Shop Image *     Upload → Camera / Gallery → checking → ✓ or ✕
-     Shop Location *  Use My Current Location → checking → ✓ or ✕
+     Shop Location *  Current Location → checking → ✓ or ✕
      Owner ID *       pick document → Upload → checking → ✓ or ✕
 
    ✓ shows a one-line reason and [Edit] [Delete]. ✕ shows the problem,
@@ -33,13 +33,9 @@ const CHECK_MS = 1600;
 
 export function KycDocsStep({
   flow,
-  agreed,
-  onAgreedChange,
   onManualReview,
 }: {
   flow: KycFlow;
-  agreed: boolean;
-  onAgreedChange: (v: boolean) => void;
   /** The 5th rejection on any field. */
   onManualReview: () => void;
 }) {
@@ -113,15 +109,15 @@ export function KycDocsStep({
           status={f.location.status}
           empty={
             <div className="space-y-3 rounded-lg border-2 border-dashed border-border-strong bg-card p-4">
-              <p className="text-base text-foreground">📍 Stand inside your shop and tap the button.</p>
+              <p className="text-sm text-foreground">📍 Stand inside your shop and tap the button.</p>
               <Button
-                size="lg"
-                className="w-full"
+                variant="outlinePrimary"
+                fullWidth
                 onClick={() => flow.addLocation({ ...GPS_FIX, source: 'gps' })}
               >
-                <LocateFixed className="h-5 w-5" /> Use My Current Location
+                <LocateFixed className="h-5 w-5" /> Current Location
               </Button>
-              <HelpLink onClick={() => setSheet('location-help')}>Where should I be? · Type it myself</HelpLink>
+              <HelpLink onClick={() => setSheet('location-help')}>Enter location manually</HelpLink>
             </div>
           }
           checking={<Checking art={<PinMapArt variant="captured" className="aspect-[4/3]" />} text="Finding your shop location…" />}
@@ -163,11 +159,14 @@ export function KycDocsStep({
 
       {/* ---- Owner ID ---- */}
       <div className="space-y-2">
-        <Field label="Owner ID" required>
-          <p className="-mt-1 text-sm text-foreground-secondary">Owner ID or a shop document — any one.</p>
-        </Field>
+        <label className="block text-sm font-medium text-foreground">
+          Owner ID<span className="text-error"> *</span>
+        </label>
         {(f.ownerId.status === 'empty' || f.ownerId.status === 'rejected') && (
+          /* No "Document type" label above the picker: the placeholder already
+             says Choose document, and the sheet it opens is titled. */
           <SelectField
+            hideLabel
             label="Document type"
             placeholder="Choose document"
             value={idLabel}
@@ -218,25 +217,6 @@ export function KycDocsStep({
           </button>
         </div>
       </Field>
-
-      <button
-        type="button"
-        onClick={() => onAgreedChange(!agreed)}
-        aria-pressed={agreed}
-        className="mt-auto flex items-start gap-2 pb-2 text-left"
-      >
-        <span
-          className={`mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border ${
-            agreed ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-          }`}
-        >
-          {agreed && <Check className="h-3.5 w-3.5" />}
-        </span>
-        <span className="text-sm text-foreground-secondary">
-          I have read &amp; agree to the <a className="font-medium text-primary underline underline-offset-2">Terms of Use</a> and{' '}
-          <a className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>
-        </span>
-      </button>
 
       {/* ---- sheets ---- */}
       <UploadSheet
@@ -328,8 +308,8 @@ function EmptyUpload({ art, hint, button, onClick }: { art: ReactNode; hint: str
         <p className="text-sm leading-snug text-foreground">{hint}</p>
       </div>
       <div className="px-3 pb-3">
-        <Button size="lg" className="w-full" onClick={onClick}>
-          <Camera className="h-5 w-5" /> {button}
+        <Button variant="outlinePrimary" fullWidth onClick={onClick}>
+          <Camera className="h-4 w-4" /> {button}
         </Button>
       </div>
     </div>
@@ -345,7 +325,7 @@ function Checking({ art, text }: { art: ReactNode; text: string }) {
           <span className="size-10 animate-spin rounded-full border-4 border-primary-soft border-t-primary" />
         </div>
       </div>
-      <p className="px-4 py-3 text-center text-base font-semibold text-primary">{text}</p>
+      <p className="px-4 py-3 text-center text-sm font-semibold text-primary">{text}</p>
     </div>
   );
 }
@@ -371,12 +351,12 @@ function Accepted({
     <div className="overflow-hidden rounded-lg border-2 border-success-border bg-card shadow-sm">
       <div className="flex items-center gap-3 bg-success-subtle px-4 py-3">
         <Mark ok />
-        <span className="text-lg font-bold text-success-foreground">{title}</span>
+        <span className="text-sm font-semibold text-success-foreground">{title}</span>
       </div>
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-3">
           <div className="w-24 shrink-0 overflow-hidden rounded-md border border-border">{art}</div>
-          <p className="text-base leading-snug text-foreground">{text}</p>
+          <p className="text-sm leading-snug text-foreground">{text}</p>
         </div>
         {extra}
         <div className="flex gap-3">
@@ -391,10 +371,10 @@ function Accepted({
 function InReview({ what }: { what: string }) {
   return (
     <div className="rounded-lg border-2 border-warning-border bg-warning-subtle p-4">
-      <div className="flex items-center gap-2 text-lg font-bold text-warning-foreground">
+      <div className="flex items-center gap-2 text-sm font-semibold text-warning-foreground">
         <Clock className="h-5 w-5" /> Manual review
       </div>
-      <p className="mt-1 text-base text-foreground">
+      <p className="mt-1 text-sm text-foreground">
         AI could not check your {what} after {MAX_ATTEMPTS} attempts. Our team will check it. You can continue.
       </p>
     </div>
@@ -403,7 +383,7 @@ function InReview({ what }: { what: string }) {
 
 function RetryButton({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
   return (
-    <Button size="lg" className="w-full" onClick={onClick}>
+    <Button fullWidth onClick={onClick}>
       {icon} {label}
     </Button>
   );
@@ -421,7 +401,7 @@ function Coord({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-background-subtle px-3 py-2">
       <div className="text-xs font-medium text-foreground-secondary">{label}</div>
-      <div className="text-lg font-bold tabular-nums text-foreground">{value}</div>
+      <div className="text-base font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
@@ -455,10 +435,10 @@ function UploadSheet({
       icon={<Camera className="h-5 w-5" />}
       footer={
         <div className="grid grid-cols-2 gap-3">
-          <Button size="lg" className="h-16 w-full flex-col gap-1" onClick={onCamera}>
+          <Button className="h-16 w-full flex-col gap-1" onClick={onCamera}>
             <Camera className="h-6 w-6" /> Take Photo
           </Button>
-          <Button variant="secondary" size="lg" className="h-16 w-full flex-col gap-1" onClick={onGallery}>
+          <Button variant="secondary" className="h-16 w-full flex-col gap-1" onClick={onGallery}>
             <ImageIcon className="h-6 w-6" /> Gallery
           </Button>
         </div>
@@ -467,7 +447,7 @@ function UploadSheet({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Verdict ok />
-          <span className="text-base font-semibold">Like this</span>
+          <span className="text-sm font-semibold">Like this</span>
         </div>
         <figure className="overflow-hidden rounded-lg border-2 border-success-border">
           {good}
@@ -475,7 +455,7 @@ function UploadSheet({
         </figure>
         <div className="flex items-center gap-2 pt-1">
           <Verdict ok={false} />
-          <span className="text-base font-semibold">Not like this</span>
+          <span className="text-sm font-semibold">Not like this</span>
         </div>
         <div className={cn('grid gap-2', bad.length === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
           {bad.map((b) => (
@@ -526,16 +506,15 @@ function LocationHelpSheet({
             </figure>
           ))}
         </div>
-        <p className="text-base">Please select the location where your shop is located.</p>
-        <Button size="lg" className="w-full" onClick={onGps}>
-          <LocateFixed className="h-5 w-5" /> Use My Current Location
+        <p className="text-sm text-foreground-secondary">Please select the location where your shop is located.</p>
+        <Button variant="outlinePrimary" fullWidth onClick={onGps}>
+          <LocateFixed className="h-5 w-5" /> Current Location
         </Button>
 
         <div className="space-y-3 rounded-lg border border-border p-3">
-          <div className="text-base font-semibold">Or type it yourself</div>
-          <p className="text-sm text-foreground-secondary">
-            Numbers only, with a dot — like <b className="text-foreground">17.3850</b> and <b className="text-foreground">78.4867</b>
-          </p>
+          {/* Just the heading. The two fields are labelled and their
+              placeholders already show the form a coordinate takes. */}
+          <div className="text-sm font-semibold text-foreground">Enter manually</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Latitude">
               <input
@@ -543,7 +522,7 @@ function LocationHelpSheet({
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
                 placeholder="17.3850"
-                className={`${controlClass} text-base placeholder:text-foreground-secondary`}
+                className={`${controlClass} text-sm placeholder:text-foreground-secondary`}
               />
             </Field>
             <Field label="Longitude">
@@ -552,11 +531,11 @@ function LocationHelpSheet({
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
                 placeholder="78.4867"
-                className={`${controlClass} text-base placeholder:text-foreground-secondary`}
+                className={`${controlClass} text-sm placeholder:text-foreground-secondary`}
               />
             </Field>
           </div>
-          <Button variant="soft" size="lg" className="w-full" onClick={() => onManual(lat, lng)}>
+          <Button variant="soft" fullWidth onClick={() => onManual(lat, lng)}>
             Save Location
           </Button>
         </div>

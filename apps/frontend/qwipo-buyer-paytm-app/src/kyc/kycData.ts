@@ -183,7 +183,7 @@ export const ID_PHOTOS: Record<IdScene, { label: string; ok: boolean; why?: stri
 
 /* ---- Shop location ------------------------------------------------------ */
 
-/** Where "Use My Current Location" lands — the demo shop in Hyderabad. */
+/** Where "Current Location" lands — the demo shop in Hyderabad. */
 export const GPS_FIX = { lat: '17.3850', lng: '78.4867' };
 export const SHOP_ADDRESS = 'Shop 12, Main Road, Ameerpet, Hyderabad 500016';
 
@@ -209,7 +209,7 @@ export function checkLocation(lat: string, lng: string): LocationCheck {
       ok: false,
       kind: 'missing',
       why: !a ? 'Latitude is missing.' : 'Longitude is missing.',
-      fix: 'Tap “Use My Current Location” while standing in your shop.',
+      fix: 'Tap “Current Location” while standing in your shop.',
     };
   const la = Number(a);
   const lo = Number(b);
@@ -332,8 +332,8 @@ export const ID_FIX_STEPS: Partial<Record<IdScene, string[]>> = {
 };
 
 export const LOCATION_FIX_STEPS: Record<'missing' | 'format', string[]> = {
-  missing: ['Stand inside your shop', 'Tap “Use My Current Location”', 'If your phone asks, tap “Allow”'],
-  format: ['Tap “Use My Current Location” inside your shop', 'Or type numbers only, like 17.3850', 'Do not type letters or spaces'],
+  missing: ['Stand inside your shop', 'Tap “Current Location”', 'If your phone asks, tap “Allow”'],
+  format: ['Tap “Current Location” inside your shop', 'Or type numbers only, like 17.3850', 'Do not type letters or spaces'],
 };
 
 /* Demo stand-in for the camera: Camera gives a clear photo, Gallery gives a
