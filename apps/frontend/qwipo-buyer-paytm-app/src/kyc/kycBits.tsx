@@ -50,21 +50,38 @@ export function Verdict({ ok, children }: { ok: boolean; children?: ReactNode })
   );
 }
 
-/** "Attempt 2 of 5" with one dot per attempt — used dots are filled. */
-export function AttemptPill({ attempt, className }: { attempt: number; className?: string }) {
+/** "Attempt 2 of 5" with one dot per attempt — used dots are filled.
+ *  `compact` drops the pill's own chrome and the word, for sitting beside a
+ *  heading that already says what it is counting. */
+export function AttemptPill({
+  attempt,
+  compact,
+  className,
+}: {
+  attempt: number;
+  compact?: boolean;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-2 rounded-full border border-warning-border bg-card px-2.5 py-1 text-xs font-semibold text-warning-foreground',
+        'inline-flex shrink-0 items-center font-semibold text-warning-foreground',
+        compact
+          ? 'gap-1.5 text-[11px]'
+          : 'gap-2 rounded-full border border-warning-border bg-card px-2.5 py-1 text-xs',
         className
       )}
     >
-      <span className="flex gap-1">
-        {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-          <span key={i} className={cn('h-2 w-2 rounded-full', i < attempt ? 'bg-warning' : 'bg-muted')} />
-        ))}
-      </span>
-      Attempt {attempt} of {MAX_ATTEMPTS}
+      {/* No dots in compact: unfilled ones are bg-muted, which all but
+          disappears on the tinted header the heading sits in. */}
+      {!compact && (
+        <span className="flex gap-1">
+          {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+            <span key={i} className={cn('h-2 w-2 rounded-full', i < attempt ? 'bg-warning' : 'bg-muted')} />
+          ))}
+        </span>
+      )}
+      {compact ? `Attempt ${attempt}/${MAX_ATTEMPTS}` : `Attempt ${attempt} of ${MAX_ATTEMPTS}`}
     </span>
   );
 }
@@ -93,9 +110,12 @@ export function AiAlert({
 }) {
   return (
     <div role="alert" className="overflow-hidden rounded-lg border-2 border-error-border bg-card shadow-sm">
-      <div className="flex items-center gap-3 bg-error-subtle px-4 py-3">
+      {/* The attempt count rides with the heading — it is the heading's
+          qualifier, and keeping it here takes a whole row off the card. */}
+      <div className="flex items-center gap-2.5 bg-error-subtle px-4 py-3">
         <Mark ok={false} />
         <h2 className="min-w-0 flex-1 text-base font-semibold leading-tight text-error-foreground">{title}</h2>
+        {attempt ? <AttemptPill attempt={attempt} compact /> : null}
       </div>
       {art && (
         <div className="relative border-b border-border">
@@ -136,7 +156,6 @@ export function AiAlert({
             )}
           </div>
         </div>
-        {attempt ? <AttemptPill attempt={attempt} /> : null}
         {action}
       </div>
     </div>
