@@ -872,6 +872,7 @@ export default function App() {
           <DemoStateProvider empty={emptyDemo || emptyView}>
           <ShellChrome
             shell={shell}
+            screenKey={view}
             paytmHeader={view !== 'paytm-launcher' && view !== 'paytm-search'}
             bottomNav={
               ROOT_SCREENS.has(view) ? (

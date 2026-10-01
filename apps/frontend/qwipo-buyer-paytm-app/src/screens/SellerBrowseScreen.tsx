@@ -101,7 +101,9 @@ export function SellerBrowseScreen({
         </div>
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
+      {/* Keyed by tab: the panel animates in on a switch, and the list
+          starts at the top rather than at the last tab's scroll offset. */}
+      <div key={tab} className="no-scrollbar animate-screen flex-1 overflow-y-auto bg-background-subtle p-4">
         {active.length === 0 ? (
           <EmptyState
             icon={<SearchX strokeWidth={1.75} />}

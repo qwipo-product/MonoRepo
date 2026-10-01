@@ -159,6 +159,10 @@ export function HomeScreen({
       <div className="mt-4 space-y-6">
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
+        {/* Keyed by tab, so switching sides animates in rather than
+            swapping under the thumb. The banner above is outside it and
+            keeps running. */}
+        <div key={effectiveTab} className="animate-screen space-y-6">
         {effectiveTab === 'distributors' ? (
           <>
             <section className="space-y-3">
@@ -329,6 +333,7 @@ export function HomeScreen({
             )}
           </>
         )}
+        </div>
       </div>
 
       <img src="/home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />
