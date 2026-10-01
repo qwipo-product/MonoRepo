@@ -22,11 +22,11 @@ export function KycActiveScreen({ onContinue }: { onContinue: () => void }) {
           <Mark ok size="sm" /> KYC Active
         </span>
         <h1 className="mt-3 text-2xl font-bold">Your shop is verified! 🎉</h1>
-        <p className="mt-2 text-sm leading-relaxed text-foreground-secondary">
+        <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-foreground-secondary">
           All 3 details are accepted. You can now place orders.
         </p>
 
-        <div className="mt-6 w-full space-y-2 text-left">
+        <div className="mt-5 w-full space-y-2 text-left">
           {CRITERIA.map((c) => (
             <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
               <Mark ok size="sm" />
