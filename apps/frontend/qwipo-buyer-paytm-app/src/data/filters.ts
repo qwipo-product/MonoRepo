@@ -11,12 +11,6 @@ export interface AppliedFilter {
   type: AppliedType;
   value: string;
 }
-export const APPLIED_LABEL: Record<AppliedType, string> = {
-  category: 'Category',
-  brand: 'Brand',
-  distributor: 'Distributor',
-};
-
 export type Stock = 'available' | 'limited' | 'out';
 export type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'margin_desc';
 

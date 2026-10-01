@@ -126,6 +126,7 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'app-update', label: 'What\u2019s New / Update' },
       { id: 'app-update-required', label: 'Update Required (force)' },
+      { id: 'promo-banners', label: 'Promotional Banners' },
       { id: 'login-error', label: 'Login \u00b7 Errors' },
       { id: 'otp-error', label: 'OTP \u00b7 Errors' },
       { id: 'cart-price-changes', label: 'Cart \u00b7 Price Changes' },

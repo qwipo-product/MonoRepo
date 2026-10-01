@@ -45,6 +45,7 @@ import { AddToCartSheet } from './sheets/AddToCartSheet';
 import { WholesalerUnitsSheet } from './sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from './sheets/ProductImagesSheet';
 import { UpdateSheet } from './sheets/UpdateSheet';
+import { PromoBannersSheet } from './sheets/PromoBannersSheet';
 import { CartAlertsSheet } from './sheets/CartAlertsSheet';
 import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
@@ -88,7 +89,7 @@ const BUILT = new Set<ScreenId>([
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'app-update', 'app-update-required', 'location-picker', 'address-details',
+  'app-update', 'app-update-required', 'promo-banners', 'location-picker', 'address-details',
   'login-error', 'otp-error', 'cart-price-changes',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
@@ -170,6 +171,7 @@ function readInitialScreen(): ScreenId {
   if (s === 'cart-price-changes') return 'view-items'; // = View Items, price-change lines
   if (s === 'cart-alerts') return 'cart'; // = the alerts sheet over Cart Summary
   if (s === 'app-update' || s === 'app-update-required') return 'home'; // = update sheet over Home
+  if (s === 'promo-banners') return 'home'; // = the promo banner sheet over Home
   if (s === 'order-items') return 'order-summary'; // = the items sheet over Order Summary
   return s;
 }
@@ -194,6 +196,7 @@ export default function App() {
   const [emptyDemo, setEmptyDemo] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
   // Live quantities from the Product List / Reorder screens — starts empty,
   // so the cart opens with nothing in it; the buyer adding a quantity there
@@ -275,6 +278,7 @@ export default function App() {
       setUpdateRequired(s === 'app-update-required');
       setUpdateOpen(true);
     }
+    if (s === 'promo-banners') setPromoOpen(true);
     if (s === 'order-items') setOrderItemsOpen(true);
     if (s) seedKyc(s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -373,6 +377,13 @@ export default function App() {
     setAlertsOpen(false);
     setOrderItemsOpen(false);
     setUpdateOpen(false);
+    setPromoOpen(false);
+    if (id === 'promo-banners') {
+      // Not a page — the full-screen promo sheet over Home.
+      setScreen('home');
+      setPromoOpen(true);
+      return;
+    }
     if (id === 'app-update' || id === 'app-update-required') {
       // Not pages — the What's New sheet over Home.
       setUpdateRequired(id === 'app-update-required');
@@ -1069,6 +1080,8 @@ export default function App() {
             onClose={() => setUpdateOpen(false)}
             onUpdate={() => setUpdateOpen(false)}
           />
+
+          <PromoBannersSheet open={promoOpen} onClose={() => setPromoOpen(false)} />
 
           <AddToCartSheet
             product={sheetProduct}

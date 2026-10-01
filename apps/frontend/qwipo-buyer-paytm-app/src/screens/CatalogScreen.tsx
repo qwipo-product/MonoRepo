@@ -4,7 +4,6 @@ import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { PRODUCTS, defaultVariantId, skuFor, type Product } from '../data/products';
 import { offerNameSuffix } from '../data/coupons';
-import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
@@ -68,10 +67,30 @@ export function CatalogScreen({
   }));
   const activeFilters = countActiveFilters(filters);
 
-  /* What the buyer asked for, in their words: the brand or category they
-     tapped. Several filters read as a trail, most general first. */
-  const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
-  const trail = applied.length ? ['All products', ...applied.map((a) => a.value)].join(' › ') : '';
+  /* The header says two things and no more: what the buyer tapped to get
+     here, and whose products these are.
+
+     A seller's own brand or category link carries both — the brand AND the
+     distributor — and the brand is what was tapped, so it leads. The
+     distributor then becomes the context under the count rather than
+     competing for the heading. */
+  const sellerFilter = applied.find((a) => a.type === 'distributor');
+  const tapped = [...applied].reverse().find((a) => a.type !== 'distributor');
+  const heading = tapped?.value ?? sellerFilter?.value ?? 'Product List';
+
+  /* Under the count: whose shelf this is. Scoped to one seller, name them —
+     except when they are already the heading, where the list is simply all of
+     what they carry. Otherwise one seller gets named and several do not,
+     because naming them all would neither fit nor help. */
+  const sellers = Array.from(new Set(items.map((p) => p.seller)));
+  const context = sellerFilter
+    ? tapped
+      ? sellerFilter.value
+      : 'All products'
+    : sellers.length === 1
+      ? sellers[0]
+      : 'multiple sellers';
+  const subtitle = `${items.length} products · ${context}`;
 
   return (
     <div className="flex h-full flex-col">
@@ -80,13 +99,8 @@ export function CatalogScreen({
           <ChevronLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          {/* The list is named after what narrowed it — a brand, a category, a
-              seller — with the trail that got here underneath. Arriving with
-              nothing applied, it's just the product list. */}
           <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
-          <p className="truncate text-xs text-foreground-secondary">
-            {items.length} products{trail ? ` · ${trail}` : ''}
-          </p>
+          <p className="truncate text-xs text-foreground-secondary">{subtitle}</p>
         </div>
         {onOffers && (
           <button
@@ -115,8 +129,10 @@ export function CatalogScreen({
         </button>
       </header>
 
-      <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
-
+      {/* No "Filtered by" chip row: the header above already names the
+          category or brand this list was opened from, so the chip repeated it
+          one line below. The filter still applies, and the Filters sheet still
+          shows what is active. */}
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {items.length === 0 ? (
           <EmptyState
