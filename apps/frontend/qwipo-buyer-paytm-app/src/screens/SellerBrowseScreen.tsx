@@ -30,8 +30,8 @@ export function SellerBrowseScreen({
   brands,
   sellers = [],
   productListId = 'listing',
-  selfId,
   initialTab,
+  onTabChange,
   onBack,
   onNavigate,
 }: {
@@ -43,17 +43,22 @@ export function SellerBrowseScreen({
   sellers?: Distributor[];
   /** Where a category/brand tap goes (distributor vs wholesaler product list). */
   productListId?: ScreenId;
-  /** This screen's own id — used as the Back target for product-list links. */
-  selfId: ScreenId;
   /** Tab to open on (from a "See all Brands/Categories/Sellers" link). */
   initialTab?: BrowseTab;
+  /** Reports the tab the buyer switched to, so Back can return them to it —
+   *  the screen's own tab state is invisible to the navigator otherwise. */
+  onTabChange?: (t: BrowseTab) => void;
   onBack: () => void;
   onNavigate: Navigate;
 }) {
-  const [tab, setTab] = useState<BrowseTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  const [tab, setTabState] = useState<BrowseTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  const setTab = (t: BrowseTab) => {
+    setTabState(t);
+    onTabChange?.(t);
+  };
   // Re-sync when a new "See all" link picks a different tab for the same surface.
   useEffect(() => {
-    setTab(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+    setTabState(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab]);
   const [query, setQuery] = useState('');
@@ -119,7 +124,7 @@ export function SellerBrowseScreen({
             {catList.map((c) => (
               <button
                 key={c.id}
-                onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }] })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
                 {/* The tile takes its proportions from the shot itself —
@@ -142,7 +147,7 @@ export function SellerBrowseScreen({
                 key={b.id}
                 name={b.name}
                 logo={b.logo}
-                onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }], backTo: selfId })}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }] })}
               />
             ))}
           </div>
@@ -151,7 +156,7 @@ export function SellerBrowseScreen({
             {sellerList.map((d) => (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
-                  onClick={() => onNavigate('storefront', { backTo: selfId, distributor: d })}
+                  onClick={() => onNavigate('storefront', { distributor: d })}
                   aria-label={`Open ${d.name} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
@@ -188,7 +193,6 @@ export function SellerBrowseScreen({
                             { type: 'brand', value: b.name },
                             { type: 'distributor', value: d.name },
                           ],
-                          backTo: selfId,
                           tab: 'sellers',
                         })
                       }

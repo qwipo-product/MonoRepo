@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal, PackageOpen, BadgePercent } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
-import { ProductCard, formatInr } from '@mockups/components';
+import { ProductCard } from '@mockups/components';
 import { PRODUCTS, defaultVariantId, skuFor, type Product } from '../data/products';
 import { offerNameSuffix } from '../data/coupons';
 import { AppliedFilterBar } from '../components/AppliedFilterBar';
@@ -10,6 +10,7 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { useEmptyable } from '../review/demoState';
+import { CartBar } from '../components/CartBar';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(PRODUCTS.map((p) => brandOf(p.shortName)))];
@@ -33,6 +34,7 @@ export function CatalogScreen({
   onGoToCart,
   cartCount,
   cartTotal,
+  cartFreight,
 }: {
   applied?: AppliedFilter[];
   onBack?: () => void;
@@ -45,6 +47,8 @@ export function CatalogScreen({
   onGoToCart: () => void;
   cartCount: number;
   cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
 }) {
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -159,22 +163,7 @@ export function CatalogScreen({
         )}
       </div>
 
-      {cartCount > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
-              {cartCount} {cartCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
-            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
-              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
-            </div>
-          </div>
-          <Button className="px-8" onClick={onGoToCart}>
-            Go to cart
-          </Button>
-        </div>
-      )}
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
 
       <FiltersSheet
         open={filterOpen}

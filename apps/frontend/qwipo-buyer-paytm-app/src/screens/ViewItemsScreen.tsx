@@ -153,10 +153,10 @@ export function ViewItemsScreen({
               )}
 
               {item.free ? (
-                <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
+                <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
                   <ProductImage image={item.product.image} alt={item.product.name} />
-                  <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    FREE
+                  <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
+                    Free
                   </span>
                 </div>
               ) : (
