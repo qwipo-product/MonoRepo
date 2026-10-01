@@ -1,32 +1,50 @@
 import { useState } from 'react';
-import { ChevronLeft, MapPin, Check } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../../components/formbits';
 import { BusinessTypeField } from '../../components/BusinessTypeField';
+import { KycDocsStep } from '../../kyc/KycDocsStep';
+import type { KycFlow } from '../../kyc/useKycFlow';
 
-const DOC_FIELDS = [
-  { key: 'shopImage', label: 'Shop Image', required: true },
-  { key: 'ownerId', label: 'Shop Owner Photo ID', required: true },
-  { key: 'gst', label: 'GST Certificate', required: false },
-  { key: 'shopReg', label: 'Shop Registration Certificate', required: false },
-];
+/* Complete KYC — the same two steps as before:
+     1. Basic information
+     2. ID Proofs — Shop Image, Shop Location and Owner ID are mandatory and
+        checked by AI the moment they're added (see KycDocsStep).
+   Register unlocks once all three are accepted (or sent to manual review)
+   and the terms are ticked. Shop Location moved here from step 1: it's one
+   of the three things KYC needs, so it sits with the other two. */
 
-export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => void; onRegister: () => void }) {
-  const [step, setStep] = useState(1);
+export function CompleteKycScreen({
+  step,
+  flow,
+  onCancel,
+  onStep,
+  onRegister,
+  onManualReview,
+}: {
+  step: 1 | 2;
+  flow: KycFlow;
+  onCancel: () => void;
+  onStep: (s: 1 | 2) => void;
+  onRegister: () => void;
+  onManualReview: () => void;
+}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [businessType, setBusinessType] = useState('');
-  const [docs, setDocs] = useState<Record<string, string>>({});
   const [agreed, setAgreed] = useState(false);
+  // Customer Name and Business Type are both required to move on.
+  const step1Valid = name.trim() !== '' && businessType !== '';
 
-  const step2Valid = docs.shopImage && docs.ownerId && agreed;
-  const uploadDoc = (key: string) => setDocs((d) => ({ ...d, [key]: 'uploaded.jpg' }));
+  const missing = (['photo', 'location', 'ownerId'] as const).filter(
+    (c) => !['accepted', 'review'].includes(flow.kyc.fields[c].status)
+  ).length;
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
+    <div className="relative flex h-full flex-col bg-background text-foreground">
       <div className="flex h-14 items-center gap-3 px-3">
         <button
-          onClick={() => (step === 1 ? onCancel() : setStep(1))}
+          onClick={() => (step === 1 ? onCancel() : onStep(1))}
           className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground"
           aria-label="Back"
         >
@@ -43,7 +61,7 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
         <span className={`h-1 flex-1 rounded-full ${step === 2 ? 'bg-primary' : 'bg-muted'}`} />
       </div>
 
-      <div className="flex flex-1 flex-col space-y-4 overflow-y-auto px-4 pt-1">
+      <div className="no-scrollbar flex flex-1 flex-col space-y-5 overflow-y-auto px-4 pb-4 pt-1">
         {step === 1 ? (
           <>
             <Field label="Customer Name" required>
@@ -63,73 +81,44 @@ export function CompleteKycScreen({ onCancel, onRegister }: { onCancel: () => vo
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
             </Field>
-            <BusinessTypeField value={businessType} onChange={setBusinessType} />
-            <Field label="Shop Location">
-              <div className={controlClass}>
-                <input
-                  readOnly
-                  placeholder="Fetch using GPS"
-                  className="h-full flex-1 bg-transparent outline-none placeholder:text-foreground-secondary"
-                />
-                <MapPin className="h-5 w-5 text-primary" />
-              </div>
-            </Field>
+            <BusinessTypeField required value={businessType} onChange={setBusinessType} />
           </>
         ) : (
-          <>
-            {DOC_FIELDS.map((f) => (
-              <Field key={f.key} label={f.label} required={f.required}>
-                <div className={`${controlClass} justify-between`}>
-                  <span className={docs[f.key] ? 'text-foreground' : 'text-foreground-secondary'}>
-                    {docs[f.key] || 'Upload here'}
-                  </span>
-                  <button onClick={() => uploadDoc(f.key)} className="text-sm font-medium text-primary">
-                    Upload
-                  </button>
-                </div>
-              </Field>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => setAgreed((a) => !a)}
-              aria-pressed={agreed}
-              className="mt-auto flex items-start gap-2 pb-2 text-left"
-            >
-              <span
-                className={`mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded border ${
-                  agreed ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                }`}
-              >
-                {agreed && <Check className="h-3.5 w-3.5" />}
-              </span>
-              <span className="text-sm text-foreground-secondary">
-                I have read &amp; agree to the{' '}
-                <a className="font-medium text-primary underline underline-offset-2">Terms of Use</a> and{' '}
-                <a className="font-medium text-primary underline underline-offset-2">Privacy Policy</a>
-              </span>
-            </button>
-          </>
+          <KycDocsStep flow={flow} agreed={agreed} onAgreedChange={setAgreed} onManualReview={onManualReview} />
         )}
       </div>
 
       <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {step === 1 && !step1Valid && (
+          <p className="mb-2 text-center text-sm text-foreground-secondary">
+            {!name.trim() ? 'Enter your name to continue' : 'Select your Business Type to continue'}
+          </p>
+        )}
+        {step === 2 && (
+          <p className="mb-2 text-center text-sm text-foreground-secondary">
+            {missing > 0
+              ? `Add ${missing === 3 ? 'all 3' : missing} required ${missing === 1 ? 'item' : 'items'} marked *`
+              : !agreed
+                ? 'Tick “I agree” to register'
+                : 'All set — tap Register'}
+          </p>
+        )}
         <div className="flex gap-3">
           {step === 1 ? (
             <>
               <Button variant="secondary" size="lg" className="flex-1" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button size="lg" className="flex-1" onClick={() => setStep(2)}>
+              <Button size="lg" className="flex-1" disabled={!step1Valid} onClick={() => onStep(2)}>
                 Next
               </Button>
             </>
           ) : (
             <>
-              <Button variant="secondary" size="lg" className="flex-1" onClick={() => setStep(1)}>
+              <Button variant="secondary" size="lg" className="flex-1" onClick={() => onStep(1)}>
                 Back
               </Button>
-              <Button size="lg" className="flex-1" disabled={!step2Valid} onClick={onRegister}>
+              <Button size="lg" className="flex-1" disabled={!flow.ready || !agreed} onClick={onRegister}>
                 Register
               </Button>
             </>

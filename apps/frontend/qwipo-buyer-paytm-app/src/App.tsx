@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { useTheme } from '@mockups/ui';
+import { Button, InlineMessage, useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { type ScreenId, screenNumber } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
@@ -52,7 +52,8 @@ import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
 import { OnboardingScreen } from './screens/auth/OnboardingScreen';
 import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
-import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
+import { useKycFlow } from './kyc/useKycFlow';
+import { KycActiveScreen, KycManualReviewScreen } from './kyc/KycResultScreens';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { LocationPickerScreen } from './screens/LocationPickerScreen';
 import { AddressDetailsScreen } from './screens/AddressDetailsScreen';
@@ -81,6 +82,7 @@ import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/pla
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
+  'kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done', 'kyc-manual-review', 'kyc-pending',
   'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
@@ -114,7 +116,10 @@ const baseScreenOf = (id: ScreenId): ScreenId => {
 for (const id of [...BUILT]) BUILT.add(EMPTY_PREFIX + id);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
-const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'sub:help', 'profile', 'storefront']);
+const ROOT_SCREENS = new Set<ScreenId>(['home', 'kyc-pending', 'reorder', 'sub:help', 'profile', 'storefront']);
+
+// Complete KYC step 2 (ID Proofs) — the plain screen plus its review-gallery states.
+const KYC_DOCS_SCREENS = new Set<ScreenId>(['kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done']);
 
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
@@ -218,6 +223,9 @@ export default function App() {
      as before; walking a fresh signup (onboarding) clears it, and KYC Success
      sets it again. Ordering — not browsing — is what it blocks. */
   const [kycComplete, setKycComplete] = useState(true);
+  /* The KYC flow itself — photo, location, owner ID, AI attempts. Its status
+     drives the Home "KYC Pending" notice. */
+  const kycFlow = useKycFlow();
   // Payments flow context: selected vendor + amount carried into the pay screen.
   const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
   const [payAmount, setPayAmount] = useState<number>(0);
@@ -268,6 +276,7 @@ export default function App() {
       setUpdateOpen(true);
     }
     if (s === 'order-items') setOrderItemsOpen(true);
+    if (s) seedKyc(s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -445,6 +454,40 @@ export default function App() {
     setScreen(prev.screen);
   };
 
+  /* Review-gallery jumps into the middle of the KYC flow need the flow in
+     that state (e.g. "Attempt 2 of 5" needs two failed attempts). Walking the
+     flow by hand never goes through here. */
+  function seedKyc(id: ScreenId) {
+    if (!id.startsWith('kyc-')) return;
+    kycFlow.seed(id);
+    setKycComplete(id === 'kyc-success');
+  }
+  const pick = (id: ScreenId) => {
+    seedKyc(id);
+    go(id);
+  };
+
+
+  const kycNotice =
+    kycFlow.kyc.status === 'pending' || screen === 'kyc-pending' ? (
+      <InlineMessage
+        variant="warning"
+        title="KYC Pending"
+        description="Your KYC is currently under review. You can continue using the application while the review is in progress."
+      />
+    ) : kycFlow.kyc.status === 'rejected' ? (
+      <InlineMessage
+        variant="error"
+        title="KYC Not Approved"
+        description="Please update your shop details and submit your KYC again."
+        action={
+          <Button size="sm" variant="soft" onClick={() => go('kyc-docs')}>
+            Update KYC
+          </Button>
+        }
+      />
+    ) : undefined;
+
   /* Start the map → address-details flow. `from` is where Save returns to and
      where Back unwinds to, so the same two screens serve onboarding and
      Saved Addresses without either knowing about the other. */
@@ -504,6 +547,7 @@ export default function App() {
             // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
             onProceed={() => {
               setKycComplete(false);
+              kycFlow.reset();
               go(shell === 'paytm' ? 'home' : 'kyc-complete');
             }}
             location={obLocation}
@@ -515,21 +559,58 @@ export default function App() {
           />
         );
       case 'kyc-complete':
+      case 'kyc-docs':
+      case 'kyc-docs-rejected':
+      case 'kyc-docs-attempt-2':
+      case 'kyc-docs-done': {
+        /* The existing two-step Complete KYC. Step 2 (ID Proofs) checks Shop
+           Image, Shop Location and Owner ID with AI as each is added. */
+        const registerKyc = () => {
+          const outcome = kycFlow.submit();
+          setKycComplete(outcome === 'active');
+          go(outcome === 'active' ? 'kyc-success' : 'home');
+        };
         return (
           <CompleteKycScreen
+            step={KYC_DOCS_SCREENS.has(view) ? 2 : 1}
+            flow={kycFlow}
             onCancel={() => go(shell === 'paytm' ? 'home' : 'listing')}
-            onRegister={() => go('kyc-success')}
+            onStep={(s) => go(s === 2 ? 'kyc-docs' : 'kyc-complete')}
+            onRegister={registerKyc}
+            onManualReview={() => {
+              setKycComplete(false);
+              go('kyc-manual-review');
+            }}
           />
         );
+      }
       case 'kyc-success':
-        /* dev's screen is "KYC Submitted", not approved — review takes 24–48h
-           and ordering unlocks only afterwards. So submitting deliberately does
-           NOT set kycComplete; the Order Summary gate stays up, which is the
-           same rule stated twice. */
-        return <KycSuccessScreen onExplore={() => go(shell === 'paytm' ? 'home' : 'listing')} />;
+        /* AI accepted all three — KYC is Active and ordering unlocks now.
+           (Before AI checks, this was "KYC Submitted · under review 24–48h";
+           that wait now only happens after 5 failed attempts.) */
+        return <KycActiveScreen onContinue={() => go('home')} />;
+      case 'kyc-manual-review': {
+        const remaining = (['photo', 'location', 'ownerId'] as const).filter(
+          (c) => !['accepted', 'review'].includes(kycFlow.kyc.fields[c].status)
+        ).length;
+        return (
+          <KycManualReviewScreen
+            remaining={remaining}
+            onFinishKyc={() => go('kyc-docs')}
+            onContinue={() => {
+              // All three are in: register now; the case waits in BMS "KYC Review".
+              kycFlow.setStatus('pending');
+              setKycComplete(false);
+              go('home');
+            }}
+          />
+        );
+      }
       case 'home':
+      case 'kyc-pending':
         return (
           <HomeScreen
+            notice={kycNotice}
             onNavigate={go}
             tab={homeTab}
             onTabChange={setHomeTab}
@@ -726,6 +807,7 @@ export default function App() {
             onBack={goBack}
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
+            kycUnderReview={kycFlow.kyc.status === 'pending'}
             onCompleteKyc={() => go('kyc-complete')}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
@@ -916,7 +998,7 @@ export default function App() {
       <FlowIndex
         active={screen}
         built={BUILT}
-        onPick={go}
+        onPick={pick}
         shell={shell}
         onShellChange={setShell}
         role={role}
