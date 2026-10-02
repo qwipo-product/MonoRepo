@@ -1,0 +1,40 @@
+{
+  "name": "@mockups/seller-mobile",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Seller Mobile \u2014 the distributor's seller-portal app on a phone: orders, products, customers, offers. Seller logins only. Dev port 5178.",
+  "scripts": {
+    "dev": "vite --port 5178",
+    "build": "vite build",
+    "preview": "vite preview --port 6178",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@mockups/components": "workspace:*",
+    "@mockups/design-tokens": "workspace:*",
+    "@mockups/i18n": "workspace:*",
+    "@mockups/mock-data": "workspace:*",
+    "@mockups/types": "workspace:*",
+    "@mockups/ui": "workspace:*",
+    "@mockups/version-badge": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "eslint": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

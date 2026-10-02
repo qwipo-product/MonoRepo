@@ -139,6 +139,34 @@
         "vite": "catalog:",
       },
     },
+    "apps/frontend/seller-mobile": {
+      "name": "@mockups/seller-mobile",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/components": "workspace:*",
+        "@mockups/design-tokens": "workspace:*",
+        "@mockups/i18n": "workspace:*",
+        "@mockups/mock-data": "workspace:*",
+        "@mockups/types": "workspace:*",
+        "@mockups/ui": "workspace:*",
+        "@mockups/version-badge": "workspace:*",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@mockups/eslint-config": "workspace:*",
+        "@mockups/tsconfig": "workspace:*",
+        "@tailwindcss/vite": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vitejs/plugin-react": "catalog:",
+        "eslint": "catalog:",
+        "tailwindcss": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
     "apps/frontend/seller-store": {
       "name": "@mockups/seller-store",
       "version": "0.0.0",
@@ -670,6 +698,8 @@
     "@mockups/rirn": ["@mockups/rirn@workspace:apps/frontend/rirn"],
 
     "@mockups/rirn-retailer": ["@mockups/rirn-retailer@workspace:apps/frontend/rirn-retailer"],
+
+    "@mockups/seller-mobile": ["@mockups/seller-mobile@workspace:apps/frontend/seller-mobile"],
 
     "@mockups/seller-store": ["@mockups/seller-store@workspace:apps/frontend/seller-store"],
 
