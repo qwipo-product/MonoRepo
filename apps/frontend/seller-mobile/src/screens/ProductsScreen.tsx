@@ -254,7 +254,7 @@ function ProductRow({
           </button>
         )}
         <button onClick={selecting ? onToggle : onOpen} className="flex min-w-0 flex-1 gap-3 text-left">
-          <ProductThumb productId={sku.productId} alt={sku.name} size="md" />
+          <ProductThumb productId={sku.productId} image={sku.details.images[0]} alt={sku.name} size="md" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium leading-snug">{sku.name}</span>
             <span className="block text-xs text-foreground-secondary">

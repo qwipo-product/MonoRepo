@@ -336,7 +336,8 @@ export interface SellerSkuDetails {
   customerCare: { name: string; email: string; phone: string };
   manufacturerAddress: string;
   countryOfOrigin: string;
-  images: number; // how many of the 5 allowed
+  /** Up to 5 pictures, the first is the primary. A URL / path, or an emoji stand-in where no photo exists. */
+  images: string[];
 }
 
 /** One sellable product for one seller (the portal's "My SKU"). Stock is a

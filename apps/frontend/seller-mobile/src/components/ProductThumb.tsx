@@ -11,10 +11,21 @@ const SIZE = {
 /* A product's picture in a fixed square plate. ProductImage fills whatever
    box it sits in, so the box sets the size — never the image. Every product
    picture in the app goes through here, so they all line up. */
-export function ProductThumb({ productId, alt, size = 'sm' }: { productId?: string; alt: string; size?: keyof typeof SIZE }) {
+export function ProductThumb({
+  productId,
+  image,
+  alt,
+  size = 'sm',
+}: {
+  productId?: string;
+  /** The seller's own primary picture — wins over the catalogue's. */
+  image?: string;
+  alt: string;
+  size?: keyof typeof SIZE;
+}) {
   return (
     <span className={cn('grid shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-card', SIZE[size])}>
-      <ProductImage image={productId ? imageOf(productId) : undefined} alt={alt} />
+      <ProductImage image={image ?? (productId ? imageOf(productId) : undefined)} alt={alt} />
     </span>
   );
 }

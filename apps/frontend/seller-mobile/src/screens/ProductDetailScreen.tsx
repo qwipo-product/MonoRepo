@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { EyeOff, Tag } from 'lucide-react';
+import { EyeOff, Pencil, Tag } from 'lucide-react';
 import { Badge, Button, InlineMessage, Sheet, Switch } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
@@ -10,11 +10,12 @@ import { isCompliant } from '../catalog';
 import { formatDay } from '../format';
 import { SlabTable } from '../components/SlabTable';
 import { ProductDetailsSections } from '../components/ProductDetailsSections';
+import { ImageViewer } from '../components/ImageViewer';
 
 const OFFER_BADGE = { ACTIVE: 'success', INACTIVE: 'neutral', EXPIRED: 'danger' } as const;
 
 /* One product. Two main actions — Edit price and the In stock switch — in
-   one card. Hiding a product is rare and risky, so it is a quiet link at the
+   one card; "Edit product" at the bottom opens the full form, pictures included. Hiding a product is rare and risky, so it is a quiet link at the
    bottom that asks first; a hidden product says so at the top with one
    "Show again" button. The full ONDC details form stays on the web portal. */
 export function ProductDetailScreen({
@@ -26,6 +27,7 @@ export function ProductDetailScreen({
   onSetActive,
   onCreateOffer,
   onOpenOffers,
+  onEdit,
 }: {
   sku: SellerSku;
   scheme?: SellerScheme;
@@ -35,9 +37,12 @@ export function ProductDetailScreen({
   onSetActive: (active: boolean) => void;
   onCreateOffer: () => void;
   onOpenOffers: () => void;
+  onEdit: () => void;
 }) {
   const { t } = useI18n();
   const [confirmHide, setConfirmHide] = useState(false);
+  const [viewing, setViewing] = useState<number | null>(null);
+  const pictures = sku.details.images;
 
   return (
     <div className="flex h-full flex-col">
@@ -46,7 +51,13 @@ export function ProductDetailScreen({
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {/* The product */}
         <section className="flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-          <ProductThumb productId={sku.productId} alt={sku.name} size="lg" />
+          {/* Tap the picture to see all of them full size. */}
+          <button onClick={() => pictures.length && setViewing(0)} className="relative shrink-0" aria-label={t('seller.product.view_photos')}>
+            <ProductThumb productId={sku.productId} image={pictures[0]} alt={sku.name} size="lg" />
+            {pictures.length > 1 && (
+              <span className="absolute bottom-1 right-1 rounded bg-card px-1 text-[10px] font-semibold text-foreground shadow-sm">1/{pictures.length}</span>
+            )}
+          </button>
           <div className="min-w-0">
             <div className="text-base font-semibold leading-snug">{sku.name}</div>
             <div className="mt-0.5 text-xs text-foreground-secondary">
@@ -151,7 +162,7 @@ export function ProductDetailScreen({
         </section>
 
         {/* The rest of the portal's product form — read-only, in its sections */}
-        <ProductDetailsSections sku={sku} />
+        <ProductDetailsSections sku={sku} onViewImage={setViewing} />
 
         {sku.active && (
           <button onClick={() => setConfirmHide(true)} className="mx-auto flex items-center gap-1.5 py-2 text-sm font-semibold text-error-foreground">
@@ -160,6 +171,16 @@ export function ProductDetailScreen({
           </button>
         )}
       </div>
+
+      {/* The update option for everything that isn't price, stock or offer. */}
+      <div className="border-t border-border bg-card p-3 shadow-[var(--shadow-bar-top)]">
+        <Button fullWidth onClick={onEdit}>
+          <Pencil size={16} />
+          {t('seller.product.edit_product')}
+        </Button>
+      </div>
+
+      <ImageViewer images={pictures} start={viewing} onClose={() => setViewing(null)} />
 
       <Sheet
         open={confirmHide}

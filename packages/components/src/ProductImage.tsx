@@ -5,8 +5,8 @@
 
 import { cn } from '@mockups/ui';
 
-/** A path ("/product-images/…") or a URL is a picture; anything else is an emoji. */
-export const isProductPhoto = (image?: string) => !!image && /^(https?:\/\/|\/)/.test(image);
+/** A path ("/product-images/…"), a URL, or a just-picked file (blob:/data:) is a picture; anything else is an emoji. */
+export const isProductPhoto = (image?: string) => !!image && /^(https?:\/\/|\/|blob:|data:)/.test(image);
 
 export interface ProductImageProps {
   image?: string;

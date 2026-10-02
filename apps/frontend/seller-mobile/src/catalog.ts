@@ -23,6 +23,25 @@ export const imageOf = (productId: string) => {
 /** The portal's "Non-compliant": listed, but nobody can buy it until the details are filled. */
 export const isCompliant = (s: SellerSku) => s.missingFields.length === 0;
 
+/** Required ONDC fields that are still empty, by their portal name. */
+export const missingOf = (s: SellerSku): string[] => {
+  const d = s.details;
+  const checks: [string, boolean][] = [
+    ['Group Name', !d.groupName],
+    ['Short Description', !d.shortDescription],
+    ['Long Description', !d.longDescription],
+    ['Category ID', !d.categoryId],
+    ['Time to Ship', !d.timeToShip],
+    ['Customer Care Name', !d.customerCare.name],
+    ['Customer Care Phone', !d.customerCare.phone],
+    ['Customer Care Email', !d.customerCare.email],
+    ['Manufacturer / Packer Address', !d.manufacturerAddress],
+    ['Country of Origin', !d.countryOfOrigin],
+    ['Product images', d.images.length === 0],
+  ];
+  return checks.filter(([, empty]) => empty).map(([name]) => name);
+};
+
 /** Price a buyer pays per unit in a slab. */
 export const slabPrice = (price: number, pct: number) => Math.round(price * (1 - pct / 100) * 100) / 100;
 
@@ -43,6 +62,9 @@ export function useCatalog(empty = false) {
     setActive: (codes: string[], active: boolean) => editSkus(codes, { active }),
     setStock: (codes: string[], inStock: boolean) => editSkus(codes, { inStock }),
     setPrice: (code: string, mrp: number, price: number) => editSkus([code], { mrp, price }),
+    /** Save the edit-product form; "Details missing" is worked out again from what's filled. */
+    updateSku: (next: SellerSku) =>
+      setSkus((prev) => prev.map((s) => (s.code === next.code ? { ...next, missingFields: missingOf(next), updatedAt: TODAY } : s))),
     setCompanyStatus: (customerId: string, company: string, status: 'ACTIVE' | 'BLOCKED') =>
       setCustomers((prev) =>
         prev.map((c) =>

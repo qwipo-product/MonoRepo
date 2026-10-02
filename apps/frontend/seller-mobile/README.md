@@ -37,7 +37,7 @@ New and Confirmed filter by delivery day, as in the portal.
 | Sign in | Login (mobile, Send OTP) → OTP (6 digits, **123456**) → Choose seller |
 | Home | New orders to confirm, coming deliveries by day and beat, products that can't sell |
 | Orders | Tabs, search, delivery-day filter, Confirm / Cancel / Mark delivered — one or many; order page with item edits |
-| Products | One-tap In stock switch, Edit price (with offer impact), bulk In/Out of stock and Show/Hide; product page with missing ONDC details |
+| Products | Row: In stock switch + quick Price and Offer sheets; bulk In/Out of stock, Show/Hide, price by %; product page with every portal field in its sections, photo preview, and Edit product (all fields, photo upload from camera or gallery) |
 | Customers | Beat, area, mobile up front; customer page with beats per company, per-company Block / Unblock, recent orders |
 | More | Offers & Schemes (Buy more, save more — QPS) + 3-step Create offer, Store settings (pause orders, hours, weekly off, holidays), Profile, Support, Language |
 

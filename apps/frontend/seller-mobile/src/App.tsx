@@ -13,6 +13,7 @@ import { OrdersScreen, type OrderAction } from './screens/OrdersScreen';
 import { OrderDetailScreen } from './screens/OrderDetailScreen';
 import { ProductsScreen, type ProductFilter } from './screens/ProductsScreen';
 import { ProductDetailScreen } from './screens/ProductDetailScreen';
+import { EditProductScreen } from './screens/EditProductScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { CustomerDetailScreen } from './screens/CustomerDetailScreen';
 import { MoreScreen } from './screens/MoreScreen';
@@ -29,6 +30,7 @@ type Tab = 'home' | 'orders' | 'products' | 'customers' | 'more';
 type Page =
   | { kind: 'order'; id: string }
   | { kind: 'product'; code: string }
+  | { kind: 'edit-product'; code: string }
   | { kind: 'customer'; id: string }
   | { kind: 'offers' }
   | { kind: 'create-offer'; skuCode?: string }
@@ -149,6 +151,24 @@ export default function App() {
                 }}
                 onCreateOffer={() => push({ kind: 'create-offer', skuCode: s.code })}
                 onOpenOffers={() => push({ kind: 'offers' })}
+                onEdit={() => push({ kind: 'edit-product', code: s.code })}
+              />
+            )
+          );
+        }
+        case 'edit-product': {
+          const s = catalog.skus.find((x) => x.code === page.code);
+          return (
+            s && (
+              <EditProductScreen
+                key={s.code}
+                sku={s}
+                onBack={back}
+                onSave={(next) => {
+                  catalog.updateSku(next);
+                  back();
+                  setToast(t('seller.toast.product_saved'));
+                }}
               />
             )
           );

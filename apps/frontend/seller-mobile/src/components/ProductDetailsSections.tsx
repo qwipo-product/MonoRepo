@@ -17,7 +17,7 @@ interface Field {
    sections. Sections start closed so the page stays short; one with an
    empty required field opens by itself and marks it "Required" — the same
    fields that make a product "Details missing". */
-export function ProductDetailsSections({ sku }: { sku: SellerSku }) {
+export function ProductDetailsSections({ sku, onViewImage }: { sku: SellerSku; onViewImage: (index: number) => void }) {
   const { t } = useI18n();
   const d = sku.details;
   const yes = (b: boolean) => t(b ? 'seller.product.yes' : 'seller.product.no');
@@ -93,11 +93,13 @@ export function ProductDetailsSections({ sku }: { sku: SellerSku }) {
     { key: 'tags', fields: [{ key: 'origin', value: d.countryOfOrigin, required: true }] },
     {
       key: 'images',
-      fields: [{ key: 'image_count', value: d.images ? `${d.images} / 5` : '', required: true }],
-      extra: d.images > 0 && (
+      fields: [{ key: 'image_count', value: d.images.length ? `${d.images.length} / 5` : '', required: true }],
+      extra: d.images.length > 0 && (
         <div className="flex gap-2 px-3 pb-3">
-          {Array.from({ length: d.images }, (_, i) => (
-            <ProductThumb key={i} productId={sku.productId} alt={sku.name} />
+          {d.images.map((img, i) => (
+            <button key={i} onClick={() => onViewImage(i)} aria-label={`${sku.name} ${i + 1}`}>
+              <ProductThumb image={img} alt={sku.name} />
+            </button>
           ))}
         </div>
       ),

@@ -3,6 +3,7 @@
 // seed; the seller-mobile app copies it and changes the copy during a demo.
 // Shapes and words mirror the seller portal.
 
+import { products } from './mockData';
 import type { SellerAccount, SellerCustomer, SellerCustomerAddress, SellerScheme, SellerSku, SellerSkuDetails } from '@mockups/types';
 
 // ── The seller logins ──
@@ -76,7 +77,7 @@ const base: Omit<SellerSkuDetails, 'groupName' | 'shortDescription' | 'longDescr
   customerCare: { name: 'Krishna Murthy', email: 'care@saikrishnatraders.in', phone: '9900000002' },
   manufacturerAddress: '',
   countryOfOrigin: 'India',
-  images: 3,
+  images: [],
 };
 
 const DETAILS: Record<string, Partial<SellerSkuDetails>> = {
@@ -85,7 +86,7 @@ const DETAILS: Record<string, Partial<SellerSkuDetails>> = {
   'FTN-SOY-1L': { groupName: 'Fortune Soya Oil', shortDescription: 'Refined soyabean oil with omega 3 and 6.', longDescription: 'Fortune Soya Health Refined Soyabean Oil 1 L pouch.', measureUnit: 'Liter', unitValue: 1, skuWeight: 920, unitsPerCase: 16, sellingUnits: [1, 4, 16], dimensionsCm: [20, 14, 6], categoryId: 'Edible Oil' },
   'ASV-GHE-1L': { groupName: 'Aashirvaad Ghee', shortDescription: 'Pure cow ghee with rich aroma and granular texture.', longDescription: 'Aashirvaad Svasti Pure Cow Ghee 1 L carton.', measureUnit: 'Liter', unitValue: 1, skuWeight: 910, unitsPerCase: 12, dimensionsCm: [10, 10, 18], categoryId: 'Ghee & Vanaspati' },
   'ASV-ATA-5K': { groupName: 'Aashirvaad Atta', shortDescription: 'Whole wheat chakki atta for soft rotis.', longDescription: 'Aashirvaad Shudh Chakki Atta 5 kg, 100% whole wheat, 0% maida.', measureUnit: 'Kilogram', unitValue: 5, weightMeasure: 'Kilogram', skuWeight: 5, unitsPerCase: 4, sellingUnits: [1, 2, 4], dimensionsCm: [36, 24, 10], categoryId: 'Atta, Flours & Sooji' },
-  'ASV-MLT-5K': { groupName: 'Aashirvaad Atta', shortDescription: '', longDescription: "Aashirvaad Nature's Super Foods Multigrain Atta 5 kg.", measureUnit: 'Kilogram', unitValue: 5, weightMeasure: 'Kilogram', skuWeight: 5, unitsPerCase: 4, sellingUnits: [1, 2, 4], dimensionsCm: [36, 24, 10], categoryId: 'Atta, Flours & Sooji', images: 0 },
+  'ASV-MLT-5K': { groupName: 'Aashirvaad Atta', shortDescription: '', longDescription: "Aashirvaad Nature's Super Foods Multigrain Atta 5 kg.", measureUnit: 'Kilogram', unitValue: 5, weightMeasure: 'Kilogram', skuWeight: 5, unitsPerCase: 4, sellingUnits: [1, 2, 4], dimensionsCm: [36, 24, 10], categoryId: 'Atta, Flours & Sooji', images: [] },
   'TTA-SLT-1K': { groupName: 'Tata Salt', shortDescription: 'Vacuum evaporated iodised salt.', longDescription: 'Tata Salt Iodised 1 kg pouch, desh ka namak.', measureUnit: 'Kilogram', unitValue: 1, weightMeasure: 'Kilogram', skuWeight: 1, unitsPerCase: 25, sellingUnits: [1, 5, 25], dimensionsCm: [18, 12, 5], categoryId: 'Salt, Sugar & Jaggery' },
   'TTA-TEA-500': { groupName: 'Tata Tea', shortDescription: 'Premium Assam leaf tea with 15% long leaves.', longDescription: 'Tata Tea Gold 500 g pack, rich taste and aroma.', measureUnit: 'Gram', unitValue: 500, skuWeight: 500, unitsPerCase: 24, sellingUnits: [1, 6, 24], dimensionsCm: [16, 10, 6], categoryId: 'Tea' },
   'HUL-SRF-1K': { groupName: 'Surf Excel', shortDescription: 'Quick wash detergent powder that removes tough stains.', longDescription: 'Surf Excel Quick Wash Detergent Powder 1 kg.', measureUnit: 'Kilogram', unitValue: 1, weightMeasure: 'Kilogram', skuWeight: 1, unitsPerCase: 24, sellingUnits: [1, 6, 24], dimensionsCm: [22, 15, 6], categoryId: 'Detergents & Dishwash' },
@@ -99,9 +100,26 @@ const DETAILS: Record<string, Partial<SellerSkuDetails>> = {
   'MTR-RSM-200': { groupName: 'MTR Masalas', shortDescription: 'Ready rasam powder with traditional taste.', longDescription: 'MTR Rasam Powder 200 g pouch.', measureUnit: 'Gram', unitValue: 200, skuWeight: 200, unitsPerCase: 40, sellingUnits: [1, 10, 40], dimensionsCm: [16, 11, 3], categoryId: 'Masalas & Spices' },
 };
 
+// Pictures: products whose catalogue photos are really theirs get up to
+// three; the rest carry their emoji as a stand-in until shot.
+const TRUE_PHOTOS = new Set([
+  'freedom-sunflower', 'aashirvaad-atta', 'aashirvaad-multigrain', 'aashirvaad-ghee', 'surf-excel',
+  'tata-salt', 'aashirvaad-salt', 'maggi-masala', 'parle-g', 'amul-butter',
+]);
+const imagesFor = (productId: string) => {
+  const p = products.find((x) => x.id === productId);
+  if (!p) return [];
+  return TRUE_PHOTOS.has(productId) ? p.images.slice(0, 3) : [p.image];
+};
+
 export const sellerSkus: SellerSku[] = skuRows.map((s) => ({
   ...s,
-  details: { ...base, manufacturerAddress: MAKERS[s.company] ?? '', ...DETAILS[s.code] } as SellerSkuDetails,
+  details: {
+    ...base,
+    manufacturerAddress: MAKERS[s.company] ?? '',
+    images: imagesFor(s.productId),
+    ...DETAILS[s.code],
+  } as SellerSkuDetails,
 }));
 
 // ── Customers ──
