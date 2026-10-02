@@ -33,7 +33,6 @@ export function OrdersScreen({
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
-  const count = (k: OrderTab) => orders.filter((o) => tabOf(o) === k).length;
   // Delivery-day chips on New and Confirmed, like the portal: pick a day,
   // then confirm or deliver that day's orders together.
   const byDay = tab === 'new' || tab === 'confirmed';
@@ -91,12 +90,7 @@ export function OrdersScreen({
           }}
           options={(['new', 'confirmed', 'delivered', 'cancelled'] as const).map((k) => ({
             value: k,
-            label: (
-              <span className="flex flex-col items-center leading-tight">
-                <span>{t(`seller.orders.tab.${k}`)}</span>
-                <span className="text-[10px] font-normal text-foreground-secondary">{count(k)}</span>
-              </span>
-            ),
+            label: t(`seller.orders.tab.${k}`),
           }))}
         />
         <label className="relative block">
@@ -124,13 +118,13 @@ export function OrdersScreen({
         {selecting && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-foreground-secondary">
-              {t('seller.orders.selected').replace('{n}', String(picked.size))}
+              {t('seller.orders.selected').replace('{n}', String(pickedOrders.length))}
             </span>
             <button
               className="font-semibold text-primary"
-              onClick={() => setPicked(picked.size === shown.length ? new Set() : new Set(shown.map((o) => o.id)))}
+              onClick={() => setPicked(pickedOrders.length === shown.length ? new Set() : new Set(shown.map((o) => o.id)))}
             >
-              {picked.size === shown.length ? t('seller.orders.clear_all') : t('seller.orders.select_all')}
+              {pickedOrders.length === shown.length ? t('seller.orders.clear_all') : t('seller.orders.select_all')}
             </button>
           </div>
         )}
@@ -158,20 +152,20 @@ export function OrdersScreen({
         )}
       </div>
 
-      {selecting && picked.size > 0 && (
+      {selecting && pickedOrders.length > 0 && (
         <div className="flex gap-3 border-t border-border bg-card p-3 shadow-[var(--shadow-bar-top)]">
           {tab === 'new' ? (
             <>
               <Button variant="secondary" fullWidth onClick={() => onAction('cancel', pickedOrders)}>
-                {t('seller.action.cancel_n').replace('{n}', String(picked.size))}
+                {t('seller.action.cancel_n').replace('{n}', String(pickedOrders.length))}
               </Button>
               <Button fullWidth onClick={() => onAction('confirm', pickedOrders)}>
-                {t('seller.action.confirm_n').replace('{n}', String(picked.size))}
+                {t('seller.action.confirm_n').replace('{n}', String(pickedOrders.length))}
               </Button>
             </>
           ) : (
             <Button fullWidth onClick={() => onAction('deliver', pickedOrders)}>
-              {t('seller.action.deliver_n').replace('{n}', String(picked.size))}
+              {t('seller.action.deliver_n').replace('{n}', String(pickedOrders.length))}
             </Button>
           )}
         </div>
@@ -208,7 +202,7 @@ function OrderCard({
       statusLabel={t(`seller.status.${order.status}`)}
       meta={
         <>
-          {order.buyer.area} · {items} {t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')} · {order.paymentMode}
+          {order.buyer.area} · {items} {t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')} · {t(`seller.payment.${order.paymentMode}`)}
           {tab !== 'cancelled' && <BeatLine beatName={order.beatName} />}
         </>
       }

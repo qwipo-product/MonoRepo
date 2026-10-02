@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ClipboardList, Home, Menu, Package, Users } from 'lucide-react';
 import { EmptyState, StatusBar, TabBar, Toast } from '@mockups/ui';
 import { useI18n } from '@mockups/i18n';
@@ -10,11 +10,17 @@ import { CancelSheet, ConfirmSheet, DeliverSheet } from './sheets/OrderActionShe
 
 type Tab = 'home' | 'orders' | 'products' | 'customers' | 'more';
 
-// `?empty` opens a day-one seller with no orders, so every empty state can be shown.
-const EMPTY = new URLSearchParams(window.location.search).has('empty');
+// `?empty` opens a day-one seller with no orders, so every empty state can be
+// shown. `?lang=te` (or hi / ta / en) switches language until Login has a picker.
+const PARAMS = new URLSearchParams(window.location.search);
+const EMPTY = PARAMS.has('empty');
+const LANG = PARAMS.get('lang');
 
 export default function App() {
-  const { t } = useI18n();
+  const { t, setLang } = useI18n();
+  useEffect(() => {
+    if (LANG === 'en' || LANG === 'te' || LANG === 'hi' || LANG === 'ta') setLang(LANG);
+  }, [setLang]);
   const store = useOrders(EMPTY);
   const [tab, setTab] = useState<Tab>('orders');
   const [orderTab, setOrderTab] = useState<OrderTab>('new');

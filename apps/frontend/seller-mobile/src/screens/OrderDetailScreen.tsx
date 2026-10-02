@@ -80,7 +80,7 @@ export function OrderDetailScreen({
             value={formatDay(order.deliveryDate)}
           />
           <Fact label={t('seller.detail.placed')} value={formatPlacedAt(order.placedAt)} />
-          <Fact label={t('seller.detail.payment')} value={order.paymentMode} />
+          <Fact label={t('seller.detail.payment')} value={t(`seller.payment.${order.paymentMode}`)} />
         </section>
 
         {/* Items */}
