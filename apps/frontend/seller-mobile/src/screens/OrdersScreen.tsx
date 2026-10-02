@@ -43,7 +43,7 @@ export function OrdersScreen({
   const shown = inTab.filter(
     (o) =>
       (!byDay || !day || o.deliveryDate === day) &&
-      (!q || o.buyer.storeName.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.beatName?.toLowerCase().includes(q))
+      (!q || o.buyer.storeName.toLowerCase().includes(q) || o.id.toLowerCase().includes(q) || o.beatName?.toLowerCase().includes(q) || o.buyer.mobile.includes(q))
   );
 
   const canBulk = tab === 'new' || tab === 'confirmed';

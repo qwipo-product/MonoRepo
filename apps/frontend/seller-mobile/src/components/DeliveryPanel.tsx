@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CalendarDays, MapPin, Route, Zap } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, Route, Zap } from 'lucide-react';
 import { useI18n } from '@mockups/i18n';
 import type { SellerOrder } from '@mockups/types';
 import { formatDay } from '../format';
@@ -29,22 +29,37 @@ export function DeliveryPanel({ order, compact }: { order: SellerOrder; compact?
           value={formatDay(order.deliveryDate)}
         />
       </div>
-      <Row
-        icon={<MapPin size={14} className="text-primary" />}
-        label={t(compact ? 'seller.detail.area' : 'seller.detail.address')}
-        value={compact ? `${order.buyer.area} · ${order.buyer.pincode}` : fullAddress(order)}
-      />
+      {compact ? (
+        <div className="grid grid-cols-2 gap-2">
+          <Row icon={<MapPin size={14} className="text-primary" />} label={t('seller.detail.area')} value={`${order.buyer.area} · ${order.buyer.pincode}`} />
+          <Row
+            icon={<Phone size={14} className="text-primary" />}
+            label={t('seller.detail.mobile')}
+            value={order.buyer.mobile}
+            href={`tel:${order.buyer.mobile}`}
+          />
+        </div>
+      ) : (
+        <Row icon={<MapPin size={14} className="text-primary" />} label={t('seller.detail.address')} value={fullAddress(order)} />
+      )}
     </div>
   );
 }
 
-function Row({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+/* `href` makes the value a link — the mobile number dials on tap. */
+function Row({ icon, label, value, href }: { icon: ReactNode; label: string; value: string; href?: string }) {
   return (
     <div className="flex min-w-0 gap-1.5">
       <span className="mt-0.5 shrink-0">{icon}</span>
       <div className="min-w-0">
         <div className="text-[11px] text-foreground-secondary">{label}</div>
-        <div className="text-sm font-semibold leading-snug">{value}</div>
+        {href ? (
+          <a href={href} className="text-sm font-semibold leading-snug text-primary underline-offset-2 active:underline">
+            {value}
+          </a>
+        ) : (
+          <div className="text-sm font-semibold leading-snug">{value}</div>
+        )}
       </div>
     </div>
   );
