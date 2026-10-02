@@ -1,6 +1,6 @@
-import { CalendarDays, MapPin, Phone, Route, Zap } from 'lucide-react';
+import { CalendarDays, MapPin, Phone, Route, Store, Truck, Zap } from 'lucide-react';
 import { useI18n } from '@mockups/i18n';
-import type { SellerOrder } from '@mockups/types';
+import type { SellerOrder, SellerOrderLogistics } from '@mockups/types';
 import { formatDay } from '../format';
 import { tabOf } from '../orders';
 import { InfoBlock, InfoPair, InfoRow } from './InfoBlock';
@@ -49,4 +49,24 @@ export function BeatRow({ beat }: { beat: string | null }) {
 export function MobileRow({ mobile }: { mobile: string }) {
   const { t } = useI18n();
   return <InfoRow icon={<Phone size={14} className="text-primary" />} label={t('seller.detail.mobile')} value={mobile} href={`tel:${mobile}`} />;
+}
+
+/* Who has the order now, once it's with a 3PL partner or a dark store: the
+   partner, the portal's logistics status, and the tracking number. */
+export function LogisticsBlock({ logistics }: { logistics: SellerOrderLogistics }) {
+  const { t } = useI18n();
+  return (
+    <span className="flex items-start gap-2 rounded-md border border-info-border bg-info-subtle p-2.5 text-info-foreground">
+      {logistics.via === 'LOGISTICS' ? <Truck size={15} className="mt-0.5 shrink-0" /> : <Store size={15} className="mt-0.5 shrink-0" />}
+      <span className="min-w-0 text-xs">
+        <span className="block font-semibold">
+          {t(logistics.via === 'LOGISTICS' ? 'seller.logistics.with_3pl' : 'seller.logistics.with_dark').replace('{partner}', logistics.partner)}
+        </span>
+        <span className="block">
+          {t(`seller.logistics.status.${logistics.status}`)}
+          {logistics.awb && ` · ${t('seller.logistics.awb').replace('{awb}', logistics.awb)}`}
+        </span>
+      </span>
+    </span>
+  );
 }

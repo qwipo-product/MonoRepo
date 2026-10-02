@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Check, IndianRupee, Package, Search, Tag } from 'lucide-react';
+import { Check, IndianRupee, Package, Search, SlidersHorizontal, Tag } from 'lucide-react';
 import { Badge, Button, Chip, EmptyState, Input, Sheet, Switch, cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerScheme, SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { ProductsFilterSheet, type ProductPicks } from '../sheets/ProductsFilterSheet';
 import { ProductThumb } from '../components/ProductThumb';
 import { isCompliant, type Catalog } from '../catalog';
 
@@ -46,11 +47,19 @@ export function ProductsScreen({
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [pricePct, setPricePct] = useState('');
+  const [priceConfirm, setPriceConfirm] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [picks, setPicks] = useState<ProductPicks>({ categories: [], brands: [] });
 
+  const categories = [...new Set(catalog.skus.map((s) => s.category))].sort();
+  const brands = [...new Set(catalog.skus.map((s) => s.brand))].sort();
+  const pickCount = picks.categories.length + picks.brands.length;
   const q = query.trim().toLowerCase();
   const shown = catalog.skus.filter(
     (s) =>
       FILTERS[filter](s) &&
+      (picks.categories.length === 0 || picks.categories.includes(s.category)) &&
+      (picks.brands.length === 0 || picks.brands.includes(s.brand)) &&
       (!q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.brand.toLowerCase().includes(q))
   );
   const pickedCodes = shown.filter((s) => picked.has(s.code)).map((s) => s.code);
@@ -73,11 +82,17 @@ export function ProductsScreen({
   const pickedSkus = catalog.skus.filter((s) => pickedCodes.includes(s.code));
   const moved = (price: number) => Math.round(price * (1 + pct / 100) * 100) / 100;
   const overMrp = pctValid ? pickedSkus.filter((s) => moved(s.price) > s.mrp) : [];
+  // Products whose live or paused offers change with the price — the portal
+  // shows the seller this before any price change is saved.
+  const withOffers = pickedSkus.filter(
+    (s) => !overMrp.includes(s) && catalog.schemes.some((x) => x.skuCode === s.code && x.status !== 'EXPIRED')
+  );
   const applyPrice = () => {
     const ok = pickedSkus.filter((s) => !overMrp.includes(s));
     ok.forEach((s) => catalog.setPrice(s.code, s.mrp, moved(s.price)));
     setBulkOpen(false);
     setPricePct('');
+    setPriceConfirm(false);
     stopSelecting();
     onToast(
       t('seller.quick.bulk_price_done').replace('{n}', String(ok.length)) +
@@ -99,11 +114,21 @@ export function ProductsScreen({
       <ScreenHeader
         title={t('seller.products.title')}
         right={
-          shown.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={selecting ? stopSelecting : () => setSelecting(true)}>
-              {selecting ? t('seller.action.done') : t('seller.orders.select')}
-            </Button>
-          )
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setFilterOpen(true)}
+              aria-label={t('seller.offers2.filter_title')}
+              className="relative grid h-9 w-9 place-items-center rounded-md text-foreground active:bg-muted"
+            >
+              <SlidersHorizontal size={18} />
+              {pickCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />}
+            </button>
+            {shown.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={selecting ? stopSelecting : () => setSelecting(true)}>
+                {selecting ? t('seller.action.done') : t('seller.orders.select')}
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -186,7 +211,14 @@ export function ProductsScreen({
           <div className="text-sm font-semibold">{t('seller.quick.bulk_price_title')}</div>
           <div className="flex flex-wrap gap-2">
             {['-5', '-2', '+2', '+5'].map((v) => (
-              <Chip key={v} selected={pricePct === v} onClick={() => setPricePct(v)}>
+              <Chip
+                key={v}
+                selected={pricePct === v}
+                onClick={() => {
+                  setPricePct(v);
+                  setPriceConfirm(false);
+                }}
+              >
                 {v}%
               </Chip>
             ))}
@@ -194,13 +226,16 @@ export function ProductsScreen({
           <div className="flex items-center gap-2">
             <Input
               value={pricePct}
-              onChange={(e) => setPricePct(e.target.value.replace(/[^\d.+-]/g, ''))}
+              onChange={(e) => {
+                setPricePct(e.target.value.replace(/[^\d.+-]/g, ''));
+                setPriceConfirm(false);
+              }}
               inputMode="decimal"
               placeholder={t('seller.quick.bulk_price_placeholder')}
               aria-label={t('seller.quick.bulk_price_title')}
               className="flex-1"
             />
-            <Button disabled={!pctValid || overMrp.length === pickedSkus.length} onClick={applyPrice}>
+            <Button disabled={!pctValid || overMrp.length === pickedSkus.length} onClick={() => (withOffers.length ? setPriceConfirm(true) : applyPrice())}>
               {t('seller.quick.bulk_price_apply')}
             </Button>
           </div>
@@ -215,8 +250,39 @@ export function ProductsScreen({
           {overMrp.length > 0 && (
             <p className="text-xs font-medium text-warning-foreground">{t('seller.quick.bulk_price_over_mrp').replace('{n}', String(overMrp.length))}</p>
           )}
+          {priceConfirm && (
+            <div className="space-y-2 rounded-md border border-warning-border bg-warning-subtle p-3">
+              <p className="text-sm font-semibold text-warning-foreground">
+                {t(withOffers.length === 1 ? 'seller.offers2.bulk_offers_one' : 'seller.offers2.bulk_offers_many').replace('{n}', String(withOffers.length))}
+              </p>
+              <ul className="space-y-0.5 text-xs text-foreground">
+                {withOffers.map((s) => (
+                  <li key={s.code}>
+                    {s.name}: {formatInrExact(s.price)} → {formatInrExact(moved(s.price))}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2 pt-1">
+                <Button variant="secondary" size="sm" className="flex-1" onClick={() => setPriceConfirm(false)}>
+                  {t('seller.action.go_back')}
+                </Button>
+                <Button size="sm" className="flex-1" onClick={applyPrice}>
+                  {t('seller.offers2.confirm_save')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Sheet>
+
+      <ProductsFilterSheet
+        open={filterOpen}
+        categories={categories}
+        brands={brands}
+        value={picks}
+        onChange={setPicks}
+        onClose={() => setFilterOpen(false)}
+      />
     </div>
   );
 }

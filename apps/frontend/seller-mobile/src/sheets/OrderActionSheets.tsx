@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { CheckCircle2, Truck, XCircle } from 'lucide-react';
-import { Button, InlineMessage, SelectableCard, Sheet } from '@mockups/ui';
+import { Button, SelectableCard, Sheet } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerOrder } from '@mockups/types';
-import { CANCEL_REASONS, orderTotal, tabOf, unavailableLines } from '../orders';
+import { CANCEL_REASONS, orderTotal } from '../orders';
 
 /* Confirm / cancel / deliver — one sheet each, for one order or many. The
    order detail page passes one order; the bulk bar on the list passes the
-   ticked ones. Same words and steps as the portal's dialogs. */
+   ticked ones. Same words, steps and cancel reasons as the portal's dialogs. */
 
 function OrderRows({ orders }: { orders: SellerOrder[] }) {
   return (
@@ -36,11 +36,8 @@ export function ConfirmSheet({
   onConfirm: (ids: string[]) => void;
 }) {
   const { t } = useI18n();
-  // An order with an item not available needs a look first — bulk confirm
-  // leaves it out rather than confirming goods the seller can't send.
-  const ready = orders.filter((o) => unavailableLines(o).length === 0);
-  const needsCheck = orders.filter((o) => unavailableLines(o).length > 0);
-  const n = ready.length;
+  // Like the portal's bulk confirm: every ticked order is confirmed.
+  const n = orders.length;
 
   return (
     <Sheet
@@ -54,22 +51,13 @@ export function ConfirmSheet({
           <Button variant="secondary" fullWidth onClick={onClose}>
             {t('seller.action.go_back')}
           </Button>
-          <Button fullWidth disabled={n === 0} onClick={() => onConfirm(ready.map((o) => o.id))}>
+          <Button fullWidth onClick={() => onConfirm(orders.map((o) => o.id))}>
             {n > 1 ? t('seller.confirm.cta_many').replace('{n}', String(n)) : t('seller.confirm.cta_one')}
           </Button>
         </div>
       }
     >
-      <div className="space-y-3">
-        {n > 0 && <OrderRows orders={ready} />}
-        {needsCheck.length > 0 && (
-          <InlineMessage
-            variant="warning"
-            title={t('seller.confirm.skipped').replace('{n}', String(needsCheck.length))}
-            description={needsCheck.map((o) => o.buyer.storeName).join(', ')}
-          />
-        )}
-      </div>
+      <OrderRows orders={orders} />
     </Sheet>
   );
 }
@@ -85,8 +73,6 @@ export function CancelSheet({
 }) {
   const { t } = useI18n();
   const [reason, setReason] = useState<string | null>(null);
-  const afterPickup = orders.some((o) => tabOf(o) === 'confirmed');
-  const reasons = afterPickup ? CANCEL_REASONS.afterPickup : CANCEL_REASONS.beforePickup;
   const n = orders.length;
   const close = () => {
     setReason(null);
@@ -125,7 +111,7 @@ export function CancelSheet({
       }
     >
       <div className="space-y-2">
-        {reasons.map((r) => (
+        {CANCEL_REASONS.map((r) => (
           <SelectableCard key={r} radio selected={reason === r} onClick={() => setReason(r)} className="w-full p-3 pr-10 text-left text-sm">
             {r}
           </SelectableCard>

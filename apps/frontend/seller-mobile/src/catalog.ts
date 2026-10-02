@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { products, sellerCustomers, sellerSchemes, sellerSkus } from '@mockups/mock-data';
-import type { SellerCustomer, SellerScheme, SellerSku } from '@mockups/types';
+import type { SellerCustomer, SellerScheme, SellerSchemeSlab, SellerSku } from '@mockups/types';
 
 /* Products, customers and offers for this demo session — seeded from the
    shared fixtures, changed here as the seller edits. Same split as orders.ts. */
@@ -44,6 +44,16 @@ export const missingOf = (s: SellerSku): string[] => {
 
 /** Price a buyer pays per unit in a slab. */
 export const slabPrice = (price: number, pct: number) => Math.round(price * (1 - pct / 100) * 100) / 100;
+
+/** Per-unit price for one slab — a % off, or a flat ₹ off made on the web. */
+export const unitPrice = (price: number, slab: SellerSchemeSlab) =>
+  slab.flatOff ? Math.max(0, Math.round((price - slab.flatOff) * 100) / 100) : slabPrice(price, slab.discountPct);
+
+/** Offers made on the web with ₹ off can be shown here but not changed. */
+export const hasFlatSlab = (slabs: SellerSchemeSlab[]) => slabs.some((s) => !!s.flatOff);
+
+/** The portal's sanity ceiling for a price. */
+export const PRICE_MAX = 100000;
 
 export const TODAY = '2026-10-02';
 

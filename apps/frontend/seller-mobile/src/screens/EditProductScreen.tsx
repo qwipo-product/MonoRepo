@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { AlertTriangle, Plus, X } from 'lucide-react';
 import { Badge, Button, Chip, FieldError, Input, SegmentedControl, Sheet, Switch, cn } from '@mockups/ui';
 import { SelectField, controlClass } from '@mockups/components';
-import { sellerSkus } from '@mockups/mock-data';
+import { companyBrands, sellerSkus } from '@mockups/mock-data';
 import { useI18n } from '@mockups/i18n';
 import type { SellerSku, SellerSkuDetails } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -116,7 +116,18 @@ const LABEL: Partial<Record<Key, string>> = {
 const num = (v: string) => Number(v);
 const positive = (v: string) => v.trim() !== '' && Number.isFinite(num(v)) && num(v) > 0;
 
-export function EditProductScreen({ sku, onBack, onSave }: { sku: SellerSku; onBack: () => void; onSave: (next: SellerSku) => void }) {
+export function EditProductScreen({
+  sku,
+  skus,
+  onBack,
+  onSave,
+}: {
+  sku: SellerSku;
+  /** All the seller's products — for group names and unique short names. */
+  skus: SellerSku[];
+  onBack: () => void;
+  onSave: (next: SellerSku) => void;
+}) {
   const { t } = useI18n();
   const original = fromSku(sku);
   const [f, setF] = useState<Draft>(original);
@@ -140,6 +151,19 @@ export function EditProductScreen({ sku, onBack, onSave }: { sku: SellerSku; onB
   len('name', f.name, 3, 100);
   if (!f.groupName.trim()) errors.groupName = req;
   if (f.shortName.length > 20) errors.shortName = t('seller.edit.err.max').replace('{max}', '20');
+  // Short name must be unique in the seller's catalogue (portal rule).
+  else if (
+    f.shortName.trim() &&
+    skus.some((o) => o.code !== sku.code && (o.shortName ?? '').trim().toLowerCase() === f.shortName.trim().toLowerCase())
+  )
+    errors.shortName = t('seller.offers2.err.short_unique');
+  // Selling units: a multiple of Inner Pack and not above Units Per Case.
+  const ip = num(f.innerPack) || 1;
+  const upc = num(f.unitsPerCase) || 0;
+  const badMultiple = f.sellingUnits.find((u) => u % ip !== 0);
+  const tooBig = upc ? f.sellingUnits.find((u) => u > upc) : undefined;
+  if (badMultiple !== undefined) errors.sellingUnits = t('seller.offers2.err.not_multiple').replace('{u}', String(badMultiple)).replace('{n}', String(ip));
+  else if (tooBig !== undefined) errors.sellingUnits = t('seller.offers2.err.exceeds_upc').replace('{u}', String(tooBig)).replace('{n}', String(upc));
   len('shortDescription', f.shortDescription, 10, 150);
   len('longDescription', f.longDescription, 1, 200);
   if (!positive(f.unitValue)) errors.unitValue = t('seller.edit.err.positive');
@@ -161,6 +185,13 @@ export function EditProductScreen({ sku, onBack, onSave }: { sku: SellerSku; onB
   if (!f.origin) errors.origin = req;
   if (f.images.length === 0) errors.images = t('seller.edit.err.images');
   const errorKeys = Object.keys(errors) as Key[];
+
+  // Group name: pick one the catalogue already uses, or type a new one.
+  const groups = [...new Set(skus.map((o) => o.details.groupName).filter(Boolean))].sort();
+  const gq = f.groupName.trim().toLowerCase();
+  const groupMatches = groups.filter((g) => !gq || (g.toLowerCase().includes(gq) && g !== f.groupName)).slice(0, 6);
+  const groupIsNew = !!gq && !groups.some((g) => g.toLowerCase() === gq);
+  const brandOptions = [...new Set([...(companyBrands[sku.company] ?? []), sku.brand])];
 
   const kg = positive(f.skuWeight) ? (f.weightMeasure === 'Kilogram' ? num(f.skuWeight) : num(f.skuWeight) / 1000) : 0;
   const volumetric = [f.length, f.width, f.height].every(positive) ? Math.round(((num(f.length) * num(f.width) * num(f.height)) / 5000) * 100) / 100 : 0;
@@ -291,7 +322,27 @@ export function EditProductScreen({ sku, onBack, onSave }: { sku: SellerSku; onB
 
         <Card title={t('seller.pdetail.section.descriptor')}>
           {row({ k: 'name', label: 'sku_name', required: true }, text('name'))}
-          {row({ k: 'groupName', label: 'group_name', required: true }, text('groupName'))}
+          {row(
+            { k: 'groupName', label: 'group_name', required: true },
+            <>
+              {text('groupName', { placeholder: t('seller.offers2.group_hint') })}
+              {groupMatches.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {groupMatches.map((g) => (
+                    <Chip key={g} selected={f.groupName === g} onClick={() => set('groupName', g)}>
+                      {g}
+                    </Chip>
+                  ))}
+                </div>
+              )}
+              {groupIsNew && (
+                <div className="flex items-center gap-1.5 pt-1 text-xs text-foreground-secondary">
+                  <Plus size={12} />
+                  {t('seller.offers2.group_new').replace('{name}', f.groupName.trim())}
+                </div>
+              )}
+            </>
+          )}
           <div className="col-span-2 space-y-1.5">
             <span className="text-sm font-medium">{t('seller.pdetail.sku_code')}</span>
             {readOnly(sku.code)}
@@ -435,7 +486,18 @@ export function EditProductScreen({ sku, onBack, onSave }: { sku: SellerSku; onB
             <span className="text-sm font-medium">{t('seller.pdetail.maker_name')}</span>
             {readOnly(sku.company)}
           </div>
-          {row({ k: 'brand', label: 'brand', required: true }, text('brand'))}
+          {/* Only brands of the product's own company — the portal's master list. */}
+          {row(
+            { k: 'brand', label: 'brand', required: true },
+            <SelectField
+              label={t('seller.pdetail.brand')}
+              hideLabel
+              placeholder={t('seller.edit.pick')}
+              value={f.brand}
+              options={brandOptions}
+              onChange={(v) => set('brand', v)}
+            />
+          )}
           {row({ k: 'makerAddress', label: 'maker_address', required: true }, area('makerAddress', 250))}
         </Card>
 

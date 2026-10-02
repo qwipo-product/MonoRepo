@@ -36,9 +36,10 @@ export function CreateOfferScreen({
   const [query, setQuery] = useState('');
   const draft = useOfferDraft();
 
-  // Inactive products, and products that already have a live or paused offer, can't get another.
+  // Inactive products, products with no price, and products that already have
+  // a live or paused offer can't get another (the portal's SKU picker rules).
   const taken = new Set(schemes.filter((s) => s.status !== 'EXPIRED').map((s) => s.skuCode));
-  const eligible = skus.filter((s) => s.active && !taken.has(s.code));
+  const eligible = skus.filter((s) => s.active && s.price > 0 && s.mrp > 0 && !taken.has(s.code));
   const sku = skus.find((s) => s.code === skuCode);
   const { slabs, validTill, startNow } = draft;
 

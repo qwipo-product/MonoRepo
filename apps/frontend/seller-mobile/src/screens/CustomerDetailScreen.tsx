@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Map, MapPin, MessageCircle, Phone, Route } from 'lucide-react';
-import { Badge, Button, InlineMessage, Sheet } from '@mockups/ui';
+import { Badge, Button, InlineMessage, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerCustomer, SellerCustomerCompany, SellerOrder } from '@mockups/types';
@@ -13,9 +13,12 @@ import { orderTotal } from '../orders';
 const formatDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-/* One customer. Where the goods go (address, beats and their days) comes
-   first; then the companies they buy, with Block / Unblock as in the portal;
-   then their recent orders. */
+const fullAddress = (a: SellerCustomer['addresses'][number]) => `${a.line}, ${a.area}, ${a.city}, ${a.state} ${a.pincode}`;
+
+/* One customer. Where the goods go comes first: pick an address (the
+   portal's address chips), see it in full, open its exact spot in Maps, and
+   which company's beat delivers there. Then the companies they buy, with
+   Block / Unblock as in the portal; then their recent orders. */
 export function CustomerDetailScreen({
   customer: c,
   orders,
@@ -33,7 +36,16 @@ export function CustomerDetailScreen({
 }) {
   const { t } = useI18n();
   const [target, setTarget] = useState<SellerCustomerCompany | null>(null);
-  const a = c.addresses.find((x) => x.primary) ?? c.addresses[0];
+  const [addrIdx, setAddrIdx] = useState(() => Math.max(0, c.addresses.findIndex((x) => x.primary)));
+  const a = c.addresses[addrIdx] ?? c.addresses[0];
+  const located = !!a && a.lat !== null && a.lng !== null;
+  const blockedN = c.companies.filter((co) => co.status === 'BLOCKED').length;
+  const overall = blockedN === 0 ? 'active' : blockedN === c.companies.length ? 'blocked' : 'partly';
+  const mapsUrl = !a
+    ? ''
+    : located
+      ? `https://www.google.com/maps/search/?api=1&query=${a.lat},${a.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress(a))}`;
   const theirOrders = orders
     .filter((o) => o.buyer.mobile === c.mobile)
     .sort((x, y) => y.placedAt.localeCompare(x.placedAt));
@@ -54,18 +66,43 @@ export function CustomerDetailScreen({
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {/* Who and where */}
         <section className="space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-          <div>
-            <div className="text-base font-bold leading-snug">{c.storeName}</div>
-            <div className="mt-0.5 text-xs text-foreground-secondary">
-              {t('seller.customer.owner')}: {c.ownerName}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-base font-bold leading-snug">{c.storeName}</div>
+              <div className="mt-0.5 text-xs text-foreground-secondary">
+                {t('seller.customer.owner')}: {c.ownerName}
+              </div>
             </div>
+            <Badge variant={overall === 'active' ? 'success' : overall === 'blocked' ? 'danger' : 'warning'} className="shrink-0">
+              {t(`seller.customer.overall.${overall}`)}
+            </Badge>
           </div>
+
+          {/* One chip per address — the selected one drives the block below and "Delivery at". */}
+          {c.addresses.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {c.addresses.map((x, i) => (
+                <button
+                  key={`${x.label}-${i}`}
+                  onClick={() => setAddrIdx(i)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium',
+                    i === addrIdx ? 'border-primary bg-primary-soft text-primary-soft-foreground' : 'border-border bg-card text-foreground'
+                  )}
+                >
+                  {x.label}
+                  {x.primary && <Badge variant="info">{t('seller.customer.primary')}</Badge>}
+                </button>
+              ))}
+            </div>
+          )}
+
           <InfoBlock>
             {a && (
               <InfoRow
                 icon={<MapPin size={14} className="text-primary" />}
-                label={t('seller.detail.address')}
-                value={`${a.line}, ${a.area}, ${a.city} ${a.pincode}`}
+                label={c.addresses.length > 1 ? `${t('seller.detail.address')} · ${a.label}` : t('seller.detail.address')}
+                value={fullAddress(a)}
               />
             )}
             <MobileRow mobile={c.mobile} />
@@ -86,9 +123,7 @@ export function CustomerDetailScreen({
               variant="secondary"
               size="sm"
               disabled={!a}
-              onClick={() =>
-                a && window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.line}, ${a.area}, ${a.city} ${a.pincode}`)}`, '_blank')
-              }
+              onClick={() => a && window.open(mapsUrl, '_blank')}
             >
               <Map size={15} />
               {t('seller.customer.maps')}
@@ -96,32 +131,50 @@ export function CustomerDetailScreen({
           </div>
         </section>
 
-        {/* Beats */}
+        {/* Delivery at the selected address — which company's beat serves it */}
         <section className="rounded-lg border border-border bg-card shadow-sm">
-          <div className="border-b border-border px-3 py-2.5 text-sm font-semibold">{t('seller.customer.beats')}</div>
-          {a && a.serviceability.length > 0 ? (
-            <ul className="divide-y divide-border">
-              {a.serviceability.map((s) => (
-                <li key={`${s.company}-${s.beat}`} className="flex gap-2 p-3">
-                  <Route size={16} className="mt-0.5 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold">{s.beat}</div>
-                    <div className="text-xs text-foreground-secondary">{s.company}</div>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {s.days.map((d) => (
-                        <Badge key={d} variant="info">
-                          {d}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
+          <div className="border-b border-border px-3 py-2.5 text-sm font-semibold">
+            {t('seller.customer.delivery_at').replace('{label}', a?.label ?? '')}
+          </div>
+          {!a ? null : !located ? (
             <div className="p-3">
-              <InlineMessage variant="warning" title={t('seller.customer.no_beat')} description={t('seller.customer.no_beat_help')} />
+              <InlineMessage variant="warning" title={t('seller.customer.no_location_title')} description={t('seller.customer.no_location')} />
             </div>
+          ) : (
+            <>
+              {a.serviceability.length > 0 ? (
+                <ul className="divide-y divide-border">
+                  {a.serviceability.map((s) => (
+                    <li key={`${s.company}-${s.beat}`} className={cn('flex gap-2 p-3', s.blocked && 'opacity-75')}>
+                      <Route size={16} className="mt-0.5 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold">{s.beat}</span>
+                          {s.blocked && <Badge variant="danger">{t('seller.customer.blocked')}</Badge>}
+                        </div>
+                        <div className="text-xs text-foreground-secondary">{s.company}</div>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {s.days.map((d) => (
+                            <Badge key={d} variant="info">
+                              {d}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="p-3">
+                  <InlineMessage variant="warning" title={t('seller.customer.no_beat')} description={t('seller.customer.no_company_delivers')} />
+                </div>
+              )}
+              {a.notServedBy.length > 0 && (
+                <p className="border-t border-border px-3 py-2.5 text-xs text-foreground-secondary">
+                  {t('seller.customer.not_served').replace('{companies}', a.notServedBy.join(', '))}
+                </p>
+              )}
+            </>
           )}
         </section>
 

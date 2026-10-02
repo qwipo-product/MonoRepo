@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { BadgePercent, CalendarDays } from 'lucide-react';
-import { Badge, Button, Chip, EmptyState, Sheet, type BadgeProps } from '@mockups/ui';
+import { BadgePercent, CalendarDays, Search } from 'lucide-react';
+import { Badge, Button, Chip, EmptyState, Input, Sheet, type BadgeProps } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerScheme, SellerSchemeSlab, SellerSchemeStatus, SellerSku } from '@mockups/types';
@@ -22,13 +22,15 @@ const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
 /* Offers & Schemes — the portal's QPS offers, called "Buy more, save more"
-   here. One product per offer. Tap an offer to see its slabs and pause or
-   start it; expired offers are read-only. */
+   here. One product per offer. Search by offer code, SKU code or product.
+   Tap an offer to see its slabs, pause / start it, or edit a live one;
+   expired offers are read-only. */
 export function OffersScreen({
   schemes,
   skus,
   onBack,
   onCreate,
+  onEdit,
   onSetStatus,
   onToast,
 }: {
@@ -36,15 +38,24 @@ export function OffersScreen({
   skus: SellerSku[];
   onBack: () => void;
   onCreate: () => void;
+  /** Open the offer form for this product (App shows the offer sheet). */
+  onEdit: (skuCode: string) => void;
   onSetStatus: (code: string, status: 'ACTIVE' | 'INACTIVE') => void;
   onToast: (message: string) => void;
 }) {
   const { t } = useI18n();
   const [filter, setFilter] = useState<Filter>('all');
   const [openCode, setOpenCode] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   const skuOf = (code: string) => skus.find((s) => s.code === code);
-  const shown = schemes.filter((s) => filter === 'all' || s.status === filter);
+  // The portal's search: SKU code, product name, offer code.
+  const q = query.trim().toLowerCase();
+  const shown = schemes.filter(
+    (s) =>
+      (filter === 'all' || s.status === filter) &&
+      (!q || s.code.toLowerCase().includes(q) || s.skuCode.toLowerCase().includes(q) || (skuOf(s.skuCode)?.name.toLowerCase().includes(q) ?? false))
+  );
   const open = openCode ? schemes.find((s) => s.code === openCode) : undefined;
   const openSku = open ? skuOf(open.skuCode) : undefined;
 
@@ -60,7 +71,11 @@ export function OffersScreen({
       <ScreenHeader title={t('seller.offers.title')} onBack={onBack} />
 
       {schemes.length > 0 && (
-        <div className="border-b border-border bg-card px-3 py-2">
+        <div className="space-y-2 border-b border-border bg-card px-3 py-2">
+          <label className="relative block">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-secondary" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('seller.offers2.search')} aria-label={t('seller.offers2.search')} className="pl-9" />
+          </label>
           <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3">
             {FILTERS.map((f) => (
               <Chip key={f} selected={filter === f} onClick={() => setFilter(f)}>
@@ -98,7 +113,9 @@ export function OffersScreen({
                     </div>
                     <div className="mt-0.5 flex items-center gap-1.5 text-xs text-foreground-secondary">
                       <Badge variant="accent">{t('seller.offers.qps')}</Badge>
-                      <span>{s.code}</span>
+                      <span>
+                        {s.code} · {s.skuCode}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -133,9 +150,23 @@ export function OffersScreen({
           (open.status === 'EXPIRED' ? (
             <p className="text-center text-sm text-foreground-secondary">{t('seller.offers.expired_note')}</p>
           ) : (
-            <Button fullWidth variant={open.status === 'ACTIVE' ? 'secondary' : 'primary'} onClick={() => toggle(open)}>
-              {t(open.status === 'ACTIVE' ? 'seller.offers.pause' : 'seller.offers.start')}
-            </Button>
+            <div className="flex gap-3">
+              <Button className="flex-1" variant={open.status === 'ACTIVE' ? 'secondary' : 'primary'} onClick={() => toggle(open)}>
+                {t(open.status === 'ACTIVE' ? 'seller.offers.pause' : 'seller.offers.start')}
+              </Button>
+              {/* A paused offer is locked on the portal, so editing needs it running. */}
+              {open.status === 'ACTIVE' && (
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    setOpenCode(null);
+                    onEdit(open.skuCode);
+                  }}
+                >
+                  {t('seller.offers2.edit')}
+                </Button>
+              )}
+            </div>
           ))
         }
       >
@@ -166,12 +197,17 @@ export function OffersScreen({
   );
 }
 
-/** "24+ → 3% off · 48+ → 5% off" — slabs with no discount are left out. */
+/** "24+ → 3% off · 50+ → ₹1 off" — slabs with no discount are left out. */
 function slabSummary(slabs: SellerSchemeSlab[], t: (k: string) => string) {
-  const paid = slabs.filter((s) => s.discountPct > 0);
+  const paid = slabs.filter((s) => s.discountPct > 0 || !!s.flatOff);
   if (paid.length === 0) return t('seller.offers.no_discount');
   return paid
-    .map((s) => `${t('seller.offers.and_above').replace('{n}', String(s.min))} → ${t('seller.offers.off').replace('{n}', String(s.discountPct))}`)
+    .map(
+      (s) =>
+        `${t('seller.offers.and_above').replace('{n}', String(s.min))} → ${
+          s.flatOff ? t('seller.offers2.flat_off').replace('{n}', String(s.flatOff)) : t('seller.offers.off').replace('{n}', String(s.discountPct))
+        }`
+    )
     .join(' · ');
 }
 

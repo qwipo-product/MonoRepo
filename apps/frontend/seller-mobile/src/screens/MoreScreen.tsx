@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowLeftRight, ChevronRight, Headset, Languages, LogOut, Percent, Settings, Store, UserRound } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight, ClipboardList, Headset, Languages, LogOut, MessageCircle, Percent, Settings, Store, UserRound } from 'lucide-react';
 import { Button, SelectableCard, Sheet, cn } from '@mockups/ui';
 import { useI18n, type LangCode } from '@mockups/i18n';
 import type { SellerAccount } from '@mockups/types';
@@ -21,7 +21,7 @@ export function MoreScreen({
 }: {
   account: SellerAccount;
   canSwitchSeller: boolean;
-  onOpen: (page: 'offers' | 'store' | 'profile' | 'support') => void;
+  onOpen: (page: 'offers' | 'store' | 'order-settings' | 'communication' | 'profile' | 'support') => void;
   onSwitchSeller: () => void;
   onSignOut: () => void;
 }) {
@@ -49,6 +49,8 @@ export function MoreScreen({
         <ul className="divide-y divide-border rounded-lg border border-border bg-card shadow-sm">
           <Row icon={<Percent size={18} />} label={t('seller.more.offers')} onClick={() => onOpen('offers')} />
           <Row icon={<Settings size={18} />} label={t('seller.more.store')} onClick={() => onOpen('store')} />
+          <Row icon={<ClipboardList size={18} />} label={t('seller.more.order_settings')} onClick={() => onOpen('order-settings')} />
+          <Row icon={<MessageCircle size={18} />} label={t('seller.more.communication')} onClick={() => onOpen('communication')} />
           <Row icon={<UserRound size={18} />} label={t('seller.more.profile')} onClick={() => onOpen('profile')} />
           <Row icon={<Headset size={18} />} label={t('seller.more.support')} onClick={() => onOpen('support')} />
         </ul>

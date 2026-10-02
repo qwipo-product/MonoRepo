@@ -1,5 +1,5 @@
-import { ChevronRight, Store } from 'lucide-react';
-import { Chip } from '@mockups/ui';
+import { ChevronRight, Store, UserX } from 'lucide-react';
+import { Button, Chip, EmptyState } from '@mockups/ui';
 import { OtpVerify, PhoneLogin } from '@mockups/components';
 import { useI18n, type LangCode } from '@mockups/i18n';
 import type { SellerAccount } from '@mockups/types';
@@ -8,6 +8,8 @@ import type { SellerAccount } from '@mockups/types';
    portal's words: "Send OTP", 6-digit OTP, "Verify & Sign In". */
 
 export const DEMO_PHONE = '9900000002';
+/** A login with no seller assigned — App routes it to NoSellerScreen. */
+export const NO_SELLER_PHONE = '9000000000';
 
 /** English / Telugu, on the login page — the first thing a new user sees. */
 export function LanguageChips() {
@@ -43,7 +45,11 @@ export function SellerLogin({ onNext }: { onNext: (phone: string) => void }) {
       footer={
         <div className="space-y-3">
           <LanguageChips />
-          <p className="text-center text-xs text-foreground-secondary">{t('seller.login.demo')}</p>
+          <p className="text-center text-xs text-foreground-secondary">
+            {t('seller.login.demo')}
+            <br />
+            {t('seller.login.demo_no_seller').replace('{number}', NO_SELLER_PHONE)}
+          </p>
         </div>
       }
     />
@@ -112,6 +118,26 @@ export function SelectSeller({
           {t('seller.pick.sign_out')}
         </button>
       </p>
+    </div>
+  );
+}
+
+/* Signed in, but no seller has added this number yet — the portal's
+   "No seller assigned". Nothing to do here but sign out. */
+export function NoSellerScreen({ onSignOut }: { onSignOut: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="grid h-full place-items-center bg-background-subtle p-6">
+      <EmptyState
+        icon={<UserX strokeWidth={1.75} />}
+        title={t('seller.pick.none_title')}
+        description={t('seller.pick.none_help')}
+        action={
+          <Button variant="secondary" onClick={onSignOut}>
+            {t('seller.pick.sign_out')}
+          </Button>
+        }
+      />
     </div>
   );
 }

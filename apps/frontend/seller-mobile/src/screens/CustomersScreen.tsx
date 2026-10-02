@@ -1,23 +1,27 @@
 import { useState } from 'react';
-import { Building2, ChevronRight, MapPin, Search, Users } from 'lucide-react';
-import { Badge, Chip, EmptyState, Input } from '@mockups/ui';
+import { Building2, ChevronRight, MapPin, Search, SlidersHorizontal, Users } from 'lucide-react';
+import { Badge, EmptyState, Input } from '@mockups/ui';
 import { useI18n } from '@mockups/i18n';
 import type { SellerCustomer } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { InfoBlock, InfoPair, InfoRow } from '../components/InfoBlock';
 import { BeatRow, MobileRow } from '../components/DeliveryPanel';
-
-type CustomerFilter = 'all' | 'blocked';
+import { CustomersFilterSheet, type CustomerStatusFilter } from '../sheets/CustomersFilterSheet';
 
 const primaryAddress = (c: SellerCustomer) => c.addresses.find((a) => a.primary) ?? c.addresses[0];
 const blockedCount = (c: SellerCustomer) => c.companies.filter((co) => co.status === 'BLOCKED').length;
 
 /* Customers — the shops that buy from this distributor. Each card leads with
-   what delivery needs: the beat, the area and the mobile number. */
+   what delivery needs: the beat, the area and the mobile number. Status and
+   company filters sit together in one panel behind the Filter button. */
 export function CustomersScreen({ customers, onOpen }: { customers: SellerCustomer[]; onOpen: (customerId: string) => void }) {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<CustomerFilter>('all');
+  const [status, setStatus] = useState<CustomerStatusFilter>('all');
+  const [picked, setPicked] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const allCompanies = [...new Set(customers.flatMap((c) => c.companies.map((co) => co.name)))].sort();
+  const filtering = status !== 'all' || picked.length > 0;
 
   const q = query.trim().toLowerCase();
   const matches = (c: SellerCustomer) => {
@@ -27,17 +31,33 @@ export function CustomersScreen({ customers, onOpen }: { customers: SellerCustom
       c.storeName,
       c.ownerName,
       c.mobile,
+      ...c.companies.map((co) => co.name),
       a?.area,
       a?.pincode,
       ...(a?.serviceability.map((s) => s.beat) ?? []),
     ].some((v) => v?.toLowerCase().includes(q));
   };
-  const inFilter = (c: SellerCustomer) => filter === 'all' || blockedCount(c) > 0;
+  // The portal's Blocked filter also brings in partly blocked customers.
+  const inFilter = (c: SellerCustomer) =>
+    (status === 'all' || (status === 'blocked' ? blockedCount(c) > 0 : blockedCount(c) === 0)) &&
+    (picked.length === 0 || c.companies.some((co) => picked.includes(co.name)));
   const shown = customers.filter((c) => inFilter(c) && matches(c));
 
   return (
     <div className="flex h-full flex-col">
-      <ScreenHeader title={t('seller.customers.title')} />
+      <ScreenHeader
+        title={t('seller.customers.title')}
+        right={
+          <button
+            onClick={() => setFilterOpen(true)}
+            aria-label={t('seller.customers.filter_title')}
+            className="relative grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]"
+          >
+            <SlidersHorizontal size={18} />
+            {filtering && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />}
+          </button>
+        }
+      />
 
       <div className="space-y-2 border-b border-border bg-card px-3 pb-3 pt-2">
         <label className="relative block">
@@ -45,19 +65,11 @@ export function CustomersScreen({ customers, onOpen }: { customers: SellerCustom
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('seller.customers.search')}
-            aria-label={t('seller.customers.search')}
+            placeholder={t('seller.customers.search_all')}
+            aria-label={t('seller.customers.search_all')}
             className="pl-9"
           />
         </label>
-        <div className="flex gap-2">
-          <Chip selected={filter === 'all'} onClick={() => setFilter('all')}>
-            {t('seller.customers.filter.all')} ({customers.length})
-          </Chip>
-          <Chip selected={filter === 'blocked'} onClick={() => setFilter('blocked')}>
-            {t('seller.customers.filter.blocked')} ({customers.filter((c) => blockedCount(c) > 0).length})
-          </Chip>
-        </div>
       </div>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
@@ -71,6 +83,16 @@ export function CustomersScreen({ customers, onOpen }: { customers: SellerCustom
           shown.map((c) => <CustomerCard key={c.customerId} customer={c} onOpen={() => onOpen(c.customerId)} />)
         )}
       </div>
+
+      <CustomersFilterSheet
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        status={status}
+        onStatus={setStatus}
+        companies={allCompanies}
+        picked={picked}
+        onPicked={setPicked}
+      />
     </div>
   );
 }

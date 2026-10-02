@@ -7,7 +7,12 @@ import type { SellerAccount, SellerOrder } from '@mockups/types';
 import { tabOf, useOrders, type OrderTab } from './orders';
 import { useCatalog } from './catalog';
 import { useStoreSettings } from './store';
-import { SelectSeller, SellerLogin, SellerOtp } from './screens/AuthScreens';
+import { NO_SELLER_PHONE, NoSellerScreen, SelectSeller, SellerLogin, SellerOtp } from './screens/AuthScreens';
+import { SessionExpiredScreen } from './screens/SessionExpiredScreen';
+import { OrderSettingsScreen } from './screens/OrderSettingsScreen';
+import { CommunicationScreen } from './screens/CommunicationScreen';
+import { LoadGate } from './components/LoadGate';
+import { LogisticsSheet } from './sheets/LogisticsSheet';
 import { HomeScreen } from './screens/HomeScreen';
 import { OrdersScreen, type OrderAction } from './screens/OrdersScreen';
 import { OrderDetailScreen } from './screens/OrderDetailScreen';
@@ -35,16 +40,21 @@ type Page =
   | { kind: 'offers' }
   | { kind: 'create-offer'; skuCode?: string }
   | { kind: 'profile' }
+  | { kind: 'order-settings' }
+  | { kind: 'communication' }
   | { kind: 'store' }
   | { kind: 'support' };
-type Auth = 'login' | 'otp' | 'pick' | 'in';
+type Auth = 'login' | 'otp' | 'pick' | 'no-seller' | 'expired' | 'in';
 
 // `?empty` = a day-one seller with no data, so every empty state shows.
 // `?lang=te` (or en / hi / ta) opens in that language. `?in` skips sign-in.
+// `?slow` / `?fail` show every page's loading / error state (LoadGate).
 const PARAMS = new URLSearchParams(window.location.search);
 const EMPTY = PARAMS.has('empty');
 const LANG = PARAMS.get('lang');
 const SKIP_LOGIN = PARAMS.has('in');
+// `?expire` ends the session 20 s after sign-in, to show the session-expired screen.
+const EXPIRE = PARAMS.has('expire');
 
 export default function App() {
   const { t, setLang } = useI18n();
@@ -67,6 +77,12 @@ export default function App() {
   const [priceCode, setPriceCode] = useState<string | null>(null);
   const [offerCode, setOfferCode] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!EXPIRE || auth !== 'in') return;
+    const timer = window.setTimeout(() => setAuth('expired'), 20000);
+    return () => window.clearTimeout(timer);
+  }, [auth]);
 
   const page = stack[stack.length - 1];
   const push = (p: Page) => setStack((s) => [...s, p]);
@@ -97,7 +113,9 @@ export default function App() {
   };
 
   const screen = () => {
-    if (auth === 'login') return <SellerLogin onNext={() => setAuth('otp')} />;
+    if (auth === 'login') return <SellerLogin onNext={(phone) => setAuth(phone === NO_SELLER_PHONE ? 'no-seller' : 'otp')} />;
+    if (auth === 'no-seller') return <NoSellerScreen onSignOut={signOut} />;
+    if (auth === 'expired') return <SessionExpiredScreen onSignIn={signOut} />;
     if (auth === 'otp') return <SellerOtp onBack={() => setAuth('login')} onVerify={() => setAuth(sellerAccounts.length > 1 ? 'pick' : 'in')} />;
     if (auth === 'pick')
       return (
@@ -122,12 +140,8 @@ export default function App() {
                 key={o.id}
                 order={o}
                 onBack={back}
+                account={account}
                 onAction={(a, x) => onOrderAction(a, [x])}
-                onSaveAndConfirm={(lines) => {
-                  orders.saveLines(o.id, lines);
-                  orders.confirm([o.id]);
-                  done('seller.toast.confirmed', 1);
-                }}
               />
             )
           );
@@ -163,6 +177,7 @@ export default function App() {
               <EditProductScreen
                 key={s.code}
                 sku={s}
+                skus={catalog.skus}
                 onBack={back}
                 onSave={(next) => {
                   catalog.updateSku(next);
@@ -195,6 +210,7 @@ export default function App() {
               skus={catalog.skus}
               onBack={back}
               onCreate={() => push({ kind: 'create-offer' })}
+              onEdit={setOfferCode}
               onSetStatus={catalog.setSchemeStatus}
               onToast={setToast}
             />
@@ -219,6 +235,10 @@ export default function App() {
           return <StoreSettingsScreen store={store} onChange={setStore} onBack={back} onToast={setToast} />;
         case 'support':
           return <SupportScreen onBack={back} />;
+        case 'order-settings':
+          return <OrderSettingsScreen store={store} onChange={setStore} onBack={back} onToast={setToast} />;
+        case 'communication':
+          return <CommunicationScreen store={store} onChange={setStore} onBack={back} onToast={setToast} />;
       }
     }
 
@@ -246,6 +266,7 @@ export default function App() {
         return (
           <OrdersScreen
             orders={orders.orders}
+            account={account}
             tab={orderTab}
             onTabChange={setOrderTab}
             day={orderDay}
@@ -290,7 +311,13 @@ export default function App() {
           position against it, not the browser window. */}
       <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
         <StatusBar />
-        <div className="min-h-0 flex-1">{screen()}</div>
+        <div className="min-h-0 flex-1">
+          {auth === 'in' ? (
+            <LoadGate key={page ? `${page.kind}-${stack.length}` : tab}>{screen()}</LoadGate>
+          ) : (
+            screen()
+          )}
+        </div>
         {auth === 'in' && !page && (
           <TabBar<Tab>
             tabs={[
@@ -329,9 +356,15 @@ export default function App() {
             done('seller.toast.delivered', ids.length);
           }}
         />
+        <LogisticsSheet
+          via={sheet?.action === 'darkstore' ? 'DARK_STORE' : 'LOGISTICS'}
+          orders={sheet?.action === 'logistics' || sheet?.action === 'darkstore' ? sheet.orders : []}
+          onClose={() => setSheet(null)}
+          onConfirm={(ids) => orders.sendToLogistics(ids, sheet?.action === 'darkstore' ? 'DARK_STORE' : 'LOGISTICS')}
+        />
         <PriceEditSheet
           sku={priceSku}
-          scheme={priceSku ? schemeFor(priceSku.code) : undefined}
+          schemes={priceSku ? catalog.schemes.filter((x) => x.skuCode === priceSku.code && x.status !== 'EXPIRED') : []}
           onClose={() => setPriceCode(null)}
           onSave={(mrp, price) => {
             if (priceSku) catalog.setPrice(priceSku.code, mrp, price);

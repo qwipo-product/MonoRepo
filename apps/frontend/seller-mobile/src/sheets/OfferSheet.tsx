@@ -8,9 +8,10 @@ import { nextOfferCode, useOfferDraft } from '../offerDraft';
 import { OfferForm } from '../components/OfferForm';
 import { ProductThumb } from '../components/ProductThumb';
 
-/* Quick offer — opened from a product row without leaving the list. With an
-   offer on the product: change its slabs or end date, or pause / start it.
-   Without one: the same form with two slabs filled in, and Create offer. */
+/* Quick offer — opened from a product row or the Offers page. With a live
+   offer: change its slabs or end date, or pause it. A paused offer is locked
+   (as on the portal) — Start offer is the only change. ₹-off offers made on
+   the web show read-only. Without an offer: two slabs filled in, Create. */
 export function OfferSheet({
   sku,
   scheme,
@@ -72,22 +73,30 @@ function OfferBody({
 
       {!sku.active ? (
         <p className="rounded-md bg-muted p-3 text-sm text-foreground-secondary">{t('seller.product.offer_needs_active')}</p>
+      ) : !(sku.price > 0 && sku.mrp > 0) ? (
+        // The portal won't save an offer on a product without a price.
+        <p className="rounded-md bg-muted p-3 text-sm text-foreground-secondary">{t('seller.offers2.needs_price')}</p>
       ) : (
         <>
           <OfferForm draft={draft} price={sku.price} />
           {scheme ? (
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => onUpdate(scheme.code, { status: scheme.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' })}
-              >
-                {t(scheme.status === 'ACTIVE' ? 'seller.quick.pause' : 'seller.quick.start')}
+            scheme.status === 'INACTIVE' ? (
+              // Paused offers are locked on the portal — starting it is the only change.
+              <Button fullWidth onClick={() => onUpdate(scheme.code, { status: 'ACTIVE' })}>
+                {t('seller.quick.start')}
               </Button>
-              <Button className="flex-[2]" onClick={() => check(() => onUpdate(scheme.code, { slabs: draft.slabs, validTill: draft.validTill }))}>
-                {t('seller.quick.save_offer')}
-              </Button>
-            </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button variant="secondary" className="flex-1" onClick={() => onUpdate(scheme.code, { status: 'INACTIVE' })}>
+                  {t('seller.quick.pause')}
+                </Button>
+                {!draft.locked && (
+                  <Button className="flex-[2]" onClick={() => check(() => onUpdate(scheme.code, { slabs: draft.slabs, validTill: draft.validTill }))}>
+                    {t('seller.quick.save_offer')}
+                  </Button>
+                )}
+              </div>
+            )
           ) : (
             <Button
               fullWidth

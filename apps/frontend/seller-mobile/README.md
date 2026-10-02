@@ -43,12 +43,31 @@ New and Confirmed filter by delivery day, as in the portal.
 
 `?in` skips sign-in · `?empty` shows a day-one seller · `?lang=te` opens in Telugu.
 
+## Demo switches
+
+| Add to the URL | Shows |
+| --- | --- |
+| `?in` | Skip sign-in |
+| `?empty` | A day-one seller — every empty state |
+| `?lang=te` | Telugu |
+| `?slow` / `?fail` | Every page's loading / error-with-Retry state |
+| `?expire` | Session ends 20 s after sign-in |
+| Login with `9000000000` | "No seller assigned" |
+
 ## Things that look wrong on purpose
 
 - Confirming **one** order is one tap with no "are you sure" — it is the
-  everyday action. Bulk confirm, cancel and deliver ask first.
-- An order with an item the DMS reports as not available (Hanuman Provision
-  Store's ghee) can't be confirmed
-  until the item is removed; bulk confirm leaves it out and says so.
+  everyday action. Bulk confirm, cancel and deliver ask first. (The portal
+  asks on single confirm too — a deliberate phone simplification.)
+- The order page is read-only like the portal's: an item the DMS reports
+  as not available only shows a badge; quantities can't be changed.
+- Orders with a logistics partner or dark store can't be cancelled or
+  marked delivered here — the partner updates them (portal rule).
+- A paused offer is locked until started again; ₹-off offers made on the web
+  are read-only on the phone.
+- Customer list cards show beat and area, and the customer page shows
+  recent orders — the portal's customer API doesn't return those yet
+  (backend work for the real app). Bulk product selection and price-by-%
+  are phone-only too; the portal does bulk changes by file upload.
 - Telugu covers this app's strings; product names and store names stay in
   English. Hindi and Tamil fall back to English.
