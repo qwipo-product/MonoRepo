@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pencil } from 'lucide-react';
 import { Badge } from '@mockups/ui';
 import { useI18n } from '@mockups/i18n';
 import type { SellerSku } from '@mockups/types';
+import type { EditSection } from '../screens/EditProductScreen';
 import { formatDay } from '../format';
 import { ProductThumb } from './ProductThumb';
 
@@ -17,14 +18,23 @@ interface Field {
    sections. Sections start closed so the page stays short; one with an
    empty required field opens by itself and marks it "Required" — the same
    fields that make a product "Details missing". */
-export function ProductDetailsSections({ sku, onViewImage }: { sku: SellerSku; onViewImage: (index: number) => void }) {
+export function ProductDetailsSections({
+  sku,
+  onViewImage,
+  onEditSection,
+}: {
+  sku: SellerSku;
+  onViewImage: (index: number) => void;
+  /** Each section's own Edit — opens just that section in a bottom sheet. */
+  onEditSection: (section: EditSection) => void;
+}) {
   const { t } = useI18n();
   const d = sku.details;
   const yes = (b: boolean) => t(b ? 'seller.product.yes' : 'seller.product.no');
   const kg = d.weightMeasure === 'Kilogram' ? d.skuWeight : d.skuWeight / 1000;
   const [l, w, h] = d.dimensionsCm;
 
-  const sections: { key: string; fields: Field[]; extra?: ReactNode }[] = [
+  const sections: { key: EditSection; fields: Field[]; extra?: ReactNode }[] = [
     {
       key: 'descriptor',
       fields: [
@@ -123,6 +133,22 @@ export function ProductDetailsSections({ sku, onViewImage }: { sku: SellerSku; o
             <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
               <span className="flex-1">{t(`seller.pdetail.section.${sec.key}`)}</span>
               {missing > 0 && <Badge variant="danger">{t('seller.pdetail.missing_n').replace('{n}', String(missing))}</Badge>}
+              {/* Edit (or Fix, when something is missing) — opens the section's sheet, not the fold. */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEditSection(sec.key);
+                }}
+                className={
+                  missing > 0
+                    ? 'flex items-center gap-1 rounded-md bg-error px-2.5 py-1 text-xs font-semibold text-white'
+                    : 'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-primary active:bg-primary-soft'
+                }
+              >
+                <Pencil size={12} />
+                {t(missing > 0 ? 'seller.pdetail.fix' : 'seller.pdetail.edit')}
+              </button>
               <ChevronDown size={16} className="text-foreground-secondary transition-transform group-open:rotate-180" />
             </summary>
             <dl className="grid grid-cols-2 gap-x-3 gap-y-3 px-3 pb-3 text-xs">

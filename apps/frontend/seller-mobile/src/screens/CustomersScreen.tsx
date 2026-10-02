@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Building2, ChevronRight, MapPin, Search, SlidersHorizontal, Users } from 'lucide-react';
-import { Badge, EmptyState, Input } from '@mockups/ui';
+import { Building2, ChevronRight, MapPin, Search, Share2, SlidersHorizontal, Users } from 'lucide-react';
+import { Badge, Button, EmptyState, Input } from '@mockups/ui';
 import { useI18n } from '@mockups/i18n';
 import type { SellerCustomer } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { customerShareText, shareToWhatsApp } from '../share';
 import { InfoBlock, InfoPair, InfoRow } from '../components/InfoBlock';
 import { BeatRow, MobileRow } from '../components/DeliveryPanel';
 import { CustomersFilterSheet, type CustomerStatusFilter } from '../sheets/CustomersFilterSheet';
@@ -105,13 +106,30 @@ function CustomerCard({ customer: c, onOpen }: { customer: SellerCustomer; onOpe
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-      <button onClick={onOpen} className="flex w-full items-start gap-2 text-left active:scale-[0.99]">
-        <span className="min-w-0 flex-1">
+      <div className="flex items-start gap-2">
+        <button onClick={onOpen} className="min-w-0 flex-1 text-left active:scale-[0.99]">
           <span className="block truncate text-sm font-semibold text-foreground">{c.storeName}</span>
           <span className="block text-xs text-foreground-secondary">{c.ownerName}</span>
-        </span>
-        <ChevronRight size={18} className="mt-0.5 shrink-0 text-foreground-secondary" />
-      </button>
+        </button>
+        {/* Send the shop's location to a delivery agent — without opening the card. */}
+        {a && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-mt-1 shrink-0 px-2 text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              shareToWhatsApp(customerShareText(c, a, t));
+            }}
+          >
+            <Share2 size={15} />
+            {t('seller.share.share')}
+          </Button>
+        )}
+        <button onClick={onOpen} aria-label={c.storeName} className="shrink-0 pt-0.5">
+          <ChevronRight size={18} className="text-foreground-secondary" />
+        </button>
+      </div>
 
       <div className="mt-2">
         <InfoBlock>

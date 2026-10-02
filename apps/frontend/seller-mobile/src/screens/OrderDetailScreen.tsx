@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BadgePercent, Check, Copy, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { BadgePercent, Check, Copy, MapPin, MessageCircle, Phone, Share2 } from 'lucide-react';
 import { Badge, Button, InlineMessage } from '@mockups/ui';
 import { StatusBadge, formatInrExact } from '@mockups/components';
 import { sellerCustomers } from '@mockups/mock-data';
@@ -11,6 +11,7 @@ import { ProductThumb } from '../components/ProductThumb';
 import { formatPlacedAt } from '../format';
 import { cancelReasonText, liveLines, mapsLink, offerSavings, orderTotal, tabOf } from '../orders';
 import type { OrderAction } from './OrdersScreen';
+import { orderShareText, shareToWhatsApp } from '../share';
 
 /* One order, read-only like the portal's order page: the store and where the
    goods go, the order facts, the items with any offer savings. The next step
@@ -81,6 +82,11 @@ export function OrderDetailScreen({
               {t('seller.odetail.map')}
             </Button>
           </div>
+          {/* Everything a delivery agent needs — shop, map, date, what to collect. */}
+          <Button variant="outlinePrimary" size="sm" fullWidth onClick={() => shareToWhatsApp(orderShareText(order, t))}>
+            <Share2 size={15} />
+            {t('seller.share.with_agent')}
+          </Button>
           {!located && <p className="text-xs font-medium text-warning-foreground">{t('seller.odetail.no_location')}</p>}
         </section>
 

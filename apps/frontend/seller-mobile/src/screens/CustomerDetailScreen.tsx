@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Map, MapPin, MessageCircle, Phone, Route } from 'lucide-react';
+import { Mail, Map, MapPin, MessageCircle, Phone, Route, Share2 } from 'lucide-react';
 import { Badge, Button, InlineMessage, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
@@ -8,6 +8,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { InfoBlock, InfoRow } from '../components/InfoBlock';
 import { MobileRow } from '../components/DeliveryPanel';
 import { orderTotal } from '../orders';
+import { customerShareText, shareToWhatsApp } from '../share';
 
 /** "14 Mar 2026" */
 const formatDate = (iso: string) =>
@@ -110,7 +111,7 @@ export function CustomerDetailScreen({
               <InfoRow icon={<Mail size={14} className="text-primary" />} label={t('seller.customer.email')} value={c.email} href={`mailto:${c.email}`} />
             )}
           </InfoBlock>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" size="sm" onClick={() => (window.location.href = `tel:${c.mobile}`)}>
               <Phone size={15} />
               {t('seller.detail.call')}
@@ -127,6 +128,11 @@ export function CustomerDetailScreen({
             >
               <Map size={15} />
               {t('seller.customer.maps')}
+            </Button>
+            {/* The selected address, as a WhatsApp message for a delivery agent. */}
+            <Button variant="outlinePrimary" size="sm" disabled={!a} onClick={() => a && shareToWhatsApp(customerShareText(c, a, t))}>
+              <Share2 size={15} />
+              {t('seller.share.location')}
             </Button>
           </div>
         </section>

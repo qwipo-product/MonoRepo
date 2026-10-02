@@ -116,15 +116,33 @@ const LABEL: Partial<Record<Key, string>> = {
 const num = (v: string) => Number(v);
 const positive = (v: string) => v.trim() !== '' && Number.isFinite(num(v)) && num(v) > 0;
 
+export type EditSection = 'descriptor' | 'quantity' | 'dimensions' | 'category' | 'ondc' | 'company' | 'tags' | 'images';
+
+/** Which form fields each section holds — a section edit checks only its own. */
+const SECTION_KEYS: Record<EditSection, Key[]> = {
+  descriptor: ['name', 'groupName', 'shortName', 'shortDescription', 'longDescription'],
+  quantity: ['measureUnit', 'unitValue', 'weightMeasure', 'skuWeight', 'innerPack', 'unitsPerCase', 'sellingUnits', 'minQty', 'maxQty'],
+  dimensions: ['length', 'width', 'height'],
+  category: ['categoryId', 'gstPct', 'gstCessPct'],
+  ondc: ['returnable', 'cancellable', 'cod', 'careName', 'carePhone', 'careEmail'],
+  company: ['brand', 'makerAddress'],
+  tags: ['origin'],
+  images: ['images'],
+};
+
+/* The whole product form as a page — or, with `section`, just that one
+   section in a bottom sheet over the product page (the section's own Edit). */
 export function EditProductScreen({
   sku,
   skus,
+  section,
   onBack,
   onSave,
 }: {
   sku: SellerSku;
   /** All the seller's products — for group names and unique short names. */
   skus: SellerSku[];
+  section?: EditSection;
   onBack: () => void;
   onSave: (next: SellerSku) => void;
 }) {
@@ -184,7 +202,8 @@ export function EditProductScreen({
   else if (!/\b\d{6}\b/.test(f.makerAddress)) errors.makerAddress = t('seller.edit.err.pin');
   if (!f.origin) errors.origin = req;
   if (f.images.length === 0) errors.images = t('seller.edit.err.images');
-  const errorKeys = Object.keys(errors) as Key[];
+  const errorKeys = (Object.keys(errors) as Key[]).filter((k) => !section || SECTION_KEYS[section].includes(k));
+  const show = (sec: EditSection) => !section || section === sec;
 
   // Group name: pick one the catalogue already uses, or type a new one.
   const groups = [...new Set(skus.map((o) => o.details.groupName).filter(Boolean))].sort();
@@ -301,12 +320,10 @@ export function EditProductScreen({
     </div>
   );
 
-  return (
-    <div className="flex h-full flex-col">
-      <ScreenHeader title={t('seller.edit.title')} onBack={() => (dirty ? setLeaveOpen(true) : onBack())} />
-
-      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-        <Card title={t('seller.edit.status')}>
+  const cards = (
+    <>
+        {!section && (
+<Card title={t('seller.edit.status')}>
           <div className="col-span-2">
             <SegmentedControl<'on' | 'off'>
               value={f.active ? 'on' : 'off'}
@@ -319,8 +336,10 @@ export function EditProductScreen({
             <p className="mt-1.5 text-xs text-foreground-secondary">{t(f.active ? 'seller.edit.active_help' : 'seller.edit.inactive_help')}</p>
           </div>
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.descriptor')}>
+        {show('descriptor') && (
+<Card title={section ? '' : t('seller.pdetail.section.descriptor')}>
           {row({ k: 'name', label: 'sku_name', required: true }, text('name'))}
           {row(
             { k: 'groupName', label: 'group_name', required: true },
@@ -351,8 +370,10 @@ export function EditProductScreen({
           {row({ k: 'shortDescription', label: 'short_description', required: true }, area('shortDescription', 150))}
           {row({ k: 'longDescription', label: 'long_description', required: true }, area('longDescription', 200))}
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.quantity')}>
+        {show('quantity') && (
+<Card title={section ? '' : t('seller.pdetail.section.quantity')}>
           <div className="col-span-2">
             <SelectField
               label={`${t('seller.pdetail.measure_unit')}`}
@@ -420,8 +441,10 @@ export function EditProductScreen({
           {row({ k: 'minQty', label: 'min_qty', required: true, wide: false }, text('minQty', { numeric: true }))}
           {row({ k: 'maxQty', label: 'max_qty', required: true, wide: false }, text('maxQty', { numeric: true }))}
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.dimensions')} help={t('seller.edit.cm')}>
+        {show('dimensions') && (
+<Card title={section ? '' : t('seller.pdetail.section.dimensions')} help={t('seller.edit.cm')}>
           {row({ k: 'length', label: 'length', wide: false }, text('length', { decimal: true }))}
           {row({ k: 'width', label: 'width', wide: false }, text('width', { decimal: true }))}
           {row({ k: 'height', label: 'height', wide: false }, text('height', { decimal: true }))}
@@ -430,8 +453,10 @@ export function EditProductScreen({
             {readOnly(`${volumetric} kg`)}
           </div>
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.category')}>
+        {show('category') && (
+<Card title={section ? '' : t('seller.pdetail.section.category')}>
           <div id="edit-categoryId" className="col-span-2">
             <SelectField
               label={t('seller.pdetail.category_id')}
@@ -466,8 +491,10 @@ export function EditProductScreen({
             {readOnly(<span className="truncate">{sku.details.locationId}</span>)}
           </div>
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.ondc')}>
+        {show('ondc') && (
+<Card title={section ? '' : t('seller.pdetail.section.ondc')}>
           {toggle('returnable', 'returnable')}
           {toggle('cancellable', 'cancellable')}
           {toggle('cod', 'cod')}
@@ -480,8 +507,10 @@ export function EditProductScreen({
           {row({ k: 'carePhone', label: 'care_phone', required: true }, text('carePhone', { numeric: true, placeholder: '9XXXXXXXXX' }))}
           {row({ k: 'careEmail', label: 'care_email', required: true }, text('careEmail'))}
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.company')}>
+        {show('company') && (
+<Card title={section ? '' : t('seller.pdetail.section.company')}>
           <div className="col-span-2 space-y-1.5">
             <span className="text-sm font-medium">{t('seller.pdetail.maker_name')}</span>
             {readOnly(sku.company)}
@@ -500,8 +529,10 @@ export function EditProductScreen({
           )}
           {row({ k: 'makerAddress', label: 'maker_address', required: true }, area('makerAddress', 250))}
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.tags')}>
+        {show('tags') && (
+<Card title={section ? '' : t('seller.pdetail.section.tags')}>
           {row({ k: 'origin', label: 'origin', required: true }, <div className="flex flex-wrap gap-2">
               {ORIGINS.map((o) => (
                 <Chip key={o} selected={f.origin === o} onClick={() => set('origin', o)}>
@@ -510,13 +541,17 @@ export function EditProductScreen({
               ))}
             </div>)}
         </Card>
+        )}
 
-        <Card title={t('seller.pdetail.section.images')}>
+        {show('images') && (
+<Card title={section ? '' : t('seller.pdetail.section.images')}>
           {row({ k: 'images', label: 'image_count', required: true }, <ProductImagesEditor images={f.images} onChange={(images) => set('images', images)} alt={f.name} />)}
         </Card>
-      </div>
-
-      <div className="flex gap-3 border-t border-border bg-card p-3 shadow-[var(--shadow-bar-top)]">
+        )}
+    </>
+  );
+  const actions = (
+    <>
         <Button
           variant="secondary"
           className="flex-1"
@@ -531,8 +566,10 @@ export function EditProductScreen({
         <Button className="flex-[2]" disabled={!dirty} onClick={save}>
           {t('seller.edit.save')}
         </Button>
-      </div>
-
+    </>
+  );
+  const dialogs = (
+    <>
       {/* Like the portal's "Some changes need fixing" dialog */}
       <Sheet
         open={fixOpen}
@@ -573,6 +610,37 @@ export function EditProductScreen({
           </div>
         }
       />
+    </>
+  );
+
+  // One section, in a bottom sheet over the product page.
+  if (section) {
+    return (
+      <>
+        <Sheet
+          open
+          onClose={() => (dirty ? setLeaveOpen(true) : onBack())}
+          size="tall"
+          title={t(`seller.pdetail.section.${section}`)}
+          subtitle={sku.name}
+          bodyClassName="space-y-3 bg-background-subtle p-3"
+          footer={<div className="flex gap-3">{actions}</div>}
+        >
+          {cards}
+        </Sheet>
+        {dialogs}
+      </>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScreenHeader title={t('seller.edit.title')} onBack={() => (dirty ? setLeaveOpen(true) : onBack())} />
+      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+        {cards}
+      </div>
+      <div className="flex gap-3 border-t border-border bg-card p-3 shadow-[var(--shadow-bar-top)]">{actions}</div>
+      {dialogs}
     </div>
   );
 }
@@ -580,10 +648,12 @@ export function EditProductScreen({
 function Card({ title, help, children }: { title: string; help?: string; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-3 py-2.5">
-        <div className="text-sm font-semibold">{title}</div>
-        {help && <div className="text-xs text-foreground-secondary">{help}</div>}
-      </div>
+      {(title || help) && (
+        <div className="border-b border-border px-3 py-2.5">
+          {title && <div className="text-sm font-semibold">{title}</div>}
+          {help && <div className="text-xs text-foreground-secondary">{help}</div>}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-x-3 gap-y-4 p-3">{children}</div>
     </section>
   );

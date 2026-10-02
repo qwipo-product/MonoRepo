@@ -11,11 +11,12 @@ import { formatDay } from '../format';
 import { SlabTable } from '../components/SlabTable';
 import { ProductDetailsSections } from '../components/ProductDetailsSections';
 import { ImageViewer } from '../components/ImageViewer';
+import type { EditSection } from './EditProductScreen';
 
 const OFFER_BADGE = { ACTIVE: 'success', INACTIVE: 'neutral', EXPIRED: 'danger' } as const;
 
 /* One product. Two main actions — Edit price and the In stock switch — in
-   one card; "Edit product" at the bottom opens the full form, pictures included. Hiding a product is rare and risky, so it is a quiet link at the
+   one card; "Edit" in the header opens the full form, pictures included. Hiding a product is rare and risky, so it is a quiet link at the
    bottom that asks first; a hidden product says so at the top with one
    "Show again" button. The full ONDC details form stays on the web portal. */
 export function ProductDetailScreen({
@@ -28,6 +29,7 @@ export function ProductDetailScreen({
   onCreateOffer,
   onOpenOffers,
   onEdit,
+  onEditSection,
 }: {
   sku: SellerSku;
   scheme?: SellerScheme;
@@ -38,6 +40,7 @@ export function ProductDetailScreen({
   onCreateOffer: () => void;
   onOpenOffers: () => void;
   onEdit: () => void;
+  onEditSection: (section: EditSection) => void;
 }) {
   const { t } = useI18n();
   const [confirmHide, setConfirmHide] = useState(false);
@@ -46,7 +49,16 @@ export function ProductDetailScreen({
 
   return (
     <div className="flex h-full flex-col">
-      <ScreenHeader title={sku.code} onBack={onBack} />
+      <ScreenHeader
+        title={sku.code}
+        onBack={onBack}
+        right={
+          <Button variant="ghost" size="sm" className="text-primary" onClick={onEdit}>
+            <Pencil size={15} />
+            {t('seller.product.edit')}
+          </Button>
+        }
+      />
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {/* The product */}
@@ -162,7 +174,7 @@ export function ProductDetailScreen({
         </section>
 
         {/* The rest of the portal's product form — read-only, in its sections */}
-        <ProductDetailsSections sku={sku} onViewImage={setViewing} />
+        <ProductDetailsSections sku={sku} onViewImage={setViewing} onEditSection={onEditSection} />
 
         {sku.active && (
           <button onClick={() => setConfirmHide(true)} className="mx-auto flex items-center gap-1.5 py-2 text-sm font-semibold text-error-foreground">
@@ -170,14 +182,6 @@ export function ProductDetailScreen({
             {t('seller.product.hide_link')}
           </button>
         )}
-      </div>
-
-      {/* The update option for everything that isn't price, stock or offer. */}
-      <div className="border-t border-border bg-card p-3 shadow-[var(--shadow-bar-top)]">
-        <Button fullWidth onClick={onEdit}>
-          <Pencil size={16} />
-          {t('seller.product.edit_product')}
-        </Button>
       </div>
 
       <ImageViewer images={pictures} start={viewing} onClose={() => setViewing(null)} />

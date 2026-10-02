@@ -18,7 +18,7 @@ import { OrdersScreen, type OrderAction } from './screens/OrdersScreen';
 import { OrderDetailScreen } from './screens/OrderDetailScreen';
 import { ProductsScreen, type ProductFilter } from './screens/ProductsScreen';
 import { ProductDetailScreen } from './screens/ProductDetailScreen';
-import { EditProductScreen } from './screens/EditProductScreen';
+import { EditProductScreen, type EditSection } from './screens/EditProductScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { CustomerDetailScreen } from './screens/CustomerDetailScreen';
 import { MoreScreen } from './screens/MoreScreen';
@@ -76,6 +76,7 @@ export default function App() {
   const [sheet, setSheet] = useState<{ action: OrderAction; orders: SellerOrder[] } | null>(null);
   const [priceCode, setPriceCode] = useState<string | null>(null);
   const [offerCode, setOfferCode] = useState<string | null>(null);
+  const [sectionEdit, setSectionEdit] = useState<{ code: string; section: EditSection } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -166,6 +167,7 @@ export default function App() {
                 onCreateOffer={() => push({ kind: 'create-offer', skuCode: s.code })}
                 onOpenOffers={() => push({ kind: 'offers' })}
                 onEdit={() => push({ kind: 'edit-product', code: s.code })}
+                onEditSection={(section) => setSectionEdit({ code: s.code, section })}
               />
             )
           );
@@ -304,6 +306,7 @@ export default function App() {
 
   const priceSku = priceCode ? catalog.skus.find((s) => s.code === priceCode) ?? null : null;
   const offerSku = offerCode ? catalog.skus.find((s) => s.code === offerCode) ?? null : null;
+  const sectionSku = sectionEdit ? catalog.skus.find((s) => s.code === sectionEdit.code) : undefined;
 
   return (
     <div className="grid min-h-dvh place-items-center bg-shell p-4">
@@ -356,6 +359,20 @@ export default function App() {
             done('seller.toast.delivered', ids.length);
           }}
         />
+        {sectionEdit && sectionSku && (
+          <EditProductScreen
+            key={`${sectionEdit.code}-${sectionEdit.section}`}
+            sku={sectionSku}
+            skus={catalog.skus}
+            section={sectionEdit.section}
+            onBack={() => setSectionEdit(null)}
+            onSave={(next) => {
+              catalog.updateSku(next);
+              setSectionEdit(null);
+              setToast(t('seller.toast.product_saved'));
+            }}
+          />
+        )}
         <LogisticsSheet
           via={sheet?.action === 'darkstore' ? 'DARK_STORE' : 'LOGISTICS'}
           orders={sheet?.action === 'logistics' || sheet?.action === 'darkstore' ? sheet.orders : []}
