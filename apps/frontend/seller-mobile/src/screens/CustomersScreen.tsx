@@ -114,7 +114,12 @@ function CustomerCard({ customer: c, onOpen }: { customer: SellerCustomer; onOpe
 
       {blocked > 0 && (
         <Badge variant="danger" className="mt-2">
-          {blocked === 1 ? t('seller.customers.blocked_one') : t('seller.customers.blocked_many').replace('{n}', String(blocked))}
+          {/* The portal's Blocked vs Mixed: blocked for every company, or only some */}
+          {blocked === c.companies.length
+            ? t('seller.customers.blocked_all')
+            : blocked === 1
+              ? t('seller.customers.blocked_one')
+              : t('seller.customers.blocked_many').replace('{n}', String(blocked))}
         </Badge>
       )}
     </div>

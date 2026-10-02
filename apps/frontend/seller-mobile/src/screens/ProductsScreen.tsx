@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Check, Package, Search } from 'lucide-react';
 import { Badge, Button, Chip, EmptyState, Input, Sheet, Switch, cn } from '@mockups/ui';
-import { ProductImage, formatInrExact } from '@mockups/components';
+import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { imageOf, isCompliant, type Catalog } from '../catalog';
+import { ProductThumb } from '../components/ProductThumb';
+import { isCompliant, type Catalog } from '../catalog';
 
 export type ProductFilter = 'all' | 'out' | 'inactive' | 'missing';
 
@@ -18,22 +19,20 @@ const FILTERS: Record<ProductFilter, (s: SellerSku) => boolean> = {
 
 type BulkChange = 'in' | 'out' | 'active' | 'inactive';
 
-/* Products (the portal's My SKU). The stock switch sits on every row — the
-   most common change is one tap. Price is one more tap (the edit sheet).
+/* Products (the portal's My SKU). Each row has one action — the In stock
+   switch, the everyday change. Price and the rest are on the product page.
    Select → tick → "Update" changes many products at once. */
 export function ProductsScreen({
   catalog,
   filter,
   onFilterChange,
   onOpen,
-  onEditPrice,
   onToast,
 }: {
   catalog: Catalog;
   filter: ProductFilter;
   onFilterChange: (f: ProductFilter) => void;
   onOpen: (code: string) => void;
-  onEditPrice: (code: string) => void;
   onToast: (message: string) => void;
 }) {
   const { t } = useI18n();
@@ -124,7 +123,6 @@ export function ProductsScreen({
               selected={picked.has(s.code)}
               onToggle={() => toggle(s.code)}
               onOpen={() => onOpen(s.code)}
-              onEditPrice={() => onEditPrice(s.code)}
               onStock={(v) => {
                 catalog.setStock([s.code], v);
                 onToast(t(v ? 'seller.products.now_in' : 'seller.products.now_out'));
@@ -166,7 +164,6 @@ function ProductRow({
   selected,
   onToggle,
   onOpen,
-  onEditPrice,
   onStock,
 }: {
   sku: SellerSku;
@@ -174,7 +171,6 @@ function ProductRow({
   selected: boolean;
   onToggle: () => void;
   onOpen: () => void;
-  onEditPrice: () => void;
   onStock: (inStock: boolean) => void;
 }) {
   const { t } = useI18n();
@@ -189,11 +185,11 @@ function ProductRow({
           </button>
         )}
         <button onClick={selecting ? onToggle : onOpen} className="flex min-w-0 flex-1 gap-3 text-left">
-          <ProductImage image={imageOf(sku.productId)} alt={sku.name} className="h-14 w-14 shrink-0 rounded-md" />
+          <ProductThumb productId={sku.productId} alt={sku.name} size="md" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium leading-snug">{sku.name}</span>
             <span className="block text-xs text-foreground-secondary">
-              {sku.pack} · {sku.code}
+              {sku.brand} · {sku.pack} · {sku.code}
             </span>
             <span className="mt-1 flex items-baseline gap-1.5">
               <span className="text-sm font-semibold tabular-nums">{formatInrExact(sku.price)}</span>
@@ -218,9 +214,6 @@ function ProductRow({
               {t(sku.inStock ? 'seller.products.in_stock' : 'seller.products.out_of_stock')}
             </span>
           </label>
-          <Button variant="ghost" size="sm" className="text-primary" onClick={onEditPrice}>
-            {t('seller.products.edit_price')}
-          </Button>
         </div>
       )}
     </div>

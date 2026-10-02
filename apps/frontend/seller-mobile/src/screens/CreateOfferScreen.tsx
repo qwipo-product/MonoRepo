@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { ChevronRight, Plus, Search, Trash2 } from 'lucide-react';
 import { Badge, Button, Chip, EmptyState, FieldError, Input, Switch, cn } from '@mockups/ui';
-import { ProductImage, formatInrExact } from '@mockups/components';
+import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerScheme, SellerSchemeSlab, SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { imageOf, slabPrice, TODAY } from '../catalog';
+import { ProductThumb } from '../components/ProductThumb';
+import { slabPrice, TODAY } from '../catalog';
 import { formatDay } from '../format';
 import { SlabTable } from '../components/SlabTable';
 
@@ -146,7 +147,7 @@ export function CreateOfferScreen({
                       }}
                       className="flex w-full items-center gap-3 p-3 text-left active:bg-muted"
                     >
-                      <ProductImage image={imageOf(s.productId)} alt={s.name} className="h-11 w-11 shrink-0 rounded-md" />
+                      <ProductThumb productId={s.productId} alt={s.name} />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium leading-snug">{s.name}</span>
                         <span className="block text-xs text-foreground-secondary">
@@ -164,7 +165,7 @@ export function CreateOfferScreen({
 
         {step >= 2 && sku && (
           <section className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-            <ProductImage image={imageOf(sku.productId)} alt={sku.name} className="h-12 w-12 shrink-0 rounded-md" />
+            <ProductThumb productId={sku.productId} alt={sku.name} />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium leading-snug">{sku.name}</div>
               <div className="text-xs text-foreground-secondary">

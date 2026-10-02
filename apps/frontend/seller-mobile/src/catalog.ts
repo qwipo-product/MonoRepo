@@ -5,7 +5,20 @@ import type { SellerCustomer, SellerScheme, SellerSku } from '@mockups/types';
 /* Products, customers and offers for this demo session — seeded from the
    shared fixtures, changed here as the seller edits. Same split as orders.ts. */
 
-export const imageOf = (productId: string) => products.find((p) => p.id === productId)?.image;
+/* The shared photo bank is loose: some products borrow another product's
+   photo (Tata Tea Gold shows Maggi), and some links are dead. A wrong
+   picture misleads more than an emoji, so only products whose photo is
+   really theirs, and loads, use it. */
+const TRUE_PHOTOS = new Set([
+  'freedom-sunflower', 'aashirvaad-atta', 'aashirvaad-multigrain',
+  'aashirvaad-ghee', 'surf-excel', 'tata-salt', 'aashirvaad-salt', 'maggi-masala', 'parle-g', 'amul-butter',
+]);
+
+/** The product's photo where the catalogue has a true one, else its emoji. */
+export const imageOf = (productId: string) => {
+  const p = products.find((x) => x.id === productId);
+  return (TRUE_PHOTOS.has(productId) && p?.images[0]) || p?.image;
+};
 
 /** The portal's "Non-compliant": listed, but nobody can buy it until the details are filled. */
 export const isCompliant = (s: SellerSku) => s.missingFields.length === 0;

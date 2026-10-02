@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { EyeOff, Tag } from 'lucide-react';
 import { Badge, Button, InlineMessage, Sheet, Switch } from '@mockups/ui';
-import { ProductImage, formatInrExact } from '@mockups/components';
+import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerScheme, SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { imageOf, isCompliant } from '../catalog';
+import { ProductThumb } from '../components/ProductThumb';
+import { isCompliant } from '../catalog';
 import { formatDay } from '../format';
 import { SlabTable } from '../components/SlabTable';
 
 const OFFER_BADGE = { ACTIVE: 'success', INACTIVE: 'neutral', EXPIRED: 'danger' } as const;
 
-/* One product. Stock and price are the everyday changes, so they sit at the
-   top with their own controls. Hiding a product asks first; showing it again
-   doesn't. The full ONDC details form stays on the web portal. */
+/* One product. Two main actions — Edit price and the In stock switch — in
+   one card. Hiding a product is rare and risky, so it is a quiet link at the
+   bottom that asks first; a hidden product says so at the top with one
+   "Show again" button. The full ONDC details form stays on the web portal. */
 export function ProductDetailScreen({
   sku,
   scheme,
@@ -43,7 +45,7 @@ export function ProductDetailScreen({
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {/* The product */}
         <section className="flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
-          <ProductImage image={imageOf(sku.productId)} alt={sku.name} className="h-20 w-20 shrink-0 rounded-md" />
+          <ProductThumb productId={sku.productId} alt={sku.name} size="lg" />
           <div className="min-w-0">
             <div className="text-base font-semibold leading-snug">{sku.name}</div>
             <div className="mt-0.5 text-xs text-foreground-secondary">
@@ -56,6 +58,19 @@ export function ProductDetailScreen({
             )}
           </div>
         </section>
+
+        {!sku.active && (
+          <InlineMessage
+            variant="warning"
+            title={t('seller.product.hidden_title')}
+            description={t('seller.product.hidden')}
+            action={
+              <Button size="sm" variant="soft" onClick={() => onSetActive(true)}>
+                {t('seller.product.show_again')}
+              </Button>
+            }
+          />
+        )}
 
         {!isCompliant(sku) && (
           <InlineMessage
@@ -96,12 +111,6 @@ export function ProductDetailScreen({
             tone={sku.inStock ? 'text-success-foreground' : 'text-warning-foreground'}
             onChange={onSetStock}
           />
-          <SwitchRow
-            label={t('seller.product.show_to_buyers')}
-            help={t(sku.active ? 'seller.product.shown' : 'seller.product.hidden')}
-            checked={sku.active}
-            onChange={(v) => (v ? onSetActive(true) : setConfirmHide(true))}
-          />
         </section>
 
         {/* Offer */}
@@ -140,9 +149,29 @@ export function ProductDetailScreen({
           )}
         </section>
 
-        <p className="pb-2 text-center text-xs text-foreground-secondary">
-          {t('seller.product.updated').replace('{date}', formatDay(sku.updatedAt))}
-        </p>
+        {/* The rest of the portal's product details — read-only here */}
+        <section className="rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-3 py-2.5 text-sm font-semibold">{t('seller.product.details')}</div>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-3 p-3 text-xs">
+            <Fact label={t('seller.product.short_name')} value={sku.shortName ?? '—'} />
+            <Fact label={t('seller.product.company')} value={sku.company} />
+            <Fact label={t('seller.product.brand')} value={sku.brand} />
+            <Fact label={t('seller.product.category')} value={sku.category} />
+            <Fact label={t('seller.product.gst')} value={`${sku.gstPct}%`} />
+            <Fact label={t('seller.product.order_qty')} value={`${sku.minQty} – ${sku.maxQty}`} />
+            <Fact label={t('seller.product.returnable')} value={t(sku.returnable ? 'seller.product.yes' : 'seller.product.no')} />
+            <Fact label={t('seller.product.cancellable')} value={t(sku.cancellable ? 'seller.product.yes' : 'seller.product.no')} />
+            <Fact label={t('seller.product.cod')} value={t(sku.cod ? 'seller.product.yes' : 'seller.product.no')} />
+            <Fact label={t('seller.product.last_updated')} value={formatDay(sku.updatedAt)} />
+          </dl>
+        </section>
+
+        {sku.active && (
+          <button onClick={() => setConfirmHide(true)} className="mx-auto flex items-center gap-1.5 py-2 text-sm font-semibold text-error-foreground">
+            <EyeOff size={15} />
+            {t('seller.product.hide_link')}
+          </button>
+        )}
       </div>
 
       <Sheet
@@ -172,6 +201,15 @@ export function ProductDetailScreen({
       >
         <p className="text-sm text-foreground-secondary">{t('seller.product.hide_help')}</p>
       </Sheet>
+    </div>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-foreground-secondary">{label}</dt>
+      <dd className="mt-0.5 font-semibold text-foreground">{value}</dd>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, MessageCircle, Phone, Route } from 'lucide-react';
+import { Mail, Map, MapPin, MessageCircle, Phone, Route } from 'lucide-react';
 import { Badge, Button, InlineMessage, Sheet } from '@mockups/ui';
 import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
@@ -69,8 +69,11 @@ export function CustomerDetailScreen({
               />
             )}
             <MobileRow mobile={c.mobile} />
+            {c.email && (
+              <InfoRow icon={<Mail size={14} className="text-primary" />} label={t('seller.customer.email')} value={c.email} href={`mailto:${c.email}`} />
+            )}
           </InfoBlock>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button variant="secondary" size="sm" onClick={() => (window.location.href = `tel:${c.mobile}`)}>
               <Phone size={15} />
               {t('seller.detail.call')}
@@ -78,6 +81,17 @@ export function CustomerDetailScreen({
             <Button variant="secondary" size="sm" onClick={() => window.open(`https://wa.me/91${c.mobile}`, '_blank')}>
               <MessageCircle size={15} />
               {t('seller.customer.whatsapp')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!a}
+              onClick={() =>
+                a && window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.line}, ${a.area}, ${a.city} ${a.pincode}`)}`, '_blank')
+              }
+            >
+              <Map size={15} />
+              {t('seller.customer.maps')}
             </Button>
           </div>
         </section>

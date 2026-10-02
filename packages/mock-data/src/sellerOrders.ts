@@ -6,8 +6,8 @@
 // Confirmed = ACCEPTED | PACKED | SHIPPED; then DELIVERED / CANCELLED.
 // Beat orders deliver on their beat's day; quick (non-beat) orders next day.
 
-import type { SellerOrder, SellerOrderBuyer } from '@mockups/types';
-import { sellerCustomers } from './sellerCatalog';
+import type { SellerOrder, SellerOrderBuyer, SellerOrderLine } from '@mockups/types';
+import { sellerCustomers, sellerSkus } from './sellerCatalog';
 
 // The buyer on each order is one of the seller's customers, so names,
 // mobiles and addresses match the Customers tab.
@@ -26,91 +26,88 @@ const B = {
   sairam: buyer('Sai Ram Daily Needs'),
 };
 
+// One order line from the seller's own product, at its selling price — or,
+// with `offer`, at that slab's discounted price (the QPS saving).
+const line = (
+  id: string,
+  skuCode: string,
+  qty: number,
+  opts: { status?: SellerOrderLine['status']; offer?: [string, number] } = {}
+): SellerOrderLine => {
+  const sku = sellerSkus.find((s) => s.code === skuCode)!;
+  const base = { id, productId: sku.productId, skuCode, name: sku.name, pack: sku.pack, qty, status: opts.status ?? 'ORDERED' } as const;
+  if (!opts.offer) return { ...base, price: sku.price };
+  const [offerCode, pct] = opts.offer;
+  return { ...base, price: Math.round(sku.price * (1 - pct / 100) * 100) / 100, basePrice: sku.price, offerCode };
+};
+
 export const sellerOrders: SellerOrder[] = [
   // ── New (CREATED) ──
   {
-    id: 'QW-240871', placedAt: '2026-10-02T09:12:00+05:30', deliveryDate: '2026-10-05', beatName: 'KPHB Monday Beat', paymentMode: 'COD', status: 'CREATED', buyer: B.lakshmi,
+    // Atta crosses the 10-unit slab of offer QPS-1051 (4% off).
+    id: 'QW-240871', company: 'ITC Limited', marketplace: 'ONDC', placedAt: '2026-10-02T09:12:00+05:30', deliveryDate: '2026-10-05', beatName: 'KPHB Monday Beat', paymentMode: 'COD', status: 'CREATED', buyer: B.lakshmi,
     lines: [
-      { id: 'l1', productId: 'freedom-sunflower', name: 'Freedom Refined Sunflower Oil', pack: '1 L pouch', qty: 24, price: 165, status: 'ORDERED' },
-      { id: 'l2', productId: 'aashirvaad-atta', name: 'Aashirvaad Shudh Chakki Atta', pack: '5 kg bag', qty: 10, price: 265, status: 'ORDERED' },
-      { id: 'l3', productId: 'tata-salt', name: 'Tata Salt Iodised', pack: '1 kg', qty: 30, price: 27, status: 'ORDERED' },
+      line('l1', 'ASV-ATA-5K', 12, { offer: ['QPS-1051', 4] }),
+      line('l2', 'ITC-MAR-250', 36),
+      line('l3', 'ITC-BNG-FP', 24),
     ],
   },
   {
-    id: 'QW-240866', placedAt: '2026-10-02T08:47:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'COD', status: 'CREATED', buyer: B.balaji,
-    lines: [
-      { id: 'l1', productId: 'surf-excel', name: 'Surf Excel Quick Wash Detergent Powder', pack: '1 kg', qty: 12, price: 125, status: 'ORDERED' },
-      { id: 'l2', productId: 'maggi-masala', name: 'Maggi 2-Minute Masala Noodles', pack: '70 g × 12', qty: 8, price: 156, status: 'ORDERED' },
-    ],
+    id: 'QW-240866', company: 'Hindustan Unilever', marketplace: 'ONDC', placedAt: '2026-10-02T08:47:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'COD', status: 'CREATED', buyer: B.balaji,
+    lines: [line('l1', 'HUL-SRF-1K', 24)],
   },
   {
     // The item-unavailable case: the DMS reported the ghee out of stock.
-    id: 'QW-240859', placedAt: '2026-10-02T08:05:00+05:30', deliveryDate: '2026-10-06', beatName: 'Dilsukhnagar Tuesday Beat', paymentMode: 'PREPAID', status: 'CREATED', buyer: B.venkateswara,
+    id: 'QW-240859', company: 'ITC Limited', marketplace: 'ONDC', placedAt: '2026-10-02T08:05:00+05:30', deliveryDate: '2026-10-05', beatName: 'KPHB Monday Beat', paymentMode: 'PREPAID', status: 'CREATED', buyer: B.hanuman,
     lines: [
-      { id: 'l1', productId: 'aashirvaad-ghee', name: 'Aashirvaad Svasti Pure Cow Ghee', pack: '1 L', qty: 6, price: 640, status: 'OUT_OF_STOCK' },
-      { id: 'l2', productId: 'amul-butter', name: 'Amul Pasteurised Salted Butter', pack: '500 g', qty: 10, price: 285, status: 'ORDERED' },
-      { id: 'l3', productId: 'tata-tea-gold', name: 'Tata Tea Gold', pack: '500 g', qty: 12, price: 290, status: 'ORDERED' },
-      { id: 'l4', productId: 'parle-g', name: 'Parle-G Original Glucose Biscuits', pack: '250 g', qty: 48, price: 25, status: 'ORDERED' },
+      line('l1', 'ASV-GHE-1L', 6, { status: 'OUT_OF_STOCK' }),
+      line('l2', 'ASV-ATA-5K', 8),
+      line('l3', 'ITC-MAR-250', 48),
+      line('l4', 'ITC-BNG-FP', 24),
     ],
   },
   {
-    id: 'QW-240852', placedAt: '2026-10-01T19:40:00+05:30', deliveryDate: '2026-10-05', beatName: 'KPHB Monday Beat', paymentMode: 'COD', status: 'CREATED', buyer: B.hanuman,
-    lines: [
-      { id: 'l1', productId: 'fortune-soya', name: 'Fortune Soya Health Refined Oil', pack: '1 L pouch', qty: 20, price: 155, status: 'ORDERED' },
-      { id: 'l2', productId: 'itc-sunfeast-marie', name: 'Sunfeast Marie Light Biscuits', pack: '250 g', qty: 36, price: 30, status: 'ORDERED' },
-    ],
+    id: 'QW-240852', company: 'Tata Consumer Products', marketplace: 'ONDC', placedAt: '2026-10-01T19:40:00+05:30', deliveryDate: '2026-10-06', beatName: 'Dilsukhnagar Tuesday Beat', paymentMode: 'COD', status: 'CREATED', buyer: B.venkateswara,
+    lines: [line('l1', 'TTA-TEA-500', 12), line('l2', 'TTA-SLT-1K', 30)],
   },
   {
-    id: 'QW-240848', placedAt: '2026-10-01T18:15:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'COD', status: 'CREATED', buyer: B.ganesh,
-    lines: [
-      { id: 'l1', productId: 'freedom-groundnut', name: 'Freedom Double Filtered Groundnut Oil', pack: '1 L pouch', qty: 15, price: 210, status: 'ORDERED' },
-      { id: 'l2', productId: 'itc-bingo-mad-angles', name: 'Bingo Mad Angles Tomato Madness', pack: 'Family pack', qty: 24, price: 20, status: 'ORDERED' },
-    ],
+    id: 'QW-240848', company: 'Adani Wilmar', marketplace: 'ONDC', placedAt: '2026-10-01T18:15:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'COD', status: 'CREATED', buyer: B.ganesh,
+    lines: [line('l1', 'FTN-SOY-1L', 20)],
   },
 
   // ── Confirmed (ACCEPTED / PACKED / SHIPPED) ──
   {
-    id: 'QW-240831', placedAt: '2026-10-01T11:20:00+05:30', deliveryDate: '2026-10-03', beatName: 'Secunderabad Saturday Beat', paymentMode: 'COD', status: 'ACCEPTED', buyer: B.annapurna,
-    lines: [
-      { id: 'l1', productId: 'aashirvaad-atta', name: 'Aashirvaad Shudh Chakki Atta', pack: '5 kg bag', qty: 20, price: 265, status: 'ORDERED' },
-      { id: 'l2', productId: 'tata-salt', name: 'Tata Salt Iodised', pack: '1 kg', qty: 50, price: 27, status: 'ORDERED' },
-    ],
+    id: 'QW-240831', company: 'Tata Consumer Products', marketplace: 'ONDC', placedAt: '2026-10-01T11:20:00+05:30', deliveryDate: '2026-10-03', beatName: 'Secunderabad Saturday Beat', paymentMode: 'COD', status: 'ACCEPTED', buyer: B.annapurna,
+    lines: [line('l1', 'TTA-SLT-1K', 50), line('l2', 'TTA-TEA-500', 6)],
   },
   {
-    id: 'QW-240824', placedAt: '2026-10-01T10:02:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'PREPAID', status: 'PACKED', buyer: B.sairam,
-    lines: [
-      { id: 'l1', productId: 'tata-tea-gold', name: 'Tata Tea Gold', pack: '500 g', qty: 6, price: 290, status: 'ORDERED' },
-      { id: 'l2', productId: 'parle-g', name: 'Parle-G Original Glucose Biscuits', pack: '250 g', qty: 60, price: 25, status: 'ORDERED' },
-    ],
+    id: 'QW-240824', company: 'Tata Consumer Products', marketplace: 'ONDC', placedAt: '2026-10-01T10:02:00+05:30', deliveryDate: '2026-10-03', beatName: null, paymentMode: 'PREPAID', status: 'PACKED', buyer: B.sairam,
+    lines: [line('l1', 'TTA-TEA-500', 6), line('l2', 'TTA-SLT-1K', 20)],
   },
   {
-    id: 'QW-240810', placedAt: '2026-09-30T17:30:00+05:30', deliveryDate: '2026-10-03', beatName: 'KPHB Saturday Beat', paymentMode: 'COD', status: 'SHIPPED', buyer: B.lakshmi,
-    lines: [
-      { id: 'l1', productId: 'surf-excel', name: 'Surf Excel Quick Wash Detergent Powder', pack: '1 kg', qty: 10, price: 125, status: 'ORDERED' },
-    ],
+    id: 'QW-240810', company: 'Tata Consumer Products', marketplace: 'ONDC', placedAt: '2026-09-30T17:30:00+05:30', deliveryDate: '2026-10-03', beatName: 'KPHB Saturday Beat', paymentMode: 'COD', status: 'SHIPPED', buyer: B.lakshmi,
+    lines: [line('l1', 'TTA-SLT-1K', 40)],
   },
 
   // ── Delivered ──
   {
-    id: 'QW-240795', placedAt: '2026-09-30T09:10:00+05:30', deliveryDate: '2026-10-01', beatName: 'Ameerpet Thursday Beat', paymentMode: 'COD', status: 'DELIVERED', buyer: B.balaji,
-    lines: [
-      { id: 'l1', productId: 'freedom-sunflower', name: 'Freedom Refined Sunflower Oil', pack: '1 L pouch', qty: 30, price: 165, status: 'FULFILLED' },
-      { id: 'l2', productId: 'maggi-masala', name: 'Maggi 2-Minute Masala Noodles', pack: '70 g × 12', qty: 5, price: 156, status: 'FULFILLED' },
-    ],
+    id: 'QW-240795', company: 'Nestlé India', marketplace: 'ONDC', placedAt: '2026-09-30T09:10:00+05:30', deliveryDate: '2026-10-01', beatName: null, paymentMode: 'COD', status: 'DELIVERED', buyer: B.balaji,
+    lines: [line('l1', 'NES-MAG-70', 10, { status: 'FULFILLED' })],
   },
   {
-    id: 'QW-240781', placedAt: '2026-09-29T15:45:00+05:30', deliveryDate: '2026-09-30', beatName: null, paymentMode: 'PREPAID', status: 'DELIVERED', buyer: B.venkateswara,
-    lines: [
-      { id: 'l1', productId: 'amul-butter', name: 'Amul Pasteurised Salted Butter', pack: '500 g', qty: 8, price: 285, status: 'FULFILLED' },
-    ],
+    id: 'QW-240781', company: 'Amul', marketplace: 'ONDC', placedAt: '2026-09-29T15:45:00+05:30', deliveryDate: '2026-09-30', beatName: null, paymentMode: 'PREPAID', status: 'DELIVERED', buyer: B.venkateswara,
+    lines: [line('l1', 'AML-BTR-500', 8, { status: 'FULFILLED' })],
   },
 
-  // ── Cancelled ──
+  // ── Cancelled — one by the seller, one by the store from the buyer app ──
   {
-    id: 'QW-240776', placedAt: '2026-09-29T12:00:00+05:30', deliveryDate: '2026-09-30', beatName: null, paymentMode: 'COD', status: 'CANCELLED', buyer: B.hanuman,
-    cancelReason: 'One or more items in the order not available',
-    lines: [
-      { id: 'l1', productId: 'aashirvaad-ghee', name: 'Aashirvaad Svasti Pure Cow Ghee', pack: '1 L', qty: 4, price: 640, status: 'CANCELLED' },
-    ],
+    id: 'QW-240776', company: 'ITC Limited', marketplace: 'ONDC', placedAt: '2026-09-29T12:00:00+05:30', deliveryDate: '2026-09-30', beatName: 'KPHB Monday Beat', paymentMode: 'COD', status: 'CANCELLED', buyer: B.hanuman,
+    cancelledBy: 'SELLER', cancelledAt: '2026-09-29T14:20:00+05:30', cancelReason: 'One or more items in the order not available',
+    lines: [line('l1', 'ASV-GHE-1L', 4, { status: 'CANCELLED' })],
+  },
+  {
+    id: 'QW-240769', company: 'Adani Wilmar', marketplace: 'ONDC', placedAt: '2026-09-28T16:05:00+05:30', deliveryDate: '2026-09-29', beatName: null, paymentMode: 'COD', status: 'CANCELLED', buyer: B.ganesh,
+    cancelledBy: 'CUSTOMER', cancelledAt: '2026-09-28T16:40:00+05:30',
+    lines: [line('l1', 'FTN-SOY-1L', 12, { status: 'CANCELLED' })],
   },
 ];

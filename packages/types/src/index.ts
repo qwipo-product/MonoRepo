@@ -274,10 +274,14 @@ export type SellerOrderItemStatus = 'ORDERED' | 'FULFILLED' | 'CANCELLED' | 'RET
 export interface SellerOrderLine {
   id: string;
   productId: string; // → products[].id, for the picture
+  skuCode: string;
   name: string;
   pack: string;
   qty: number;
-  price: number; // per unit, ₹
+  price: number; // per unit the buyer pays, ₹ (after any offer)
+  /** Set when a "Buy more, save more" (QPS) slab applied: the price before it and the offer. */
+  basePrice?: number;
+  offerCode?: string;
   status: SellerOrderItemStatus;
 }
 
@@ -293,6 +297,9 @@ export interface SellerOrderBuyer {
 
 export interface SellerOrder {
   id: string;
+  /** Every order is for one company (brand owner) — the portal's Company column. */
+  company: string;
+  marketplace: 'ONDC' | 'AMAZON' | 'FLIPKART';
   placedAt: string; // ISO
   deliveryDate: string; // ISO date — expected delivery
   /** The beat (delivery route) the order rides on. null = quick delivery
@@ -303,6 +310,8 @@ export interface SellerOrder {
   buyer: SellerOrderBuyer;
   lines: SellerOrderLine[];
   cancelReason?: string;
+  cancelledBy?: 'SELLER' | 'CUSTOMER';
+  cancelledAt?: string; // ISO
 }
 
 /** One sellable product for one seller (the portal's "My SKU"). Stock is a
@@ -311,6 +320,8 @@ export interface SellerSku {
   code: string;
   productId: string; // → products[].id, for the picture
   name: string;
+  shortName?: string;
+  company: string; // manufacturer / packer
   brand: string;
   category: string;
   pack: string;
@@ -318,6 +329,12 @@ export interface SellerSku {
   price: number; // selling price, ₹
   active: boolean;
   inStock: boolean;
+  gstPct: number;
+  minQty: number;
+  maxQty: number;
+  returnable: boolean;
+  cancellable: boolean;
+  cod: boolean; // available on cash on delivery
   /** ONDC fields still empty. Non-empty = "Non-compliant": listed but nobody can buy it. */
   missingFields: string[];
   updatedAt: string; // ISO date

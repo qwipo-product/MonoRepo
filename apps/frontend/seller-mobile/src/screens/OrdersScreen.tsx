@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { AlertTriangle, ClipboardList, Search } from 'lucide-react';
 import { Button, Chip, EmptyState, Input, SegmentedControl } from '@mockups/ui';
-import { OrderListCard } from '@mockups/components';
+import { OrderListCard, formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerOrder } from '@mockups/types';
 import { DeliveryPanel } from '../components/DeliveryPanel';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { formatDay } from '../format';
-import { liveLines, orderTotal, tabOf, unavailableLines, type OrderTab } from '../orders';
+import { formatDay, formatPlacedAt } from '../format';
+import { cancelReasonText, liveLines, orderTotal, tabOf, unavailableLines, type OrderTab } from '../orders';
 
 export type OrderAction = 'confirm' | 'cancel' | 'deliver';
 
@@ -136,6 +136,15 @@ export function OrdersScreen({
       </div>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+        {/* The portal's summary strip, as one line inside the list. */}
+        {byDay && shown.length > 0 && (
+          <p className="px-1 text-xs text-foreground-secondary">
+            {t('seller.orders.summary')
+              .replace('{orders}', String(shown.length))
+              .replace('{stores}', String(new Set(shown.map((o) => o.buyer.mobile)).size))
+              .replace('{value}', formatInrExact(shown.reduce((sum, o) => sum + orderTotal(o), 0)))}
+          </p>
+        )}
         {shown.length === 0 ? (
           <EmptyState
             icon={<ClipboardList strokeWidth={1.75} />}
@@ -204,8 +213,22 @@ function OrderCard({
       title={order.buyer.storeName}
       orderId={order.id}
       status={order.status}
-      statusLabel={t(`seller.status.${order.status}`)}
-      meta={tab === 'cancelled' ? `${order.buyer.area}, ${order.buyer.city}` : <DeliveryPanel order={order} compact />}
+      statusLabel={t(order.cancelledBy ? `seller.status.cancelled_by.${order.cancelledBy}` : `seller.status.${order.status}`)}
+      meta={
+        <>
+          <span className="mb-2 block">
+            <span className="font-semibold text-foreground">{order.company}</span> · {t('seller.orders.placed').replace('{when}', formatPlacedAt(order.placedAt))}
+          </span>
+          {tab === 'cancelled' ? (
+            <span className="block">
+              {order.buyer.area}, {order.buyer.city}
+              <span className="mt-1 block font-medium text-error-foreground">{cancelReasonText(order, t)}</span>
+            </span>
+          ) : (
+            <DeliveryPanel order={order} compact />
+          )}
+        </>
+      }
       total={orderTotal(order)}
       totalLabel={`${t('seller.orders.order_value')} · ${items} ${t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')}`}
       rightLabel={t('seller.detail.payment')}
@@ -247,4 +270,5 @@ function OrderCard({
     />
   );
 }
+
 

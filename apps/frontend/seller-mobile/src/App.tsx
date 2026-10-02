@@ -239,7 +239,6 @@ export default function App() {
             filter={productFilter}
             onFilterChange={setProductFilter}
             onOpen={(code) => push({ kind: 'product', code })}
-            onEditPrice={setPriceCode}
             onToast={setToast}
           />
         );
