@@ -72,6 +72,7 @@ apps/
     rirn/                   Retailer identity network — company console     →  :5173
     rirn-retailer/          Retailer-facing RIRN pages (phone/WebView)      →  :5176
     qwipo-analytics/        DigiDukaan analytics console + Reports (desktop) →  :5177
+    seller-mobile/          Seller portal on a phone — distributor orders   →  :5178
     storybook/              Catalog for the mobile kit                      →  :6006
     storybook-web/          Catalog for the web kit                         →  :6007
   backend/

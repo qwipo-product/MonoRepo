@@ -1,19 +1,111 @@
-import Home from './screens/Home';
+import { useState } from 'react';
+import { ClipboardList, Home, Menu, Package, Users } from 'lucide-react';
+import { EmptyState, StatusBar, TabBar, Toast } from '@mockups/ui';
+import { useI18n } from '@mockups/i18n';
+import type { SellerOrder } from '@mockups/types';
+import { tabOf, useOrders, type OrderTab } from './orders';
+import { OrdersScreen, type OrderAction } from './screens/OrdersScreen';
+import { OrderDetailScreen } from './screens/OrderDetailScreen';
+import { CancelSheet, ConfirmSheet, DeliverSheet } from './sheets/OrderActionSheets';
+
+type Tab = 'home' | 'orders' | 'products' | 'customers' | 'more';
+
+// `?empty` opens a day-one seller with no orders, so every empty state can be shown.
+const EMPTY = new URLSearchParams(window.location.search).has('empty');
 
 export default function App() {
-  return (
-      <div className="min-h-dvh bg-shell grid place-items-center p-4">
-        {/* 390×844 ≈ iPhone 15. Design inside this frame.
+  const { t } = useI18n();
+  const store = useOrders(EMPTY);
+  const [tab, setTab] = useState<Tab>('orders');
+  const [orderTab, setOrderTab] = useState<OrderTab>('new');
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<{ action: OrderAction; orders: SellerOrder[] } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-            `relative` is load-bearing: @mockups/ui's Sheet renders
-            `absolute inset-0` and fills its nearest positioned ancestor.
-            Drop it and every bottom sheet escapes the phone and covers the
-            whole browser window. */}
-        <div className="relative w-[390px] h-[844px] overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
-          <div className="h-full overflow-y-auto">
-            <Home />
-          </div>
+  const open = openId ? store.orders.find((o) => o.id === openId) : undefined;
+  const newCount = store.orders.filter((o) => tabOf(o) === 'new').length;
+  const closeSheet = () => setSheet(null);
+  const done = (key: string, n: number) => {
+    setSheet(null);
+    setToast(t(n === 1 ? `${key}_one` : `${key}_many`).replace('{n}', String(n)));
+  };
+
+  // Confirming one order is one tap — it is the everyday action and can be
+  // cancelled later. Bulk confirm, cancel and deliver ask first.
+  const onAction = (action: OrderAction, orders: SellerOrder[]) => {
+    if (action === 'confirm' && orders.length === 1) {
+      store.confirm([orders[0].id]);
+      done('seller.toast.confirmed', 1);
+    } else setSheet({ action, orders });
+  };
+
+  return (
+    <div className="grid min-h-dvh place-items-center bg-shell p-4">
+      {/* 390×844 ≈ iPhone 15. `relative` is load-bearing: Sheet and Toast
+          position against it, not the browser window. */}
+      <div className="relative flex h-[844px] w-[390px] flex-col overflow-hidden rounded-[2rem] bg-background text-foreground shadow-xl">
+        <StatusBar />
+        <div className="min-h-0 flex-1">
+          {open ? (
+            <OrderDetailScreen
+              key={open.id}
+              order={open}
+              onBack={() => setOpenId(null)}
+              onAction={(a, o) => onAction(a, [o])}
+              onSaveAndConfirm={(lines) => {
+                store.saveLines(open.id, lines);
+                store.confirm([open.id]);
+                done('seller.toast.confirmed', 1);
+              }}
+            />
+          ) : tab === 'orders' ? (
+            <OrdersScreen orders={store.orders} tab={orderTab} onTabChange={setOrderTab} onOpen={setOpenId} onAction={onAction} />
+          ) : (
+            <div className="grid h-full place-items-center p-6">
+              <EmptyState title={t(`seller.nav.${tab}`)} description="This page is next in the build." />
+            </div>
+          )}
         </div>
+        {!open && (
+          <TabBar<Tab>
+            tabs={[
+              { id: 'home', label: t('seller.nav.home'), icon: Home },
+              { id: 'orders', label: t('seller.nav.orders'), icon: ClipboardList, badge: newCount },
+              { id: 'products', label: t('seller.nav.products'), icon: Package },
+              { id: 'customers', label: t('seller.nav.customers'), icon: Users },
+              { id: 'more', label: t('seller.nav.more'), icon: Menu },
+            ]}
+            active={tab}
+            onSelect={setTab}
+          />
+        )}
+
+        <ConfirmSheet
+          orders={sheet?.action === 'confirm' ? sheet.orders : []}
+          onClose={closeSheet}
+          onConfirm={(ids) => {
+            store.confirm(ids);
+            done('seller.toast.confirmed', ids.length);
+          }}
+        />
+        <CancelSheet
+          orders={sheet?.action === 'cancel' ? sheet.orders : []}
+          onClose={closeSheet}
+          onCancel={(ids, reason) => {
+            store.cancel(ids, reason);
+            done('seller.toast.cancelled', ids.length);
+          }}
+        />
+        <DeliverSheet
+          orders={sheet?.action === 'deliver' ? sheet.orders : []}
+          onClose={closeSheet}
+          onDeliver={(ids) => {
+            store.deliver(ids);
+            done('seller.toast.delivered', ids.length);
+          }}
+        />
+        <Toast open={!!toast} variant="success" message={toast} onClose={() => setToast(null)} />
       </div>
+    </div>
   );
 }

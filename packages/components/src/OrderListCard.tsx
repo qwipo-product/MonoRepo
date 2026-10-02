@@ -24,6 +24,8 @@ export interface OrderListCardProps {
   rightValue?: ReactNode;
   /** Present → title + "Order details" link open the shared Order Details. */
   onOpenDetails?: () => void;
+  /** The details link's text, for translated screens. */
+  detailsLabel?: string;
   /** Button row (Cancel/Track, Invoice, Pay, …). */
   actions?: ReactNode;
   /** Small helper line under the actions (e.g. cancel window). */
@@ -44,6 +46,7 @@ export function OrderListCard({
   rightLabel,
   rightValue,
   onOpenDetails,
+  detailsLabel = 'Order details',
   actions,
   hint,
   onToggleSelect,
@@ -92,7 +95,7 @@ export function OrderListCard({
             onClick={onOpenDetails}
             className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-primary active:scale-[0.98]"
           >
-            Order details
+            {detailsLabel}
             <ChevronRight size={15} />
           </button>
         )}

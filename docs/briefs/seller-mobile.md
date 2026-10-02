@@ -6,7 +6,7 @@ user: a distributor (seller login only, never super admin) — the owner and the
 flows:
   - Seller logs in with mobile + OTP and, with more than one seller membership, picks the seller.
   - Owner opens the app and sees today's new orders and sales on the dashboard.
-  - Ops staff confirms a new order — first changing a line's quantity or removing an unavailable item if needed — or cancels it with a reason, then marks it delivered. One at a time or several at once (bulk confirm / cancel / deliver, as in the portal). Tabs: New · Confirmed · Delivered · Cancelled.
+  - Ops staff confirms a new order — first changing a line's quantity or removing an unavailable item if needed — or cancels it with a reason, then marks it delivered. One at a time or several at once (bulk confirm / cancel / deliver, as in the portal). Tabs: New · Confirmed · Delivered · Cancelled. Every New / Confirmed order shows its beat name (or quick delivery) and expected delivery date, filterable by delivery day.
   - Ops staff searches a SKU and changes its stock or price, or switches it off.
   - Owner looks up a customer and sees their orders.
   - Owner views offers and creates a slab scheme (buy at least N units, get X% off) on chosen SKUs.

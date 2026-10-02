@@ -292,7 +292,10 @@ export interface SellerOrderBuyer {
 export interface SellerOrder {
   id: string;
   placedAt: string; // ISO
-  deliveryDate: string; // ISO date
+  deliveryDate: string; // ISO date — expected delivery
+  /** The beat (delivery route) the order rides on. null = quick delivery
+   *  outside a beat, next day — the platform's "Non-Beat" order. */
+  beatName: string | null;
   paymentMode: 'COD' | 'PREPAID';
   status: SellerOrderStatus;
   buyer: SellerOrderBuyer;
