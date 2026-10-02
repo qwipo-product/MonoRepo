@@ -10,8 +10,9 @@ const fullAddress = (o: SellerOrder) =>
 
 /* Where and when the goods go — the beat, the delivery date and the shop's
    address. In B2B distribution this is what the team plans the van around,
-   so it sits in one tinted block on every order card and on the order page. */
-export function DeliveryPanel({ order }: { order: SellerOrder }) {
+   so it sits in one tinted block on every order card and on the order page.
+   Cards show just the area and pincode; the order page shows the full address. */
+export function DeliveryPanel({ order, compact }: { order: SellerOrder; compact?: boolean }) {
   const { t } = useI18n();
   const delivered = tabOf(order) === 'delivered';
   return (
@@ -28,7 +29,11 @@ export function DeliveryPanel({ order }: { order: SellerOrder }) {
           value={formatDay(order.deliveryDate)}
         />
       </div>
-      <Row icon={<MapPin size={14} className="text-primary" />} label={t('seller.detail.address')} value={fullAddress(order)} />
+      <Row
+        icon={<MapPin size={14} className="text-primary" />}
+        label={t(compact ? 'seller.detail.area' : 'seller.detail.address')}
+        value={compact ? `${order.buyer.area} · ${order.buyer.pincode}` : fullAddress(order)}
+      />
     </div>
   );
 }

@@ -201,7 +201,7 @@ function OrderCard({
       orderId={order.id}
       status={order.status}
       statusLabel={t(`seller.status.${order.status}`)}
-      meta={tab === 'cancelled' ? `${order.buyer.area}, ${order.buyer.city}` : <DeliveryPanel order={order} />}
+      meta={tab === 'cancelled' ? `${order.buyer.area}, ${order.buyer.city}` : <DeliveryPanel order={order} compact />}
       total={orderTotal(order)}
       totalLabel={`${t('seller.orders.order_value')} · ${items} ${t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')}`}
       rightLabel={t('seller.detail.payment')}
