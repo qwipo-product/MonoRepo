@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { AlertTriangle, ClipboardList, MapPin, MoreHorizontal, PackageCheck, Search, SlidersHorizontal, Store, Truck, XCircle } from 'lucide-react';
 import { Button, Chip, EmptyState, Input, Sheet, cn } from '@mockups/ui';
-import { OrderListCard, formatInrExact } from '@mockups/components';
+import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerAccount, SellerOrder } from '@mockups/types';
 import { DeliveryPanel, LogisticsBlock } from '../components/DeliveryPanel';
@@ -183,15 +183,6 @@ export function OrdersScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {tab === 'logistics' && <p className="rounded-md bg-info-subtle px-3 py-2 text-xs text-info-foreground">{t('seller.logistics.tab_note')}</p>}
-        {/* The portal's summary strip, as one line inside the list. */}
-        {byDay && shown.length > 0 && (
-          <p className="px-1 text-xs text-foreground-secondary">
-            {t('seller.orders.summary')
-              .replace('{orders}', String(shown.length))
-              .replace('{stores}', String(new Set(shown.map((o) => o.buyer.mobile)).size))
-              .replace('{value}', formatInrExact(shown.reduce((sum, o) => sum + orderTotal(o), 0)))}
-          </p>
-        )}
         {shown.length === 0 ? (
           <EmptyState
             icon={<ClipboardList strokeWidth={1.75} />}
