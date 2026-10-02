@@ -293,6 +293,30 @@ export interface SellerOrderBuyer {
   area: string;
   city: string;
   pincode: string;
+  /** Exact shop location; null when the store never set it. */
+  lat: number | null;
+  lng: number | null;
+  gstn?: string;
+}
+
+/** The seller platform's provider-agnostic logistics status (logistics-status.ts). */
+export type SellerLogisticsStatus =
+  | 'REQUESTED'
+  | 'PENDING'
+  | 'READY_FOR_SHIPMENT'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'PARTIALLY_DELIVERED'
+  | 'RETURNED'
+  | 'CANCELLED'
+  | 'OFFLINE_DELIVERY';
+
+/** Set once a confirmed order is handed to a 3PL partner or a dark store. */
+export interface SellerOrderLogistics {
+  via: 'LOGISTICS' | 'DARK_STORE';
+  partner: string; // e.g. "Shiprocket", "Moosapet Dark Store"
+  status: SellerLogisticsStatus;
+  awb?: string; // tracking number
 }
 
 export interface SellerOrder {
@@ -300,6 +324,8 @@ export interface SellerOrder {
   /** Every order is for one company (brand owner) — the portal's Company column. */
   company: string;
   marketplace: 'ONDC' | 'AMAZON' | 'FLIPKART';
+  /** The marketplace's own order number — what the buyer app shows. */
+  channelOrderId?: string;
   placedAt: string; // ISO
   deliveryDate: string; // ISO date — expected delivery
   /** The beat (delivery route) the order rides on. null = quick delivery
@@ -312,6 +338,7 @@ export interface SellerOrder {
   cancelReason?: string;
   cancelledBy?: 'SELLER' | 'CUSTOMER';
   cancelledAt?: string; // ISO
+  logistics?: SellerOrderLogistics;
 }
 
 /** The rest of the portal's product form (My SKU → Product Details), read-only
@@ -371,6 +398,8 @@ export interface SellerCustomerBeat {
   company: string;
   beat: string;
   days: string[]; // 'Monday', …
+  /** The customer is blocked for this company, so the beat doesn't serve them. */
+  blocked?: boolean;
 }
 
 export interface SellerCustomerAddress {
@@ -381,8 +410,13 @@ export interface SellerCustomerAddress {
   state: string;
   pincode: string;
   primary: boolean;
+  /** Exact location; null = "Location not set" — beats can't be worked out. */
+  lat: number | null;
+  lng: number | null;
   /** Which company's beat serves this address — matched from the beat map. */
   serviceability: SellerCustomerBeat[];
+  /** Linked companies with no beat at this address ("Not served at this address"). */
+  notServedBy: string[];
 }
 
 export interface SellerCustomerCompany {
@@ -409,6 +443,8 @@ export interface SellerSchemeSlab {
   min: number;
   max: number | null;
   discountPct: number;
+  /** Flat ₹ off per unit instead of a % (made on the web; shown read-only). */
+  flatOff?: number;
 }
 
 /** A QPS offer — one product, slab discounts, starts the day it is made. */
@@ -429,6 +465,9 @@ export interface SellerAccount {
   address: string;
   contactName: string;
   phone: string;
+  /** Connectors the seller has switched on — they light up the Logistics tab. */
+  hasLogistics: boolean;
+  hasDarkStore: boolean;
 }
 
 export type PaymentMethodType = 'upi' | 'card' | 'credit' | 'cod';

@@ -16,6 +16,8 @@ export const sellerAccounts: SellerAccount[] = [
     address: '4-7-112, Industrial Estate Road, Moosapet, Hyderabad 500018',
     contactName: 'Krishna Murthy',
     phone: '9900000002',
+    hasLogistics: true,
+    hasDarkStore: true,
   },
   {
     id: 'SLR-10517',
@@ -25,8 +27,25 @@ export const sellerAccounts: SellerAccount[] = [
     address: '12-2-30, Rashtrapati Road, Secunderabad 500003',
     contactName: 'Krishna Murthy',
     phone: '9900000002',
+    hasLogistics: false,
+    hasDarkStore: false,
   },
 ];
+
+// ── Brands each company owns — the portal only lets a product take a brand
+// of its own company (the master brand list). ──
+export const companyBrands: Record<string, string[]> = {
+  'Gemini Edible & Fats India': ['Freedom', 'Gemini'],
+  'Adani Wilmar': ['Fortune', 'Kohinoor', 'Raag'],
+  'ITC Limited': ['Aashirvaad', 'Sunfeast', 'Bingo', 'YiPPee!', 'Candyman'],
+  'Tata Consumer Products': ['Tata Salt', 'Tata Tea', 'Tata Sampann', 'Tetley'],
+  'Hindustan Unilever': ['Surf Excel', 'Rin', 'Wheel', 'Vim', 'Lifebuoy'],
+  'Nestlé India': ['Maggi', 'Nescafé', 'KitKat'],
+  'Parle Products': ['Parle-G', 'Monaco', 'Hide & Seek'],
+  'Amul': ['Amul'],
+  'Britannia Industries': ['Britannia', 'Good Day', 'Marie Gold'],
+  'MTR Foods': ['MTR'],
+};
 
 // ── Products (My SKU) ──
 const skuRows: Omit<SellerSku, 'details'>[] = [
@@ -127,14 +146,27 @@ const addr = (
   line: string,
   area: string,
   pincode: string,
+  at: [number, number] | null,
   serviceability: SellerCustomerAddress['serviceability'],
-  label = 'Shop'
-): SellerCustomerAddress => ({ label, line, area, city: 'Hyderabad', state: 'Telangana', pincode, primary: true, serviceability });
+  opts: { label?: string; primary?: boolean; notServedBy?: string[] } = {}
+): SellerCustomerAddress => ({
+  label: opts.label ?? 'Shop',
+  line,
+  area,
+  city: 'Hyderabad',
+  state: 'Telangana',
+  pincode,
+  primary: opts.primary ?? true,
+  lat: at ? at[0] : null,
+  lng: at ? at[1] : null,
+  serviceability,
+  notServedBy: opts.notServedBy ?? [],
+});
 
 export const sellerCustomers: SellerCustomer[] = [
   {
     customerId: 'CUS-200341', storeName: 'Sri Lakshmi Kirana', ownerName: 'Ramesh Goud', mobile: '9848012345', gstn: '36BQTPG2231K1ZR',
-    addresses: [addr('Shop 4, Road No. 1, KPHB Phase 3', 'Kukatpally', '500072', [
+    addresses: [addr('Shop 4, Road No. 1, KPHB Phase 3', 'Kukatpally', '500072', [17.4935, 78.3916], [
       { company: 'ITC Limited', beat: 'KPHB Monday Beat', days: ['Monday'] },
       { company: 'Tata Consumer Products', beat: 'KPHB Saturday Beat', days: ['Saturday'] },
     ])],
@@ -145,7 +177,7 @@ export const sellerCustomers: SellerCustomer[] = [
   },
   {
     customerId: 'CUS-200352', storeName: 'Balaji General Stores', ownerName: 'Srinivas Rao', mobile: '9849023456',
-    addresses: [addr('7-1-212, Balkampet Road', 'Ameerpet', '500016', [
+    addresses: [addr('7-1-212, Balkampet Road', 'Ameerpet', '500016', [17.4375, 78.4482], [
       { company: 'Hindustan Unilever', beat: 'Ameerpet Thursday Beat', days: ['Thursday'] },
     ])],
     companies: [
@@ -155,10 +187,15 @@ export const sellerCustomers: SellerCustomer[] = [
   },
   {
     customerId: 'CUS-200367', storeName: 'Venkateswara Super Market', ownerName: 'Padma Reddy', mobile: '9866034567', email: 'venkateswara.dsnr@gmail.com', gstn: '36AJRPR7712L1Z9',
-    addresses: [addr('Plot 18, Chaitanyapuri Main Road', 'Dilsukhnagar', '500060', [
+    addresses: [addr('Plot 18, Chaitanyapuri Main Road', 'Dilsukhnagar', '500060', [17.3687, 78.5247], [
       { company: 'Adani Wilmar', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday'] },
       { company: 'Tata Consumer Products', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday'] },
-    ])],
+    ], { notServedBy: ['Amul'] }),
+      // A second shop — a branch the same owner runs.
+      addr('16-11-740, Kothapet Main Road', 'Kothapet', '500035', [17.3685, 78.5389], [
+        { company: 'Tata Consumer Products', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday'] },
+      ], { label: 'Branch', primary: false, notServedBy: ['Adani Wilmar', 'Amul'] }),
+    ],
     companies: [
       { name: 'Adani Wilmar', registeredOn: '2026-01-08', status: 'ACTIVE' },
       { name: 'Tata Consumer Products', registeredOn: '2026-01-08', status: 'ACTIVE' },
@@ -167,8 +204,9 @@ export const sellerCustomers: SellerCustomer[] = [
   },
   {
     customerId: 'CUS-200375', storeName: 'Hanuman Provision Store', ownerName: 'Mahesh Yadav', mobile: '9885045678',
-    addresses: [addr('Shop 2, Allwyn Colony X Road', 'Miyapur', '500049', [
+    addresses: [addr('Shop 2, Allwyn Colony X Road', 'Miyapur', '500049', [17.4968, 78.3614], [
       { company: 'ITC Limited', beat: 'KPHB Monday Beat', days: ['Monday'] },
+      { company: 'Adani Wilmar', beat: 'Miyapur Thursday Beat', days: ['Thursday'], blocked: true },
     ])],
     companies: [
       { name: 'ITC Limited', registeredOn: '2026-04-02', status: 'ACTIVE' },
@@ -177,7 +215,7 @@ export const sellerCustomers: SellerCustomer[] = [
   },
   {
     customerId: 'CUS-200388', storeName: 'Annapurna Traders', ownerName: 'Lakshmi Devi', mobile: '9908056789', gstn: '36AAEFA9921C1Z2',
-    addresses: [addr('9-1-120, SD Road, near Clock Tower', 'Secunderabad', '500003', [
+    addresses: [addr('9-1-120, SD Road, near Clock Tower', 'Secunderabad', '500003', [17.4399, 78.4983], [
       { company: 'Adani Wilmar', beat: 'Secunderabad Saturday Beat', days: ['Saturday'] },
       { company: 'Tata Consumer Products', beat: 'Secunderabad Saturday Beat', days: ['Saturday'] },
     ])],
@@ -189,26 +227,26 @@ export const sellerCustomers: SellerCustomer[] = [
   {
     customerId: 'CUS-200394', storeName: 'Ganesh Kirana & General', ownerName: 'Ravi Kumar', mobile: '9959067890',
     // No beat reaches LB Nagar yet — this shop only gets quick (next-day) delivery.
-    addresses: [addr('Shop 11, Sagar Ring Road', 'LB Nagar', '500074', [])],
+    addresses: [addr('Shop 11, Sagar Ring Road', 'LB Nagar', '500074', [17.3457, 78.5522], [], { notServedBy: ['Adani Wilmar'] })],
     companies: [{ name: 'Adani Wilmar', registeredOn: '2026-08-30', status: 'ACTIVE' }],
   },
   {
     customerId: 'CUS-200402', storeName: 'Sai Ram Daily Needs', ownerName: 'Anil Sharma', mobile: '9703078901',
-    addresses: [addr('2-3-45, Ramanthapur Road', 'Uppal', '500039', [
+    addresses: [addr('2-3-45, Ramanthapur Road', 'Uppal', '500039', [17.3984, 78.5583], [
       { company: 'Tata Consumer Products', beat: 'Uppal Wednesday Beat', days: ['Wednesday'] },
     ])],
     companies: [{ name: 'Tata Consumer Products', registeredOn: '2026-05-17', status: 'ACTIVE' }],
   },
   {
     customerId: 'CUS-200417', storeName: 'Durga Bhavani Stores', ownerName: 'Suresh Naidu', mobile: '9440089012',
-    addresses: [addr('1-8-302, Begumpet Main Road', 'Begumpet', '500016', [
+    addresses: [addr('1-8-302, Begumpet Main Road', 'Begumpet', '500016', [17.4447, 78.4664], [
       { company: 'Hindustan Unilever', beat: 'Ameerpet Thursday Beat', days: ['Thursday'] },
     ])],
     companies: [{ name: 'Hindustan Unilever', registeredOn: '2026-09-18', status: 'ACTIVE' }],
   },
   {
     customerId: 'CUS-200425', storeName: 'Mahalakshmi Departmental', ownerName: 'Kavitha Rao', mobile: '9391090123',
-    addresses: [addr('Shop 7, Nizampet Road', 'Nizampet', '500090', [
+    addresses: [addr('Shop 7, Nizampet Road', 'Nizampet', '500090', null, [
       { company: 'ITC Limited', beat: 'KPHB Monday Beat', days: ['Monday'] },
     ])],
     companies: [{ name: 'ITC Limited', registeredOn: '2026-03-03', status: 'BLOCKED' }],
@@ -220,5 +258,7 @@ export const sellerSchemes: SellerScheme[] = [
   { code: 'QPS-1042', skuCode: 'FRD-SUN-1L', validFrom: '2026-09-15', validTill: '2026-10-31', status: 'ACTIVE', slabs: [{ min: 1, max: 23, discountPct: 0 }, { min: 24, max: 47, discountPct: 3 }, { min: 48, max: null, discountPct: 5 }] },
   { code: 'QPS-1051', skuCode: 'ASV-ATA-5K', validFrom: '2026-09-20', validTill: '2026-10-20', status: 'ACTIVE', slabs: [{ min: 1, max: 9, discountPct: 0 }, { min: 10, max: null, discountPct: 4 }] },
   { code: 'QPS-1063', skuCode: 'PRL-GLU-250', validFrom: '2026-10-01', validTill: '2026-11-15', status: 'INACTIVE', slabs: [{ min: 1, max: 47, discountPct: 0 }, { min: 48, max: 95, discountPct: 2 }, { min: 96, max: null, discountPct: 4 }] },
+  // Made on the web with a flat ₹ off per unit, starting at 10 — the phone shows it as is.
+  { code: 'QPS-1066', skuCode: 'TTA-SLT-1K', validFrom: '2026-09-25', validTill: '2026-10-25', status: 'ACTIVE', slabs: [{ min: 10, max: 49, discountPct: 0 }, { min: 50, max: 199, discountPct: 0, flatOff: 1 }, { min: 200, max: 500, discountPct: 0, flatOff: 2 }] },
   { code: 'QPS-0988', skuCode: 'HUL-SRF-1K', validFrom: '2026-08-01', validTill: '2026-08-31', status: 'EXPIRED', slabs: [{ min: 1, max: 11, discountPct: 0 }, { min: 12, max: null, discountPct: 5 }] },
 ];
