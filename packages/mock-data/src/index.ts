@@ -15,3 +15,4 @@
 export * from './mockData';
 export { generatedProducts } from './generatedProducts';
 export { IMG } from './imageBank';
+export { sellerOrders } from './sellerOrders';

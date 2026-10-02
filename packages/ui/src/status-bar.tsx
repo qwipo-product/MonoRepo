@@ -1,6 +1,6 @@
 import { Signal, Wifi, BatteryFull } from 'lucide-react';
 
-/* Mock iOS status bar for the phone frame — matches the screenshots' 9:41 row. */
+/* Mock iOS status bar for the phone frame — the 9:41 row every phone mockup shows. */
 export function StatusBar() {
   return (
     <div className="flex h-8 flex-shrink-0 items-center justify-between px-5 text-xs font-medium text-foreground">

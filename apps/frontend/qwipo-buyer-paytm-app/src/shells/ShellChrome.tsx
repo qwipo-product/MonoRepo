@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronsLeft, MoreVertical } from 'lucide-react';
-import { StatusBar } from '../components/StatusBar';
+import { StatusBar } from '@mockups/ui';
 import type { Shell } from '../review/ShellSwitcher';
 
 /* Wraps a screen in the selected surface's chrome:

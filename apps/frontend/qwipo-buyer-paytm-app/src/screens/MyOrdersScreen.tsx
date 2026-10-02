@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, FileText, Check, Package } from 'lucide-react';
 import { Button, EmptyState, Sheet, cn } from '@mockups/ui';
-import { OrderListCard } from '../components/OrderListCard';
+import { OrderListCard } from '@mockups/components';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
 import { formatDate } from '../date';
 import { useEmptyable } from '../review/demoState';

@@ -1,7 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { ProductImage, formatInrExact } from '@mockups/components';
-import { OrderListCard } from '../../components/OrderListCard';
+import { OrderListCard } from '@mockups/components';
 import { buildOrder, statusFromLabel, type Order } from '../../data/orders';
 import { CUSTOMER_ORDERS, RECOMMENDATIONS } from '../../data/salesperson';
 import { formatDate } from '../../date';

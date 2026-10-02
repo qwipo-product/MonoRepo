@@ -1,7 +1,7 @@
 import { ChevronLeft, ShoppingBag } from 'lucide-react';
 import { EmptyState } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
-import { OrderListCard } from '../../components/OrderListCard';
+import { OrderListCard } from '@mockups/components';
 import { buildOrder, type Order } from '../../data/orders';
 import { SP_ORDERS, SP_ORDER_SUMMARY, type SpOrder } from '../../data/salesperson';
 import { formatDate } from '../../date';

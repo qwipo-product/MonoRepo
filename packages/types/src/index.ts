@@ -258,6 +258,48 @@ export interface OrderHistoryEntry {
   items: string[];
 }
 
+// Seller side — mirrors the seller platform's real enums
+// (seller-platform packages/types/src/order.ts), casing included.
+export type SellerOrderStatus =
+  | 'CREATED'
+  | 'ACCEPTED'
+  | 'PACKED'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'RETURNED';
+
+export type SellerOrderItemStatus = 'ORDERED' | 'FULFILLED' | 'CANCELLED' | 'RETURNED' | 'OUT_OF_STOCK';
+
+export interface SellerOrderLine {
+  id: string;
+  productId: string; // → products[].id, for the picture
+  name: string;
+  pack: string;
+  qty: number;
+  price: number; // per unit, ₹
+  status: SellerOrderItemStatus;
+}
+
+export interface SellerOrderBuyer {
+  storeName: string;
+  ownerName: string;
+  mobile: string;
+  area: string;
+  city: string;
+}
+
+export interface SellerOrder {
+  id: string;
+  placedAt: string; // ISO
+  deliveryDate: string; // ISO date
+  paymentMode: 'COD' | 'PREPAID';
+  status: SellerOrderStatus;
+  buyer: SellerOrderBuyer;
+  lines: SellerOrderLine[];
+  cancelReason?: string;
+}
+
 export type PaymentMethodType = 'upi' | 'card' | 'credit' | 'cod';
 
 export interface PaymentMethod {

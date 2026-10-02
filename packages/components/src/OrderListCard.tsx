@@ -1,18 +1,22 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronRight, Copy, Check } from 'lucide-react';
-import { StatusBadge, formatInrExact } from '@mockups/components';
-import type { OrderStatus } from '@mockups/types';
+import { cn } from '@mockups/ui';
+import type { OrderStatus, SellerOrderStatus } from '@mockups/types';
+import { StatusBadge } from './StatusBadge';
+import { formatInrExact } from './PriceLabel';
 
 /* The one order-list card. My Orders is the reference layout; every order list
    (My Orders, Customer Orders, Task/Customer Details orders, Payment Orders)
    renders through this so they stay identical. Lifecycle actions (cancel/track/
    pay/invoice) and the "Order details" link are optional slots — a screen turns
-   on only what it needs. */
+   on only what it needs. Shared with the seller app, which also uses the
+   tick box (`onToggleSelect`) for bulk actions. */
 export interface OrderListCardProps {
   title: string;
   orderId: string;
-  status: OrderStatus;
-  statusLabel: string;
+  status: OrderStatus | SellerOrderStatus;
+  /** Defaults to the StatusBadge's own label for the status. */
+  statusLabel?: string;
   meta?: ReactNode;
   total: number;
   totalLabel?: string;
@@ -24,6 +28,9 @@ export interface OrderListCardProps {
   actions?: ReactNode;
   /** Small helper line under the actions (e.g. cancel window). */
   hint?: ReactNode;
+  /** Present → a tick box before the title, for picking cards for a bulk action. */
+  onToggleSelect?: () => void;
+  selected?: boolean;
 }
 
 export function OrderListCard({
@@ -39,10 +46,30 @@ export function OrderListCard({
   onOpenDetails,
   actions,
   hint,
+  onToggleSelect,
+  selected = false,
 }: OrderListCardProps) {
   return (
-    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+    <div className={cn('rounded-lg border bg-card p-3 shadow-sm', selected ? 'border-primary' : 'border-border')}>
       <div className="flex items-center justify-between gap-2">
+        {onToggleSelect && (
+          <button
+            role="checkbox"
+            aria-checked={selected}
+            aria-label={`Select order ${orderId}`}
+            onClick={onToggleSelect}
+            className="-m-2 grid h-10 w-10 shrink-0 place-items-center"
+          >
+            <span
+              className={cn(
+                'grid h-5 w-5 place-items-center rounded border-2',
+                selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border-strong bg-card'
+              )}
+            >
+              {selected && <Check size={14} strokeWidth={3} />}
+            </span>
+          </button>
+        )}
         {onOpenDetails ? (
           <button
             onClick={onOpenDetails}

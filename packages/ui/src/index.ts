@@ -43,3 +43,5 @@ export { FieldError, type FieldErrorProps } from './field-error';
 export { QtyStepper, type QtyStepperProps } from './qty-stepper';
 export { SelectableCard, type SelectableCardProps } from './selectable-card';
 export { Switch, type SwitchProps } from './switch';
+export { StatusBar } from './status-bar';
+export { TabBar, type TabBarProps, type TabBarTab } from './tab-bar';

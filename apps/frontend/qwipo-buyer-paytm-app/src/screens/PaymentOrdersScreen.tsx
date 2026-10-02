@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, Receipt } from 'lucide-react';
 import { SegmentedControl, EmptyState, Button, cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
-import { OrderListCard } from '../components/OrderListCard';
+import { OrderListCard } from '@mockups/components';
 import { statusFromLabel } from '../data/orders';
 import { formatDate } from '../date';
 import {
