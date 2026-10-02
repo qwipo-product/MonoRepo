@@ -305,6 +305,88 @@ export interface SellerOrder {
   cancelReason?: string;
 }
 
+/** One sellable product for one seller (the portal's "My SKU"). Stock is a
+ *  yes/no flag in the portal, not a quantity. */
+export interface SellerSku {
+  code: string;
+  productId: string; // → products[].id, for the picture
+  name: string;
+  brand: string;
+  category: string;
+  pack: string;
+  mrp: number;
+  price: number; // selling price, ₹
+  active: boolean;
+  inStock: boolean;
+  /** ONDC fields still empty. Non-empty = "Non-compliant": listed but nobody can buy it. */
+  missingFields: string[];
+  updatedAt: string; // ISO date
+}
+
+export interface SellerCustomerBeat {
+  company: string;
+  beat: string;
+  days: string[]; // 'Monday', …
+}
+
+export interface SellerCustomerAddress {
+  label: string;
+  line: string; // shop / street, up to the area
+  area: string;
+  city: string;
+  state: string;
+  pincode: string;
+  primary: boolean;
+  /** Which company's beat serves this address — matched from the beat map. */
+  serviceability: SellerCustomerBeat[];
+}
+
+export interface SellerCustomerCompany {
+  name: string;
+  registeredOn: string; // ISO date — first order with that company
+  status: 'ACTIVE' | 'BLOCKED';
+}
+
+export interface SellerCustomer {
+  customerId: string;
+  storeName: string;
+  ownerName: string;
+  mobile: string;
+  email?: string;
+  gstn?: string;
+  addresses: SellerCustomerAddress[];
+  companies: SellerCustomerCompany[];
+}
+
+export type SellerSchemeStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+
+/** A quantity slab: buy at least `min` (up to `max`, null = no top), get `discountPct` off. */
+export interface SellerSchemeSlab {
+  min: number;
+  max: number | null;
+  discountPct: number;
+}
+
+/** A QPS offer — one product, slab discounts, starts the day it is made. */
+export interface SellerScheme {
+  code: string;
+  skuCode: string;
+  validFrom: string; // ISO date
+  validTill: string;
+  status: SellerSchemeStatus;
+  slabs: SellerSchemeSlab[];
+}
+
+export interface SellerAccount {
+  id: string;
+  name: string;
+  role: 'OWNER' | 'STAFF';
+  gstId: string;
+  address: string;
+  contactName: string;
+  phone: string;
+}
+
 export type PaymentMethodType = 'upi' | 'card' | 'credit' | 'cod';
 
 export interface PaymentMethod {
