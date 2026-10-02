@@ -9,6 +9,7 @@ import { ProductThumb } from '../components/ProductThumb';
 import { isCompliant } from '../catalog';
 import { formatDay } from '../format';
 import { SlabTable } from '../components/SlabTable';
+import { ProductDetailsSections } from '../components/ProductDetailsSections';
 
 const OFFER_BADGE = { ACTIVE: 'success', INACTIVE: 'neutral', EXPIRED: 'danger' } as const;
 
@@ -149,22 +150,8 @@ export function ProductDetailScreen({
           )}
         </section>
 
-        {/* The rest of the portal's product details — read-only here */}
-        <section className="rounded-lg border border-border bg-card shadow-sm">
-          <div className="border-b border-border px-3 py-2.5 text-sm font-semibold">{t('seller.product.details')}</div>
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-3 p-3 text-xs">
-            <Fact label={t('seller.product.short_name')} value={sku.shortName ?? '—'} />
-            <Fact label={t('seller.product.company')} value={sku.company} />
-            <Fact label={t('seller.product.brand')} value={sku.brand} />
-            <Fact label={t('seller.product.category')} value={sku.category} />
-            <Fact label={t('seller.product.gst')} value={`${sku.gstPct}%`} />
-            <Fact label={t('seller.product.order_qty')} value={`${sku.minQty} – ${sku.maxQty}`} />
-            <Fact label={t('seller.product.returnable')} value={t(sku.returnable ? 'seller.product.yes' : 'seller.product.no')} />
-            <Fact label={t('seller.product.cancellable')} value={t(sku.cancellable ? 'seller.product.yes' : 'seller.product.no')} />
-            <Fact label={t('seller.product.cod')} value={t(sku.cod ? 'seller.product.yes' : 'seller.product.no')} />
-            <Fact label={t('seller.product.last_updated')} value={formatDay(sku.updatedAt)} />
-          </dl>
-        </section>
+        {/* The rest of the portal's product form — read-only, in its sections */}
+        <ProductDetailsSections sku={sku} />
 
         {sku.active && (
           <button onClick={() => setConfirmHide(true)} className="mx-auto flex items-center gap-1.5 py-2 text-sm font-semibold text-error-foreground">
@@ -201,15 +188,6 @@ export function ProductDetailScreen({
       >
         <p className="text-sm text-foreground-secondary">{t('seller.product.hide_help')}</p>
       </Sheet>
-    </div>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-foreground-secondary">{label}</dt>
-      <dd className="mt-0.5 font-semibold text-foreground">{value}</dd>
     </div>
   );
 }

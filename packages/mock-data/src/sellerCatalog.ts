@@ -3,7 +3,7 @@
 // seed; the seller-mobile app copies it and changes the copy during a demo.
 // Shapes and words mirror the seller portal.
 
-import type { SellerAccount, SellerCustomer, SellerCustomerAddress, SellerScheme, SellerSku } from '@mockups/types';
+import type { SellerAccount, SellerCustomer, SellerCustomerAddress, SellerScheme, SellerSku, SellerSkuDetails } from '@mockups/types';
 
 // ── The seller logins ──
 export const sellerAccounts: SellerAccount[] = [
@@ -28,7 +28,7 @@ export const sellerAccounts: SellerAccount[] = [
 ];
 
 // ── Products (My SKU) ──
-export const sellerSkus: SellerSku[] = [
+const skuRows: Omit<SellerSku, 'details'>[] = [
   { code: 'FRD-SUN-1L', productId: 'freedom-sunflower', name: 'Freedom Refined Sunflower Oil', shortName: 'Freedom Sun 1L', company: 'Gemini Edible & Fats India', brand: 'Freedom', category: 'Cooking Oils & Ghee', pack: '1 L pouch', mrp: 185, price: 165, active: true, inStock: true, gstPct: 5, minQty: 6, maxQty: 240, returnable: false, cancellable: true, cod: true, missingFields: [], updatedAt: '2026-10-01' },
   { code: 'FRD-GNT-1L', productId: 'freedom-groundnut', name: 'Freedom Double Filtered Groundnut Oil', shortName: 'Freedom GNut 1L', company: 'Gemini Edible & Fats India', brand: 'Freedom', category: 'Cooking Oils & Ghee', pack: '1 L pouch', mrp: 235, price: 210, active: true, inStock: true, gstPct: 5, minQty: 6, maxQty: 240, returnable: false, cancellable: true, cod: true, missingFields: [], updatedAt: '2026-09-29' },
   { code: 'FTN-SOY-1L', productId: 'fortune-soya', name: 'Fortune Soya Health Refined Oil', shortName: 'Fortune Soya 1L', company: 'Adani Wilmar', brand: 'Fortune', category: 'Cooking Oils & Ghee', pack: '1 L pouch', mrp: 170, price: 155, active: true, inStock: true, gstPct: 5, minQty: 6, maxQty: 240, returnable: false, cancellable: true, cod: true, missingFields: [], updatedAt: '2026-09-28' },
@@ -47,6 +47,62 @@ export const sellerSkus: SellerSku[] = [
   { code: 'BRT-GDY-200', productId: 'britannia-good-day', name: 'Britannia Good Day Cashew Cookies', shortName: 'Good Day 200g', company: 'Britannia Industries', brand: 'Britannia', category: 'Biscuits', pack: '200 g', mrp: 40, price: 36, active: true, inStock: false, gstPct: 18, minQty: 12, maxQty: 600, returnable: false, cancellable: true, cod: false, missingFields: ['Manufacturer / Packer Address', 'Customer Care Phone'], updatedAt: '2026-09-20' },
   { code: 'MTR-RSM-200', productId: 'mtr-rasam-mix', name: 'MTR Rasam Powder', shortName: 'MTR Rasam 200g', company: 'MTR Foods', brand: 'MTR', category: 'Salt, Sugar & Spices', pack: '200 g', mrp: 95, price: 86, active: false, inStock: false, gstPct: 5, minQty: 6, maxQty: 240, returnable: false, cancellable: true, cod: true, missingFields: [], updatedAt: '2026-09-08' },
 ];
+
+// The rest of each product's portal form. Shared defaults first, then what
+// differs per product. An empty string is a field the seller hasn't filled
+// in yet — those are the product's missingFields.
+const MAKERS: Record<string, string> = {
+  'Gemini Edible & Fats India': 'Gemini Edible & Fats India Pvt Ltd, Plot 1, Sy No 225, Kattedan Industrial Area, Hyderabad 500077',
+  'Adani Wilmar': 'Adani Wilmar Ltd, Fortune House, Navrangpura, Ahmedabad 380009',
+  'ITC Limited': 'ITC Limited, Virginia House, 37 JL Nehru Road, Kolkata 700071',
+  'Tata Consumer Products': 'Tata Consumer Products Ltd, 1 Bishop Lefroy Road, Kolkata 700020',
+  'Hindustan Unilever': 'Hindustan Unilever Ltd, Unilever House, BD Sawant Marg, Andheri East, Mumbai 400099',
+  'Nestlé India': 'Nestlé India Ltd, 100/101 World Trade Centre, Barakhamba Lane, New Delhi 110001',
+  'Parle Products': 'Parle Products Pvt Ltd, North Level Crossing, Vile Parle East, Mumbai 400057',
+  'Amul': 'Gujarat Co-operative Milk Marketing Federation Ltd, Amul Dairy Road, Anand 388001',
+  'Britannia Industries': '',
+  'MTR Foods': 'MTR Foods Pvt Ltd, No 1 2nd Cross, Hosur Road, Bengaluru 560068',
+};
+
+const base: Omit<SellerSkuDetails, 'groupName' | 'shortDescription' | 'longDescription' | 'measureUnit' | 'unitValue' | 'skuWeight' | 'dimensionsCm' | 'categoryId'> = {
+  weightMeasure: 'Gram',
+  innerPack: 1,
+  unitsPerCase: 12,
+  sellingUnits: [1, 6, 12],
+  gstCessPct: null,
+  fulfillmentId: 'Store Delivery',
+  locationId: 'WH-MOOSAPET-01',
+  timeToShip: '1 day',
+  customerCare: { name: 'Krishna Murthy', email: 'care@saikrishnatraders.in', phone: '9900000002' },
+  manufacturerAddress: '',
+  countryOfOrigin: 'India',
+  images: 3,
+};
+
+const DETAILS: Record<string, Partial<SellerSkuDetails>> = {
+  'FRD-SUN-1L': { groupName: 'Freedom Sunflower Oil', shortDescription: 'Refined sunflower oil, light and healthy for daily cooking.', longDescription: 'Freedom Refined Sunflower Oil 1 L pouch. Rich in Vitamin E, low absorption.', measureUnit: 'Liter', unitValue: 1, skuWeight: 920, unitsPerCase: 16, sellingUnits: [1, 4, 16], dimensionsCm: [20, 14, 6], categoryId: 'Edible Oil' },
+  'FRD-GNT-1L': { groupName: 'Freedom Groundnut Oil', shortDescription: 'Double filtered groundnut oil with natural flavour.', longDescription: 'Freedom Double Filtered Groundnut Oil 1 L pouch for frying and tempering.', measureUnit: 'Liter', unitValue: 1, skuWeight: 920, unitsPerCase: 16, sellingUnits: [1, 4, 16], dimensionsCm: [20, 14, 6], categoryId: 'Edible Oil' },
+  'FTN-SOY-1L': { groupName: 'Fortune Soya Oil', shortDescription: 'Refined soyabean oil with omega 3 and 6.', longDescription: 'Fortune Soya Health Refined Soyabean Oil 1 L pouch.', measureUnit: 'Liter', unitValue: 1, skuWeight: 920, unitsPerCase: 16, sellingUnits: [1, 4, 16], dimensionsCm: [20, 14, 6], categoryId: 'Edible Oil' },
+  'ASV-GHE-1L': { groupName: 'Aashirvaad Ghee', shortDescription: 'Pure cow ghee with rich aroma and granular texture.', longDescription: 'Aashirvaad Svasti Pure Cow Ghee 1 L carton.', measureUnit: 'Liter', unitValue: 1, skuWeight: 910, unitsPerCase: 12, dimensionsCm: [10, 10, 18], categoryId: 'Ghee & Vanaspati' },
+  'ASV-ATA-5K': { groupName: 'Aashirvaad Atta', shortDescription: 'Whole wheat chakki atta for soft rotis.', longDescription: 'Aashirvaad Shudh Chakki Atta 5 kg, 100% whole wheat, 0% maida.', measureUnit: 'Kilogram', unitValue: 5, weightMeasure: 'Kilogram', skuWeight: 5, unitsPerCase: 4, sellingUnits: [1, 2, 4], dimensionsCm: [36, 24, 10], categoryId: 'Atta, Flours & Sooji' },
+  'ASV-MLT-5K': { groupName: 'Aashirvaad Atta', shortDescription: '', longDescription: "Aashirvaad Nature's Super Foods Multigrain Atta 5 kg.", measureUnit: 'Kilogram', unitValue: 5, weightMeasure: 'Kilogram', skuWeight: 5, unitsPerCase: 4, sellingUnits: [1, 2, 4], dimensionsCm: [36, 24, 10], categoryId: 'Atta, Flours & Sooji', images: 0 },
+  'TTA-SLT-1K': { groupName: 'Tata Salt', shortDescription: 'Vacuum evaporated iodised salt.', longDescription: 'Tata Salt Iodised 1 kg pouch, desh ka namak.', measureUnit: 'Kilogram', unitValue: 1, weightMeasure: 'Kilogram', skuWeight: 1, unitsPerCase: 25, sellingUnits: [1, 5, 25], dimensionsCm: [18, 12, 5], categoryId: 'Salt, Sugar & Jaggery' },
+  'TTA-TEA-500': { groupName: 'Tata Tea', shortDescription: 'Premium Assam leaf tea with 15% long leaves.', longDescription: 'Tata Tea Gold 500 g pack, rich taste and aroma.', measureUnit: 'Gram', unitValue: 500, skuWeight: 500, unitsPerCase: 24, sellingUnits: [1, 6, 24], dimensionsCm: [16, 10, 6], categoryId: 'Tea' },
+  'HUL-SRF-1K': { groupName: 'Surf Excel', shortDescription: 'Quick wash detergent powder that removes tough stains.', longDescription: 'Surf Excel Quick Wash Detergent Powder 1 kg.', measureUnit: 'Kilogram', unitValue: 1, weightMeasure: 'Kilogram', skuWeight: 1, unitsPerCase: 24, sellingUnits: [1, 6, 24], dimensionsCm: [22, 15, 6], categoryId: 'Detergents & Dishwash' },
+  'NES-MAG-70': { groupName: 'Maggi Noodles', shortDescription: '2-minute masala instant noodles.', longDescription: 'Maggi 2-Minute Masala Noodles 70 g, pack of 12.', measureUnit: 'Gram', unitValue: 70, skuWeight: 840, innerPack: 12, unitsPerCase: 8, sellingUnits: [1, 4, 8], dimensionsCm: [30, 20, 12], categoryId: 'Noodles, Pasta & Vermicelli' },
+  'PRL-GLU-250': { groupName: 'Parle-G', shortDescription: 'Original glucose biscuits.', longDescription: 'Parle-G Original Glucose Biscuits 250 g family pack.', measureUnit: 'Gram', unitValue: 250, skuWeight: 250, unitsPerCase: 48, sellingUnits: [1, 12, 48], dimensionsCm: [18, 6, 5], categoryId: 'Biscuits & Cookies' },
+  'ITC-MAR-250': { groupName: 'Sunfeast Biscuits', shortDescription: 'Light and crispy Marie biscuits.', longDescription: 'Sunfeast Marie Light Biscuits 250 g pack.', measureUnit: 'Gram', unitValue: 250, skuWeight: 250, unitsPerCase: 48, sellingUnits: [1, 12, 48], dimensionsCm: [18, 6, 5], categoryId: 'Biscuits & Cookies' },
+  'ITC-BNG-FP': { groupName: 'Bingo Snacks', shortDescription: 'Tomato flavoured crunchy chips.', longDescription: 'Bingo Mad Angles Tomato Madness family pack.', measureUnit: 'Gram', unitValue: 130, skuWeight: 130, unitsPerCase: 36, sellingUnits: [1, 12, 36], dimensionsCm: [30, 20, 6], categoryId: 'Chips & Corn Snacks' },
+  'AML-BTR-500': { groupName: 'Amul Butter', shortDescription: 'Pasteurised salted table butter.', longDescription: 'Amul Pasteurised Salted Butter 500 g carton. Keep refrigerated.', measureUnit: 'Gram', unitValue: 500, skuWeight: 500, unitsPerCase: 20, sellingUnits: [1, 5, 20], dimensionsCm: [14, 7, 6], categoryId: 'Dairy & Cheese', timeToShip: 'Same day' },
+  'ASV-SLT-1K': { groupName: 'Aashirvaad Salt', shortDescription: 'Iodised crystal salt.', longDescription: 'Aashirvaad Iodised Crystal Salt 1 kg pouch.', measureUnit: 'Kilogram', unitValue: 1, weightMeasure: 'Kilogram', skuWeight: 1, unitsPerCase: 25, sellingUnits: [1, 5, 25], dimensionsCm: [18, 12, 5], categoryId: 'Salt, Sugar & Jaggery' },
+  'BRT-GDY-200': { groupName: 'Britannia Good Day', shortDescription: 'Cashew cookies with rich buttery taste.', longDescription: 'Britannia Good Day Cashew Cookies 200 g.', measureUnit: 'Gram', unitValue: 200, skuWeight: 200, unitsPerCase: 48, sellingUnits: [1, 12, 48], dimensionsCm: [17, 6, 5], categoryId: 'Biscuits & Cookies', customerCare: { name: 'Krishna Murthy', email: 'care@saikrishnatraders.in', phone: '' } },
+  'MTR-RSM-200': { groupName: 'MTR Masalas', shortDescription: 'Ready rasam powder with traditional taste.', longDescription: 'MTR Rasam Powder 200 g pouch.', measureUnit: 'Gram', unitValue: 200, skuWeight: 200, unitsPerCase: 40, sellingUnits: [1, 10, 40], dimensionsCm: [16, 11, 3], categoryId: 'Masalas & Spices' },
+};
+
+export const sellerSkus: SellerSku[] = skuRows.map((s) => ({
+  ...s,
+  details: { ...base, manufacturerAddress: MAKERS[s.company] ?? '', ...DETAILS[s.code] } as SellerSkuDetails,
+}));
 
 // ── Customers ──
 const addr = (

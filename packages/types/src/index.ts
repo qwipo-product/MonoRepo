@@ -314,6 +314,31 @@ export interface SellerOrder {
   cancelledAt?: string; // ISO
 }
 
+/** The rest of the portal's product form (My SKU → Product Details), read-only
+ *  on the phone. An empty string = not filled in yet (an ONDC "Required"). */
+export interface SellerSkuDetails {
+  groupName: string;
+  shortDescription: string;
+  longDescription: string;
+  measureUnit: 'Unit' | 'Gram' | 'Kilogram' | 'Liter' | 'Milliliter';
+  unitValue: number;
+  weightMeasure: 'Gram' | 'Kilogram';
+  skuWeight: number;
+  innerPack: number;
+  unitsPerCase: number;
+  sellingUnits: number[];
+  dimensionsCm: [number, number, number]; // length, width, height
+  categoryId: string; // ONDC eB2B taxonomy
+  gstCessPct: number | null;
+  fulfillmentId: string;
+  locationId: string;
+  timeToShip: string;
+  customerCare: { name: string; email: string; phone: string };
+  manufacturerAddress: string;
+  countryOfOrigin: string;
+  images: number; // how many of the 5 allowed
+}
+
 /** One sellable product for one seller (the portal's "My SKU"). Stock is a
  *  yes/no flag in the portal, not a quantity. */
 export interface SellerSku {
@@ -338,6 +363,7 @@ export interface SellerSku {
   /** ONDC fields still empty. Non-empty = "Non-compliant": listed but nobody can buy it. */
   missingFields: string[];
   updatedAt: string; // ISO date
+  details: SellerSkuDetails;
 }
 
 export interface SellerCustomerBeat {
