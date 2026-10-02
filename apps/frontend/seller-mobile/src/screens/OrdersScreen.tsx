@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, ClipboardList, Route, Search, Zap } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Search } from 'lucide-react';
 import { Button, Chip, EmptyState, Input, SegmentedControl } from '@mockups/ui';
 import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerOrder } from '@mockups/types';
+import { DeliveryPanel } from '../components/DeliveryPanel';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { formatDay } from '../format';
 import { liveLines, orderTotal, tabOf, unavailableLines, type OrderTab } from '../orders';
@@ -200,16 +201,11 @@ function OrderCard({
       orderId={order.id}
       status={order.status}
       statusLabel={t(`seller.status.${order.status}`)}
-      meta={
-        <>
-          {order.buyer.area} · {items} {t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')} · {t(`seller.payment.${order.paymentMode}`)}
-          {tab !== 'cancelled' && <BeatLine beatName={order.beatName} />}
-        </>
-      }
+      meta={tab === 'cancelled' ? `${order.buyer.area}, ${order.buyer.city}` : <DeliveryPanel order={order} />}
       total={orderTotal(order)}
-      totalLabel={t('seller.orders.order_value')}
-      rightLabel={tab === 'cancelled' ? undefined : t(tab === 'delivered' ? 'seller.orders.delivered_on' : 'seller.orders.expected_delivery')}
-      rightValue={formatDay(order.deliveryDate)}
+      totalLabel={`${t('seller.orders.order_value')} · ${items} ${t(items === 1 ? 'seller.orders.item' : 'seller.orders.items')}`}
+      rightLabel={t('seller.detail.payment')}
+      rightValue={t(`seller.payment.${order.paymentMode}`)}
       onOpenDetails={onOpen}
       detailsLabel={t('seller.orders.details')}
       onToggleSelect={selecting ? onToggle : undefined}
@@ -248,13 +244,3 @@ function OrderCard({
   );
 }
 
-/* The beat an order rides on — or that it is a quick, next-day delivery. */
-function BeatLine({ beatName }: { beatName: string | null }) {
-  const { t } = useI18n();
-  return (
-    <span className="mt-1 flex items-center gap-1 font-medium text-foreground">
-      {beatName ? <Route size={13} className="text-primary" /> : <Zap size={13} className="text-warning-foreground" />}
-      {beatName ?? t('seller.orders.quick_delivery')}
-    </span>
-  );
-}

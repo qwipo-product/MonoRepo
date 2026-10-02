@@ -282,11 +282,13 @@ export interface SellerOrderLine {
 }
 
 export interface SellerOrderBuyer {
-  storeName: string;
+  storeName: string; // the customer's business name
   ownerName: string;
   mobile: string;
+  address: string; // shop / street line, up to the area
   area: string;
   city: string;
+  pincode: string;
 }
 
 export interface SellerOrder {

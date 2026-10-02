@@ -5,8 +5,9 @@ import { ProductImage, StatusBadge, formatInrExact } from '@mockups/components';
 import { products } from '@mockups/mock-data';
 import { useI18n } from '@mockups/i18n';
 import type { SellerOrder, SellerOrderLine } from '@mockups/types';
+import { DeliveryPanel } from '../components/DeliveryPanel';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { formatDay, formatPlacedAt } from '../format';
+import { formatPlacedAt } from '../format';
 import { liveLines, orderTotal, tabOf } from '../orders';
 import type { OrderAction } from './OrdersScreen';
 
@@ -54,13 +55,16 @@ export function OrderDetailScreen({
           <InlineMessage variant="warning" title={t('seller.detail.unavailable_title')} description={t('seller.detail.unavailable_help')} />
         )}
 
-        {/* Store */}
-        <section className="rounded-lg border border-border bg-card p-3 shadow-sm">
-          <div className="text-sm font-semibold">{order.buyer.storeName}</div>
-          <div className="mt-0.5 text-xs text-foreground-secondary">
-            {order.buyer.ownerName} · {order.buyer.area}, {order.buyer.city}
+        {/* Customer and where the goods go */}
+        <section className="space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+          <div>
+            <div className="text-base font-bold leading-snug">{order.buyer.storeName}</div>
+            <div className="mt-0.5 text-xs text-foreground-secondary">
+              {order.buyer.ownerName} · {order.buyer.mobile}
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <DeliveryPanel order={order} />
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" size="sm" onClick={() => (window.location.href = `tel:${order.buyer.mobile}`)}>
               <Phone size={15} />
               {t('seller.detail.call')}
@@ -72,13 +76,7 @@ export function OrderDetailScreen({
           </div>
         </section>
 
-        {/* Delivery + payment */}
-        <section className="grid grid-cols-2 gap-x-2 gap-y-3 rounded-lg border border-border bg-card p-3 text-xs shadow-sm">
-          <Fact label={t('seller.detail.beat')} value={order.beatName ?? t('seller.orders.quick_delivery')} />
-          <Fact
-            label={t(tab === 'delivered' ? 'seller.orders.delivered_on' : 'seller.orders.expected_delivery')}
-            value={formatDay(order.deliveryDate)}
-          />
+        <section className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-card p-3 text-xs shadow-sm">
           <Fact label={t('seller.detail.placed')} value={formatPlacedAt(order.placedAt)} />
           <Fact label={t('seller.detail.payment')} value={t(`seller.payment.${order.paymentMode}`)} />
         </section>
@@ -100,7 +98,7 @@ export function OrderDetailScreen({
                     <div className="text-xs text-foreground-secondary">
                       {l.pack} · {formatInrExact(l.price)} {t('seller.detail.each')}
                     </div>
-                    {unavailable && (
+                    {unavailable && !editable && (
                       <Badge variant="warning" className="mt-1">
                         {t('seller.detail.not_available')}
                       </Badge>
@@ -114,10 +112,15 @@ export function OrderDetailScreen({
                         </button>
                       </div>
                     )}
+                    {/* Same row shape as an available item: the badge where the
+                        stepper would be, Remove in the same place. */}
                     {editable && unavailable && (
-                      <Button variant="secondary" size="sm" className="mt-2" onClick={() => setLine(l.id, { status: 'CANCELLED' })}>
-                        {t('seller.detail.remove_item')}
-                      </Button>
+                      <div className="mt-2 flex h-9 items-center justify-between">
+                        <Badge variant="warning">{t('seller.detail.not_available')}</Badge>
+                        <button className="text-sm font-semibold text-error-foreground" onClick={() => setLine(l.id, { status: 'CANCELLED' })}>
+                          {t('seller.detail.remove')}
+                        </button>
+                      </div>
                     )}
                     {editable && removed && (
                       <button
