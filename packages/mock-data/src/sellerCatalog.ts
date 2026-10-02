@@ -7,6 +7,8 @@ import { products } from './mockData';
 import type { SellerAccount, SellerCustomer, SellerCustomerAddress, SellerScheme, SellerSku, SellerSkuDetails } from '@mockups/types';
 
 // ── The seller logins ──
+// One seller for this login, so sign-in goes straight to Home (the portal
+// auto-selects a single membership). Add a second to show "Choose a seller".
 export const sellerAccounts: SellerAccount[] = [
   {
     id: 'SLR-10482',
@@ -18,17 +20,6 @@ export const sellerAccounts: SellerAccount[] = [
     phone: '9900000002',
     hasLogistics: true,
     hasDarkStore: true,
-  },
-  {
-    id: 'SLR-10517',
-    name: 'Sai Krishna Agencies — Secunderabad',
-    role: 'STAFF',
-    gstId: '36AAKFS4821M2Z4',
-    address: '12-2-30, Rashtrapati Road, Secunderabad 500003',
-    contactName: 'Krishna Murthy',
-    phone: '9900000002',
-    hasLogistics: false,
-    hasDarkStore: false,
   },
 ];
 

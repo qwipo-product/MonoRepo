@@ -34,7 +34,7 @@ New and Confirmed filter by delivery day, as in the portal.
 
 | Area | Pages |
 | --- | --- |
-| Sign in | Login (mobile, Send OTP) → OTP (6 digits, **123456**) → Choose seller |
+| Sign in | Login (mobile, Send OTP) → OTP (6 digits, **123456**) → Home. One seller per login in the demo, so no "Choose a seller" (it appears only with 2+) |
 | Home | New orders to confirm, coming deliveries by day and beat, products that can't sell |
 | Orders | Tabs, search, delivery-day filter, Confirm / Cancel / Mark delivered — one or many; order page with item edits |
 | Products | Row: In stock switch + quick Price and Offer sheets; bulk In/Out of stock, Show/Hide, price by %; product page with every portal field in its sections, photo preview, and Edit product (all fields, photo upload from camera or gallery) |
