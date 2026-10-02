@@ -12,5 +12,7 @@ export { ProductImage, isProductPhoto, type ProductImageProps } from './ProductI
 export { ProductCard, type ProductCardProps, type PackPill } from './ProductCard';
 export { QtyPill, type QtyPillProps } from './QtyPill';
 export { AuthShell, AuthBrand, Field, SelectField, controlClass } from './formbits';
+export { PhoneLogin } from './PhoneLogin';
+export { OtpVerify } from './OtpVerify';
 export { OrderListCard, type OrderListCardProps } from './OrderListCard';
 export { RankedRow, Columns, StackBar, HBars, Stat } from './charts';

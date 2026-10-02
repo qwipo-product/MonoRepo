@@ -19,18 +19,22 @@ export function OrdersScreen({
   orders,
   tab,
   onTabChange,
+  day,
+  onDayChange,
   onOpen,
   onAction,
 }: {
   orders: SellerOrder[];
   tab: OrderTab;
   onTabChange: (tab: OrderTab) => void;
+  /** Delivery-day filter — held by App so Home can open Orders on a day. */
+  day: string | null;
+  onDayChange: (day: string | null) => void;
   onOpen: (id: string) => void;
   onAction: (action: OrderAction, orders: SellerOrder[]) => void;
 }) {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
-  const [day, setDay] = useState<string | null>(null);
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
@@ -86,7 +90,7 @@ export function OrdersScreen({
           value={tab}
           onChange={(v) => {
             onTabChange(v);
-            setDay(null);
+            onDayChange(null);
             stopSelecting();
           }}
           options={(['new', 'confirmed', 'delivered', 'cancelled'] as const).map((k) => ({
@@ -106,11 +110,11 @@ export function OrdersScreen({
         </label>
         {byDay && days.length > 1 && (
           <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3">
-            <Chip selected={!day} onClick={() => setDay(null)}>
+            <Chip selected={!day} onClick={() => onDayChange(null)}>
               {t('seller.orders.all_days')} ({inTab.length})
             </Chip>
             {days.map((d) => (
-              <Chip key={d} selected={day === d} onClick={() => setDay(d)}>
+              <Chip key={d} selected={day === d} onClick={() => onDayChange(d)}>
                 {formatDay(d)} ({inTab.filter((o) => o.deliveryDate === d).length})
               </Chip>
             ))}

@@ -83,7 +83,7 @@ export const sellerCustomers: SellerCustomer[] = [
     customerId: 'CUS-200367', storeName: 'Venkateswara Super Market', ownerName: 'Padma Reddy', mobile: '9866034567', email: 'venkateswara.dsnr@gmail.com', gstn: '36AJRPR7712L1Z9',
     addresses: [addr('Plot 18, Chaitanyapuri Main Road', 'Dilsukhnagar', '500060', [
       { company: 'Adani Wilmar', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday'] },
-      { company: 'Tata Consumer Products', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday', 'Friday'] },
+      { company: 'Tata Consumer Products', beat: 'Dilsukhnagar Tuesday Beat', days: ['Tuesday'] },
     ])],
     companies: [
       { name: 'Adani Wilmar', registeredOn: '2026-01-08', status: 'ACTIVE' },
