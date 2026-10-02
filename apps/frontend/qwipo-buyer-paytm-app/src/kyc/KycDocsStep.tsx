@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Camera, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
-import { Field, SelectField, controlClass } from '../components/formbits';
+import { Field, SelectField, controlClass } from '@mockups/components';
 import { IdCardArt, PinMapArt, ShopPhotoArt } from './KycArt';
 import { ActionButton, AiAlert, DeleteConfirm, Mark, Verdict } from './kycBits';
 import {

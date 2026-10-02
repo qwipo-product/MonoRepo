@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button, FieldError, Input } from '@mockups/ui';
-import { Field } from '../components/formbits';
+import { Field } from '@mockups/components';
 import { formatPlace, suggestedLines, type Place } from '../data/places';
 import type { Address } from '../data/addresses';
 

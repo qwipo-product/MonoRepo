@@ -11,5 +11,6 @@ export { PriceLabel, formatInr, formatInrExact, type PriceLabelProps } from './P
 export { ProductImage, isProductPhoto, type ProductImageProps } from './ProductImage';
 export { ProductCard, type ProductCardProps, type PackPill } from './ProductCard';
 export { QtyPill, type QtyPillProps } from './QtyPill';
+export { AuthShell, AuthBrand, Field, SelectField, controlClass } from './formbits';
 export { OrderListCard, type OrderListCardProps } from './OrderListCard';
 export { RankedRow, Columns, StackBar, HBars, Stat } from './charts';

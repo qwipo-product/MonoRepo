@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, FieldError } from '@mockups/ui';
-import { AuthShell } from '../../components/formbits';
+import { AuthShell } from '@mockups/components';
 
 /* OTP verification. 123456 is the happy path; any other code fails.
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@mockups/ui';
-import { Field, controlClass } from '../../components/formbits';
+import { Field, controlClass } from '@mockups/components';
 import { BusinessTypeField } from '../../components/BusinessTypeField';
 import { KycDocsStep } from '../../kyc/KycDocsStep';
 import type { KycFlow } from '../../kyc/useKycFlow';

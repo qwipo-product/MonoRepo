@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Sheet, cn } from '@mockups/ui';
-import { Field, controlClass } from './formbits';
+import { Field, controlClass } from '@mockups/components';
 import { BUSINESS_TYPES } from '../data/businessTypes';
 
 function BtIcon({ paths }: { paths: string[] }) {

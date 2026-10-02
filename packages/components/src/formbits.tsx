@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { ChevronDown, Check, ChevronLeft } from 'lucide-react';
 import { Sheet, useTheme, cn } from '@mockups/ui';
 
-/* AuthShell — the shared frame for Login and OTP Verification.
+/* AuthShell — the shared frame for Login and OTP Verification, in the buyer
+   and seller apps alike. AuthBrand reads /brand/*.svg from the app's own
+   public/ folder, so an app using it ships those three files.
 
    Both screens must line up pixel for pixel: same logo position, same heading,
    subheading, field row and primary button. They drifted when each owned its
