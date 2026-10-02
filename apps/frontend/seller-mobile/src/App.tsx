@@ -23,6 +23,7 @@ import { StoreSettingsScreen } from './screens/StoreSettingsScreen';
 import { SupportScreen } from './screens/SupportScreen';
 import { CancelSheet, ConfirmSheet, DeliverSheet } from './sheets/OrderActionSheets';
 import { PriceEditSheet } from './sheets/PriceEditSheet';
+import { OfferSheet } from './sheets/OfferSheet';
 
 type Tab = 'home' | 'orders' | 'products' | 'customers' | 'more';
 type Page =
@@ -62,6 +63,7 @@ export default function App() {
   const [productFilter, setProductFilter] = useState<ProductFilter>('all');
   const [sheet, setSheet] = useState<{ action: OrderAction; orders: SellerOrder[] } | null>(null);
   const [priceCode, setPriceCode] = useState<string | null>(null);
+  const [offerCode, setOfferCode] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const page = stack[stack.length - 1];
@@ -239,6 +241,8 @@ export default function App() {
             filter={productFilter}
             onFilterChange={setProductFilter}
             onOpen={(code) => push({ kind: 'product', code })}
+            onEditPrice={setPriceCode}
+            onOffer={setOfferCode}
             onToast={setToast}
           />
         );
@@ -258,6 +262,7 @@ export default function App() {
   };
 
   const priceSku = priceCode ? catalog.skus.find((s) => s.code === priceCode) ?? null : null;
+  const offerSku = offerCode ? catalog.skus.find((s) => s.code === offerCode) ?? null : null;
 
   return (
     <div className="grid min-h-dvh place-items-center bg-shell p-4">
@@ -312,6 +317,22 @@ export default function App() {
             if (priceSku) catalog.setPrice(priceSku.code, mrp, price);
             setPriceCode(null);
             setToast(t('seller.toast.price_saved'));
+          }}
+        />
+        <OfferSheet
+          sku={offerSku}
+          scheme={offerSku ? schemeFor(offerSku.code) : undefined}
+          schemes={catalog.schemes}
+          onClose={() => setOfferCode(null)}
+          onCreate={(scheme) => {
+            catalog.addScheme(scheme);
+            setOfferCode(null);
+            setToast(t('seller.toast.offer_created'));
+          }}
+          onUpdate={(code, patch) => {
+            catalog.updateScheme(code, patch);
+            setOfferCode(null);
+            setToast(t(patch.status === 'INACTIVE' ? 'seller.quick.offer_paused_toast' : patch.status === 'ACTIVE' ? 'seller.quick.offer_started_toast' : 'seller.quick.offer_saved_toast'));
           }}
         />
         <Toast open={!!toast} variant="success" message={toast} onClose={() => setToast(null)} />

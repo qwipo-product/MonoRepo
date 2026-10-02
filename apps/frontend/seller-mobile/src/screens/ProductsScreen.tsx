@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Check, Package, Search } from 'lucide-react';
+import { Check, IndianRupee, Package, Search, Tag } from 'lucide-react';
 import { Badge, Button, Chip, EmptyState, Input, Sheet, Switch, cn } from '@mockups/ui';
 import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
-import type { SellerSku } from '@mockups/types';
+import type { SellerScheme, SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ProductThumb } from '../components/ProductThumb';
 import { isCompliant, type Catalog } from '../catalog';
@@ -19,20 +19,25 @@ const FILTERS: Record<ProductFilter, (s: SellerSku) => boolean> = {
 
 type BulkChange = 'in' | 'out' | 'active' | 'inactive';
 
-/* Products (the portal's My SKU). Each row has one action — the In stock
-   switch, the everyday change. Price and the rest are on the product page.
-   Select → tick → "Update" changes many products at once. */
+/* Products (the portal's My SKU). Each row's bottom bar holds the three
+   everyday changes: the In stock switch, then quick Price and Offer — each
+   a sheet over the list, so the seller never leaves it. Select → tick →
+   "Update" changes many products at once, price by % included. */
 export function ProductsScreen({
   catalog,
   filter,
   onFilterChange,
   onOpen,
+  onEditPrice,
+  onOffer,
   onToast,
 }: {
   catalog: Catalog;
   filter: ProductFilter;
   onFilterChange: (f: ProductFilter) => void;
   onOpen: (code: string) => void;
+  onEditPrice: (code: string) => void;
+  onOffer: (code: string) => void;
   onToast: (message: string) => void;
 }) {
   const { t } = useI18n();
@@ -40,6 +45,7 @@ export function ProductsScreen({
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [pricePct, setPricePct] = useState('');
 
   const q = query.trim().toLowerCase();
   const shown = catalog.skus.filter(
@@ -59,6 +65,25 @@ export function ProductsScreen({
       else next.add(code);
       return next;
     });
+
+  // Bulk price change: every ticked product's selling price moves by the same
+  // %. A price that would go above its MRP is left alone (the portal's rule).
+  const pct = Number(pricePct);
+  const pctValid = pricePct.trim() !== '' && pricePct !== '-' && Number.isFinite(pct) && pct !== 0 && pct > -100;
+  const pickedSkus = catalog.skus.filter((s) => pickedCodes.includes(s.code));
+  const moved = (price: number) => Math.round(price * (1 + pct / 100) * 100) / 100;
+  const overMrp = pctValid ? pickedSkus.filter((s) => moved(s.price) > s.mrp) : [];
+  const applyPrice = () => {
+    const ok = pickedSkus.filter((s) => !overMrp.includes(s));
+    ok.forEach((s) => catalog.setPrice(s.code, s.mrp, moved(s.price)));
+    setBulkOpen(false);
+    setPricePct('');
+    stopSelecting();
+    onToast(
+      t('seller.quick.bulk_price_done').replace('{n}', String(ok.length)) +
+        (overMrp.length ? ` · ${t('seller.quick.bulk_price_skipped').replace('{n}', String(overMrp.length))}` : '')
+    );
+  };
 
   const applyBulk = (change: BulkChange) => {
     const n = pickedCodes.length;
@@ -123,6 +148,9 @@ export function ProductsScreen({
               selected={picked.has(s.code)}
               onToggle={() => toggle(s.code)}
               onOpen={() => onOpen(s.code)}
+              offer={catalog.schemes.find((x) => x.skuCode === s.code && x.status !== 'EXPIRED')}
+              onEditPrice={() => onEditPrice(s.code)}
+              onOffer={() => onOffer(s.code)}
               onStock={(v) => {
                 catalog.setStock([s.code], v);
                 onToast(t(v ? 'seller.products.now_in' : 'seller.products.now_out'));
@@ -153,6 +181,41 @@ export function ProductsScreen({
             </Button>
           ))}
         </div>
+
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <div className="text-sm font-semibold">{t('seller.quick.bulk_price_title')}</div>
+          <div className="flex flex-wrap gap-2">
+            {['-5', '-2', '+2', '+5'].map((v) => (
+              <Chip key={v} selected={pricePct === v} onClick={() => setPricePct(v)}>
+                {v}%
+              </Chip>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={pricePct}
+              onChange={(e) => setPricePct(e.target.value.replace(/[^\d.+-]/g, ''))}
+              inputMode="decimal"
+              placeholder={t('seller.quick.bulk_price_placeholder')}
+              aria-label={t('seller.quick.bulk_price_title')}
+              className="flex-1"
+            />
+            <Button disabled={!pctValid || overMrp.length === pickedSkus.length} onClick={applyPrice}>
+              {t('seller.quick.bulk_price_apply')}
+            </Button>
+          </div>
+          {pctValid && pickedSkus[0] && (
+            <p className="text-xs text-foreground-secondary">
+              {t('seller.quick.bulk_price_preview')
+                .replace('{name}', pickedSkus[0].name)
+                .replace('{from}', formatInrExact(pickedSkus[0].price))
+                .replace('{to}', formatInrExact(moved(pickedSkus[0].price)))}
+            </p>
+          )}
+          {overMrp.length > 0 && (
+            <p className="text-xs font-medium text-warning-foreground">{t('seller.quick.bulk_price_over_mrp').replace('{n}', String(overMrp.length))}</p>
+          )}
+        </div>
       </Sheet>
     </div>
   );
@@ -164,6 +227,9 @@ function ProductRow({
   selected,
   onToggle,
   onOpen,
+  offer,
+  onEditPrice,
+  onOffer,
   onStock,
 }: {
   sku: SellerSku;
@@ -171,6 +237,9 @@ function ProductRow({
   selected: boolean;
   onToggle: () => void;
   onOpen: () => void;
+  offer?: SellerScheme;
+  onEditPrice: () => void;
+  onOffer: () => void;
   onStock: (inStock: boolean) => void;
 }) {
   const { t } = useI18n();
@@ -214,6 +283,20 @@ function ProductRow({
               {t(sku.inStock ? 'seller.products.in_stock' : 'seller.products.out_of_stock')}
             </span>
           </label>
+          <div className="flex gap-1.5">
+            <Button variant="secondary" size="sm" className="px-2.5" onClick={onEditPrice}>
+              <IndianRupee size={14} />
+              {t('seller.quick.price')}
+            </Button>
+            <Button variant={offer?.status === 'ACTIVE' ? 'soft' : 'secondary'} size="sm" className="px-2.5" onClick={onOffer}>
+              <Tag size={14} />
+              {offer
+                ? offer.status === 'ACTIVE'
+                  ? t('seller.quick.offer_pct').replace('{n}', String(Math.max(...offer.slabs.map((x) => x.discountPct))))
+                  : t('seller.quick.offer_paused')
+                : t('seller.quick.add_offer')}
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -54,6 +54,8 @@ export function useCatalog(empty = false) {
     addScheme: (s: SellerScheme) => setSchemes((prev) => [s, ...prev]),
     setSchemeStatus: (code: string, status: SellerScheme['status']) =>
       setSchemes((prev) => prev.map((s) => (s.code === code ? { ...s, status } : s))),
+    updateScheme: (code: string, patch: Partial<SellerScheme>) =>
+      setSchemes((prev) => prev.map((s) => (s.code === code ? { ...s, ...patch } : s))),
   };
 }
 
