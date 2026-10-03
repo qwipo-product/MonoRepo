@@ -5,14 +5,12 @@ import { OrderListCard } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerCustomer, SellerCustomerCompany, SellerOrder } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { formatDate } from '../format';
 import { InfoBlock, InfoRow } from '../components/InfoBlock';
 import { MobileRow } from '../components/DeliveryPanel';
 import { orderTotal } from '../orders';
 import { customerShareText, shareToWhatsApp } from '../share';
 
-/** "14 Mar 2026" */
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
 const fullAddress = (a: SellerCustomer['addresses'][number]) => `${a.line}, ${a.area}, ${a.city}, ${a.state} ${a.pincode}`;
 
@@ -162,7 +160,7 @@ export function CustomerDetailScreen({
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {s.days.map((d) => (
                             <Badge key={d} variant="info">
-                              {d}
+                              {t(`seller.store.day.${d}`)}
                             </Badge>
                           ))}
                         </div>

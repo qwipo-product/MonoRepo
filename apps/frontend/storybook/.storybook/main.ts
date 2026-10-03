@@ -14,6 +14,8 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-themes'],
   framework: { name: '@storybook/react-vite', options: {} },
+  // The login lockup (AuthBrand) reads /brand/*.svg, as it does in the apps.
+  staticDirs: ['../public'],
   core: { disableTelemetry: true },
   // Deployed-version pill on the manager shell (sidebar/toolbar), the same
   // badge the apps mount in main.tsx. Reads VITE_APP_VERSION at build time.

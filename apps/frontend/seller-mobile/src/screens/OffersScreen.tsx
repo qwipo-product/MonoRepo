@@ -5,6 +5,7 @@ import { formatInrExact } from '@mockups/components';
 import { useI18n } from '@mockups/i18n';
 import type { SellerScheme, SellerSchemeSlab, SellerSchemeStatus, SellerSku } from '@mockups/types';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { formatShortDate } from '../format';
 import { ProductThumb } from '../components/ProductThumb';
 import { SlabTable } from '../components/SlabTable';
 
@@ -17,9 +18,6 @@ const STATUS_VARIANT: Record<SellerSchemeStatus, NonNullable<BadgeProps['variant
   EXPIRED: 'danger',
 };
 
-/** "15 Sep" */
-const shortDate = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
 /* Offers & Schemes — the portal's QPS offers, called "Buy more, save more"
    here. One product per offer. Search by offer code, SKU code or product.
@@ -125,7 +123,7 @@ export function OffersScreen({
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-foreground-secondary">
                   <CalendarDays size={13} />
-                  {t('seller.offers.valid').replace('{from}', shortDate(s.validFrom)).replace('{till}', shortDate(s.validTill))}
+                  {t('seller.offers.valid').replace('{from}', formatShortDate(s.validFrom)).replace('{till}', formatShortDate(s.validTill))}
                 </div>
               </button>
             );
@@ -144,7 +142,7 @@ export function OffersScreen({
         onClose={() => setOpenCode(null)}
         icon={<BadgePercent size={18} />}
         title={openSku?.name ?? open?.code}
-        subtitle={open ? `${open.code} · ${t('seller.offers.valid').replace('{from}', shortDate(open.validFrom)).replace('{till}', shortDate(open.validTill))}` : undefined}
+        subtitle={open ? `${open.code} · ${t('seller.offers.valid').replace('{from}', formatShortDate(open.validFrom)).replace('{till}', formatShortDate(open.validTill))}` : undefined}
         footer={
           open &&
           (open.status === 'EXPIRED' ? (
@@ -179,7 +177,7 @@ export function OffersScreen({
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">{t('seller.offers.validity')}</span>
               <span className="font-semibold">
-                {shortDate(open.validFrom)} → {shortDate(open.validTill)}
+                {formatShortDate(open.validFrom)} → {formatShortDate(open.validTill)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">

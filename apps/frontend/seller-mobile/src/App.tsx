@@ -6,6 +6,7 @@ import { useI18n } from '@mockups/i18n';
 import type { SellerAccount, SellerOrder } from '@mockups/types';
 import { tabOf, useOrders, type OrderTab } from './orders';
 import { useCatalog } from './catalog';
+import { setDateLanguage } from './format';
 import { useStoreSettings } from './store';
 import { NO_SELLER_PHONE, NoSellerScreen, SelectSeller, SellerLogin, SellerOtp } from './screens/AuthScreens';
 import { SessionExpiredScreen } from './screens/SessionExpiredScreen';
@@ -57,7 +58,8 @@ const SKIP_LOGIN = PARAMS.has('in');
 const EXPIRE = PARAMS.has('expire');
 
 export default function App() {
-  const { t, setLang } = useI18n();
+  const { t, lang, setLang } = useI18n();
+  setDateLanguage(lang);
   useEffect(() => {
     if (LANG === 'en' || LANG === 'te' || LANG === 'hi' || LANG === 'ta') setLang(LANG);
   }, [setLang]);
@@ -405,7 +407,7 @@ export default function App() {
             setToast(t(patch.status === 'INACTIVE' ? 'seller.quick.offer_paused_toast' : patch.status === 'ACTIVE' ? 'seller.quick.offer_started_toast' : 'seller.quick.offer_saved_toast'));
           }}
         />
-        <Toast open={!!toast} variant="success" message={toast} onClose={() => setToast(null)} />
+        <Toast open={!!toast} variant="success" message={toast} duration={2500} onClose={() => setToast(null)} />
       </div>
     </div>
   );
