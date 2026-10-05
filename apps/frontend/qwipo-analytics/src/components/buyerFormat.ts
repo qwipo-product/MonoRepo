@@ -20,7 +20,7 @@ export const ago = (d?: Date) => {
 
 export const rangeText = (s: BuyerScope) => `${dmy(s.from)} to ${dmy(s.to)}`;
 export const geoText = (s: BuyerScope) =>
-  [s.state === 'All' ? 'All states' : s.state, s.city !== 'All' && s.city, s.distributor !== 'All' && s.distributor, s.team !== 'All' && `Team ${s.team}`]
+  [s.state === 'All' ? 'All states' : s.state, s.city !== 'All' && s.city, s.sellerType !== 'All' && `${s.sellerType}s`, s.distributor !== 'All' && s.distributor, s.team !== 'All' && `Team ${s.team}`]
     .filter(Boolean).join(' · ');
 
 /** KPI card change vs the previous period: `↑ 8.1%` for amounts, `↑ 2.4 pts` for rates. */

@@ -33,25 +33,37 @@ Table data is a report: it lives under Reports → DigiDukaan · Buyer and
 downloads as Excel. No tables on these three pages; each ends with a hand-off
 card to its report.
 
+**Written for the sales team** (Oct 2026): business people chasing a
+monthly number, not analysts. Their words (sales, orders, shops, new shops,
+target, to go, per day), their periods (today, this week, this month) and
+charts anyone reads — target bars, plain bars, ranked bars, pies. No
+scatters or quadrants. The pages open on **Month to date** because targets
+are monthly.
+
 - **Scope bar** — same chip grammar as the seller ScopeBar: Date, State,
-  City, Distributor, Team, a Filters panel, and one **universal search**
-  (distributor, BA or customer) that opens that entity's drill-down
+  City, **Seller type** (Distributors / Wholesalers — Qwipo is a marketplace
+  and lists both), Seller, Team, a Filters panel, and one **universal
+  search** (seller, salesperson or shop) that opens that entity's drill-down
   dashboard. Shared by all three pages and kept while navigating. KPIs
   compare with the equal-length period just before the range.
-- **Sales dashboard** — five KPIs, value per day / hour / week (beat vs
-  non-beat), Attention, beat vs non-beat by distributor, order status and
-  who cancelled, distributor leaderboard, size × momentum scatter, highest
-  cancellation rate.
-- **BA performance** — team KPIs, target achievement meters for every BA,
-  Attention, teams compared (click = Team filter), "who is best at what"
-  leader cards (revenue, coverage, beat discipline, onboarding, retention,
-  cancellations), coverage × achievement quadrant.
+- **Sales dashboard** — this month's target (achieved, where we should be
+  today, still to go, needed per day vs doing per day); Today / This week /
+  This month cards; five KPIs (sales, orders, shops ordered, new shops, avg
+  order value); sales per day against the daily target; Attention;
+  salesperson leaderboard; top sellers tagged D / W; pies for distributors
+  vs wholesalers, beat visit vs shop self-order, order status; sales by
+  city. With a seller filter on, the target card says why it can't compare.
+- **BA performance** — team KPIs; one salesperson scoreboard that switches
+  between sales vs target, orders, orders today, new shops and shops
+  ordered; Attention; teams compared (click = Team filter); star performers
+  (top 3 per number); new shops per week.
 - **Customers** — base KPIs, the customer journey funnel (onboarded → first
   order → repeat → regular → active), Attention, where customers go quiet by
   city, new outlets per week, top customers, KYC blockers.
 - **Drill-down dashboards** (`src/components/buyerDrill.tsx`) — one entity,
-  cards first: distributor, BA (orders, customers, revenue, onboarding,
-  order status, target, beats, call list) and customer. They stack with
+  cards first: seller, salesperson (today / this week / this month, month
+  target with to-go and needed per day, orders, shops, new shops, order
+  status, beats, call list) and shop. They stack with
   Back; the bottom of every drill is a short record list with a link to the
   full report. Any card, bar, dot, stage or search result opens one.
 

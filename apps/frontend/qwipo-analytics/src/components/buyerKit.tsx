@@ -1,5 +1,5 @@
 // Pieces shared by the DigiDukaan · Buyer pages: the scope bar (same chip
-// grammar as the seller ScopeBar — Date, State, City, Distributor, Team — plus
+// grammar as the seller ScopeBar — Date, State, City, Seller type, Seller, Team — plus
 // one universal search that opens the drill-down dashboard of whatever it
 // finds), its filter panel, the Attention card, a right-side drawer and a toast.
 import { useState } from 'react';
@@ -11,7 +11,7 @@ import { Section, Option } from './filterControls';
 import { dmy, geoText, rangeText } from './buyerFormat';
 import { useBuyerDrill } from './buyerDrillContext';
 import {
-  DEFAULT_SCOPE, FIRST_DAY, TODAY, citiesOf, distributorsIn, leads, presetRange, states,
+  DEFAULT_SCOPE, FIRST_DAY, TODAY, buyerDistributors, citiesOf, distributorsIn, leads, presetRange, states,
   type BuyerScope, type Preset,
 } from '../data/buyer';
 import { previousScope, searchBuyer, type SearchHit } from '../data/buyerMetrics';
@@ -24,13 +24,14 @@ export function BuyerScopeBar() {
   const [open, setOpen] = useState(false);
   const openPanel = () => setOpen(true);
   const prev = previousScope(s);
-  const changed = s.preset !== DEFAULT_SCOPE.preset || s.state !== 'All' || s.city !== 'All' || s.distributor !== 'All' || s.team !== 'All';
+  const changed = s.preset !== DEFAULT_SCOPE.preset || s.state !== 'All' || s.city !== 'All' || s.distributor !== 'All' || s.sellerType !== 'All' || s.team !== 'All';
 
   // A filter with a selection shows its value as a removable chip; otherwise "All (n)".
   const groups: { label: string; value: string; total: number; clear: Partial<BuyerScope> }[] = [
     { label: 'State', value: s.state, total: states.length, clear: { state: 'All', city: 'All', distributor: 'All' } },
     { label: 'City', value: s.city, total: citiesOf(s.state).length, clear: { city: 'All', distributor: 'All' } },
-    { label: 'Distributor', value: s.distributor, total: distributorsIn(s).length, clear: { distributor: 'All' } },
+    { label: 'Seller type', value: s.sellerType === 'All' ? 'All' : `${s.sellerType}s`, total: 2, clear: { sellerType: 'All', distributor: 'All' } },
+    { label: 'Seller', value: s.distributor, total: distributorsIn(s).length, clear: { distributor: 'All' } },
     { label: 'Team', value: s.team, total: leads.length, clear: { team: 'All' } },
   ];
 
@@ -65,7 +66,7 @@ export function BuyerScopeBar() {
 /* ----------------------------- universal search ---------------------------- */
 
 const hitIcon = { distributor: Truck, ba: UserRound, customer: Store } as const;
-const hitGroup = { distributor: 'Distributors', ba: 'Salespersons (BA)', customer: 'Customers' } as const;
+const hitGroup = { distributor: 'Sellers · distributors & wholesalers', ba: 'Salespersons (BA)', customer: 'Shops' } as const;
 
 /** One search for every buyer page: pick a result to open its drill-down dashboard. */
 function UniversalSearch() {
@@ -87,8 +88,8 @@ function UniversalSearch() {
         onFocus={() => setFocus(true)}
         onBlur={() => window.setTimeout(() => setFocus(false), 150)}
         onKeyDown={(e) => { if (e.key === 'Enter' && hits[0]) pick(hits[0]); if (e.key === 'Escape') setQ(''); }}
-        placeholder="Search distributor, BA or customer"
-        aria-label="Search distributor, BA or customer"
+        placeholder="Search seller, salesperson or shop"
+        aria-label="Search seller, salesperson or shop"
         className="h-9 w-72 pl-8"
       />
       {focus && q.trim().length >= 2 && (
@@ -178,15 +179,23 @@ function BuyerFilterPanel({ value, onClose, onApply }: { value: BuyerScope; onCl
               <Option key={x} selected={d.city === x} muted={x === 'All'} onClick={() => set({ city: x, distributor: 'All' })}>{x === 'All' ? `All cities (${citiesOf(d.state).length})` : x}</Option>
             ))}
           </Section>
-          <Section label="Distributor" hint="Narrowed by state and city">
+          <Section label="Seller type" hint="Qwipo lists brand distributors and wholesalers">
+            {(['All', 'Distributor', 'Wholesaler'] as const).map((x) => (
+              <Option key={x} selected={d.sellerType === x} muted={x === 'All'}
+                onClick={() => set({ sellerType: x, distributor: x === 'All' || buyerDistributors.find((b) => b.name === d.distributor)?.type === x ? d.distributor : 'All' })}>
+                {x === 'All' ? 'Distributors and wholesalers' : `${x}s only`}
+              </Option>
+            ))}
+          </Section>
+          <Section label="Seller" hint="Narrowed by state, city and seller type">
             <div className="relative mb-1.5">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-              <Input value={distQ} onChange={(e) => setDistQ(e.target.value)} placeholder="Search distributors" className="h-9 pl-8" />
+              <Input value={distQ} onChange={(e) => setDistQ(e.target.value)} placeholder="Search sellers" className="h-9 pl-8" />
             </div>
-            {!distQ && <Option selected={d.distributor === 'All'} muted onClick={() => set({ distributor: 'All' })}>All distributors ({distributorsIn(d).length})</Option>}
+            {!distQ && <Option selected={d.distributor === 'All'} muted onClick={() => set({ distributor: 'All' })}>All sellers ({distributorsIn(d).length})</Option>}
             {dists.map((x) => (
               <Option key={x.name} selected={d.distributor === x.name} onClick={() => set({ distributor: x.name })}>
-                {x.name}<span className="type-caption ml-1.5 text-foreground-tertiary">{x.city}</span>
+                {x.name}<span className="type-caption ml-1.5 text-foreground-tertiary">{x.city} · {x.type}</span>
               </Option>
             ))}
           </Section>
