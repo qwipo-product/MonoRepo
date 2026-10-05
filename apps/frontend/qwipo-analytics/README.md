@@ -24,28 +24,49 @@ http://localhost:5177
 ### DigiDukaan · Buyer (sales team)
 
 Data from the buyer-app database — Telangana, Maharashtra, Rajasthan.
-Its own scope bar (dd-mm-yyyy range + State / City / Distributor) shared by
-the three pages; one generated world in `src/data/buyer.ts`, so every number
-agrees across pages.
+One generated world in `src/data/buyer.ts` and one set of KPI maths in
+`src/data/buyerMetrics.ts`, so every number agrees across pages and drawers.
 
-- **Sales dashboard** — summary cards, Distributors and customer-wise Orders
-  tables, each with its own Export (CSV).
-- **BA performance** — target vs achievement, coverage, beat share, today's
-  orders, attention tiles; BA drawer with beats and a call list.
-- **Customers** — the outlet database: beat, BA, mapped + discoverable
-  distributors, KYC, Active / Dormant / Never ordered; customer drawer.
+**Dashboards, not reports** (Siva's rule, Oct 2026): a dashboard is for
+making a decision at a glance — KPI cards first, then comparisons as charts.
+Table data is a report: it lives under Reports → DigiDukaan · Buyer and
+downloads as Excel. No tables on these three pages; each ends with a hand-off
+card to its report.
+
+- **Scope bar** — same chip grammar as the seller ScopeBar: Date, State,
+  City, Distributor, Team, a Filters panel, and one **universal search**
+  (distributor, BA or customer) that opens that entity's drill-down
+  dashboard. Shared by all three pages and kept while navigating. KPIs
+  compare with the equal-length period just before the range.
+- **Sales dashboard** — five KPIs, value per day / hour / week (beat vs
+  non-beat), Attention, beat vs non-beat by distributor, order status and
+  who cancelled, distributor leaderboard, size × momentum scatter, highest
+  cancellation rate.
+- **BA performance** — team KPIs, target achievement meters for every BA,
+  Attention, teams compared (click = Team filter), "who is best at what"
+  leader cards (revenue, coverage, beat discipline, onboarding, retention,
+  cancellations), coverage × achievement quadrant.
+- **Customers** — base KPIs, the customer journey funnel (onboarded → first
+  order → repeat → regular → active), Attention, where customers go quiet by
+  city, new outlets per week, top customers, KYC blockers.
+- **Drill-down dashboards** (`src/components/buyerDrill.tsx`) — one entity,
+  cards first: distributor, BA (orders, customers, revenue, onboarding,
+  order status, target, beats, call list) and customer. They stack with
+  Back; the bottom of every drill is a short record list with a link to the
+  full report. Any card, bar, dot, stage or search result opens one.
 
 Reports is split the same way: DigiDukaan · Seller, Ops (Logistics),
 DigiDukaan · Buyer (`#reports/<seller|ops|buyer>`).
 
-### Reports → DigiDukaan · Buyer → Buyer app analytics
+### Buyer app analytics
 
 PostHog-style product-analytics boards for the buyer app (sample data), moved
 in from the retired `buyer-analytics` app and rebuilt on this app's kit.
-Reach it from the sidebar: **Reports → Buyer app analytics** is a dropdown holding
+Its own sidebar group (between DigiDukaan · Buyer and Reports) holding
 Overview, App screens (ten boards), Funnels and Session recordings
-(`#reports/analytics[:<board>]`). Screen: `src/screens/BuyerAppAnalytics.tsx`;
-engine, board definitions and charts in `src/buyerapp/`.
+(`#buyer-analytics[/<board>]`; old `#reports/analytics:<board>` links redirect).
+Screen: `src/screens/BuyerAppAnalytics.tsx`; engine, board definitions and
+charts in `src/buyerapp/`.
 
 - **Overview** — north-star metric, orders per day, four KPIs, key funnels, "what changed".
 - **App screens** — ten boards (Home, Search, Categories/Brands/Distributors,

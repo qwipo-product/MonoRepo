@@ -1,10 +1,12 @@
 // Three data sources, three sidebar groups: DigiDukaan seller side, Ops
 // (logistics) and DigiDukaan buyer side (the sales team's app). Reports
-// mirrors the same split, one section per source.
+// mirrors the same split, one section per source. Buyer app analytics (the
+// app's product-analytics boards) is its own sidebar group and page.
 export type Page =
   | 'overview' | 'sales' | 'distributors' | 'customers'
   | 'lg-today' | 'lg-network' | 'lg-platform'
   | 'buyer-sales' | 'buyer-ba' | 'buyer-customers'
+  | 'buyer-analytics'
   | 'reports';
 
 export type NavItem = { key: Page; label: string; disabled?: string };
@@ -39,5 +41,6 @@ export const titles: Record<Page, string> = {
   overview: 'Overview', sales: 'Sales', distributors: 'Distributors', customers: 'Customers & Onboarding',
   'lg-today': 'Dispatch today', 'lg-network': 'Distributor network', 'lg-platform': 'Platform health',
   'buyer-sales': 'Sales Dashboard', 'buyer-ba': 'BA Performance', 'buyer-customers': 'Customers',
+  'buyer-analytics': 'Buyer App Analytics',
   reports: 'Reports',
 };
