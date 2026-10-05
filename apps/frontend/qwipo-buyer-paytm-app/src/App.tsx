@@ -628,6 +628,7 @@ export default function App() {
             deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
             onOpenSheet={setSheetId}
             onOpenWholesaleSheet={setWholesaleSheetId}
+            sheetOpen={!!sheetProduct || !!wholesaleSheetProduct}
             salesperson={isSalesperson}
           />
         );

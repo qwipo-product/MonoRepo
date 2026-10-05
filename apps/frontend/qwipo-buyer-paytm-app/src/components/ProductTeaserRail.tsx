@@ -48,15 +48,18 @@ function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: (id: str
 export function ProductTeaserRail({
   items,
   onOpen,
+  paused = false,
 }: {
   items: ProductTeaser[];
   /** Tapping a card hands back its product id — the rails open its sheet. */
   onOpen: (id: string) => void;
+  /** True while the add-to-cart sheet one of these cards opened is up. */
+  paused?: boolean;
 }) {
   const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
     items.slice(i * PER_PAGE, i * PER_PAGE + PER_PAGE)
   );
-  const { index, autoplay, fillRef, railProps } = useAutoAdvance(pages.length, ADVANCE_MS);
+  const { index, autoplay, fillRef, railProps } = useAutoAdvance(pages.length, ADVANCE_MS, paused);
 
   return (
     <div>

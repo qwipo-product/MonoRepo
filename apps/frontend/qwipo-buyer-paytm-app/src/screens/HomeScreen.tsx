@@ -40,6 +40,7 @@ export function HomeScreen({
   onNavigate,
   onOpenSheet,
   onOpenWholesaleSheet,
+  sheetOpen = false,
   salesperson = false,
   notice,
 }: {
@@ -58,6 +59,10 @@ export function HomeScreen({
    *  distributor one or the vendor one, depending on the tab it's on. */
   onOpenSheet: (id: string) => void;
   onOpenWholesaleSheet: (id: string) => void;
+  /** True while either add-to-cart sheet is up, so the product rails hold
+   *  still behind it — and for five seconds after it closes, so the card the
+   *  buyer came back to is still where they left it. */
+  sheetOpen?: boolean;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
   salesperson?: boolean;
 }) {
@@ -207,7 +212,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail items={prevOrderedDistributor} onOpen={onOpenSheet} />
+                <ProductTeaserRail items={prevOrderedDistributor} onOpen={onOpenSheet} paused={sheetOpen} />
               </section>
             )}
 
@@ -244,7 +249,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('listing')}
                 />
-                <ProductTeaserRail items={trendingDistributor} onOpen={onOpenSheet} />
+                <ProductTeaserRail items={trendingDistributor} onOpen={onOpenSheet} paused={sheetOpen} />
               </section>
             )}
           </>
@@ -275,7 +280,7 @@ export function HomeScreen({
                   title="Previously Ordered"
                   onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail items={prevOrderedWholesaler} onOpen={onOpenWholesaleSheet} />
+                <ProductTeaserRail items={prevOrderedWholesaler} onOpen={onOpenWholesaleSheet} paused={sheetOpen} />
               </section>
             )}
 
@@ -327,7 +332,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('wholesaler-products')}
                 />
-                <ProductTeaserRail items={trendingWholesaler} onOpen={onOpenWholesaleSheet} />
+                <ProductTeaserRail items={trendingWholesaler} onOpen={onOpenWholesaleSheet} paused={sheetOpen} />
               </section>
             )}
           </>
