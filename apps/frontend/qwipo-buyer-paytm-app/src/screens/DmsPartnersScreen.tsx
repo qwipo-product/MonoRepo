@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Lock, Clock, BadgeCheck, FileSearch, XCircle, MapPin } from 'lucide-react';
-import { DMS_COMPANIES, DMS_DISTRIBUTORS, companyDistributors, type DmsStatus } from '../data/dmsPartners';
-
-/** Which kind of list entry the buyer opened (company vs distributor). */
-export type DmsTab = 'company' | 'distributor';
+import { ChevronLeft, ChevronRight, Lock, Clock, BadgeCheck, FileSearch, XCircle } from 'lucide-react';
+import { DMS_COMPANIES, type DmsStatus } from '../data/dmsPartners';
 
 /** Entry banner pinned on Authorised Distributors — prompts the buyer into the
     Register-to-Order flow for the gated catalogues. */
@@ -21,7 +18,7 @@ export function DmsPromoCard({ onClick }: { onClick: () => void }) {
           Register to order from more distributors
         </span>
         <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">
-          ITC, TCPL, Colgate &amp; Pepsi sell only to registered shops — register once to unlock
+          TCPL, HUL &amp; more sell only to registered shops — register once to unlock
           their catalogues
         </span>
       </span>
@@ -105,22 +102,16 @@ function PartnerCard({
   );
 }
 
-/* Register to Order — one list of gated catalogues:
-   – companies (ITC): register once with the company; its authorised
-     distributors in your area are shown inside;
-   – direct companies (TCPL): no distributor step — straight to "already a
-     customer / new to TCPL";
-   – distributors (Balaji Enterprises): register with their own DMS. */
+/* Register to Order — one list of gated companies. Every company opens the
+   same registration: "already a customer / new to <company>". */
 export function DmsPartnersScreen({
   statuses,
   onBack,
   onOpenCompany,
-  onOpenDistributor,
 }: {
   statuses: Record<string, DmsStatus>;
   onBack: () => void;
   onOpenCompany: (id: string) => void;
-  onOpenDistributor: (id: string) => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -140,49 +131,19 @@ export function DmsPartnersScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-4">
         <p className="rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-foreground-secondary shadow-sm">
-          These companies and distributors sell only to registered shops. Register once, or link
+          These companies sell only to registered shops. Register once, or link
           your existing customer ID, to unlock their full catalogue on Qwipo.
         </p>
 
-        {DMS_COMPANIES.map((c) => {
-          const dists = companyDistributors(c);
-          return (
-            <PartnerCard
-              key={c.id}
-              emoji={c.emoji}
-              title={c.company}
-              meta={
-                c.direct ? (
-                  <>Register directly · {c.products} products</>
-                ) : (
-                  <>
-                    {dists.length} distributor{dists.length > 1 ? 's' : ''} near you · {c.products} products
-                  </>
-                )
-              }
-              status={statuses[c.id] ?? 'none'}
-              chips={c.brands}
-              onClick={() => onOpenCompany(c.id)}
-            />
-          );
-        })}
-
-        {DMS_DISTRIBUTORS.map((d) => (
+        {DMS_COMPANIES.map((c) => (
           <PartnerCard
-            key={d.id}
-            emoji={d.emoji}
-            title={d.name}
-            meta={
-              <>
-                Distributor for {d.serves.join(', ')}
-                <span className="mt-0.5 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" /> {d.distanceKm} km · {d.products} products
-                </span>
-              </>
-            }
-            status={statuses[d.id] ?? 'none'}
-            chips={d.brands}
-            onClick={() => onOpenDistributor(d.id)}
+            key={c.id}
+            emoji={c.emoji}
+            title={c.company}
+            meta={<>Register directly · {c.products} products</>}
+            status={statuses[c.id] ?? 'none'}
+            chips={c.brands}
+            onClick={() => onOpenCompany(c.id)}
           />
         ))}
       </div>

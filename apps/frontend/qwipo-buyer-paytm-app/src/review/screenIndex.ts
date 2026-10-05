@@ -48,8 +48,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'home', label: 'Home Page' },
       { id: 'distributors-list', label: 'Distributors' },
       { id: 'dms-partners', label: 'Distributors · Register to Order' },
-      { id: 'dms-company', label: 'Register · Company (ITC + distributors)' },
-      { id: 'dms-distributor', label: 'Register · Distributor (Balaji Enterprises)' },
       { id: 'dms-register', label: 'Distributors · DMS Registration' },
       { id: 'wholesaler-categories', label: 'Wholesalers' },
       { id: 'wholesaler-groceries', label: 'Wholesalers \u00b7 Groceries' },
