@@ -57,7 +57,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
   return (
     <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-3">
       <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">Last order</div>
+        <div className="text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">Last order</div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
           <Mini label="Date" value={formatDate(reco.lastOrderDate)} />
           <Mini label="Value" value={formatInrExact(reco.lastOrderValue)} />
@@ -65,7 +65,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
         </div>
       </div>
       <div className="space-y-2">
-        <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">Suggested reorder</div>
+        <div className="px-1 text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">Suggested reorder</div>
         {reco.products.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-background-subtle text-xl"><ProductImage image={p.image} alt={p.name} /></span>
@@ -75,7 +75,7 @@ export function RecoPanel({ customerId }: { customerId: string }) {
             </div>
             <div className="text-right">
               <div className="text-sm font-semibold tabular-nums text-foreground">{formatInrExact(p.price)}</div>
-              <div className="text-[11px] text-foreground-secondary line-through tabular-nums">{formatInrExact(p.mrp)}</div>
+              <div className="text-xs text-foreground-secondary line-through tabular-nums">{formatInrExact(p.mrp)}</div>
             </div>
           </div>
         ))}
@@ -96,7 +96,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md bg-background-subtle p-2">
       <div className="text-sm font-semibold text-foreground">{value}</div>
-      <div className="text-[11px] text-foreground-secondary">{label}</div>
+      <div className="text-xs text-foreground-secondary">{label}</div>
     </div>
   );
 }

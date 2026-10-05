@@ -70,13 +70,13 @@ export function PaymentsScreen({
                     v.gateways.map((g) => (
                       <span
                         key={g}
-                        className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground-secondary"
+                        className="rounded-md bg-muted px-2 py-0.5 text-2xs font-medium text-foreground-secondary"
                       >
                         {GATEWAY_LABEL[g]}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[11px] font-medium text-warning-foreground">
+                    <span className="text-xs font-medium text-warning-foreground">
                       No gateways configured
                     </span>
                   )}

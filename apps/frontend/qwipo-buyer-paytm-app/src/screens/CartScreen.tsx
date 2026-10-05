@@ -102,10 +102,10 @@ export function CartScreen({
 
           {/* No blanket warning here: each seller's card now says exactly what
               it is short of, which is the thing the buyer can act on. */}
-          <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+          <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
             <div className="flex items-center justify-between gap-3">
               <div className="leading-tight">
-                <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
+                <div className="text-2xs uppercase tracking-wide text-foreground-secondary">
                   Total Cart Value
                 </div>
                 <div className="text-lg font-bold tabular-nums">{formatInr(grandTotal)}</div>
@@ -260,13 +260,13 @@ function SellerCard({
                       the tag was being sliced. A full-width strip also stops
                       it sitting on top of the product. */}
                   {item.free && (
-                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
                       Free
                     </span>
                   )}
                 </div>
-                <div className="mt-1 text-[11px] text-foreground-secondary">×{item.quantity}</div>
-                <div className="text-[11px] font-medium tabular-nums text-foreground">
+                <div className="mt-1 text-2xs text-foreground-secondary">×{item.quantity}</div>
+                <div className="text-2xs font-medium tabular-nums text-foreground">
                   {formatInr(item.lineTotal)}
                 </div>
               </Tile>
@@ -283,7 +283,7 @@ function SellerCard({
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <span className="text-xs text-foreground-secondary">Delivery by</span>
             {isBeatDay(win) && (
-              <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">
+              <span className="shrink-0 text-xs font-medium text-foreground-secondary">
                 Delivered within 24–48 hrs
               </span>
             )}

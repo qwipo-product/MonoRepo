@@ -195,7 +195,7 @@ export function HomeScreen({
                       imgClassName="p-0 scale-110"
                     />
                     <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
-                    <div className="truncate text-[11px] text-foreground-secondary">{d.name}</div>
+                    <div className="truncate text-xs text-foreground-secondary">{d.name}</div>
                   </button>
                 ))}
               </div>
@@ -263,7 +263,7 @@ export function HomeScreen({
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
                       <img src={encodeURI(c.image)} alt={c.name} className="aspect-[400/268] w-full object-cover" />
                     </span>
-                    <div className="text-center text-sm font-medium">{c.name}</div>
+                    <div className="text-center text-xs text-foreground">{c.name}</div>
                   </button>
                 ))}
               </div>
@@ -381,7 +381,7 @@ function TabButton({
         >
           {label}
         </span>
-        {disabled && <span className="mt-0.5 block text-[10px] text-foreground-tertiary">Coming Soon</span>}
+        {disabled && <span className="mt-0.5 block text-2xs text-foreground-tertiary">Coming Soon</span>}
       </span>
     </button>
   );

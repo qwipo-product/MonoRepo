@@ -90,9 +90,9 @@ function toOrder(o: SpOrder): Order {
 function SummaryCell({ label, count, amount }: { label: string; count: number; amount: number }) {
   return (
     <div className="rounded-md bg-background-subtle p-2.5">
-      <div className="text-[11px] text-foreground-secondary">{label}</div>
+      <div className="text-xs text-foreground-secondary">{label}</div>
       <div className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatInrExact(amount)}</div>
-      <div className="text-[11px] text-foreground-secondary">{count} {count === 1 ? 'customer' : 'customers'}</div>
+      <div className="text-xs text-foreground-secondary">{count} {count === 1 ? 'customer' : 'customers'}</div>
     </div>
   );
 }

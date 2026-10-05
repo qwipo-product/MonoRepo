@@ -36,12 +36,12 @@ export function BottomNav({
           <span className="relative">
             <Icon className="h-5 w-5" />
             {id === 'cart' && cartCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-error px-1 text-[10px] font-semibold text-white">
+              <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-error px-1 text-2xs font-semibold text-white">
                 {cartCount}
               </span>
             )}
           </span>
-          <span className="text-[10px] font-medium">{label}</span>
+          <span className="text-2xs font-medium">{label}</span>
         </button>
       ))}
     </nav>

@@ -41,11 +41,11 @@ export function WholesalerUnitsSheet({
       onClose={onClose}
       icon={<Store size={18} />}
       title="Add to Cart"
-      subtitle="Select the quantity to add to your cart"
+      subtitle="Please select the quantity to add to your cart"
       footer={
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
+            <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">
               Total value
             </div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(sel.price * qty)}</div>
@@ -89,13 +89,13 @@ export function WholesalerUnitsSheet({
           seller above rewrites all three. */}
       <div className="mt-4 flex items-center gap-5 rounded-lg bg-muted p-3">
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
           <div className="text-sm font-medium tabular-nums text-foreground-secondary line-through">
             {formatInr(sel.mrp)}
           </div>
         </div>
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
           <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(sel.price)}</div>
         </div>
         <div className="ml-auto text-sm font-semibold text-success-foreground">{sel.margin}</div>

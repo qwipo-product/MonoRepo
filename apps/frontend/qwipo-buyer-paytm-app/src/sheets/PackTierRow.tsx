@@ -59,7 +59,7 @@ export function PackTierRow({
           </Button>
         )}
         {packs > 0 && (
-          <div className="mt-1 text-center text-[11px] font-medium text-foreground">
+          <div className="mt-1 text-center text-2xs font-medium text-foreground">
             {packs * pcs} pcs
           </div>
         )}

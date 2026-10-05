@@ -123,7 +123,7 @@ export function DeviceSwitcher({
           <RotateCcw size={15} />
         </button>
       </div>
-      <div className="mt-1 px-1 text-[11px] tabular-nums text-foreground-secondary">
+      <div className="mt-1 px-1 text-xs tabular-nums text-foreground-secondary">
         {w} × {h} pt · {orientation}
         {scale < 1 ? ` · fitted to ${Math.round(scale * 100)}%` : ''}
       </div>

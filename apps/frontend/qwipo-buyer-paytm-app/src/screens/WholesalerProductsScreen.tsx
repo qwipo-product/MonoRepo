@@ -113,7 +113,7 @@ export function WholesalerProductsScreen({
         >
           <SlidersHorizontal size={18} />
           {activeFilters > 0 && (
-            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-2xs font-semibold text-primary-foreground">
               {activeFilters}
             </span>
           )}

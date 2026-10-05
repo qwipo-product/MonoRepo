@@ -63,7 +63,7 @@ export function BusinessTypeField({
                   >
                     <BtIcon paths={bt.paths} />
                   </div>
-                  <span className="text-center text-[10px] font-medium leading-tight text-foreground">
+                  <span className="text-center text-2xs font-medium leading-tight text-foreground">
                     {bt.label}
                   </span>
                 </button>
