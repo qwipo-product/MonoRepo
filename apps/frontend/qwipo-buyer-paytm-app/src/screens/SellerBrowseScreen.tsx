@@ -30,8 +30,8 @@ export function SellerBrowseScreen({
   brands,
   sellers = [],
   productListId = 'listing',
-  selfId,
   initialTab,
+  onTabChange,
   onBack,
   onNavigate,
 }: {
@@ -43,17 +43,22 @@ export function SellerBrowseScreen({
   sellers?: Distributor[];
   /** Where a category/brand tap goes (distributor vs wholesaler product list). */
   productListId?: ScreenId;
-  /** This screen's own id — used as the Back target for product-list links. */
-  selfId: ScreenId;
   /** Tab to open on (from a "See all Brands/Categories/Sellers" link). */
   initialTab?: BrowseTab;
+  /** Reports the tab the buyer switched to, so Back can return them to it —
+   *  the screen's own tab state is invisible to the navigator otherwise. */
+  onTabChange?: (t: BrowseTab) => void;
   onBack: () => void;
   onNavigate: Navigate;
 }) {
-  const [tab, setTab] = useState<BrowseTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  const [tab, setTabState] = useState<BrowseTab>(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+  const setTab = (t: BrowseTab) => {
+    setTabState(t);
+    onTabChange?.(t);
+  };
   // Re-sync when a new "See all" link picks a different tab for the same surface.
   useEffect(() => {
-    setTab(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
+    setTabState(initialTab && tabs.includes(initialTab) ? initialTab : tabs[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab]);
   const [query, setQuery] = useState('');
@@ -101,7 +106,9 @@ export function SellerBrowseScreen({
         </div>
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto bg-background-subtle p-4">
+      {/* Keyed by tab: the panel animates in on a switch, and the list
+          starts at the top rather than at the last tab's scroll offset. */}
+      <div key={tab} className="no-scrollbar animate-screen flex-1 overflow-y-auto bg-background-subtle p-4">
         {active.length === 0 ? (
           <EmptyState
             icon={<SearchX strokeWidth={1.75} />}
@@ -117,7 +124,7 @@ export function SellerBrowseScreen({
             {catList.map((c) => (
               <button
                 key={c.id}
-                onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }], backTo: selfId })}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'category', value: c.name }] })}
                 className="flex flex-col gap-2 text-left active:scale-[0.99]"
               >
                 {/* The tile takes its proportions from the shot itself —
@@ -140,7 +147,7 @@ export function SellerBrowseScreen({
                 key={b.id}
                 name={b.name}
                 logo={b.logo}
-                onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }], backTo: selfId })}
+                onClick={() => onNavigate(productListId, { applied: [{ type: 'brand', value: b.name }] })}
               />
             ))}
           </div>
@@ -149,7 +156,7 @@ export function SellerBrowseScreen({
             {sellerList.map((d) => (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
-                  onClick={() => onNavigate('storefront', { backTo: selfId, distributor: d })}
+                  onClick={() => onNavigate('storefront', { distributor: d })}
                   aria-label={`Open ${d.name} storefront`}
                   className="flex w-full items-center gap-3 p-3 text-left active:scale-[0.99]"
                 >
@@ -159,14 +166,15 @@ export function SellerBrowseScreen({
                   <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
                 </button>
-                {/* delivery day(s) + the MOV for each — the same rows the
+                {/* delivery day(s) + the MOV for each — the same quiet rows the
                     product cards carry, from the one delivery source, so a
-                    seller's terms read identically wherever they appear */}
+                    seller's terms read identically wherever they appear. Only
+                    the label is brand-coloured, to head the block. */}
                 <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
-                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
                     Delivery by
                   </div>
-                  {deliveryFooter(d.name, { boxed: true })}
+                  {deliveryFooter(d.name)}
                 </div>
 
                 {/* the seller's brands — scrolls sideways, and each one opens
@@ -186,7 +194,6 @@ export function SellerBrowseScreen({
                             { type: 'brand', value: b.name },
                             { type: 'distributor', value: d.name },
                           ],
-                          backTo: selfId,
                           tab: 'sellers',
                         })
                       }

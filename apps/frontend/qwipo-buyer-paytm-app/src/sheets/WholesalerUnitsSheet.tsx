@@ -58,8 +58,11 @@ export function WholesalerUnitsSheet({
     >
       {/* product header */}
       <div className="flex items-center gap-3">
-        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-3xl ring-2 ring-warning/70">
-          <ProductImage image={product.image} alt={product.name} />
+        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-3xl">
+          {/* Follows the pack the buyer picked, the same as the wholesale card
+              and the distributor sheet — the sheet was holding one picture
+              whichever pack was selected. */}
+          <ProductImage image={product.images?.[activeVariant] ?? product.image} alt={product.name} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">{product.name}</div>
@@ -80,6 +83,23 @@ export function WholesalerUnitsSheet({
         value={sel.id}
         onChange={setVendorId}
       />
+
+      {/* MRP / SP / Margin bar — the same strip the distributor sheet carries.
+          Here the figures are the chosen vendor's, so picking a different
+          seller above rewrites all three. */}
+      <div className="mt-4 flex items-center gap-5 rounded-lg bg-muted p-3">
+        <div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
+          <div className="text-sm font-medium tabular-nums text-foreground-secondary line-through">
+            {formatInr(sel.mrp)}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
+          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(sel.price)}</div>
+        </div>
+        <div className="ml-auto text-sm font-semibold text-success-foreground">{sel.margin}</div>
+      </div>
 
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">

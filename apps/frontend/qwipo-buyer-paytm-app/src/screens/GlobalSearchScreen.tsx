@@ -17,6 +17,7 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { offerNameSuffix } from '../data/coupons';
 import { search, suggest, normalise, SEARCH_CARDS, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
 import type { Navigate } from '../nav';
+import { CartBar } from '../components/CartBar';
 
 /* Global Search — one box, three states.
 
@@ -109,6 +110,10 @@ export function GlobalSearchScreen({
   onOpenWholesaleSheet,
   onOpenGallery,
   onNavigate,
+  onGoToCart,
+  cartCount = 0,
+  cartTotal = 0,
+  cartFreight = 0,
 }: {
   /* Results are the same cards the product lists show, so they need the same
      live state: what's in the cart, and which vendor a wholesale line is on. */
@@ -123,6 +128,10 @@ export function GlobalSearchScreen({
   onOpenWholesaleSheet?: (id: string) => void;
   onOpenGallery?: (id: string) => void;
   onNavigate: Navigate;
+  onGoToCart?: () => void;
+  cartCount?: number;
+  cartTotal?: number;
+  cartFreight?: number;
 }) {
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState<string | null>(null);
@@ -156,7 +165,6 @@ export function GlobalSearchScreen({
     );
     onNavigate(onDistributor ? 'listing' : 'wholesaler-products', {
       applied: [{ type: 'category', value: category }],
-      backTo: 'global-search',
     });
   };
 
@@ -366,7 +374,7 @@ export function GlobalSearchScreen({
                       name={name}
                       logo={BRANDS.find((b) => b.name === name)?.logo}
                       className="w-18 shrink-0"
-                      onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: name }], backTo: 'global-search' })}
+                      onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: name }] })}
                     />
                   ))}
                 </div>
@@ -409,6 +417,12 @@ export function GlobalSearchScreen({
           </div>
         )}
       </div>
+
+      {/* Results only. The opening screen and the suggestions aren't a list of
+          products to add from, so a cart bar there would sit under nothing. */}
+      {submitted !== null && onGoToCart && (
+        <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
+      )}
 
       <DiscountsSheet
         open={!!discountsProductId}

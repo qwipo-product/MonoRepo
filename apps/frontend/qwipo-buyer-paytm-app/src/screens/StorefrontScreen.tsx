@@ -37,7 +37,6 @@ export function StorefrontScreen({
       applied: extra
         ? [{ type: 'distributor', value: distributor.name }, extra]
         : [{ type: 'distributor', value: distributor.name }],
-      backTo: 'storefront',
     });
   return (
     <div className="flex h-full flex-col">
@@ -62,19 +61,12 @@ export function StorefrontScreen({
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background">
         {/* distributor hero */}
         <div className="bg-gradient-to-br from-primary to-primary-active px-4 pb-4 pt-4 text-primary-foreground">
-          <div className="flex items-center gap-3">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-white text-sm font-bold text-primary">
-              {distributor.short}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate text-base font-bold">{distributor.name}</span>
-                <BadgeCheck className="h-4 w-4 shrink-0" />
-              </div>
-              <span className="mt-1 inline-flex items-center rounded-full bg-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                Authorised
-              </span>
-            </div>
+          {/* Just the name. The tile beside it held the distributor's initials
+              standing in for a logo there is no artwork for, and the badge
+              under it repeated the page's own title. */}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-base font-bold">{distributor.name}</span>
+            <BadgeCheck className="h-4 w-4 shrink-0" />
           </div>
 
           {/* delivery days — one cell per option, each with its own MOV (info only) */}

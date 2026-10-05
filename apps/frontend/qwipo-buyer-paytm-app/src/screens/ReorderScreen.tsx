@@ -13,13 +13,16 @@ import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
 import { useEmptyable } from '../review/demoState';
+import { CartBar } from '../components/CartBar';
 
 /* Reorder — the Product List pattern applied to purchase history, in two tabs.
    Distributor and wholesale history are not one list: the two are bought,
    priced and delivered separately, and a wholesale SKU is quoted by several
    vendors, so each tab shows the card its own list shows — the distributor
    card on one side, the vendor card on the other.
-   Root tab screen, so cart lives in the bottom nav — no in-screen cart strip. */
+   A root tab screen, so the cart also sits in the bottom nav — but the nav
+   shows a count and this shows the money, which is the figure that decides
+   whether to keep reordering. */
 
 const brandOf = (name: string) => name.split(' ')[0];
 
@@ -49,6 +52,10 @@ export function ReorderScreen({
   onOpenGallery,
   onSearch,
   onBack,
+  onGoToCart,
+  cartCount,
+  cartTotal,
+  cartFreight,
 }: {
   qty: Record<string, number>;
   /** Wholesale lines keep their own quantities — App.tsx owns both maps. */
@@ -63,6 +70,11 @@ export function ReorderScreen({
   onOpenGallery?: (id: string) => void;
   onSearch?: () => void;
   onBack?: () => void;
+  onGoToCart: () => void;
+  cartCount: number;
+  cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
 }) {
   const [tab, setTab] = useState<Source>(initialTab ?? 'distributor');
   const [variant, setVariant] = useState<Record<string, string>>({});
@@ -141,7 +153,7 @@ export function ReorderScreen({
         </div>
       </div>
 
-      <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
+      <div key={tab} className="no-scrollbar animate-screen flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {count === 0 ? (
           <EmptyState
             icon={<History strokeWidth={1.75} />}
@@ -194,6 +206,8 @@ export function ReorderScreen({
           })
         )}
       </div>
+
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
 
       <FiltersSheet
         open={filterOpen}

@@ -5,17 +5,22 @@
      • default   — Skip + Update Now, X closes it (the reference design)
      • required  — force update: no Skip, no X, the buyer can't dismiss it */
 
+import type { ReactNode } from 'react';
+import { AlertTriangle, MapPin, Package, Search, ShoppingCart, Sparkles } from 'lucide-react';
 import { Button, Sheet } from '@mockups/ui';
 
+/** Version this release note describes — shown as the sheet's subtitle. */
+const VERSION = 'Version 2.4.0 · 12 Aug 2026';
+
 interface Section {
-  icon: string;
+  icon: ReactNode;
   title: string;
   points: string[];
 }
 
 const SECTIONS: Section[] = [
   {
-    icon: '🚀',
+    icon: <Search className="h-4 w-4" />,
     title: 'Smarter Search Experience',
     points: [
       'Faster search results with improved relevance.',
@@ -24,7 +29,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '📍',
+    icon: <MapPin className="h-4 w-4" />,
     title: 'Beat Day–Based Shopping',
     points: [
       'Improved serviceability based on your assigned beat day.',
@@ -33,7 +38,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🛒',
+    icon: <ShoppingCart className="h-4 w-4" />,
     title: 'Better Cart & Checkout',
     points: [
       'Price changes since you added an item are now shown per product.',
@@ -41,7 +46,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '📦',
+    icon: <Package className="h-4 w-4" />,
     title: 'Improved Order Management',
     points: [
       'Track every order from placed to delivered in one view.',
@@ -68,8 +73,15 @@ export function UpdateSheet({
       // A required update must not be dismissible — swallow backdrop taps too.
       onClose={required ? () => {} : onClose}
       showHandle={!required}
-      size="tall"
-      title={required ? '⚠️ Update required' : "🚀 What's new!"}
+      showClose={!required}
+      /* Grows to its content but never past 60% of the phone: a release note
+         is something to glance at over the screen behind it, not a takeover.
+         The body scrolls, so a long list of changes still reaches the end. */
+      className="max-h-[60%]"
+      icon={required ? <AlertTriangle size={18} /> : <Sparkles size={18} />}
+      iconClassName={required ? 'bg-warning-subtle text-warning-foreground' : undefined}
+      title={required ? 'Update required' : "What's new"}
+      subtitle={VERSION}
       footer={
         <div className="flex gap-3">
           {!required && (
@@ -94,11 +106,16 @@ export function UpdateSheet({
       <ul className="mt-2 space-y-4">
         {SECTIONS.map((s) => (
           <li key={s.title}>
-            <div className="flex items-start gap-2 text-sm font-semibold text-foreground">
-              <span aria-hidden>{s.icon}</span>
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <span
+                aria-hidden
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary-soft text-primary-soft-foreground"
+              >
+                {s.icon}
+              </span>
               <span className="min-w-0">{s.title}</span>
             </div>
-            <ul className="mt-1.5 space-y-1.5 pl-6">
+            <ul className="mt-1.5 space-y-1.5 pl-8">
               {s.points.map((p) => (
                 <li
                   key={p}
@@ -112,7 +129,6 @@ export function UpdateSheet({
         ))}
       </ul>
 
-      <p className="mt-5 text-xs text-foreground-secondary">Version 2.4.0 · 12 Aug 2026</p>
     </Sheet>
   );
 }

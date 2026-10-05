@@ -27,7 +27,9 @@ export function BottomNav({
           key={id}
           onClick={() => onNavigate(id)}
           className={cn(
-            'relative flex min-h-14 flex-col items-center justify-center gap-1',
+            // The colour eases rather than snapping, and the tab dips under
+            // the thumb — the only feedback a tap on a flat icon can give.
+            'relative flex min-h-14 flex-col items-center justify-center gap-1 transition-colors active:scale-95',
             active === id ? 'text-primary' : 'text-foreground-secondary'
           )}
         >

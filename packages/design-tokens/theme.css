@@ -325,9 +325,22 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* A screen arriving. Short and small on purpose: enough to show that one
+   screen replaced another, not enough to make a tap feel slow. */
+@keyframes qwipo-screen-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @layer utilities {
   .animate-sheet { animation: qwipo-sheet-in 0.22s cubic-bezier(0, 0, 0.2, 1); }
   .animate-overlay { animation: qwipo-overlay-in 0.2s ease-out; }
+  .animate-screen { animation: qwipo-screen-in 0.18s cubic-bezier(0, 0, 0.2, 1); }
+
+  /* Someone who has asked their system for less motion gets the change
+     without the movement. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-screen { animation: qwipo-overlay-in 0.12s ease-out; }
+  }
 
   /* Scroll without a visible scrollbar (device-like). */
   .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

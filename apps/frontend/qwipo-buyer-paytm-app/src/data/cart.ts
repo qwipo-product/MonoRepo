@@ -61,6 +61,15 @@ export const SELLER_MOW: Record<string, number> = {
  *                         minimum-order-value bar shows on that card
  *   p39 × 20  Tata      Bogo + Freebie ............ qualify
  *                       Case Bonus, Slab, Combo ... short
+ *   p5  ×  4  Karnataka a few bars of soap ........ under both minimums
+ *
+ * The four sellers also cover every combination of the two minimums, so the
+ * cart shows all of them side by side:
+ *
+ *   Sri Sai     ₹6,120 / 53 kg  — clears both ........ no bar
+ *   Omkar       no MOV, 13 kg   — weight only ........ weight bar
+ *   Tata        ₹480 of ₹2,000  — no MOW set ......... value bar
+ *   Karnataka   ₹168 / 0.6 kg   — under both ......... both bars
  *
  * Nothing depends on these being present — clear the cart and every screen
  * still behaves, it just has less to show.
@@ -72,10 +81,41 @@ export const INITIAL_QTY: Record<string, number> = {
   p3: 20,
   p10: 2,
   p39: 20,
+  p5: 4,
 };
 
 export const itemWeight = (item: CartItem): number =>
-  item.quantity * (UNIT_WEIGHT_KG[item.product.id] ?? 0);
+  item.quantity * (UNIT_WEIGHT_KG[item.product.id] ?? item.unitKg ?? 0);
+
+/* Kilos in one selling unit, read off the pack label the buyer picked:
+   "1 Ltr" → 1, "500 ml" → 0.5, "15 Kg" → 15, "250 g" → 0.25. Litres are
+   carried as kilos, which is how freight is charged on oil. A label that
+   isn't a weight ("Set of 6") falls back to the SKU's own unitKg. */
+export function variantKg(label: string): number | undefined {
+  const m = /([\d.]+)\s*(kg|g|ltr|lt|l|ml)\b/i.exec(label);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  switch (m[2].toLowerCase()) {
+    case 'kg':
+      return n;
+    case 'g':
+      return n / 1000;
+    case 'ml':
+      return n / 1000;
+    default:
+      return n; // litres ≈ kilos
+  }
+}
+
+/** "₹2/kg" → 2, "₹1.5/kg" → 1.5, "Free" → 0. */
+export const perKgRate = (fee: string): number => {
+  const m = /([\d.]+)\s*\/\s*kg/i.exec(fee);
+  return m ? Number(m[1]) : 0;
+};
+
+/** What this line costs to carry: rate per kilo × kilos ordered. */
+export const lineFreight = (item: CartItem): number =>
+  (item.freightPerKg ?? 0) * item.quantity * (item.unitKg ?? 0);
 
 /* Price the buyer saw when the item went into the cart, for the lines that have
    since moved. Sellers re-rate stock daily, so a cart left overnight is the
@@ -98,6 +138,12 @@ export interface CartItem {
   priceDelta?: number;
   /** Delta across this whole line (priceDelta × quantity). */
   lineDelta?: number;
+  /* Wholesale freight: what this vendor charges per kilo, and what one unit
+     weighs. Both sit on the line because freight is quoted per kilo and a
+     cart line is the only place that knows how many kilos were ordered.
+     Absent on a distributor line — those deliver on the seller's own terms. */
+  freightPerKg?: number;
+  unitKg?: number;
   /** One entry per percentage scheme (Slab/Combo) currently discounting this
    * line — the cart's answer to "or the discounted amount" for offers that
    * don't pay out in free goods. A line can carry more than one (a SKU can
@@ -131,6 +177,10 @@ export interface CartSeller {
   weightRemaining: number;
   /** Checkout is blocked when below MOV or below MOW. */
   blocked: boolean;
+  /* What this seller charges to carry the order: their per-kilo rate across
+     the kilos ordered. 0 for a distributor, and 0 for a wholesaler who
+     delivers free. */
+  freight: number;
 }
 
 /** Cart-wide summary of what re-rating did to this order. */
@@ -178,6 +228,8 @@ export function buildCart(
 ): {
   sellers: CartSeller[];
   grandTotal: number;
+  /** Delivery across the whole cart — the per-kilo freight every vendor adds. */
+  freightTotal: number;
   totalItems: number;
   anyBelow: boolean;
   priceChanges: PriceChangeSummary;
@@ -187,7 +239,11 @@ export function buildCart(
   // discount the exact line a Slab/Combo applies to.
   const itemByProductId = new Map<string, CartItem>();
 
-  const addItem = (product: Product, quantity: number) => {
+  const addItem = (
+    product: Product,
+    quantity: number,
+    freight?: { freightPerKg: number; unitKg: number }
+  ) => {
     if (quantity <= 0) return;
     const lineTotal = product.price * quantity;
     const was = PRICE_WHEN_ADDED[product.id];
@@ -197,6 +253,7 @@ export function buildCart(
       quantity,
       lineTotal,
       free: false,
+      ...freight,
       priceWhenAdded: was,
       priceDelta,
       lineDelta: priceDelta != null ? priceDelta * quantity : undefined,
@@ -224,7 +281,13 @@ export function buildCart(
     if (!wp) continue;
     const vendorId = wholesaleVendor[wpId] ?? cheapestVendorId(wp);
     const vendor = wp.vendors.find((v) => v.id === vendorId) ?? wp.vendors[0];
-    addItem(wholesaleAsProduct(wp, vendor), quantity);
+    /* Freight travels with the line: the vendor's per-kilo rate from the card
+       the buyer chose, and the kilos in one unit from the pack it's listed
+       at. The cart is where the two meet the quantity. */
+    addItem(wholesaleAsProduct(wp, vendor), quantity, {
+      freightPerKg: perKgRate(vendor.fee),
+      unitKg: wp.unitKg ?? variantKg(wp.variants[0]?.label ?? '') ?? 1,
+    });
   }
 
   /* Schemes are checked against BOTH catalogues. A wholesale line is a cart
@@ -308,6 +371,7 @@ export function buildCart(
       freeDeliveryAt: cfg.freeDeliveryAt,
       status,
       deliveryFee: status === 'paid' ? 30 : 0,
+      freight: items.reduce((n, i) => n + lineFreight(i), 0),
       unlockRemaining: status === 'below' ? cfg.mov - subtotal : 0,
       windows: cfg.windows,
       mow,
@@ -319,6 +383,8 @@ export function buildCart(
   }
 
   const grandTotal = sellers.reduce((s, x) => s + x.subtotal, 0);
+  /** Every seller's freight added up — what the cart costs to deliver. */
+  const freightTotal = sellers.reduce((s, x) => s + x.freight, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.length, 0);
   const anyBelow = sellers.some((s) => s.blocked);
 
@@ -330,5 +396,5 @@ export function buildCart(
     net: moved.reduce((n, i) => n + (i.lineDelta ?? 0), 0),
   };
 
-  return { sellers, grandTotal, totalItems, anyBelow, priceChanges };
+  return { sellers, grandTotal, freightTotal, totalItems, anyBelow, priceChanges };
 }

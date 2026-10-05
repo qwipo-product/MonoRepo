@@ -1,4 +1,5 @@
 import { Bell, User, MapPin, ChevronDown, Search, ClipboardList } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import type { ScreenId } from '../review/screenIndex';
@@ -38,7 +39,10 @@ export function HomeScreen({
   onTabChange,
   onNavigate,
   salesperson = false,
+  notice,
 }: {
+  /** Account-level message above the banners (e.g. KYC Pending). */
+  notice?: ReactNode;
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
   /* Which side the buyer is shopping. App.tsx holds it rather than this
@@ -157,8 +161,13 @@ export function HomeScreen({
       </div>
 
       <div className="mt-4 space-y-6">
+        {notice && <div className="px-4">{notice}</div>}
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
+        {/* Keyed by tab, so switching sides animates in rather than
+            swapping under the thumb. The banner above is outside it and
+            keeps running. */}
+        <div key={effectiveTab} className="animate-screen space-y-6">
         {effectiveTab === 'distributors' ? (
           <>
             <section className="space-y-3">
@@ -167,7 +176,7 @@ export function HomeScreen({
                 {distributors.map((d) => (
                   <button
                     key={d.id}
-                    onClick={() => onNavigate('storefront', { backTo: 'home', distributor: d })}
+                    onClick={() => onNavigate('storefront', { distributor: d })}
                     className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
                   >
                     {/* The plate keeps its own frame inside the card, the way a
@@ -206,7 +215,7 @@ export function HomeScreen({
                   <CategoryTile
                     key={c.id}
                     cat={c}
-                    onClick={() => onNavigate('listing', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'category', value: c.name }] })}
                   />
                 ))}
               </div>
@@ -220,7 +229,7 @@ export function HomeScreen({
                     key={b.id}
                     name={b.name}
                     logo={b.logo}
-                    onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('listing', { applied: [{ type: 'brand', value: b.name }] })}
                   />
                 ))}
               </div>
@@ -230,11 +239,11 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Trending Products"
-                  onSeeAll={() => onNavigate('listing', { backTo: 'home' })}
+                  onSeeAll={() => onNavigate('listing')}
                 />
                 <ProductTeaserRail
                   items={trendingDistributor}
-                  onOpen={() => onNavigate('listing', { backTo: 'home' })}
+                  onOpen={() => onNavigate('listing')}
                 />
               </section>
             )}
@@ -248,7 +257,7 @@ export function HomeScreen({
                 {wholesalerL1.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => onNavigate(L1_SCREEN[c.l1], { backTo: 'home' })}
+                    onClick={() => onNavigate(L1_SCREEN[c.l1])}
                     className="flex flex-col gap-2"
                   >
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
@@ -281,7 +290,7 @@ export function HomeScreen({
                   <OfferCard
                     key={o.id}
                     offer={o}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: o.brand }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: o.brand }] })}
                   />
                 ))}
               </div>
@@ -295,7 +304,7 @@ export function HomeScreen({
                   <CategoryTile
                     key={c.id}
                     cat={c}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'category', value: c.name }] })}
                   />
                 ))}
               </div>
@@ -309,7 +318,7 @@ export function HomeScreen({
                     key={b.id}
                     name={b.name}
                     logo={b.logo}
-                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }], backTo: 'home' })}
+                    onClick={() => onNavigate('wholesaler-products', { applied: [{ type: 'brand', value: b.name }] })}
                   />
                 ))}
               </div>
@@ -319,16 +328,17 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Trending Products"
-                  onSeeAll={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                  onSeeAll={() => onNavigate('wholesaler-products')}
                 />
                 <ProductTeaserRail
                   items={trendingWholesaler}
-                  onOpen={() => onNavigate('wholesaler-products', { backTo: 'home' })}
+                  onOpen={() => onNavigate('wholesaler-products')}
                 />
               </section>
             )}
           </>
         )}
+        </div>
       </div>
 
       <img src="/home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />

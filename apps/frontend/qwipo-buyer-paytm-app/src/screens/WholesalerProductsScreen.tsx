@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
-import { Button, EmptyState } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { EmptyState } from '@mockups/ui';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, minVendorPrice, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
 import { VendorProductCard } from '../components/VendorProductCard';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
-import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { useEmptyable } from '../review/demoState';
+import { CartBar } from '../components/CartBar';
 
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(WHOLESALER_PRODUCTS.map((p) => brandOf(p.name)))];
@@ -35,6 +34,9 @@ export function WholesalerProductsScreen({
   onBack,
   onSearch,
   onGoToCart,
+  cartCount,
+  cartTotal,
+  cartFreight,
   initialSheet = false,
 }: {
   applied?: AppliedFilter[];
@@ -46,6 +48,13 @@ export function WholesalerProductsScreen({
   onBack: () => void;
   onSearch?: () => void;
   onGoToCart: () => void;
+  /* The whole cart, both channels — the bar says "total cart value", and a
+     wholesale-only subtotal would have made it mean something different here
+     than on every other list. */
+  cartCount: number;
+  cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
   initialSheet?: boolean;
 }) {
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
@@ -64,16 +73,23 @@ export function WholesalerProductsScreen({
   }));
   const activeFilters = countActiveFilters(filters);
 
+  /* Same two lines as the distributor list: what was tapped, then what it is.
+     No breadcrumb — it only repeated the heading. */
   const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
-  const trail = applied.length ? ['All products', ...applied.map((a) => a.value)].join(' › ') : '';
+
+  /* A wholesale SKU is quoted by several vendors, so a list almost always
+     spans more than one — but it is read off the list rather than assumed,
+     so a list that happens to carry a single vendor names them. */
+  const vendorNames = Array.from(new Set(products.flatMap((p) => p.vendors.map((v) => v.name))));
+  const subtitle = `${products.length} products · ${
+    vendorNames.length === 1 ? vendorNames[0] : 'multiple vendors'
+  }`;
 
   const vendorFor = (p: WholesalerProduct) => {
     const id = vendorSel[p.id] ?? cheapestVendorId(p);
     return p.vendors.find((v) => v.id === id) ?? p.vendors[0];
   };
 
-  const cartCount = Object.values(qty).reduce((n, x) => n + x, 0);
-  const cartTotal = WHOLESALER_PRODUCTS.reduce((s, p) => s + vendorFor(p).price * (qty[p.id] ?? 0), 0);
 
   const sheetProduct = sheetId ? WHOLESALER_PRODUCTS.find((p) => p.id === sheetId) ?? null : null;
 
@@ -84,12 +100,8 @@ export function WholesalerProductsScreen({
           <ChevronLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          {/* Named after what narrowed it, with the trail underneath — the same
-              as the distributor list, so arriving from search reads alike. */}
           <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
-          <p className="truncate text-xs text-foreground-secondary">
-            {products.length} products · multiple vendors{trail ? ` · ${trail}` : ''}
-          </p>
+          <p className="truncate text-xs text-foreground-secondary">{subtitle}</p>
         </div>
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
@@ -108,8 +120,10 @@ export function WholesalerProductsScreen({
         </button>
       </header>
 
-      <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
-
+      {/* No "Filtered by" chip row: the header above already names the
+          category or brand this list was opened from, so the chip repeated it
+          one line below. The filter still applies, and the Filters sheet still
+          shows what is active. */}
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {products.length === 0 ? (
           <EmptyState
@@ -150,22 +164,7 @@ export function WholesalerProductsScreen({
         onClose={() => setGalleryId(null)}
       />
 
-      {cartCount > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
-              {cartCount} {cartCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
-            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
-              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
-            </div>
-          </div>
-          <Button className="px-8" onClick={onGoToCart}>
-            Go to cart
-          </Button>
-        </div>
-      )}
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
 
       <DiscountsSheet
         open={!!discountsProductId}
