@@ -475,4 +475,3 @@ You can also call one directly: `/brief` before a new idea, `/new-mockup`,
 lands), `/git-doctor` when git surprises you,
 `/share-mockup`, `/deploy-mockup`, `/verify`, `/handoff` when engineering takes
 over. Nothing is done until `verify` has run.
-
