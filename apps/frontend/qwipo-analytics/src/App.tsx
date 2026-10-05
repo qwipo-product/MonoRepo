@@ -12,12 +12,16 @@ import { ALL, type Filters } from './components/filters';
 import { BuyerScopeContext, ScopeContext } from './scope';
 import { DEFAULT_SCOPE, type BuyerScope } from './data/buyer';
 import type { Page } from './nav';
+import BuyerAppAnalytics from './screens/BuyerAppAnalytics';
 import { BuyerAppFiltersProvider } from './buyerapp/filters';
+import { BuyerDrillProvider } from './components/buyerDrill';
 
 // Hash holds the page and an optional drill segment, e.g. #sales/overdue —
 // the URL carries the drill chips so the state can be shared.
 const fromHash = () => {
   const [page, drill] = (location.hash.slice(1) || 'overview').split('/');
+  // Old links: Buyer app analytics used to live under Reports (#reports/analytics:<board>).
+  if (page === 'reports' && drill?.startsWith('analytics')) return { page: 'buyer-analytics' as Page, drill: drill.split(':').slice(1).join(':') };
   return { page: (page || 'overview') as Page, drill };
 };
 
@@ -35,6 +39,7 @@ export default function App() {
   return (
     <ScopeContext.Provider value={{ f: scope, setF: setScope }}>
     <BuyerScopeContext.Provider value={{ s: buyerScope, setS: setBuyerScope }}>
+    <BuyerDrillProvider go={go}>
     <BuyerAppFiltersProvider>
       <Shell page={route.page} drill={route.drill} onNavigate={go}>
         {route.page === 'overview' ? (
@@ -46,11 +51,13 @@ export default function App() {
         ) : route.page === 'customers' ? (
           <Customers go={go} />
         ) : route.page === 'buyer-sales' ? (
-          <BuyerSales />
+          <BuyerSales go={go} />
         ) : route.page === 'buyer-ba' ? (
           <BuyerBA go={go} />
         ) : route.page === 'buyer-customers' ? (
-          <BuyerCustomers key={route.drill ?? ''} drill={route.drill} />
+          <BuyerCustomers go={go} />
+        ) : route.page === 'buyer-analytics' ? (
+          <BuyerAppAnalytics go={go} drill={route.drill} />
         ) : route.page === 'reports' ? (
           <Reports key={route.drill ?? ''} go={go} drill={route.drill} />
         ) : (
@@ -58,6 +65,7 @@ export default function App() {
         )}
       </Shell>
     </BuyerAppFiltersProvider>
+    </BuyerDrillProvider>
     </BuyerScopeContext.Provider>
     </ScopeContext.Provider>
   );

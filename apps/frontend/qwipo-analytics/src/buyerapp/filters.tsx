@@ -1,5 +1,5 @@
 // Filters shared by every Buyer app analytics board. Mounted once in App so
-// they survive moving between boards and the rest of Reports.
+// they survive moving between boards and the rest of the app.
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_FILTERS, model, type Filters } from './engine';
 
