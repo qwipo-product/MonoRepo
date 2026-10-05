@@ -8,6 +8,12 @@
       "port": 5175
     },
     {
+      "name": "qwipo-analytics",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/frontend/qwipo-analytics", "dev"],
+      "port": 5177
+    },
+    {
       "name": "storybook-web",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook-web"],

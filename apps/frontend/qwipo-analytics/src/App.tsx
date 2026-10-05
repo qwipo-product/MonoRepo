@@ -12,6 +12,7 @@ import { ALL, type Filters } from './components/filters';
 import { BuyerScopeContext, ScopeContext } from './scope';
 import { DEFAULT_SCOPE, type BuyerScope } from './data/buyer';
 import type { Page } from './nav';
+import { BuyerAppFiltersProvider } from './buyerapp/filters';
 
 // Hash holds the page and an optional drill segment, e.g. #sales/overdue —
 // the URL carries the drill chips so the state can be shared.
@@ -34,6 +35,7 @@ export default function App() {
   return (
     <ScopeContext.Provider value={{ f: scope, setF: setScope }}>
     <BuyerScopeContext.Provider value={{ s: buyerScope, setS: setBuyerScope }}>
+    <BuyerAppFiltersProvider>
       <Shell page={route.page} drill={route.drill} onNavigate={go}>
         {route.page === 'overview' ? (
           <Overview go={go} />
@@ -55,6 +57,7 @@ export default function App() {
           <div className="grid h-full place-items-center text-sm text-foreground-secondary">{route.page} — not ported yet</div>
         )}
       </Shell>
+    </BuyerAppFiltersProvider>
     </BuyerScopeContext.Provider>
     </ScopeContext.Provider>
   );

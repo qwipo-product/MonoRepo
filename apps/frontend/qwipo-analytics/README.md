@@ -38,6 +38,28 @@ agrees across pages.
 Reports is split the same way: DigiDukaan · Seller, Ops (Logistics),
 DigiDukaan · Buyer (`#reports/<seller|ops|buyer>`).
 
+### Reports → DigiDukaan · Buyer → Buyer app analytics
+
+PostHog-style product-analytics boards for the buyer app (sample data), moved
+in from the retired `buyer-analytics` app and rebuilt on this app's kit.
+Reach it from the sidebar: **Reports → Buyer app analytics** is a dropdown holding
+Overview, App screens (ten boards), Funnels and Session recordings
+(`#reports/analytics[:<board>]`). Screen: `src/screens/BuyerAppAnalytics.tsx`;
+engine, board definitions and charts in `src/buyerapp/`.
+
+- **Overview** — north-star metric, orders per day, four KPIs, key funnels, "what changed".
+- **App screens** — ten boards (Home, Search, Categories/Brands/Distributors,
+  Product List, Cart, Order Summary, Orders, Profile, Onboarding/KYC, Reorder),
+  each opening with one line (“came → did something → left without doing
+  anything”), then 4 headline numbers, then every tracked action as a plain
+  sentence: how many buyers did it, what they did next, how many didn’t carry on.
+- **Funnels** — Purchase, Search, Distributor, Reorder, Onboarding, plus common paths.
+- **Session recordings** — problem counts by page and a list of recordings by buyer ID.
+
+One filter bar shared by every board and kept while navigating: date range
+(7 / 30 / 90 days), State → City picker, Platform, Buyers (new / returning),
+Version. Adding a tracked action means adding a row in `src/buyerapp/boards.ts`.
+
 One app-wide scope bar (Date range, Company, City, Distributor) that
 survives navigation; entity filters live in a right-side panel, the date
 range in its own popover.
