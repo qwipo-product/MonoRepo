@@ -7,16 +7,16 @@ import { Download, FileSpreadsheet, Phone } from 'lucide-react';
 import { Badge, Button, cn, type BadgeProps } from '@mockups/ui';
 import { HBars, StackBar } from '@mockups/components';
 import { Drawer, DrawerSection, useFlash } from './buyerKit';
-import { BeatLegend, TargetMeters, ValueBars } from './buyerCharts';
+import { Bars, TargetBar } from './buyerCharts';
 import { BuyerDrillContext, type DrillItem } from './buyerDrillContext';
 import { ago, dmy, dmyTime, downloadCsv, inr, kpiDelta, lakh, num, pctOf, rangeText } from './buyerFormat';
 import { Delta } from './dashboard';
 import {
-  TODAY, buyerCustomers, buyerDistributors, customerStatus, ordersByCustomer, scopedOrders,
+  buyerCustomers, buyerDistributors, customerStatus, ordersByCustomer, scopedOrders,
   type BuyerCustomer, type BuyerOrder, type CustomerStatus, type Kyc, type OrderStatus,
 } from '../data/buyer';
 import {
-  PACE_LOW, PACE_OK, baStats, buckets, customerStats, distributorStats, summarize, type Summary,
+  PACE_LOW, PACE_OK, baStats, buckets, customerStats, distributorStats, monthPlan, pulse, summarize, type Bucket, type Summary,
 } from '../data/buyerMetrics';
 import { useBuyerScope } from '../scope';
 import type { Page } from '../nav';
@@ -60,7 +60,7 @@ function DrillDrawer({ item, ...p }: DrawerProps & { item: DrillItem }) {
     case 'distributor': return <DistributorDash name={item.name} {...p} />;
     case 'ba': return <BaDash name={item.name} {...p} />;
     case 'customer': return <CustomerDash id={item.id} {...p} />;
-    case 'orders': return <OrdersList title={item.title} where={item.where} {...p} />;
+    case 'orders': return <OrdersList title={item.title} where={item.where} range={item.range} {...p} />;
     case 'customers': return <CustomersList item={item} {...p} />;
     case 'distributors': return <DistributorsList item={item} {...p} />;
     case 'bas': return <BasList item={item} {...p} />;
@@ -133,6 +133,16 @@ function CancelSplit({ s, onSource }: { s: Summary; onSource: (src: 'BA' | 'Dist
   );
 }
 
+/** Sales per day (hour / week) as plain bars; click a bar for its orders. */
+function SalesBars({ orders, scope, onBar, height = 120 }: { orders: BuyerOrder[]; scope: Parameters<typeof buckets>[1]; onBar: (b: Bucket) => void; height?: number }) {
+  const data = buckets(orders, scope);
+  return (
+    <Bars height={height}
+      items={data.map((b) => ({ key: b.title, label: b.label, title: b.title, value: b.beat + b.nonBeat, display: lakh(b.beat + b.nonBeat), note: `${b.orders} orders` }))}
+      onBar={(k) => onBar(data.find((b) => b.title === k)!)} />
+  );
+}
+
 function ReportBtn({ go, report, label }: { go: Go; report: string; label: string }) {
   return <Button variant="secondary" size="sm" onClick={() => go(`reports/run:${report}`)}><FileSpreadsheet size={14} /> {label}</Button>;
 }
@@ -141,11 +151,12 @@ function ReportBtn({ go, report, label }: { go: Go; report: string; label: strin
 
 function DistributorDash({ name, push, onBack, onClose, go }: DrawerProps & { name: string }) {
   const { s: scope } = useBuyerScope();
-  const all = useMemo(() => distributorStats({ ...scope, distributor: 'All' }), [scope]);
+  // Ranked against every seller in the geography, whatever the seller filters say.
+  const all = useMemo(() => distributorStats({ ...scope, distributor: 'All', sellerType: 'All' }), [scope]);
   const ranked = [...all].sort((a, b) => b.s.value - a.s.value);
   const me = all.find((d) => d.name === name);
   const d = me?.d ?? buyerDistributors.find((x) => x.name === name)!;
-  const orders = useMemo(() => scopedOrders({ ...scope, distributor: name }), [scope, name]);
+  const orders = useMemo(() => scopedOrders({ ...scope, distributor: name, sellerType: 'All' }), [scope, name]);
   const s = me?.s ?? summarize(orders);
   const prev = me?.prev;
   const mine = (w: (o: BuyerOrder) => boolean) => (o: BuyerOrder) => o.distributor === name && w(o);
@@ -156,7 +167,7 @@ function DistributorDash({ name, push, onBack, onClose, go }: DrawerProps & { na
   return (
     <Drawer
       width="w-[640px]" onBack={onBack} onClose={onClose}
-      title={<span className="flex items-center gap-2">{name} <Badge variant={s.orders ? 'success' : 'neutral'}>{s.orders ? 'Active' : 'Inactive'}</Badge></span>}
+      title={<span className="flex items-center gap-2">{name} <Badge variant="info">{d.type}</Badge> <Badge variant={s.orders ? 'success' : 'neutral'}>{s.orders ? 'Active' : 'Inactive'}</Badge></span>}
       sub={<>{d.locality}, {d.city}, {d.state} · {me ? `#${ranked.indexOf(me) + 1} of ${ranked.length} by value` : 'outside the current filters'} · {rangeText(scope)}</>}
       footer={<>
         <Button fullWidth size="sm" onClick={() => push({ kind: 'orders', title: `Orders · ${name}`, where: mine(() => true) })}>View {num(s.orders)} orders</Button>
@@ -165,18 +176,17 @@ function DistributorDash({ name, push, onBack, onClose, go }: DrawerProps & { na
     >
       <KpiGrid cells={[
         { label: 'Orders', value: num(s.orders), note: <Change cur={s.orders} prev={prev?.orders} /> },
-        { label: 'Order value', value: lakh(s.value), note: <Change cur={s.value} prev={prev?.value} /> },
+        { label: 'Sales', value: lakh(s.value), note: <Change cur={s.value} prev={prev?.value} /> },
         { label: 'Avg order value', value: inr(s.aov), note: <Change cur={s.aov} prev={prev?.aov} /> },
         { label: 'Beat orders', value: `${s.beatShare.toFixed(0)}%`, note: <>{num(s.beat)} on a planned visit</> },
         { label: 'Cancellation rate', value: `${s.cancelRate.toFixed(1)}%`, tone: s.cancelRate > 20 ? 'error' : undefined, note: <Change cur={s.cancelRate} prev={prev?.cancelRate} mode="pts" inverse />,
           onClick: () => push({ kind: 'orders', title: `Cancelled · ${name}`, where: mine((o) => o.status === 'Cancelled') }) },
-        { label: 'Customers ordering', value: num(s.customers), note: <>of {num(me?.mapped ?? 0)} mapped outlets</> },
+        { label: 'Shops ordered', value: num(s.customers), note: <>{num(me?.mapped ?? 0)} shops mapped to this seller</> },
       ]} />
 
-      <DrawerSection title="Order value · beat vs non-beat" right={<span className="type-caption text-foreground-tertiary">click a bar for its orders</span>}>
-        <ValueBars data={buckets(orders, scope)} height={120}
+      <DrawerSection title="Sales" right={<span className="type-caption text-foreground-tertiary">click a bar for its orders</span>}>
+        <SalesBars orders={orders} scope={scope}
           onBar={(b) => push({ kind: 'orders', title: `${name} · ${b.title}`, where: mine((o) => o.at >= b.from && o.at < b.to) })} />
-        <BeatLegend beat={lakh(orders.filter((o) => o.beat).reduce((a, o) => a + o.value, 0))} nonBeat={lakh(orders.filter((o) => !o.beat).reduce((a, o) => a + o.value, 0))} />
       </DrawerSection>
 
       <DrawerSection title="Order status">
@@ -184,14 +194,14 @@ function DistributorDash({ name, push, onBack, onClose, go }: DrawerProps & { na
         <CancelSplit s={s} onSource={(src) => push({ kind: 'orders', title: `Cancelled by ${src} · ${name}`, where: mine((o) => o.cancelledBy === src) })} />
       </DrawerSection>
 
-      <DrawerSection title="Salespersons bringing the orders" right={<span className="type-caption text-foreground-tertiary">orders · value</span>}>
+      <DrawerSection title="Salespersons bringing the orders" right={<span className="type-caption text-foreground-tertiary">orders · sales</span>}>
         {byBa.length ? (
           <HBars rows={byBa.slice(0, 6).map((r) => ({ label: r.key, n: r.n, value: lakh(r.v), barClass: 'bg-chart-indigo' }))}
             onRow={(l) => push({ kind: 'ba', name: l })} />
         ) : <p className="type-caption text-foreground-secondary">No orders in this range.</p>}
       </DrawerSection>
 
-      <DrawerSection title="Top customers" right={<span className="type-caption text-foreground-tertiary">orders · value</span>}>
+      <DrawerSection title="Top shops" right={<span className="type-caption text-foreground-tertiary">orders · sales</span>}>
         {byCustomer.length ? (
           <HBars rows={byCustomer.slice(0, 6).map((r) => ({ label: custName(r.key), n: r.n, value: lakh(r.v), barClass: 'bg-chart-teal' }))}
             onRow={(l) => push({ kind: 'customer', id: byCustomer.find((r) => custName(r.key) === l)!.key })} />
@@ -227,7 +237,7 @@ function BaDash({ name, push, onBack, onClose, go }: DrawerProps & { name: strin
   if (!r) {
     return (
       <Drawer title={name} sub="Salesperson" onBack={onBack} onClose={onClose}>
-        <p className="type-body px-5 py-6 text-foreground-secondary">{name} has no customers in the current filters — widen State, City or Distributor.</p>
+        <p className="type-body px-5 py-6 text-foreground-secondary">{name} has no shops in the current filters — widen State, City or Seller.</p>
       </Drawer>
     );
   }
@@ -236,14 +246,15 @@ function BaDash({ name, push, onBack, onClose, go }: DrawerProps & { name: strin
   const revive = customers.filter((c) => c.status === 'Dormant').sort((a, b) => a.last!.getTime() - b.last!.getTime());
   const never = customers.filter((c) => c.status === 'Never ordered');
   const kyc = customers.filter((c) => c.c.kyc === 'Pending');
-  const gap = r.target - r.s.value;
   const tone = r.achievement >= PACE_OK ? 'success' : r.achievement >= PACE_LOW ? 'warning' : 'error';
+  const periods = pulse({ ...scope, team: 'All' }, name);
+  const plan = monthPlan({ ...scope, team: 'All' }, name);
 
   return (
     <Drawer
       width="w-[640px]" onBack={onBack} onClose={onClose}
       title={<>{ba.name} <span className="type-caption font-normal text-foreground-secondary">· BA</span></>}
-      sub={<>{ba.city}, {ba.state} · Team {ba.lead} · <span className="tabular-nums">{ba.mobile}</span> · #{ranked.indexOf(r) + 1} of {ranked.length} by value · {rangeText(scope)}</>}
+      sub={<>{ba.city}, {ba.state} · Team {ba.lead} · <span className="tabular-nums">{ba.mobile}</span> · #{ranked.indexOf(r) + 1} of {ranked.length} in sales</>}
       footer={<>
         <Button fullWidth size="sm" onClick={() => {
           downloadCsv(`call_list_${ba.name.replace(/ /g, '-')}_${dmy(scope.to)}.csv`,
@@ -257,28 +268,41 @@ function BaDash({ name, push, onBack, onClose, go }: DrawerProps & { name: strin
       </>}
     >
       {toast}
-      <KpiGrid cells={[
-        { label: 'Revenue', value: lakh(r.s.value), tone, note: <Change cur={r.s.value} prev={r.prevValue} /> },
-        { label: 'Orders', value: num(r.s.orders), note: <>avg {inr(r.s.aov)} per order</>,
-          onClick: () => push({ kind: 'orders', title: `Orders · ${name}`, where: mine(() => true) }) },
-        { label: 'Customers ordered', value: num(r.ordering), note: <>{r.coverage.toFixed(0)}% of {r.customers} customers</>,
-          onClick: () => push({ kind: 'customers', title: `${name} · customers who ordered`, where: (c) => c.c.ba === name && c.orders > 0 }) },
-        { label: 'New onboarded', value: num(r.newCustomers), note: 'outlets joined in the range',
-          onClick: () => push({ kind: 'customers', title: `${name} · new outlets`, where: (c) => c.c.ba === name && c.isNew }) },
-        { label: 'Beat orders', value: `${r.s.beatShare.toFixed(0)}%`, note: <>{num(r.s.beat)} on planned visits</> },
-        { label: `Today · ${dmy(TODAY)}`, value: num(r.today), tone: r.today ? undefined : 'warning', note: r.today ? lakh(r.todayValue) : 'nothing booked yet',
-          onClick: () => push({ kind: 'orders', title: `${name} · today`, where: mine((o) => o.at.toDateString() === TODAY.toDateString()) }) },
-      ]} />
+      <div className="grid grid-cols-3 gap-px border-b border-border-subtle bg-border-subtle">
+        {periods.map((p) => (
+          <div key={p.key} className="bg-card px-5 py-3">
+            <div className="type-caption text-foreground-secondary">{p.label} <span className="text-foreground-tertiary">· {p.sub}</span></div>
+            <div className={cn('type-h2 tabular-nums', p.key === 'today' && !p.s.orders && 'text-warning-foreground')}>{num(p.s.orders)} <span className="type-caption font-normal text-foreground-secondary">orders</span></div>
+            <div className="type-caption text-foreground-secondary"><b className="font-semibold text-foreground">{lakh(p.s.value)}</b> · {num(p.s.customers)} shops · {num(p.newShops)} new</div>
+          </div>
+        ))}
+      </div>
 
-      <DrawerSection title="Target" right={<span className="type-caption text-foreground-tertiary">monthly {lakh(ba.target)} · prorated to the range</span>}>
-        <TargetMeters head={false} rows={[{ key: name, label: 'Achieved', sub: `of ${lakh(r.target)} target`, pct: r.achievement, value: lakh(r.s.value) }]} />
-        <p className={cn('type-caption mt-1.5', gap > 0 ? 'text-warning-foreground' : 'text-success-foreground')}>
-          {gap > 0 ? `${lakh(gap)} short of target for this range` : `${lakh(-gap)} ahead of target`}
+      <DrawerSection title={`${plan.month} target`} right={<span className="type-caption text-foreground-tertiary">day {plan.daysGone} of {plan.daysGone + plan.daysLeft}</span>}>
+        <TargetBar achieved={plan.achieved} target={plan.target} expected={plan.expected}
+          achievedText={lakh(plan.achieved)} targetText={lakh(plan.target)} expectedText={lakh(plan.expected)} />
+        <p className={cn('type-label mt-2', plan.toGo > 0 ? 'text-foreground' : 'text-success-foreground')}>
+          {plan.toGo > 0
+            ? <>{lakh(plan.toGo)} to go · needs {lakh(plan.needPerDay)} a day for the last {plan.daysLeft} days <span className="type-caption font-normal text-foreground-secondary">(doing {lakh(plan.perDay)} a day)</span></>
+            : <>Target met · {lakh(plan.achieved - plan.target)} ahead</>}
         </p>
       </DrawerSection>
 
-      <DrawerSection title="Revenue · beat vs non-beat">
-        <ValueBars data={buckets(orders, scope)} height={110}
+      <KpiGrid cells={[
+        { label: 'Sales', value: lakh(r.s.value), tone, note: <Change cur={r.s.value} prev={r.prevValue} /> },
+        { label: 'Orders', value: num(r.s.orders), note: <>avg {inr(r.s.aov)} per order</>,
+          onClick: () => push({ kind: 'orders', title: `Orders · ${name}`, where: mine(() => true) }) },
+        { label: 'Shops ordered', value: num(r.ordering), note: <>of {r.customers} shops on the beat</>,
+          onClick: () => push({ kind: 'customers', title: `${name} · shops that ordered`, where: (c) => c.c.ba === name && c.orders > 0 }) },
+        { label: 'New shops onboarded', value: num(r.newCustomers), note: `${kyc.length} still KYC pending`,
+          onClick: () => push({ kind: 'customers', title: `${name} · new shops`, where: (c) => c.c.ba === name && c.isNew }) },
+        { label: 'Beat orders', value: `${r.s.beatShare.toFixed(0)}%`, note: <>{num(r.s.beat)} taken on beat visits</> },
+        { label: 'Cancelled', value: num(r.s.cancelled), tone: r.s.cBA ? 'error' : undefined, note: <>{r.s.cBA} cancelled by {ba.name.split(' ')[0]}</>,
+          onClick: () => push({ kind: 'orders', title: `${name} · cancelled`, where: mine((o) => o.status === 'Cancelled') }) },
+      ]} />
+
+      <DrawerSection title="Sales per day" right={<span className="type-caption text-foreground-tertiary">{rangeText(scope)}</span>}>
+        <SalesBars orders={orders} scope={scope} height={110}
           onBar={(b) => push({ kind: 'orders', title: `${name} · ${b.title}`, where: mine((o) => o.at >= b.from && o.at < b.to) })} />
       </DrawerSection>
 
@@ -286,7 +310,7 @@ function BaDash({ name, push, onBack, onClose, go }: DrawerProps & { name: strin
         <StatusSplit s={r.s} onStatus={(st) => push({ kind: 'orders', title: `${name} · ${st}`, where: mine((o) => o.status === st) })} />
       </DrawerSection>
 
-      <DrawerSection title="Beats" right={<span className="type-caption text-foreground-tertiary">orders · value · customers ordered</span>}>
+      <DrawerSection title="Beats" right={<span className="type-caption text-foreground-tertiary">orders · sales · shops ordered</span>}>
         <HBars
           rows={ba.beats.map((b) => {
             const os = orders.filter((o) => o.beatName === b.name);
@@ -339,7 +363,7 @@ function CustomerDash({ id, push, onBack, onClose }: DrawerProps & { id: string 
   const c = buyerCustomers.find((x) => x.id === id)!;
   const st = customerStatus(c, scope.to);
   const history = ordersByCustomer.get(c.id) ?? [];
-  const inRange = scopedOrders({ ...scope, state: 'All', city: 'All', distributor: 'All', team: 'All' }).filter((o) => o.customerId === id);
+  const inRange = scopedOrders({ ...scope, state: 'All', city: 'All', distributor: 'All', sellerType: 'All', team: 'All' }).filter((o) => o.customerId === id);
   const s = summarize(inRange);
   const lifetime = history.reduce((a, o) => a + o.value, 0);
   const recent = [...history].reverse().slice(0, 8);
@@ -433,8 +457,10 @@ function OrderLine({ o, onClick }: { o: BuyerOrder; onClick?: () => void }) {
 
 const LIST_MAX = 40;
 
-function OrdersList({ title, where, push, onBack, onClose, go }: DrawerProps & { title: string; where: (o: BuyerOrder) => boolean }) {
-  const { s: scope } = useBuyerScope();
+function OrdersList({ title, where, range, push, onBack, onClose, go }: DrawerProps & { title: string; where: (o: BuyerOrder) => boolean; range?: [Date, Date] }) {
+  const { s: filters } = useBuyerScope();
+  // A fixed period (Today / This week / This month) overrides the date filter; the rest still applies.
+  const scope = useMemo(() => (range ? { ...filters, preset: 'Custom' as const, from: range[0], to: range[1] } : filters), [filters, range]);
   const [st, setSt] = useState<OrderStatus | 'All'>('All');
   const all = useMemo(() => scopedOrders(scope).filter(where).sort((a, b) => b.at.getTime() - a.at.getTime()), [scope, where]);
   const s = summarize(all);

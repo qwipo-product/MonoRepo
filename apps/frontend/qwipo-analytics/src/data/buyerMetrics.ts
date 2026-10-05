@@ -149,11 +149,14 @@ export interface BaStat {
   last?: Date;
 }
 
-/** Target for the range, prorated from the monthly target (from the state's launch at the earliest). */
+/** What is due for the range: the monthly target spread over each day's own month (from the state's launch at the earliest). */
 export const rangeTarget = (ba: BA, s: BuyerScope) => {
-  const from = Math.max(s.from.getTime(), launch[ba.state].getTime());
-  const days = Math.max(0, Math.round((s.to.getTime() - from) / DAY) + 1);
-  return (ba.target * days) / 30;
+  let due = 0;
+  for (let t = Math.max(dayStart(s.from).getTime(), launch[ba.state].getTime()); t <= s.to.getTime(); t += DAY) {
+    const d = new Date(t);
+    due += ba.target / new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  }
+  return due;
 };
 
 export function baStats(scope: BuyerScope): BaStat[] {
@@ -223,6 +226,59 @@ export function customerStats(scope: BuyerScope): CustStat[] {
   });
 }
 
+/* ------------------------- the numbers a sales team chases ------------------------- */
+
+const MONTH_START = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+const DAYS_IN_MONTH = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0).getDate();
+/** Monday of the current week. */
+const WEEK_START = addDays(TODAY, -((TODAY.getDay() + 6) % 7));
+
+export interface Pulse { key: 'today' | 'week' | 'month'; label: string; sub: string; from: Date; s: Summary; newShops: number }
+
+/** Today / This week / This month — fixed periods, whatever the date filter says; geography, seller and team still apply. */
+export function pulse(scope: BuyerScope, onlyBa?: string): Pulse[] {
+  const fmt = (d: Date) => `${d.getDate()} ${d.toLocaleString('en-IN', { month: 'short' })}`;
+  const periods: [Pulse['key'], string, Date][] = [
+    ['today', 'Today', TODAY], ['week', 'This week', WEEK_START], ['month', 'This month', MONTH_START],
+  ];
+  const customers = scopedCustomers(scope).filter((c) => !onlyBa || c.ba === onlyBa);
+  return periods.map(([key, label, from]) => ({
+    key, label, from,
+    sub: key === 'today' ? fmt(TODAY) : `${fmt(from)} – ${fmt(TODAY)}`,
+    s: summarize(scopedOrders({ ...scope, preset: 'Custom', from, to: TODAY }).filter((o) => !onlyBa || o.ba === onlyBa)),
+    newShops: customers.filter((c) => c.onboarded >= from && c.onboarded <= TODAY).length,
+  }));
+}
+
+export interface MonthPlan {
+  month: string; target: number; achieved: number; pct: number;
+  /** where the team should be by today if the month were evenly paced */
+  expected: number;
+  toGo: number; daysGone: number; daysLeft: number;
+  /** ₹ per day so far, and ₹ per day needed for the rest of the month */
+  perDay: number; needPerDay: number;
+}
+
+/** This month's target for the salespersons in scope, against sales so far. */
+export function monthPlan(scope: BuyerScope, onlyBa?: string): MonthPlan {
+  const inScope = new Set(scopedCustomers(scope).map((c) => c.ba));
+  const people = bas.filter((b) => (onlyBa ? b.name === onlyBa : inScope.has(b.name)));
+  const target = people.reduce((a, b) => a + b.target, 0);
+  const names = new Set(people.map((b) => b.name));
+  const achieved = scopedOrders({ ...scope, preset: 'Custom', from: MONTH_START, to: TODAY })
+    .filter((o) => names.has(o.ba)).reduce((a, o) => a + o.value, 0);
+  const daysGone = TODAY.getDate();
+  const daysLeft = DAYS_IN_MONTH - daysGone;
+  return {
+    month: TODAY.toLocaleString('en-IN', { month: 'long' }),
+    target, achieved, pct: target ? (achieved / target) * 100 : 0,
+    expected: (target * daysGone) / DAYS_IN_MONTH,
+    toGo: Math.max(0, target - achieved), daysGone, daysLeft,
+    perDay: achieved / daysGone,
+    needPerDay: daysLeft ? Math.max(0, target - achieved) / daysLeft : 0,
+  };
+}
+
 /* ---------------------------------- search --------------------------------- */
 
 export type SearchHit =
@@ -238,7 +294,7 @@ export function searchBuyer(q: string, scope: BuyerScope): SearchHit[] {
   const dists = distributorsIn(scope)
     .filter((d) => has(d.name, d.locality, d.city))
     .slice(0, 4)
-    .map((d): SearchHit => ({ kind: 'distributor', key: d.name, title: d.name, sub: `${d.locality}, ${d.city}` }));
+    .map((d): SearchHit => ({ kind: 'distributor', key: d.name, title: d.name, sub: `${d.type} · ${d.locality}, ${d.city}` }));
   const customers = scopedCustomers(scope);
   const baNames = new Set(customers.map((c) => c.ba));
   const people = bas

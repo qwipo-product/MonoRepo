@@ -11,7 +11,7 @@ export type DrillItem =
   | { kind: 'ba'; name: string }
   | { kind: 'customer'; id: string }
   /** the orders behind a number — the last level of a drill */
-  | { kind: 'orders'; title: string; where: (o: BuyerOrder) => boolean }
+  | { kind: 'orders'; title: string; where: (o: BuyerOrder) => boolean; range?: [Date, Date] }
   | { kind: 'customers'; title: string; where: (c: CustStat) => boolean; note?: (c: CustStat) => string }
   | { kind: 'distributors'; title: string; where: (d: DistStat) => boolean; note?: (d: DistStat) => string }
   | { kind: 'bas'; title: string; where: (b: BaStat) => boolean; note?: (b: BaStat) => string };

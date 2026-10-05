@@ -1,69 +1,90 @@
-// Chart pieces for the DigiDukaan · Buyer dashboards. Token classes only —
-// beat business is chart-blue, non-beat chart-sky everywhere — and every mark
-// is a drill target. Inline styles carry data geometry and nothing else.
+// Chart pieces for the DigiDukaan · Buyer pages, kept to what a sales team
+// reads without thinking: a target bar, plain bar charts, ranked bars and
+// pies. Token classes only; inline styles carry data geometry and nothing
+// else. Every mark is a drill target.
 import { useState } from 'react';
-import { Card, cn } from '@mockups/ui';
-import { lakh, num } from './buyerFormat';
-import type { Bucket } from '../data/buyerMetrics';
+import { cn } from '@mockups/ui';
 
-export const BEAT_BG = 'bg-chart-blue';
-export const NONBEAT_BG = 'bg-chart-sky';
+const toneBg = { brand: 'bg-chart-blue', success: 'bg-success', warning: 'bg-warning', error: 'bg-error', muted: 'bg-border-strong' } as const;
+export type Tone = keyof typeof toneBg;
 
-export function BeatLegend({ beat, nonBeat }: { beat: string; nonBeat: string }) {
+/** Big progress bar towards a target, with a marker where the team should be by today. */
+export function TargetBar({ achieved, target, expected, achievedText, targetText, expectedText }: {
+  achieved: number; target: number; expected?: number;
+  achievedText: string; targetText: string; expectedText?: string;
+}) {
+  const pct = target ? (achieved / target) * 100 : 0;
+  const pace = expected ? achieved / expected : pct / 100;
+  const tone: Tone = pace >= 1 ? 'success' : pace >= 0.85 ? 'warning' : 'error';
+  const at = (v: number) => `${Math.min(100, target ? (v / target) * 100 : 0)}%`;
   return (
-    <div className="type-caption mt-2 flex gap-4 text-foreground-secondary">
-      <span className="flex items-center gap-1.5"><i className={cn('h-2.5 w-2.5 rounded-sm', BEAT_BG)} />Beat · {beat}</span>
-      <span className="flex items-center gap-1.5"><i className={cn('h-2.5 w-2.5 rounded-sm', NONBEAT_BG)} />Non-beat · {nonBeat}</span>
+    <div>
+      <div className="relative h-5 rounded-full bg-background-sunken">
+        <i className={cn('absolute inset-y-0 left-0 block rounded-full', toneBg[tone])} style={{ width: at(achieved) }} />
+        {expected != null && <i className="absolute -inset-y-1 border-l-2 border-dashed border-foreground" style={{ left: at(expected) }} />}
+      </div>
+      <div className="type-caption relative mt-1.5 flex justify-between text-foreground-secondary">
+        <span><b className="font-semibold text-foreground">{achievedText}</b> achieved · {pct.toFixed(0)}%</span>
+        <span>Target <b className="font-semibold text-foreground">{targetText}</b></span>
+      </div>
+      {expected != null && expectedText && (
+        <div className="type-caption mt-0.5 text-foreground-tertiary">Dashed line = where you should be today ({expectedText})</div>
+      )}
     </div>
   );
 }
 
-/** Stacked value per bucket (beat under non-beat), hover tooltip, click = that bucket's orders. */
-export function ValueBars({ data, onBar, height = 190 }: { data: Bucket[]; onBar?: (b: Bucket) => void; height?: number }) {
+/** Plain vertical bars with a hover tooltip; values on top when there are few bars; optional dashed target line. */
+export function Bars({ items, height = 170, target, onBar, tone = 'brand' }: {
+  items: { key: string; label: string; title?: string; value: number; display: string; note?: string }[];
+  height?: number;
+  /** a per-bar goal, drawn as one dashed line */
+  target?: { value: number; label: string };
+  onBar?: (key: string) => void;
+  tone?: Tone;
+}) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(1, ...data.map((b) => b.beat + b.nonBeat));
-  const every = Math.ceil(data.length / 8);
-  const h = hover === null ? null : data[hover];
+  const max = Math.max(1, target?.value ?? 0, ...items.map((i) => i.value)) * 1.1;
+  const few = items.length <= 12;
+  const every = Math.ceil(items.length / 10);
+  const h = hover === null ? null : items[hover];
   return (
     <div className="relative">
-      {h && (
+      {h && !few && (
         <div
-          className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-3 py-2 shadow-md"
-          style={{ left: `${Math.min(Math.max(((hover! + 0.5) / data.length) * 100, 14), 86)}%` }}
+          className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max(((hover! + 0.5) / items.length) * 100, 12), 88)}%` }}
         >
-          <div className="type-label whitespace-nowrap">{h.title}</div>
-          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
-            <i className={cn('h-2 w-2 rounded-full', BEAT_BG)} /><span>Beat <b className="ml-1 tabular-nums text-foreground">{lakh(h.beat)}</b></span>
-            <i className={cn('h-2 w-2 rounded-full', NONBEAT_BG)} /><span>Non-beat <b className="ml-1 tabular-nums text-foreground">{lakh(h.nonBeat)}</b></span>
-            <span /><span>{num(h.orders)} orders</span>
-          </div>
+          <div className="type-label whitespace-nowrap">{h.title ?? h.label}</div>
+          <div className="type-caption whitespace-nowrap text-foreground-secondary"><b className="text-foreground">{h.display}</b>{h.note && ` · ${h.note}`}</div>
         </div>
       )}
       <div className="relative" style={{ height }}>
-        {[0.5, 1].map((f) => (
-          <div key={f} className="absolute inset-x-0 border-t border-border-subtle" style={{ bottom: `${f * 100}%` }}>
-            <span className="type-micro absolute -top-2 left-0 bg-card pr-1 normal-case tracking-normal text-foreground-tertiary">{lakh(max * f)}</span>
+        {target && (
+          <div className="absolute inset-x-0 z-[1] border-t-2 border-dashed border-foreground/70" style={{ bottom: `${(target.value / max) * 100}%` }}>
+            <span className="type-micro absolute -top-4 right-0 bg-card px-1 normal-case tracking-normal text-foreground">{target.label}</span>
           </div>
-        ))}
-        <div className="absolute inset-0 flex items-end gap-[3px] pl-12">
-          {data.map((b, i) => (
+        )}
+        <div className="absolute inset-0 flex items-end gap-1">
+          {items.map((b, i) => (
             <div
-              key={b.title}
-              className={cn('flex h-full flex-1 flex-col justify-end rounded-sm', onBar && b.orders > 0 && 'cursor-pointer', hover === i && 'bg-muted')}
+              key={b.key}
+              className={cn('flex h-full flex-1 flex-col items-center justify-end gap-1 rounded-t-sm', onBar && 'cursor-pointer', hover === i && 'bg-muted')}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
-              onClick={onBar && b.orders > 0 ? (e) => { e.stopPropagation(); onBar(b); } : undefined}
+              onClick={onBar ? (e) => { e.stopPropagation(); onBar(b.key); } : undefined}
+              title={few ? `${b.title ?? b.label} · ${b.display}${b.note ? ` · ${b.note}` : ''}` : undefined}
             >
-              <i className={cn('block w-full rounded-t-sm', NONBEAT_BG)} style={{ height: `${(b.nonBeat / max) * 100}%` }} />
-              <i className={cn('block w-full', BEAT_BG)} style={{ height: `${(b.beat / max) * 100}%` }} />
+              {few && <b className="type-caption whitespace-nowrap font-semibold tabular-nums">{b.display}</b>}
+              <i className={cn('block w-full rounded-t-sm', toneBg[tone])} style={{ height: `${(b.value / max) * 100}%` }} />
             </div>
           ))}
         </div>
       </div>
-      <div className="mt-1 flex gap-[3px] pl-12">
-        {data.map((b, i) => (
-          <span key={b.title} className="type-micro flex-1 overflow-visible whitespace-nowrap text-center normal-case tracking-normal text-foreground-tertiary">
-            {i % every === 0 ? b.label : ''}
+      <div className="mt-1 flex gap-1 border-t border-border pt-1">
+        {items.map((b, i) => (
+          <span key={b.key} className="type-caption flex-1 whitespace-nowrap text-center text-foreground-secondary">
+            {few || i % every === 0 ? b.label : ''}
           </span>
         ))}
       </div>
@@ -71,171 +92,108 @@ export function ValueBars({ data, onBar, height = 190 }: { data: Bucket[]; onBar
   );
 }
 
-/** Beat vs non-beat share per row as a 100% bar, with the overall share as a dashed marker. */
-export function SplitBars({ rows, avg, onRow }: {
-  rows: { key: string; label: string; sub?: string; a: number; b: number }[];
-  /** overall beat share, % */
-  avg: number;
+/** League table as bars: rank · name · bar · value. A row's `target` draws a tick on its bar. */
+export function RankBars({ rows, onRow, ranked = true }: {
+  rows: { key: string; label: string; sub?: string; value: number; display: string; target?: number; tone?: Tone; badge?: React.ReactNode }[];
   onRow?: (key: string) => void;
+  ranked?: boolean;
 }) {
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.value, r.target ?? 0)));
   return (
     <div className="flex flex-col gap-1">
-      <div className="type-micro grid grid-cols-[190px_1fr_92px] gap-2.5 pb-1 text-foreground-tertiary">
-        <span>Distributor</span><span>Beat ← → Non-beat</span><span className="text-right">Orders</span>
-      </div>
-      {rows.map((r) => {
-        const total = r.a + r.b;
-        const pct = total ? (r.a / total) * 100 : 0;
-        return (
-          <div
-            key={r.key}
-            className={cn('type-caption grid grid-cols-[190px_1fr_92px] items-center gap-2.5 rounded-md py-1', onRow && '-mx-1 cursor-pointer px-1 hover:bg-muted')}
-            onClick={onRow && ((e) => { e.stopPropagation(); onRow(r.key); })}
-          >
-            <span className="min-w-0 leading-tight">
-              <span className="block truncate text-foreground">{r.label}</span>
-              {r.sub && <span className="block truncate text-foreground-tertiary">{r.sub}</span>}
-            </span>
-            <span className="relative flex h-3.5 overflow-hidden rounded-sm bg-background-sunken">
-              {total > 0 && <>
-                <i className={cn('block h-full', BEAT_BG)} style={{ width: `${pct}%` }} />
-                <i className={cn('block h-full flex-1', NONBEAT_BG)} />
-              </>}
-              <i className="absolute inset-y-[-2px] border-l-2 border-dashed border-foreground/60" style={{ left: `${avg}%` }} />
-            </span>
-            <span className="text-right tabular-nums">
-              <b className={cn('font-semibold', pct >= avg ? 'text-chart-blue' : 'text-foreground-secondary')}>{total ? `${pct.toFixed(0)}%` : '—'}</b>
-              <span className="ml-1.5 text-foreground-tertiary">{num(total)}</span>
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Achievement meters on a 0–150% track with the target at 100%. */
-export function TargetMeters({ rows, onRow, ok = 90, low = 70, head = true }: {
-  rows: { key: string; label: string; sub?: string; pct: number; value: string }[];
-  onRow?: (key: string) => void; ok?: number; low?: number;
-  /** column captions — off for a single meter */
-  head?: boolean;
-}) {
-  const at = (p: number) => `${(Math.min(p, 150) / 150) * 100}%`;
-  return (
-    <div className="flex flex-col gap-1">
-      {head && (
-        <div className="type-micro grid grid-cols-[170px_1fr_116px] gap-2.5 pb-1 text-foreground-tertiary">
-          <span>Salesperson</span>
-          <span className="relative">0%<span className="absolute -translate-x-1/2" style={{ left: at(100) }}>Target</span><span className="absolute right-0">150%</span></span>
-          <span className="text-right">Achieved · value</span>
-        </div>
-      )}
-      {rows.map((r) => (
+      {rows.map((r, i) => (
         <div
           key={r.key}
-          className={cn('type-caption grid grid-cols-[170px_1fr_116px] items-center gap-2.5 rounded-md py-1', onRow && '-mx-1 cursor-pointer px-1 hover:bg-muted')}
+          className={cn('type-caption grid items-center gap-2.5 rounded-md py-1', ranked ? 'grid-cols-[16px_180px_1fr_128px]' : 'grid-cols-[180px_1fr_128px]', onRow && '-mx-1 cursor-pointer px-1 hover:bg-muted')}
           onClick={onRow && ((e) => { e.stopPropagation(); onRow(r.key); })}
         >
+          {ranked && <span className="text-right tabular-nums text-foreground-tertiary">{i + 1}</span>}
           <span className="min-w-0 leading-tight">
-            <span className="block truncate text-foreground">{r.label}</span>
+            <span className="flex items-center gap-1.5"><span className="truncate text-foreground">{r.label}</span>{r.badge}</span>
             {r.sub && <span className="block truncate text-foreground-tertiary">{r.sub}</span>}
           </span>
-          <span className="relative h-3 rounded-sm bg-background-sunken">
-            <i className={cn('absolute inset-y-0 left-0 block rounded-sm', r.pct >= ok ? 'bg-success' : r.pct >= low ? 'bg-warning' : 'bg-error')} style={{ width: at(r.pct) }} />
-            <i className="absolute inset-y-[-3px] border-l-2 border-foreground/70" style={{ left: at(100) }} />
+          <span className="relative h-3.5 rounded-sm bg-background-sunken">
+            <i className={cn('absolute inset-y-0 left-0 block rounded-sm', toneBg[r.tone ?? 'brand'])} style={{ width: `${(r.value / max) * 100}%` }} />
+            {r.target != null && <i className="absolute -inset-y-1 border-l-2 border-foreground/70" style={{ left: `${(r.target / max) * 100}%` }} />}
           </span>
-          <span className="text-right tabular-nums">
-            <b className="font-semibold">{r.pct.toFixed(0)}%</b>
-            <span className="ml-1.5 text-foreground-tertiary">{r.value}</span>
-          </span>
+          <span className="text-right font-semibold tabular-nums">{r.display}</span>
         </div>
       ))}
     </div>
   );
 }
 
-/** Dot label: the first word, or the first two when the first is an initial ("S R Enterprises"). */
-const shortName = (l: string) => { const w = l.split(' '); return w[0].length <= 2 ? w.slice(0, 2).join(' ') : w[0]; };
+const strokeOf = {
+  'bg-chart-blue': 'stroke-chart-blue', 'bg-chart-teal': 'stroke-chart-teal', 'bg-chart-violet': 'stroke-chart-violet',
+  'bg-chart-sky': 'stroke-chart-sky', 'bg-chart-indigo': 'stroke-chart-indigo', 'bg-chart-cyan': 'stroke-chart-cyan',
+  'bg-success': 'stroke-success', 'bg-warning': 'stroke-warning', 'bg-error': 'stroke-error', 'bg-info': 'stroke-info',
+  'bg-border-strong': 'stroke-border-strong',
+} as const;
+export type PieColour = keyof typeof strokeOf;
 
-/** Two-measure scatter with threshold lines and a caption in each quadrant. */
-export function Quadrant({ points, xLabel, yLabel, xMid, yMid, xMax, yMax, yMin = 0, xMidLabel, yMidLabel, captions, onPick }: {
-  points: { key: string; label: string; x: number; y: number; r: number; tone: 'success' | 'warning' | 'error' | 'info'; tip: string }[];
-  xLabel: string; yLabel: string; xMid: number; yMid: number; xMax: number; yMax: number; yMin?: number;
-  /** what the dashed lines stand for, e.g. "avg ₹1.8L", "target pace" */
-  xMidLabel?: string; yMidLabel?: string;
-  /** top-left, top-right, bottom-left, bottom-right */
-  captions: [string, string, string, string];
-  onPick?: (key: string) => void;
+/** Pie (donut) with the total in the middle and a legend that doubles as the click target. */
+export function Donut({ parts, center, centerLabel, onPart }: {
+  parts: { key: string; label: string; value: number; display: string; colour: PieColour }[];
+  center: string; centerLabel: string;
+  onPart?: (key: string) => void;
 }) {
-  const [hover, setHover] = useState<string | null>(null);
-  const W = 640, H = 290, L = 26, R = 632, T = 10, B = 262;
-  const x = (v: number) => L + (Math.min(v, xMax) / xMax) * (R - L);
-  const y = (v: number) => B - ((Math.max(Math.min(v, yMax), yMin) - yMin) / (yMax - yMin)) * (B - T);
-  const fill = { success: 'fill-success', warning: 'fill-warning', error: 'fill-error', info: 'fill-chart-blue' } as const;
-  const hp = points.find((p) => p.key === hover);
+  const total = parts.reduce((a, p) => a + p.value, 0);
+  const R = 42, C = 2 * Math.PI * R;
+  let offset = 0;
   return (
-    <div className="relative">
-      {hp && (
-        <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-3 py-2 shadow-md"
-          style={{ left: `${Math.min(Math.max((x(hp.x) / W) * 100, 15), 85)}%`, top: `${(y(hp.y) / H) * 100 - 5}%` }}
-        >
-          <div className="type-label whitespace-nowrap">{hp.label}</div>
-          <div className="type-caption whitespace-nowrap text-foreground-secondary">{hp.tip}</div>
-        </div>
-      )}
-      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img" aria-label={`${yLabel} against ${xLabel}`}>
-        <rect x={x(xMid)} y={T} width={R - x(xMid)} height={y(yMid) - T} className="fill-success/5" />
-        <rect x={L} y={y(yMid)} width={x(xMid) - L} height={B - y(yMid)} className="fill-error/5" />
-        <line x1={x(xMid)} y1={T} x2={x(xMid)} y2={B} className="stroke-border-strong" strokeDasharray="5 4" />
-        <line x1={L} y1={y(yMid)} x2={R} y2={y(yMid)} className="stroke-border-strong" strokeDasharray="5 4" />
-        <line x1={L} y1={B} x2={R} y2={B} className="stroke-border" />
-        <text x={L + 6} y={T + 14} className="fill-foreground-tertiary text-[11px] font-semibold">{captions[0]}</text>
-        <text x={R - 6} y={T + 14} textAnchor="end" className="fill-success-foreground text-[11px] font-semibold">{captions[1]}</text>
-        <text x={L + 6} y={B - 8} className="fill-error-foreground text-[11px] font-semibold">{captions[2]}</text>
-        <text x={R - 6} y={B - 8} textAnchor="end" className="fill-foreground-tertiary text-[11px] font-semibold">{captions[3]}</text>
-        {xMidLabel && <text x={x(xMid)} y={B + 13} textAnchor="middle" className="fill-foreground-secondary text-[10px]">{xMidLabel}</text>}
-        {yMidLabel && <text x={R} y={y(yMid) - 4} textAnchor="end" className="fill-foreground-secondary text-[10px]">{yMidLabel}</text>}
-        <text x={(L + R) / 2} y={H - 2} textAnchor="middle" className="fill-foreground-secondary text-[11px]">{xLabel} →</text>
-        <text x={10} y={(T + B) / 2} textAnchor="middle" transform={`rotate(-90 10 ${(T + B) / 2})`} className="fill-foreground-secondary text-[11px]">{yLabel} →</text>
-        {points.map((p) => (
-          <g
-            key={p.key}
-            className={cn(onPick && 'cursor-pointer')}
-            onClick={onPick && (() => onPick(p.key))}
-            onMouseEnter={() => setHover(p.key)}
-            onMouseLeave={() => setHover(null)}
-          >
-            <circle cx={x(p.x)} cy={y(p.y)} r={p.r} className={fill[p.tone]} opacity={hover === p.key ? 1 : 0.78} />
-            <text x={x(p.x)} y={y(p.y) - p.r - 4} textAnchor="middle" className="fill-foreground text-[10px] font-medium">{shortName(p.label)}</text>
-          </g>
-        ))}
+    <div className="flex items-center gap-5">
+      <svg viewBox="0 0 100 100" className="h-32 w-32 shrink-0 -rotate-90" role="img" aria-label={centerLabel}>
+        <circle cx={50} cy={50} r={R} className="fill-none stroke-background-sunken" strokeWidth={14} />
+        {total > 0 && parts.filter((p) => p.value > 0).map((p) => {
+          const len = (p.value / total) * C;
+          const el = (
+            <circle
+              key={p.key} cx={50} cy={50} r={R}
+              className={cn('fill-none', strokeOf[p.colour], onPart && 'cursor-pointer hover:opacity-80')}
+              strokeWidth={14} strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-offset}
+              onClick={onPart && ((e) => { e.stopPropagation(); onPart(p.key); })}
+            />
+          );
+          offset += len;
+          return el;
+        })}
+        <text x={50} y={48} textAnchor="middle" transform="rotate(90 50 50)" className="fill-foreground text-[15px] font-bold">{center}</text>
+        <text x={50} y={62} textAnchor="middle" transform="rotate(90 50 50)" className="fill-foreground-secondary text-[8px]">{centerLabel}</text>
       </svg>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        {parts.map((p) => (
+          <button
+            key={p.key} type="button" disabled={!onPart}
+            onClick={onPart && ((e) => { e.stopPropagation(); onPart(p.key); })}
+            className="type-caption -mx-1 grid grid-cols-[10px_1fr_auto] items-center gap-2 rounded-md px-1 py-0.5 text-left enabled:hover:bg-muted"
+          >
+            <i className={cn('h-2.5 w-2.5 rounded-sm', p.colour)} />
+            <span className="truncate text-foreground">{p.label}</span>
+            <span className="tabular-nums"><b className="font-semibold">{p.display}</b> <span className="text-foreground-tertiary">{total ? `${Math.round((p.value / total) * 100)}%` : '—'}</span></span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-/** "Best at …" card: top three on one KPI, the average, and the one furthest behind. */
-export function LeaderCard({ title, hint, accent, rows, avg, last, onRow, onOpen }: {
-  title: string; hint: string; accent: string;
-  rows: { key: string; name: string; sub: string; value: string; share: number }[];
-  avg: string; last?: { key: string; name: string; value: string };
-  onRow?: (key: string) => void; onOpen?: () => void;
+/** "Top 3" card: the leaders on one number, for a sales-team podium. */
+export function TopThree({ title, accent, rows, onRow }: {
+  title: string; accent: string;
+  rows: { key: string; name: string; sub: string; value: string }[];
+  onRow?: (key: string) => void;
 }) {
   return (
-    <Card variant={onOpen ? 'interactive' : 'default'} className="border border-border p-3.5" onClick={onOpen}>
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <span className={cn('type-micro', accent)}>{title}</span>
-        <span className="type-caption text-foreground-secondary">{hint}</span>
-      </div>
+    <div className="rounded-xl border border-border bg-card p-3.5">
+      <div className={cn('type-micro mb-1.5', accent)}>{title}</div>
+      {rows.length === 0 && <p className="type-caption text-foreground-secondary">No one yet in this scope.</p>}
       {rows.map((r, i) => (
         <div
           key={r.key}
           className={cn('flex items-baseline gap-2 rounded-md py-1', onRow && '-mx-1.5 cursor-pointer px-1.5 hover:bg-muted')}
-          onClick={onRow && ((e) => { e.stopPropagation(); onRow(r.key); })}
+          onClick={onRow && (() => onRow(r.key))}
         >
-          <i className="type-caption w-3.5 shrink-0 not-italic text-foreground-tertiary">{i + 1}</i>
+          <i className={cn('type-caption grid h-5 w-5 shrink-0 place-items-center rounded-full not-italic font-semibold', i === 0 ? 'bg-warning-subtle text-warning-foreground' : 'bg-background-sunken text-foreground-secondary')}>{i + 1}</i>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="type-body block truncate">{r.name}</span>
             <span className="type-caption block truncate text-foreground-tertiary">{r.sub}</span>
@@ -243,22 +201,6 @@ export function LeaderCard({ title, hint, accent, rows, avg, last, onRow, onOpen
           <b className="type-price-sm">{r.value}</b>
         </div>
       ))}
-      <div className="type-caption mt-1.5 flex justify-between border-t border-dashed border-border pt-1.5 text-foreground-secondary">
-        <span>Average</span><span className="tabular-nums">{avg}</span>
-      </div>
-      {last && (
-        <div
-          className={cn('type-caption flex justify-between rounded-md pt-1 text-error-foreground', onRow && 'cursor-pointer hover:underline')}
-          onClick={onRow && ((e) => { e.stopPropagation(); onRow(last.key); })}
-        >
-          <span className="truncate">Lowest · {last.name}</span><span className="tabular-nums">{last.value}</span>
-        </div>
-      )}
-      <div className="mt-2.5 flex h-1.5 gap-px overflow-hidden rounded-full bg-background-sunken">
-        {rows.map((r, i) => (
-          <i key={r.key} className={cn('block bg-current', accent, i === 1 && 'opacity-70', i === 2 && 'opacity-45')} style={{ width: `${r.share}%` }} />
-        ))}
-      </div>
-    </Card>
+    </div>
   );
 }
