@@ -1,13 +1,27 @@
 import { useState } from 'react';
-import { ChevronLeft, Check, Clock, FileCheck2, FileSearch, XCircle, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, Check, Clock, FileCheck2, FileSearch, XCircle, BadgeCheck, Lock } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
-import type { DmsPartner, DmsStatus } from '../data/dmsPartners';
+import type { DmsStatus } from '../data/dmsPartners';
 
-/* DMS registration for one gated company. Two paths:
-   – already a customer → enter the customer ID → linked (registered) instantly;
-   – new customer → KYC form pre-filled from the Qwipo profile → "Request
-     Registration" → pending approval at the company's distributor. */
+/** Who the shop is registering with — a company (ITC, served via the chosen
+    distributor) or a distributor directly (Balaji Enterprises). */
+export interface DmsTarget {
+  /** Company or distributor name — the one approving the registration. */
+  name: string;
+  /** Header sub-line, e.g. `via Golden Distributors` / `Distributor for TCPL`. */
+  via: string;
+  emoji: string;
+  /** The distributor that receives the KYC and serves the shop. */
+  distributor: string;
+  idHint: string;
+  rejectedReason?: string;
+}
+
+/* DMS registration with one company or distributor. Two paths:
+   – already a customer → enter the customer ID → sent for approval;
+   – new customer → read-only KYC summary + consent → "Request Registration".
+   Both end pending approval and follow the same status tracking. */
 
 // Same shop profile shown in Account · Business Details — the pre-fill source.
 const KYC_PREFILL = {
@@ -18,28 +32,34 @@ const KYC_PREFILL = {
   gstin: '36ABCDE1234F1Z5',
 };
 
-const SHARED_DOCS = ['Shop Image', 'Shop Owner Photo ID', 'GST Certificate'];
+const KYC_ROWS: [string, string][] = [
+  ['Shop Name', KYC_PREFILL.shopName],
+  ['Owner Name', KYC_PREFILL.ownerName],
+  ['Mobile Number', `+91 ${KYC_PREFILL.mobile}`],
+  ['Shop Address', KYC_PREFILL.address],
+  ['GSTIN', KYC_PREFILL.gstin],
+];
+
+const SHARED_DOCS =['Shop Image', 'Shop Owner Photo ID', 'GST Certificate'];
 
 type Step = 'choose' | 'form' | 'sent' | 'linked';
 
 export function DmsRegisterScreen({
-  partner,
+  target,
   status,
   onBack,
   onComplete,
 }: {
-  partner: DmsPartner;
-  /** The partner's current registration status — drives the status views. */
+  target: DmsTarget;
+  /** The target's current registration status — drives the status views. */
   status: DmsStatus;
   onBack: () => void;
-  /** Called from the end states — sets the partner's status and returns to the list. */
+  /** Called from the end states — sets the target's status and returns to the list. */
   onComplete: (status: DmsStatus) => void;
 }) {
   const [step, setStep] = useState<Step>('choose');
   const [customerId, setCustomerId] = useState('');
-  const [form, setForm] = useState(KYC_PREFILL);
-  const set = (k: keyof typeof KYC_PREFILL) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const [consent, setConsent] = useState(false);
 
   const header = (
     <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -51,11 +71,11 @@ export function DmsRegisterScreen({
         <ChevronLeft size={18} />
       </button>
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-base font-semibold leading-tight">{partner.company}</h1>
-        <p className="text-xs text-foreground-secondary">via {partner.distributor}</p>
+        <h1 className="truncate text-base font-semibold leading-tight">{target.name}</h1>
+        <p className="truncate text-xs text-foreground-secondary">{target.via}</p>
       </div>
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border bg-muted text-xl">
-        {partner.emoji}
+        {target.emoji}
       </span>
     </header>
   );
@@ -74,7 +94,7 @@ export function DmsRegisterScreen({
               </div>
               <h2 className="mt-4 text-lg font-semibold text-foreground">Registered</h2>
               <p className="mx-auto mt-2 max-w-[260px] text-sm leading-relaxed text-foreground-secondary">
-                Your shop is registered with {partner.company}. Their full catalogue is unlocked
+                Your shop is registered with {target.name}. Their full catalogue is unlocked
                 and products appear in your feed.
               </p>
             </div>
@@ -98,12 +118,12 @@ export function DmsRegisterScreen({
                 <XCircle className="h-5 w-5 shrink-0" /> Registration rejected
               </div>
               <p className="mt-2 text-xs leading-relaxed text-error-foreground">
-                {partner.rejectedReason ??
+                {target.rejectedReason ??
                   'The distributor could not verify your shop details.'}
               </p>
             </div>
             <p className="rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-foreground-secondary shadow-sm">
-              Update the flagged details and re-apply — or contact {partner.distributor} if you
+              Update the flagged details and re-apply — or contact {target.distributor} if you
               believe this was a mistake.
             </p>
           </div>
@@ -121,7 +141,7 @@ export function DmsRegisterScreen({
       {
         icon: Check,
         label: 'Request sent',
-        desc: `Your KYC was shared with ${partner.distributor}.`,
+        desc: `Your KYC was shared with ${target.distributor}.`,
         state: 'done' as const,
       },
       {
@@ -129,14 +149,14 @@ export function DmsRegisterScreen({
         label: 'Under review',
         desc:
           status === 'review'
-            ? `${partner.distributor} is verifying your shop details.`
-            : `Waiting for ${partner.distributor} to pick up your request.`,
+            ? `${target.distributor} is verifying your shop details.`
+            : `Waiting for ${target.distributor} to pick up your request.`,
         state: status === 'review' ? ('current' as const) : ('upcoming' as const),
       },
       {
         icon: BadgeCheck,
         label: 'Approval',
-        desc: `${partner.company} confirms your outlet — usually within 24–48 hrs.`,
+        desc: `${target.name} confirms your outlet — usually within 24–48 hrs.`,
         state: 'upcoming' as const,
       },
     ];
@@ -197,6 +217,7 @@ export function DmsRegisterScreen({
     );
   }
 
+  // Both paths end pending approval — a linked customer ID is verified too.
   if (step === 'sent' || step === 'linked') {
     const linked = step === 'linked';
     return (
@@ -204,28 +225,20 @@ export function DmsRegisterScreen({
         {header}
         <div className="grid flex-1 place-items-center bg-background-subtle p-6">
           <div className="text-center">
-            <div
-              className={`mx-auto grid h-16 w-16 place-items-center rounded-full border ${
-                linked
-                  ? 'border-success-border bg-success-subtle text-success-foreground'
-                  : 'border-warning-border bg-warning-subtle text-warning-foreground'
-              }`}
-            >
-              {linked ? <Check className="h-8 w-8" /> : <Clock className="h-8 w-8" />}
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-warning-border bg-warning-subtle text-warning-foreground">
+              <Clock className="h-8 w-8" />
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-foreground">
-              {linked ? 'Customer ID linked' : 'Request sent'}
-            </h2>
+            <h2 className="mt-4 text-lg font-semibold text-foreground">Request sent</h2>
             <p className="mx-auto mt-2 max-w-[260px] text-sm leading-relaxed text-foreground-secondary">
               {linked
-                ? `${partner.company}'s catalogue is now unlocked for your shop. New products will appear in your feed.`
-                : `Your registration is pending approval at ${partner.distributor}. We'll notify you once ${partner.company} approves — usually within 24–48 hrs.`}
+                ? `Your customer ID ${customerId.trim()} has been sent to ${target.distributor} for approval. We'll notify you once ${target.name} confirms — usually within 24–48 hrs.`
+                : `Your registration is pending approval at ${target.distributor}. We'll notify you once ${target.name} approves — usually within 24–48 hrs.`}
             </p>
           </div>
         </div>
         <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Button size="lg" className="w-full" onClick={() => onComplete(linked ? 'registered' : 'pending')}>
-            {linked ? 'Start Ordering' : 'Back to Distributors'}
+          <Button size="lg" className="w-full" onClick={() => onComplete('pending')}>
+            Back to Distributors
           </Button>
         </div>
       </div>
@@ -238,41 +251,69 @@ export function DmsRegisterScreen({
         {header}
         <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
           <p className="rounded-lg border border-primary/30 bg-primary-soft p-3 text-xs leading-relaxed text-foreground">
-            Pre-filled from your Qwipo KYC — review the details and send your registration request
-            to {partner.distributor}.
+            These details come from your Qwipo KYC. Review them and send your registration request
+            to {target.distributor}.
           </p>
 
-          <Field label="Shop Name" required>
-            <input value={form.shopName} onChange={set('shopName')} className={controlClass} />
-          </Field>
-          <Field label="Owner Name" required>
-            <input value={form.ownerName} onChange={set('ownerName')} className={controlClass} />
-          </Field>
-          <Field label="Mobile Number" required>
-            <input value={form.mobile} onChange={set('mobile')} className={controlClass} />
-          </Field>
-          <Field label="Shop Address" required>
-            <input value={form.address} onChange={set('address')} className={controlClass} />
-          </Field>
-          <Field label="GSTIN Number">
-            <input value={form.gstin} onChange={set('gstin')} className={controlClass} />
-          </Field>
-
-          <Field label="Documents shared from Qwipo KYC">
-            <div className="space-y-2">
-              {SHARED_DOCS.map((d) => (
-                <div key={d} className={`${controlClass} justify-between`}>
-                  <span className="flex items-center gap-2">
-                    <FileCheck2 className="h-4 w-4 text-success-foreground" /> {d}
-                  </span>
-                  <span className="text-xs font-medium text-success-foreground">Attached</span>
+          {/* Read-only summary — values come from Qwipo KYC and can't be edited here. */}
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="flex items-center justify-between gap-2 border-b border-border bg-muted px-4 py-2.5">
+              <span className="text-sm font-semibold text-foreground">Shop details</span>
+              <span className="flex items-center gap-1 text-xs text-foreground-secondary">
+                <Lock className="h-3.5 w-3.5" /> From Qwipo KYC
+              </span>
+            </div>
+            <dl className="divide-y divide-border px-4">
+              {KYC_ROWS.map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 py-2.5">
+                  <dt className="shrink-0 text-xs text-foreground-secondary">{label}</dt>
+                  <dd className="text-right text-sm font-medium text-foreground">{value}</dd>
                 </div>
               ))}
+            </dl>
+            <div className="border-t border-border px-4 py-3">
+              <div className="text-xs text-foreground-secondary">Documents shared</div>
+              <ul className="mt-2 space-y-1.5">
+                {SHARED_DOCS.map((d) => (
+                  <li key={d} className="flex items-center justify-between text-sm text-foreground">
+                    <span className="flex items-center gap-2">
+                      <FileCheck2 className="h-4 w-4 text-success-foreground" /> {d}
+                    </span>
+                    <span className="text-xs font-medium text-success-foreground">Attached</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </Field>
+          </div>
+          <p className="text-xs leading-relaxed text-foreground-secondary">
+            Need to change something? Update it in My Account · Business Details first.
+          </p>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="sr-only"
+            />
+            {/* Drawn box (not the native control) so the ticked state also shows in screenshots. */}
+            <span
+              aria-hidden
+              className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${
+                consent ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card'
+              }`}
+            >
+              {consent && <Check className="h-3.5 w-3.5" />}
+            </span>
+            <span className="text-xs leading-relaxed text-foreground">
+              {target.distributor === target.name
+                ? `I allow Qwipo to share my details with ${target.name} so they can create my account.`
+                : `I allow Qwipo to share my details with ${target.distributor} so they can create my account with ${target.name}.`}
+            </span>
+          </label>
         </div>
         <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Button size="lg" className="w-full" onClick={() => setStep('sent')}>
+          <Button size="lg" className="w-full" disabled={!consent} onClick={() => setStep('sent')}>
             Request Registration
           </Button>
         </div>
@@ -287,17 +328,17 @@ export function DmsRegisterScreen({
       <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-foreground">
-            Already a {partner.company} customer?
+            Already a customer of {target.name}?
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-foreground-secondary">
-            Enter the customer ID from your {partner.distributor} bills to link your shop instantly.
+            Enter the customer ID from your {target.distributor} bills to link your shop.
           </p>
           <div className="mt-3">
             <Field label="Customer ID">
               <input
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
-                placeholder={partner.idHint}
+                placeholder={target.idHint}
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
             </Field>
@@ -319,10 +360,10 @@ export function DmsRegisterScreen({
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-foreground">New to {partner.company}?</h2>
+          <h2 className="text-sm font-semibold text-foreground">New to {target.name}?</h2>
           <p className="mt-1 text-xs leading-relaxed text-foreground-secondary">
             Send a registration request with your shop's KYC — we pre-fill everything from your
-            Qwipo profile. {partner.company} approves new outlets in 24–48 hrs.
+            Qwipo profile. {target.name} approves new outlets in 24–48 hrs.
           </p>
           <Button variant="secondary" size="lg" className="mt-3 w-full" onClick={() => setStep('form')}>
             Proceed to Registration

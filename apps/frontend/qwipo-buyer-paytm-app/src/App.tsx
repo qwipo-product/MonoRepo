@@ -56,9 +56,17 @@ import { KycSuccessScreen } from './screens/auth/KycSuccessScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
-import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
-import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
-import { DMS_PARTNERS, dmsPartnerById, type DmsStatus } from './data/dmsPartners';
+import { DmsPartnersScreen, DmsPromoCard, type DmsTab } from './screens/DmsPartnersScreen';
+import { DmsCompanyScreen, DmsDistributorScreen } from './screens/DmsDetailScreens';
+import { DmsRegisterScreen, type DmsTarget } from './screens/DmsRegisterScreen';
+import {
+  DMS_COMPANIES,
+  DMS_DISTRIBUTORS,
+  dmsCompanyById,
+  dmsDistributorById,
+  companyDistributors,
+  type DmsStatus,
+} from './data/dmsPartners';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
@@ -77,7 +85,7 @@ const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'dms-partners', 'dms-register', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
+  'distributors-list', 'dms-partners', 'dms-company', 'dms-distributor', 'dms-register', 'wholesaler-categories', 'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'offers-schemes', ...OFFERS.map((o) => `offer:${o.id}`),
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
@@ -178,14 +186,19 @@ export default function App() {
   const [storefrontBackTo, setStorefrontBackTo] = useState<ScreenId>('home');
   const [selectedDistributor, setSelectedDistributor] = useState<Distributor>(DISTRIBUTORS[0]);
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
-  // DMS registrations: gated company distributors (Colgate, PepsiCo, …).
-  // Marico / HUL / ITC start mid-pipeline so every status is visible in the demo.
+  // DMS registrations — keyed by company id (Companies tab) or distributor id
+  // (Distributors tab). A few start mid-pipeline so every status is visible;
+  // ITC and Balaji Enterprises start unregistered so both flows can be walked.
   const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({
+    pepsico: 'registered',
     marico: 'review',
     hul: 'rejected',
-    itc: 'registered',
+    'sri-ganesh': 'pending',
+    mahalakshmi: 'rejected',
   });
-  const [dmsPartnerId, setDmsPartnerId] = useState<string>(DMS_PARTNERS[0].id);
+  const [dmsTab, setDmsTab] = useState<DmsTab>('company');
+  const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
+  const [dmsDistributorId, setDmsDistributorId] = useState<string>(DMS_DISTRIBUTORS[0].id);
 
   // Deep-link parity: ?screen=distributor-units / cart-units open the sheet.
   useEffect(() => {
@@ -419,21 +432,92 @@ export default function App() {
           <DmsPartnersScreen
             statuses={dmsStatus}
             onBack={() => go('distributors-list')}
-            onOpen={(id) => {
-              setDmsPartnerId(id);
+            onOpenCompany={(id) => {
+              setDmsCompanyId(id);
+              setDmsTab('company');
+              // Direct companies (TCPL) skip the distributor page.
+              go(dmsCompanyById(id)?.direct ? 'dms-register' : 'dms-company');
+            }}
+            onOpenDistributor={(id) => {
+              setDmsDistributorId(id);
+              setDmsTab('distributor');
+              go('dms-distributor');
+            }}
+          />
+        );
+      case 'dms-company': {
+        const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+        return (
+          <DmsCompanyScreen
+            company={company}
+            status={dmsStatus[company.id] ?? 'none'}
+            onBack={() => go('dms-partners')}
+            onRegister={() => {
+              setDmsTab('company');
               go('dms-register');
             }}
           />
         );
+      }
+      case 'dms-distributor': {
+        const distributor = dmsDistributorById(dmsDistributorId) ?? DMS_DISTRIBUTORS[0];
+        return (
+          <DmsDistributorScreen
+            distributor={distributor}
+            status={dmsStatus[distributor.id] ?? 'none'}
+            onBack={() => go('dms-partners')}
+            onRegister={() => {
+              setDmsTab('distributor');
+              go('dms-register');
+            }}
+          />
+        );
+      }
       case 'dms-register': {
-        const partner = dmsPartnerById(dmsPartnerId) ?? DMS_PARTNERS[0];
+        // Registering with a company or with a distributor directly —
+        // whichever kind of list entry the buyer opened.
+        let targetId: string;
+        let target: DmsTarget;
+        let backTo: ScreenId = 'dms-distributor';
+        if (dmsTab === 'company') {
+          const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+          const name = company.shortName ?? company.company;
+          // No distributor is picked — the company assigns one, so the
+          // request goes to its authorised distributor(s) in the area. Direct
+          // companies (TCPL) take the request themselves.
+          const names = company.direct
+            ? name
+            : companyDistributors(company).map((d) => d.name).join(' / ');
+          targetId = company.id;
+          backTo = company.direct ? 'dms-partners' : 'dms-company';
+          target = {
+            name,
+            via: company.direct ? company.company : `via ${names}`,
+            emoji: company.emoji,
+            distributor: names,
+            idHint: company.idHint,
+            rejectedReason: company.rejectedReason,
+          };
+        } else {
+          const d = dmsDistributorById(dmsDistributorId) ?? DMS_DISTRIBUTORS[0];
+          targetId = d.id;
+          target = {
+            name: d.name,
+            via: `Distributor for ${d.serves.join(', ')}`,
+            emoji: d.emoji,
+            distributor: d.name,
+            idHint: d.idHint,
+            rejectedReason: d.rejectedReason,
+          };
+        }
         return (
           <DmsRegisterScreen
-            partner={partner}
-            status={dmsStatus[partner.id] ?? 'none'}
-            onBack={() => go('dms-partners')}
+            key={targetId}
+            target={target}
+            status={dmsStatus[targetId] ?? 'none'}
+            onBack={() => go(backTo)}
             onComplete={(status) => {
-              setDmsStatus((s) => ({ ...s, [partner.id]: status }));
+              setDmsStatus((s) => ({ ...s, [targetId]: status }));
               go('dms-partners');
             }}
           />
