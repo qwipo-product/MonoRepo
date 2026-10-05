@@ -106,6 +106,8 @@ export interface BA {
   beats: Beat[];
   /** how well this BA converts — drives order volume */
   pull: number;
+  /** share of this BA's orders taken on a planned beat visit (vs retailer self-orders) */
+  beatRate: number;
 }
 
 const baSeed: [string, string, string, number][] = [
@@ -141,6 +143,7 @@ export const bas: BA[] = baSeed.map(([name, city, lead, target], i) => {
     // seed values are the plan; calibrated to what the network actually runs at
     target: Math.round((target * 0.62) / 10000) * 10000,
     pull: 0.55 + rnd() * 0.75,
+    beatRate: 0.38 + rnd() * 0.48,
     beats: Array.from({ length: n }, (_, k) => {
       const locality = locs[(start + k) % locs.length];
       return { name: `${locality} Beat`, locality, days: beatDays[k] };
@@ -255,6 +258,9 @@ function status(at: Date): { status: OrderStatus; cancelledBy?: CancelSource } {
 export const buyerOrders: BuyerOrder[] = (() => {
   const out: BuyerOrder[] = [];
   const dist = new Map(buyerDistributors.map((d) => [d.name, d]));
+  const baBeat = new Map(bas.map((b) => [b.name, b.beatRate]));
+  // Some distributors push retailers to self-order in the app; others rely on BA visits.
+  const distBeat = new Map(buyerDistributors.map((d, i) => [d.name, 0.78 + ((i * 37) % 9) / 18]));
   let seq = 48100;
   for (let t = FIRST_DAY.getTime(); t <= TODAY.getTime(); t += DAY) {
     const day = new Date(t);
@@ -274,7 +280,7 @@ export const buyerOrders: BuyerOrder[] = (() => {
         state: c.state, city: c.city, locality: c.locality,
         distributor: to, ba: c.ba, baMobile: c.baMobile, lead: c.lead, beatName: c.beat,
         value: Math.round((1500 + rnd() * rnd() * 16000) / 10) * 10,
-        beat: rnd() < 0.62,
+        beat: rnd() < Math.min(0.94, baBeat.get(c.ba)! * distBeat.get(to)!),
         ...status(at),
       });
     }
@@ -288,6 +294,8 @@ export type Preset = 'Today' | 'Last 7 Days' | 'Last 30 Days' | 'Month to date' 
 export interface BuyerScope {
   preset: Preset; from: Date; to: Date;
   state: string; city: string; distributor: string; // 'All' = no filter
+  /** sales team (team lead's name) — 'All' = every team */
+  team: string;
 }
 
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -300,7 +308,7 @@ export const presetRange = (p: Preset): [Date, Date] =>
 
 export const DEFAULT_SCOPE: BuyerScope = {
   preset: 'Last 30 Days', from: presetRange('Last 30 Days')[0], to: TODAY,
-  state: 'All', city: 'All', distributor: 'All',
+  state: 'All', city: 'All', distributor: 'All', team: 'All',
 };
 
 const geoMatch = (x: { state: string; city: string }, s: BuyerScope) =>
@@ -314,12 +322,15 @@ export function scopedOrders(s: BuyerScope) {
   const start = new Date(s.from.getFullYear(), s.from.getMonth(), s.from.getDate());
   const end = addDays(s.to, 1);
   return buyerOrders.filter((o) => o.at >= start && o.at < end && geoMatch(o, s)
-    && (s.distributor === 'All' || o.distributor === s.distributor));
+    && (s.distributor === 'All' || o.distributor === s.distributor)
+    && (s.team === 'All' || o.lead === s.team));
 }
 
 /** Customers in the geography (the base — not date dependent). */
 export function scopedCustomers(s: BuyerScope) {
-  return buyerCustomers.filter((c) => geoMatch(c, s) && (s.distributor === 'All' || c.distributor === s.distributor));
+  return buyerCustomers.filter((c) => geoMatch(c, s)
+    && (s.distributor === 'All' || c.distributor === s.distributor)
+    && (s.team === 'All' || c.lead === s.team));
 }
 
 /** Customer's orders by id, over the whole ledger — for last-order / dormancy. */

@@ -1,7 +1,7 @@
-// Reports → DigiDukaan · Buyer → Buyer app analytics. PostHog-style product
+// Buyer app analytics — its own sidebar group and page. PostHog-style product
 // boards for the buyer app: Overview, ten app-screen boards, Funnels and
 // Session recordings, all behind one shared filter bar.
-// Hash: #reports/analytics[:<board>[:<arg>]] — board is overview | funnels |
+// Hash: #buyer-analytics[/<board>[:<arg>]] — board is overview | funnels |
 // recordings | a screen id (home, cart, …); arg is a funnel id or a recordings page.
 import { useState, type ReactNode } from 'react';
 import { ArrowRight, ChevronRight, Download, MapPin, PlayCircle, Share2, Target, Video } from 'lucide-react';
@@ -82,7 +82,7 @@ function Board({ spec, go, flash }: { spec: BoardSpec; go: (p: string) => void; 
           <p className="type-caption text-foreground-secondary">See rage clicks, dead clicks and drop-offs on the {spec.recordings} page.</p>
           <button
             type="button"
-            onClick={() => go(`reports/analytics:recordings:${encodeURIComponent(spec.recordings!)}`)}
+            onClick={() => go(`buyer-analytics/recordings:${encodeURIComponent(spec.recordings!)}`)}
             className="type-caption flex items-center gap-1 font-medium text-link hover:underline"
           >
             Watch recordings <ArrowRight size={13} />
@@ -142,7 +142,7 @@ function Overview({ go, flash }: { go: (p: string) => void; flash: (m: string) =
           <button
             key={b.path}
             type="button"
-            onClick={() => go(`reports/analytics:${boardId(b)}`)}
+            onClick={() => go(`buyer-analytics/${boardId(b)}`)}
             className="type-caption flex items-center justify-between gap-2 px-5 py-1.5 text-left hover:bg-muted"
           >
             <Tip side="left" title={b.title} note={`${b.question} ${b.sections.reduce((a, s) => a + s.rows.length, 0)} actions tracked.`}>
@@ -156,7 +156,7 @@ function Overview({ go, flash }: { go: (p: string) => void; flash: (m: string) =
   );
 
   return (
-    <Frame title="Buyer App Analytics" question="How buyers sign up, find products, order and come back." rail={rail} flash={flash}>
+    <Frame title="Overview" question="How buyers sign up, find products, order and come back." rail={rail} flash={flash}>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Card className="flex flex-col gap-3 bg-gradient-to-br from-primary-soft via-card to-card px-6 py-5">
           <div className="flex items-center justify-between">
@@ -197,7 +197,7 @@ function Overview({ go, flash }: { go: (p: string) => void; flash: (m: string) =
         title="Key funnels"
         sub="Start to finish, for each journey"
         action={
-          <button type="button" onClick={() => go('reports/analytics:funnels')} className="type-caption flex items-center gap-1 font-medium text-link hover:underline">
+          <button type="button" onClick={() => go('buyer-analytics/funnels')} className="type-caption flex items-center gap-1 font-medium text-link hover:underline">
             All funnels <ChevronRight size={14} />
           </button>
         }
@@ -217,7 +217,7 @@ function Overview({ go, flash }: { go: (p: string) => void; flash: (m: string) =
               <tr key={f.id} className="border-t border-border-subtle">
                 <td className="py-2.5 pl-5 font-medium">
                   <Tip side="right" title={`${f.title} funnel`} note="Click for step-by-step detail." {...explainFunnelRow(f.title, f.steps.map((s) => s.label))}>
-                    <button type="button" onClick={() => go(`reports/analytics:funnels:${f.id}`)} className="hover:text-primary hover:underline">{f.title}</button>
+                    <button type="button" onClick={() => go(`buyer-analytics/funnels:${f.id}`)} className="hover:text-primary hover:underline">{f.title}</button>
                   </Tip>
                 </td>
                 <td className="py-2.5 text-right tabular-nums">{int(f.start.users)}</td>
@@ -431,12 +431,12 @@ function Recordings({ initialPage, flash }: { initialPage?: string; flash: (m: s
   );
 }
 
-/* ── board router: the sidebar dropdown picks the board ─────────────── */
+/* ── board router: the sidebar group picks the board ────────────────── */
 
 export default function BuyerAppAnalytics({ go, drill }: { go: (p: string) => void; drill?: string }) {
   const [toast, flash] = useFlash();
-  // drill: analytics[:<board>[:<arg>]]
-  const [, board = 'overview', arg] = (drill ?? 'analytics').split(':');
+  // drill: <board>[:<arg>]
+  const [board = 'overview', arg] = (drill || 'overview').split(':');
   const spec = BOARDS.find((b) => boardId(b) === board);
 
   return (

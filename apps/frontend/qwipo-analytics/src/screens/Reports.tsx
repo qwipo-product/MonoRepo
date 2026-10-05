@@ -15,7 +15,6 @@ import { buyerDistributors } from '../data/buyer';
 import { Chip } from '../components/Chip';
 import { useScope } from '../scope';
 import { reportSections, type Page, type ReportDomain } from '../nav';
-import BuyerAppAnalytics from './BuyerAppAnalytics';
 
 const statusBadge: Record<Run['status'], NonNullable<BadgeProps['variant']>> = {
   Ready: 'success', Running: 'info', Failed: 'danger',
@@ -35,9 +34,7 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
   // Section: #reports/<seller|ops|buyer>; a run: hand-off lands in its report's section.
   const section: ReportDomain = runMatch
     ? reportDefs.find((d) => d.key === runMatch[0])?.domain ?? 'seller'
-    : drill?.startsWith('analytics') ? 'buyer'
     : reportSections.find((s) => s.key === drill)?.key ?? 'seller';
-  const inAnalytics = !!drill?.startsWith('analytics');
   const meta = reportSections.find((s) => s.key === section)!;
   const defs = reportDefs.filter((d) => d.domain === section);
   const closeRun = () => { setRunning(null); if (runMatch) go(`reports/${section}`); };
@@ -71,8 +68,6 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
         <span className="type-caption text-foreground-secondary">Source: {meta.source}</span>
       </div>
 
-
-      {inAnalytics ? <BuyerAppAnalytics go={go} drill={drill} /> : (
       <Card className="flex flex-col">
         <table className="w-full border-collapse">
           <thead>
@@ -130,7 +125,6 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
           </tbody>
         </table>
       </Card>
-      )}
     </div>
   );
 }

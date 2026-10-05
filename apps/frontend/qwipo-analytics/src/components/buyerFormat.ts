@@ -1,6 +1,5 @@
-// Formatting, scope text and CSV export for the DigiDukaan · Buyer pages.
-// Kept apart from buyerKit.tsx so that file only exports components.
-import type { ChipData } from './filters';
+// Formatting, scope text, KPI deltas and CSV export for the DigiDukaan · Buyer
+// pages. Kept apart from buyerKit.tsx so that file only exports components.
 import { TODAY, type BuyerScope } from '../data/buyer';
 
 /* -------------------------------- formatting ------------------------------- */
@@ -19,31 +18,18 @@ export const ago = (d?: Date) => {
   return n === 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`;
 };
 
-export function sortBy<T, K extends keyof T>(rows: T[], k: K, dir: 1 | -1) {
-  return [...rows].sort((a, b) => {
-    const av = a[k] ?? 0, bv = b[k] ?? 0;
-    return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
-  });
-}
-
 export const rangeText = (s: BuyerScope) => `${dmy(s.from)} to ${dmy(s.to)}`;
 export const geoText = (s: BuyerScope) =>
-  [s.state === 'All' ? 'All states' : s.state, s.city !== 'All' && s.city, s.distributor !== 'All' && s.distributor].filter(Boolean).join(' · ');
+  [s.state === 'All' ? 'All states' : s.state, s.city !== 'All' && s.city, s.distributor !== 'All' && s.distributor, s.team !== 'All' && `Team ${s.team}`]
+    .filter(Boolean).join(' · ');
 
-/** What an export records in Reports history. */
-export function buyerChips(s: BuyerScope, extra: ChipData[] = []): ChipData[] {
-  return [
-    { label: 'Date', value: rangeText(s) },
-    ...(s.state !== 'All' ? [{ label: 'State', value: s.state }] : []),
-    ...(s.city !== 'All' ? [{ label: 'City', value: s.city }] : []),
-    ...(s.distributor !== 'All' ? [{ label: 'Distributor', value: s.distributor }] : []),
-    ...extra,
-  ];
+/** KPI card change vs the previous period: `↑ 8.1%` for amounts, `↑ 2.4 pts` for rates. */
+export function kpiDelta(cur: number, prev: number | null | undefined, mode: 'pct' | 'pts' = 'pct'): { change: string; trend: 'up' | 'down' | 'flat' } {
+  if (prev == null || (mode === 'pct' && !prev)) return { change: '—', trend: 'flat' };
+  const d = mode === 'pct' ? ((cur - prev) / prev) * 100 : cur - prev;
+  if (Math.abs(d) < 0.05) return { change: '→ 0', trend: 'flat' };
+  return { change: `${d > 0 ? '↑' : '↓'} ${Math.abs(d).toFixed(1)}${mode === 'pct' ? '%' : ' pts'}`, trend: d > 0 ? 'up' : 'down' };
 }
-
-/** File-name safe suffix for an export. */
-export const fileTag = (s: BuyerScope) =>
-  [dmy(s.from), 'to', dmy(s.to), s.state !== 'All' && s.state, s.city !== 'All' && s.city].filter(Boolean).join('_').replace(/ /g, '-');
 
 /* ---------------------------------- export --------------------------------- */
 
