@@ -60,6 +60,17 @@ import { LocationPickerScreen } from './screens/LocationPickerScreen';
 import { AddressDetailsScreen } from './screens/AddressDetailsScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
+import { DmsPartnersScreen, DmsPromoCard, type DmsTab } from './screens/DmsPartnersScreen';
+import { DmsCompanyScreen, DmsDistributorScreen } from './screens/DmsDetailScreens';
+import { DmsRegisterScreen, type DmsTarget } from './screens/DmsRegisterScreen';
+import {
+  DMS_COMPANIES,
+  DMS_DISTRIBUTORS,
+  dmsCompanyById,
+  dmsDistributorById,
+  companyDistributors,
+  type DmsStatus,
+} from './data/dmsPartners';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
@@ -85,7 +96,8 @@ const BUILT = new Set<ScreenId>([
   'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
   'kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done', 'kyc-manual-review', 'kyc-pending',
   'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
+  'distributors-list', 'dms-partners', 'dms-company', 'dms-distributor', 'dms-register',
+  'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
@@ -156,6 +168,8 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'order-details') return 'my-orders';
   if (id === 'address-details') return 'location-picker';
   if (id === 'offer-skus' || id === 'storefront') return 'listing';
+  if (id === 'dms-partners') return 'distributors-list';
+  if (id.startsWith('dms-')) return 'dms-partners';
   return 'home';
 }
 
@@ -253,6 +267,19 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
+  // DMS registrations — keyed by company id (Companies tab) or distributor id
+  // (Distributors tab). A few start mid-pipeline so every status is visible;
+  // ITC and Balaji Enterprises start unregistered so both flows can be walked.
+  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({
+    pepsico: 'registered',
+    marico: 'review',
+    hul: 'rejected',
+    'sri-ganesh': 'pending',
+    mahalakshmi: 'rejected',
+  });
+  const [dmsTab, setDmsTab] = useState<DmsTab>('company');
+  const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
+  const [dmsDistributorId, setDmsDistributorId] = useState<string>(DMS_DISTRIBUTORS[0].id);
 
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
      to the screen they actually came from rather than to a target each screen
@@ -672,10 +699,105 @@ export default function App() {
             sellers={DISTRIBUTORS}
             initialTab={browseTab}
             onTabChange={setBrowseTab}
+            promo={<DmsPromoCard onClick={() => go('dms-partners')} />}
             onBack={goBack}
             onNavigate={go}
           />
         );
+      case 'dms-partners':
+        return (
+          <DmsPartnersScreen
+            statuses={dmsStatus}
+            onBack={goBack}
+            onOpenCompany={(id) => {
+              setDmsCompanyId(id);
+              setDmsTab('company');
+              // Direct companies (TCPL) skip the distributor page.
+              go(dmsCompanyById(id)?.direct ? 'dms-register' : 'dms-company');
+            }}
+            onOpenDistributor={(id) => {
+              setDmsDistributorId(id);
+              setDmsTab('distributor');
+              go('dms-distributor');
+            }}
+          />
+        );
+      case 'dms-company': {
+        const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+        return (
+          <DmsCompanyScreen
+            company={company}
+            status={dmsStatus[company.id] ?? 'none'}
+            onBack={goBack}
+            onRegister={() => {
+              setDmsTab('company');
+              go('dms-register');
+            }}
+          />
+        );
+      }
+      case 'dms-distributor': {
+        const distributor = dmsDistributorById(dmsDistributorId) ?? DMS_DISTRIBUTORS[0];
+        return (
+          <DmsDistributorScreen
+            distributor={distributor}
+            status={dmsStatus[distributor.id] ?? 'none'}
+            onBack={goBack}
+            onRegister={() => {
+              setDmsTab('distributor');
+              go('dms-register');
+            }}
+          />
+        );
+      }
+      case 'dms-register': {
+        // Registering with a company or with a distributor directly —
+        // whichever kind of list entry the buyer opened.
+        let targetId: string;
+        let target: DmsTarget;
+        if (dmsTab === 'company') {
+          const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+          const name = company.shortName ?? company.company;
+          // No distributor is picked — the company assigns one, so the
+          // request goes to its authorised distributor(s) in the area. Direct
+          // companies (TCPL) take the request themselves.
+          const names = company.direct
+            ? name
+            : companyDistributors(company).map((d) => d.name).join(' / ');
+          targetId = company.id;
+          target = {
+            name,
+            via: company.direct ? company.company : `via ${names}`,
+            emoji: company.emoji,
+            distributor: names,
+            idHint: company.idHint,
+            rejectedReason: company.rejectedReason,
+          };
+        } else {
+          const d = dmsDistributorById(dmsDistributorId) ?? DMS_DISTRIBUTORS[0];
+          targetId = d.id;
+          target = {
+            name: d.name,
+            via: `Distributor for ${d.serves.join(', ')}`,
+            emoji: d.emoji,
+            distributor: d.name,
+            idHint: d.idHint,
+            rejectedReason: d.rejectedReason,
+          };
+        }
+        return (
+          <DmsRegisterScreen
+            key={targetId}
+            target={target}
+            status={dmsStatus[targetId] ?? 'none'}
+            onBack={goBack}
+            onComplete={(status) => {
+              setDmsStatus((s) => ({ ...s, [targetId]: status }));
+              go('dms-partners');
+            }}
+          />
+        );
+      }
       // One screen per level-1 group, each listing only its own categories.
       case 'wholesaler-groceries':
       case 'wholesaler-fmcg': {
