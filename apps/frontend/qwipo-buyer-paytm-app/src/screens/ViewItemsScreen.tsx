@@ -187,9 +187,14 @@ export function ViewItemsScreen({
                     <span className="text-xs font-semibold text-success-foreground">Free item</span>
                   ) : (
                     <>
-                      <span className="text-xs tabular-nums text-foreground-secondary line-through">
-                        {formatInr(item.product.mrp)}
-                      </span>
+                      {item.product.mrp > item.product.price && (
+                        <span className="text-xs text-foreground-secondary">
+                          MRP{' '}
+                          <span className="tabular-nums line-through">
+                            {formatInr(item.product.mrp)}
+                          </span>
+                        </span>
+                      )}
                       <span className="text-sm font-semibold tabular-nums text-foreground">
                         {formatInr(item.product.price)}
                       </span>
@@ -213,7 +218,12 @@ export function ViewItemsScreen({
                 {/* A paid line carries its count in the control itself, so the
                     separate Qty badge would say it twice. A free line has no
                     control — the buyer didn't put it there — so it keeps the
-                    badge as the only place its count appears. */}
+                    badge as the only place its count appears.
+
+                    Beside the control sits what the line is actually worth:
+                    the unit price above answers "what does one cost", and
+                    this answers "what am I spending on this product" — the
+                    figure the seller's total is built from. */}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   {item.free ? (
                     <>
@@ -226,7 +236,10 @@ export function ViewItemsScreen({
                     </>
                   ) : (
                     <>
-                      <span />
+                      <span className="text-sm text-foreground">
+                        Total:{' '}
+                        <span className="font-bold tabular-nums">{formatInr(item.lineTotal)}</span>
+                      </span>
                       <QtyPill
                         qty={item.quantity}
                         onEdit={() => onItemTap(item.product.id)}

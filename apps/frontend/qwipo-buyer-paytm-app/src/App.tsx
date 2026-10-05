@@ -66,7 +66,7 @@ import { ReorderScreen } from './screens/ReorderScreen';
 import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
-import { PRODUCTS, productById, type Source } from './data/products';
+import { PRODUCTS, productById } from './data/products';
 import { WHOLESALER_PRODUCTS, cheapestVendorId } from './data/wholesaler';
 import { DIST_CATEGORIES, WHOLESALER_CATEGORIES, wholesalerCategoriesIn, BRANDS, DISTRIBUTORS, type Distributor } from './data/home';
 import { buildCart, INITIAL_QTY } from './data/cart';
@@ -140,7 +140,6 @@ interface TrailEntry {
   browseTab?: BrowseTab;
   distributor: Distributor;
   seller: string | null;
-  source?: Source;
 }
 
 /** Long enough for any real path through the app, short enough to stay cheap. */
@@ -251,9 +250,6 @@ export default function App() {
      wholesaler tab. */
   const [homeTab, setHomeTab] = useState<'distributors' | 'wholesalers'>('distributors');
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
-  /* Set when Reorder is opened from a Home rail, cleared when it's opened
-     from the bottom nav — that entry carries no opts and shows everything. */
-  const [reorderSource, setReorderSource] = useState<Source | undefined>(undefined);
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
@@ -359,7 +355,6 @@ export default function App() {
     browseTab,
     distributor: selectedDistributor,
     seller: viewSellerId,
-    source: reorderSource,
   });
 
   const go = (id: ScreenId, opts?: NavOpts) => {
@@ -435,7 +430,6 @@ export default function App() {
       setListBackTab(opts?.tab as BrowseTab | undefined);
     }
     if (id === 'storefront' && opts?.distributor) setSelectedDistributor(opts.distributor);
-    if (id === 'reorder') setReorderSource(opts?.source);
     if (id === 'distributors-list' || id === 'wholesaler-categories') {
       setBrowseTab(opts?.tab as BrowseTab | undefined);
     }
@@ -461,7 +455,6 @@ export default function App() {
     setBrowseTab(prev.browseTab);
     setSelectedDistributor(prev.distributor);
     setViewSellerId(prev.seller);
-    setReorderSource(prev.source);
     setScreen(prev.screen);
   };
 
@@ -633,6 +626,8 @@ export default function App() {
                   : availabilityFor(deliveryAddressId)
             }
             deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
+            onOpenSheet={setSheetId}
+            onOpenWholesaleSheet={setWholesaleSheetId}
             salesperson={isSalesperson}
           />
         );
@@ -838,7 +833,6 @@ export default function App() {
             onSetWholesaleQty={setWholesaleLineQty}
             vendorSel={wholesaleVendor}
             onSetVendor={setWholesaleVendorFor}
-            initialTab={reorderSource}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
             onSearch={() => go('global-search')}

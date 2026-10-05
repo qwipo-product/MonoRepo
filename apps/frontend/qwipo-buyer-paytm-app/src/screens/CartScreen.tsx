@@ -127,6 +127,12 @@ export function CartScreen({
 /** Weight the way a seller quotes it: "25 kg", "12.5 kg". */
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 
+/* Whole rupees for the minimum bars only. A minimum is a round target, not an
+   invoice line — "Add ₹1,520 of ₹2,000" is read at a glance, where
+   "₹1,520.00 of ₹2,000.00" is four numbers to wade through. Everything else
+   on this screen still shows paise. */
+const rupees = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+
 /* A minimum this seller has not met yet — value or weight, same shape either
    way. It leads with what is still missing, because that is the number the
    buyer acts on; the threshold follows it for context.
@@ -148,9 +154,9 @@ function MinimumBar({
   return (
     <div className="mt-2.5">
       <div className="flex items-center justify-between gap-2 text-xs">
-        {/* The label is the brand blue so the condition is legible at a
-            glance; the amber is saved for the number still outstanding. */}
-        <span className="font-medium text-primary">{label}</span>
+        {/* Plain black, like the seller name above it: the label only names
+            the condition, and the amber beside it is what needs reading. */}
+        <span className="font-medium text-foreground">{label}</span>
         <span className="tabular-nums">
           <span className="font-semibold text-warning-foreground">Add {format(need - have)}</span>
           <span className="text-foreground-secondary"> of {format(need)}</span>
@@ -204,20 +210,10 @@ function SellerCard({
             minimum is unmet — once it's cleared there is no progress left to
             report. Weight only appears for sellers who set one. */}
         {seller.mov > 0 && seller.subtotal < seller.mov && (
-          <MinimumBar
-            label="Minimum order value"
-            have={seller.subtotal}
-            need={seller.mov}
-            format={formatInr}
-          />
+          <MinimumBar label="MOV" have={seller.subtotal} need={seller.mov} format={rupees} />
         )}
         {seller.mow > 0 && seller.belowWeight && (
-          <MinimumBar
-            label="Minimum order weight"
-            have={seller.weight}
-            need={seller.mow}
-            format={kg}
-          />
+          <MinimumBar label="MOW" have={seller.weight} need={seller.mow} format={kg} />
         )}
 
         {/* delivery pill — driven by the fee, not the status, so a seller
