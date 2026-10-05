@@ -168,12 +168,11 @@ export function SellerBrowseScreen({
                 </button>
                 {/* delivery day(s) + the MOV for each — the same quiet rows the
                     product cards carry, from the one delivery source, so a
-                    seller's terms read identically wherever they appear. Only
-                    the label is brand-coloured, to head the block. */}
+                    seller's terms read identically wherever they appear. The
+                    label heads the block in the seller name's own size and
+                    colour; weight alone is enough to set it apart. */}
                 <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
-                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                    Delivery by
-                  </div>
+                  <div className="mb-1 text-xs font-semibold text-foreground">Delivery by</div>
                   {deliveryFooter(d.name)}
                 </div>
 

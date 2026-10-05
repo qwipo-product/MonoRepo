@@ -38,6 +38,8 @@ export function HomeScreen({
   tab,
   onTabChange,
   onNavigate,
+  onOpenSheet,
+  onOpenWholesaleSheet,
   salesperson = false,
   notice,
 }: {
@@ -52,6 +54,10 @@ export function HomeScreen({
   tab: 'distributors' | 'wholesalers';
   onTabChange: (tab: 'distributors' | 'wholesalers') => void;
   onNavigate: Navigate;
+  /** A tapped product rail card opens that SKU's add-to-cart sheet — the
+   *  distributor one or the vendor one, depending on the tab it's on. */
+  onOpenSheet: (id: string) => void;
+  onOpenWholesaleSheet: (id: string) => void;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
   salesperson?: boolean;
 }) {
@@ -179,13 +185,13 @@ export function HomeScreen({
                     onClick={() => onNavigate('storefront', { distributor: d })}
                     className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
                   >
-                    {/* The plate keeps its own frame inside the card, the way a
-                        brand tile does — the card is what holds the mark and the
-                        two lines together. */}
+                    {/* No frame of its own: the card already draws one around
+                        the mark and the two lines, and a second outline just
+                        inside it read as a box in a box. */}
                     <BrandLogo
                       src={d.logo}
                       alt={d.title}
-                      className="aspect-square w-full rounded border border-border"
+                      className="aspect-square w-full rounded"
                       imgClassName="p-0 scale-110"
                     />
                     <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
@@ -199,12 +205,9 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Previously Ordered"
-                  onSeeAll={() => onNavigate('reorder', { source: 'distributor' })}
+                  onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail
-                  items={prevOrderedDistributor}
-                  onOpen={() => onNavigate('reorder', { source: 'distributor' })}
-                />
+                <ProductTeaserRail items={prevOrderedDistributor} onOpen={onOpenSheet} />
               </section>
             )}
 
@@ -241,10 +244,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('listing')}
                 />
-                <ProductTeaserRail
-                  items={trendingDistributor}
-                  onOpen={() => onNavigate('listing')}
-                />
+                <ProductTeaserRail items={trendingDistributor} onOpen={onOpenSheet} />
               </section>
             )}
           </>
@@ -273,12 +273,9 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Previously Ordered"
-                  onSeeAll={() => onNavigate('reorder', { source: 'wholesaler' })}
+                  onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail
-                  items={prevOrderedWholesaler}
-                  onOpen={() => onNavigate('reorder', { source: 'wholesaler' })}
-                />
+                <ProductTeaserRail items={prevOrderedWholesaler} onOpen={onOpenWholesaleSheet} />
               </section>
             )}
 
@@ -330,10 +327,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('wholesaler-products')}
                 />
-                <ProductTeaserRail
-                  items={trendingWholesaler}
-                  onOpen={() => onNavigate('wholesaler-products')}
-                />
+                <ProductTeaserRail items={trendingWholesaler} onOpen={onOpenWholesaleSheet} />
               </section>
             )}
           </>

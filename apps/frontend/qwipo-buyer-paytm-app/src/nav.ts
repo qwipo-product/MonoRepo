@@ -1,7 +1,6 @@
 import type { ScreenId } from './review/screenIndex';
 import type { AppliedFilter } from './data/filters';
 import type { Distributor } from './data/home';
-import type { Source } from './data/products';
 
 /** Options a navigation can carry to the destination screen. */
 export interface NavOpts {
@@ -11,8 +10,6 @@ export interface NavOpts {
   tab?: string;
   /** The distributor whose storefront to open (Home tile / Sellers row). */
   distributor?: Distributor;
-  /** Which side of the catalogue the destination covers (Reorder). */
-  source?: Source;
 }
 
 /** App-wide navigate: jump to a screen, optionally carrying filter/back context. */
