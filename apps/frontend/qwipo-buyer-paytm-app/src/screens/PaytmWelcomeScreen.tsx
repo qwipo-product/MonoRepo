@@ -17,7 +17,7 @@ export function PaytmWelcomeScreen({ onProceed }: { onProceed: () => void }) {
       </div>
 
       <div className="mb-6 flex flex-col items-center gap-2">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground-secondary">Powered by</div>
+        <div className="text-2xs font-semibold uppercase tracking-[0.2em] text-foreground-secondary">Powered by</div>
         <img src="/brand/digidukaan-logo.svg" alt="ONDC DigiDukaan" className="h-7 w-auto" />
       </div>
 

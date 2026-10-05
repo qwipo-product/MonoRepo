@@ -207,7 +207,7 @@ export function CouponsScreen({
 
       {/* sticky summary — the Apply action lives on the cards now, so the bar
           just reports the running state and gets the buyer back to the cart */}
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-bar-top">
         <div className="min-w-0 text-sm text-foreground-secondary">
           {appliedCount > 0 ? (
             <>
@@ -289,7 +289,7 @@ function OfferCard({
                 if (e.key === 'Enter' || e.key === ' ') copyCode(e as unknown as React.MouseEvent);
               }}
               aria-label={`Copy coupon code ${offer.code}`}
-              className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-primary bg-primary-soft px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary"
+              className="mb-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded border border-dashed border-primary bg-primary-soft px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-primary"
             >
               {offer.code}
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}

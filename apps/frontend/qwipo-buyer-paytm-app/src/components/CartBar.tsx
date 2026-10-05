@@ -26,9 +26,9 @@ export function CartBar({
 }) {
   if (count <= 0) return null;
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+    <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-bar-top">
       <div className="leading-tight">
-        <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
+        <div className="text-2xs uppercase tracking-wide text-foreground-secondary">
           Total cart value
         </div>
         <div className="text-lg font-bold tabular-nums">{formatInr(total)}</div>

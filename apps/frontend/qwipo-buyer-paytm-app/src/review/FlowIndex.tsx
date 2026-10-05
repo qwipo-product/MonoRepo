@@ -133,7 +133,7 @@ export default function FlowIndex({
           <UserRound size={15} />
         </span>
         <span className="min-w-0">
-          <span className="block text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+          <span className="block text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
             {effectiveRole === 'salesperson' ? 'Salesperson login' : 'Customer login'}
           </span>
           <span className="block font-mono text-sm font-semibold tabular-nums text-foreground">
@@ -176,7 +176,7 @@ export default function FlowIndex({
                       {item.label}
                     </span>
                     {!isBuilt && (
-                      <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground-secondary">
+                      <span className="ml-auto text-2xs uppercase tracking-wider text-foreground-secondary">
                         soon
                       </span>
                     )}

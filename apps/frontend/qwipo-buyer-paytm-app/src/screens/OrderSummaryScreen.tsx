@@ -107,7 +107,7 @@ export function OrderSummaryScreen({
         </div>
       </div>
 
-      <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+      <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
         {kycPending && kycUnderReview && (
           <InlineMessage
             className="mb-3"
@@ -133,9 +133,9 @@ export function OrderSummaryScreen({
         )}
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
+            <div className="text-2xs uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
-            <div className="text-[11px] font-medium text-primary">Cash on Delivery</div>
+            <div className="text-xs font-medium text-primary">Cash on Delivery</div>
           </div>
           <Button className="px-8" disabled={kycPending} onClick={onPlaceOrder}>
             Place order

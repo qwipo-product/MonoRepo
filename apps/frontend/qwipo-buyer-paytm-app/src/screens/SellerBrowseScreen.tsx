@@ -136,7 +136,7 @@ export function SellerBrowseScreen({
                 <span className="w-full overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
                   <img src={encodeURI(c.image)} alt="" className="aspect-[400/268] w-full object-cover" />
                 </span>
-                <span className="truncate px-0.5 text-center text-sm font-medium text-foreground">{c.name}</span>
+                <span className="truncate px-0.5 text-center text-xs text-foreground">{c.name}</span>
               </button>
             ))}
           </div>

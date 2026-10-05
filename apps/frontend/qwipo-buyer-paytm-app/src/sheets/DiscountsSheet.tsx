@@ -178,7 +178,7 @@ export function DiscountsSheet({
                     <span className="block text-xs text-foreground-secondary">{o.sub}</span>
                   </span>
                   {o.state === 'auto' && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-success-subtle px-2 py-1 text-[11px] font-semibold text-success-foreground">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-success-subtle px-2 py-1 text-2xs font-semibold text-success-foreground">
                       <Check className="h-3 w-3" /> Applied
                     </span>
                   )}

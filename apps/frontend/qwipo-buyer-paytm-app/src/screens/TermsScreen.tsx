@@ -46,7 +46,7 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
           {SUPPORT_PHONE}
         </a>
 
-        <div className="pt-1 text-center text-[11px] text-foreground-tertiary">© Qwipo · B2B Commerce</div>
+        <div className="pt-1 text-center text-xs text-foreground-tertiary">© Qwipo · B2B Commerce</div>
       </div>
     </div>
   );

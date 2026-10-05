@@ -65,7 +65,7 @@ export function TabsTrigger({
         'inline-flex items-center gap-2 rounded-xl border-[1.5px] px-3 py-2.5 text-xs font-medium transition-colors',
         active
           ? 'bg-primary border-primary text-primary-foreground'
-          : 'bg-background border-[var(--color-border-token)] text-primary',
+          : 'bg-background border-border-token text-primary',
         className
       )}
     >

@@ -9,7 +9,7 @@ import { MAX_ATTEMPTS } from './kycData';
 /** Sticky bottom bar holding the screen's main CTA(s). */
 export function KycFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="shrink-0 space-y-3 border-t border-border bg-background px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-bar-top)]">
+    <div className="shrink-0 space-y-3 border-t border-border bg-background px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-bar-top">
       {children}
     </div>
   );
@@ -67,7 +67,7 @@ export function AttemptPill({
       className={cn(
         'inline-flex shrink-0 items-center font-semibold text-warning-foreground',
         compact
-          ? 'gap-1.5 text-[11px]'
+          ? 'gap-1.5 text-2xs'
           : 'gap-2 rounded-full border border-warning-border bg-card px-2.5 py-1 text-xs',
         className
       )}

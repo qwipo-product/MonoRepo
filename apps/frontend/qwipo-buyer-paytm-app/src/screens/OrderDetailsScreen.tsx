@@ -98,7 +98,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="rounded border border-dashed border-primary bg-primary-soft px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
+                        <span className="rounded border border-dashed border-primary bg-primary-soft px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-primary">
                           {o.code}
                         </span>
                         <span className="text-xs font-medium text-foreground-secondary">{o.label}</span>
@@ -138,13 +138,13 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
                 <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
                   <ProductImage image={item.image} alt={item.name} />
                   {item.free && (
-                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
                       Free
                     </span>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-foreground-secondary">
+                  <div className="text-2xs font-semibold uppercase tracking-wide text-foreground-secondary">
                     {item.brand}
                   </div>
                   <div className="text-sm font-medium text-foreground">{item.name}</div>
@@ -153,7 +153,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
                 {item.free ? (
                   <div className="shrink-0 text-right">
                     <div className="text-sm font-bold tabular-nums text-success-foreground">₹0.00</div>
-                    <div className="text-[11px] text-foreground-secondary">Free item</div>
+                    <div className="text-xs text-foreground-secondary">Free item</div>
                   </div>
                 ) : (
                   <PriceLabel price={item.price} mrp={item.mrp} className="shrink-0" />

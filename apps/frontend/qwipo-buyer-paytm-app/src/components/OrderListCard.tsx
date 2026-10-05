@@ -73,19 +73,19 @@ export function OrderListCard({
 
       <div className="mt-2 flex items-center justify-between rounded-md bg-background-subtle p-2.5">
         <div>
-          <div className="text-[11px] text-foreground-secondary">{totalLabel}</div>
+          <div className="text-xs text-foreground-secondary">{totalLabel}</div>
           <div className="text-sm font-semibold tabular-nums text-foreground">{formatInrExact(total)}</div>
         </div>
         {rightLabel && (
           <div className="text-right">
-            <div className="text-[11px] text-foreground-secondary">{rightLabel}</div>
+            <div className="text-xs text-foreground-secondary">{rightLabel}</div>
             <div className="text-sm font-medium text-foreground">{rightValue}</div>
           </div>
         )}
       </div>
 
       {actions && <div className="mt-3">{actions}</div>}
-      {hint && <div className="mt-2 text-[11px] text-foreground-secondary">{hint}</div>}
+      {hint && <div className="mt-2 text-xs text-foreground-secondary">{hint}</div>}
     </div>
   );
 }

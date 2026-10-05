@@ -10,6 +10,45 @@
    sheet animations). Everything visual resolves from here. */
 @import "../../../../packages/design-tokens/theme.css";
 
+/* ---- Paytm shell --------------------------------------------------------
+   The mini-app frame imitates Paytm, and Paytm's colours are not ours — they
+   can't come from the design tokens and they must not be redefined by them.
+   They are named once here and used by name (`text-paytm-navy`), so the whole
+   shell is one edit away from changing and no screen carries a hex. This block
+   only ADDS names; it never redefines a design-system token. The values are
+   fixed rather than theme-aware because the shell renders as Paytm renders,
+   light, whichever theme the buyer app is in. */
+:root {
+  --paytm-navy: #002970;        /* headings, icons, body text */
+  --paytm-link: #0a5cff;        /* links and active icons */
+  --paytm-cyan: #00baf2;        /* the brand stripe */
+  --paytm-surface: #eef1f6;     /* page ground and chips */
+  --paytm-tint: #eef4ff;        /* icon circles */
+  --paytm-mint: #c8f0e8;        /* loan banner, gradient start */
+  --paytm-sky: #d7eafe;         /* loan banner, gradient end */
+  --paytm-text-strong: #1f2937;
+  --paytm-text: #374151;
+  --paytm-text-muted: #4b5563;
+  --paytm-text-faint: #6b7280;
+  --paytm-line: #e5e7eb;
+  --paytm-dot: #d1d5db;
+}
+@theme inline {
+  --color-paytm-navy: var(--paytm-navy);
+  --color-paytm-link: var(--paytm-link);
+  --color-paytm-cyan: var(--paytm-cyan);
+  --color-paytm-surface: var(--paytm-surface);
+  --color-paytm-tint: var(--paytm-tint);
+  --color-paytm-mint: var(--paytm-mint);
+  --color-paytm-sky: var(--paytm-sky);
+  --color-paytm-text-strong: var(--paytm-text-strong);
+  --color-paytm-text: var(--paytm-text);
+  --color-paytm-text-muted: var(--paytm-text-muted);
+  --color-paytm-text-faint: var(--paytm-text-faint);
+  --color-paytm-line: var(--paytm-line);
+  --color-paytm-dot: var(--paytm-dot);
+}
+
 html,
 body,
 #root {
@@ -21,14 +60,18 @@ body {
 
 /* Splash color-morph — ported from the New-Buyer-App reference. Lavender
    background holds, the white brand mark scales in, then the background fades
-   to white while the mark cross-fades into the colored primary. #bc77ff is the
-   Qwipo brand lavender (splash-only, not a DS token). */
+   to white while the mark cross-fades into the colored primary. The lavender
+   is a brand colour used only here, so it is named once below rather than
+   repeated as a literal — and it is not a design-system token. */
+:root {
+  --splash-lavender: #bc77ff;
+}
 .splash-screen-v2 {
   position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: #bc77ff;
+  background: var(--splash-lavender);
   animation: splash-bg 2700ms ease-in-out forwards;
 }
 .splash-stage {
@@ -58,7 +101,7 @@ body {
   animation: splash-primary 2700ms ease-out forwards;
 }
 @keyframes splash-bg {
-  0%, 50%   { background: #bc77ff; }
+  0%, 50%   { background: var(--splash-lavender); }
   76%, 100% { background: #ffffff; }
 }
 @keyframes splash-white {
