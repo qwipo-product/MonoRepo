@@ -4,21 +4,20 @@ import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
 import type { DmsStatus } from '../data/dmsPartners';
 
-/** Who the shop is registering with — a company (ITC, served via the chosen
-    distributor) or a distributor directly (Balaji Enterprises). */
+/** The company the shop is registering with (TCPL, HUL, …). */
 export interface DmsTarget {
-  /** Company or distributor name — the one approving the registration. */
+  /** Company name used in sentences — the one approving the registration. */
   name: string;
-  /** Header sub-line, e.g. `via Golden Distributors` / `Distributor for TCPL`. */
+  /** Header sub-line — the company's full name. */
   via: string;
   emoji: string;
-  /** The distributor that receives the KYC and serves the shop. */
+  /** Who receives the KYC — the company itself. */
   distributor: string;
   idHint: string;
   rejectedReason?: string;
 }
 
-/* DMS registration with one company or distributor. Two paths:
+/* DMS registration with one company. Two paths:
    – already a customer → enter the customer ID → sent for approval;
    – new customer → read-only KYC summary + consent → "Request Registration".
    Both end pending approval and follow the same status tracking. */
