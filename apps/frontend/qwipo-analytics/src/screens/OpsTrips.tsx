@@ -9,7 +9,7 @@ import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
 import { EntityDrawer } from '../components/EntityDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripsDaily, fleet, registry } from '../data/logistics';
+import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripStatusCards, tripsByWeekday, tripsWeekly, fleet, registry } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
@@ -87,6 +87,28 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
       )}
 
       <section>
+        <div className="grid grid-cols-4 gap-3">
+          {tripStatusCards.map((s) => {
+            const total = tripStatusCards.reduce((x, c) => x + c.value, 0);
+            const share = Math.round((s.value / total) * 100);
+            return (
+              <Card key={s.label} className="p-3.5">
+                <div className="type-caption flex items-center justify-between text-foreground-secondary">
+                  {s.label}
+                  <i className={cn('h-2.5 w-2.5 rounded-full', s.bg)} />
+                </div>
+                <div className="type-display my-0.5 tabular-nums tracking-tight">{s.value}</div>
+                <div className="type-caption text-foreground-secondary">{share}% of {total} total</div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background-sunken">
+                  <i className={cn('block h-full rounded-full', s.bg)} style={{ width: `${share}%` }} />
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
         <div className="grid grid-cols-6 gap-3">
           <KpiCard label="Total fleet trips" value={fleet.trips.toLocaleString('en-IN')} change="→" trend="flat" note="This period" />
           <KpiCard label="Active distributors" value={String(opsDistributors.length)} change="→" trend="flat" note="in scope this period" />
@@ -114,11 +136,19 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
           </div>
         </Panel>
 
-        <Panel className="col-span-7" title="Trips per day" subtitle="Daily trip volume for the selected period">
-          <Columns items={tripsDaily.map((t) => ({ label: String(t.day), n: t.trips, bg: 'bg-chart-cyan' }))} height={110} />
+        <Panel className="col-span-7" title="Trips per day" subtitle="Weekday profile · avg vehicles in use beneath">
+          <Columns items={tripsByWeekday.map((t) => ({ label: t.day, n: t.trips, bg: 'bg-chart-cyan' }))} height={110} />
+          <div className="type-caption mt-2 flex gap-2.5 text-foreground-secondary">
+            <span className="shrink-0">Vehicles</span>
+            {tripsByWeekday.map((t) => (
+              <span key={t.day} className="flex-1 text-center tabular-nums">{t.avgVehicles}</span>
+            ))}
+          </div>
+          <div className="type-caption mt-3 border-t border-border-subtle pt-2 text-foreground-secondary">
+            Weekly · {tripsWeekly.map((w) => `${w.week} ${w.trips}`).join(' · ')}
+          </div>
           <div className="mt-4 flex gap-6">
             <Stat label="Total trips" value={String(fleet.trips)} note="this period" />
-            <Stat label="Avg / day" value={(fleet.trips / tripsDaily.length).toFixed(1)} note={`${tripsDaily.length} working days`} />
             <Stat label="Total distance" value={`${fleet.distanceKm.toLocaleString('en-IN')} km`} note={`${fleet.drivers} drivers`} />
           </div>
         </Panel>
