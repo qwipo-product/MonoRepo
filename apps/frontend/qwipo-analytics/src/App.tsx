@@ -5,6 +5,9 @@ import Sales from './screens/Sales';
 import Distributors from './screens/Distributors';
 import Customers from './screens/Customers';
 import Reports from './screens/Reports';
+import OpsSummary from './screens/OpsSummary';
+import OpsOrders from './screens/OpsOrders';
+import OpsTrips from './screens/OpsTrips';
 import BuyerSales from './screens/BuyerSales';
 import BuyerBA from './screens/BuyerBA';
 import BuyerCustomers from './screens/BuyerCustomers';
@@ -50,6 +53,12 @@ export default function App() {
           <Distributors go={go} />
         ) : route.page === 'customers' ? (
           <Customers go={go} />
+        ) : route.page === 'lg-summary' ? (
+          <OpsSummary />
+        ) : route.page === 'lg-orders' ? (
+          <OpsOrders />
+        ) : route.page === 'lg-trips' ? (
+          <OpsTrips />
         ) : route.page === 'buyer-sales' ? (
           <BuyerSales go={go} />
         ) : route.page === 'buyer-ba' ? (

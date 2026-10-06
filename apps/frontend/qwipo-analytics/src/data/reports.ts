@@ -10,6 +10,8 @@ export interface ReportDef {
   name: string;
   desc: string;
   sheets: string[];
+  /** column contract per sheet (same index as sheets), where one is agreed */
+  columns?: string[][];
   /** which scope filters this report takes */
   scope: ('date' | 'company' | 'city' | 'distributor')[];
   /** report-specific filters */
@@ -87,6 +89,35 @@ export const reportDefs: ReportDef[] = [
   },
 
   /* ---------------------------- Ops (Logistics) ---------------------------- */
+  // The two report shapes of the reference build (logistics-tech-dashboard),
+  // with its exact sheet and column contracts.
+  {
+    key: 'ops-company-report', domain: 'ops', scope: ['date', 'company'], name: 'Company Report',
+    desc: 'Operations-level summary across all distributors — day-level trips, returns split, utilization.',
+    sheets: ['Reports', 'Summary'],
+    columns: [
+      ['Trip Date', 'Number of Trips', 'Number of Vehicles', 'Total Trip (Km)', 'Delivered', 'Returned', 'Returned : Cancelled', 'Returned : Delivery Retry', 'Total Delivery Attempt', 'Net Sale Value', 'Return Value', 'Total Net Sale', 'Total Delivery Weight', 'Vehicle Vol. Capacity', 'Average Run Time (Min)', 'Average Run Time (Hr)', 'Weight Utilization', 'Delivery Point Utilization', 'Time Utilization'],
+      ['Trip Date', 'Order ID', 'Trip Number', 'Buyer Name', 'Start Date & Time', 'End Date & Time', 'Time Taken', 'Total Travel Time', 'Total Loading / Unloading Time', 'Total Trip (Km)', 'Total Delivered', 'Total Returned', 'Returned : Cancelled', 'Returned : Delivery Retry', 'Total Delivery Attempt', 'Net Sale Value', 'Return Value', 'Delivered Total Weight', 'Returned Total Weight', 'Total Net Sale', 'Total Delivery Weight', 'Vehicle Details', 'Driver Name', 'Vehicle Vol. Capacity', 'Run Time (Min)', 'Max Delivery Point', 'Delivery Point Utilization', 'Time Utilization', 'Vehicle Utilization'],
+    ],
+    filters: [],
+  },
+  {
+    key: 'ops-distributor-report', domain: 'ops', scope: ['date', 'company', 'distributor'], name: 'Distributor Report',
+    desc: 'Trip details, delivery aging and vehicle data per distributor — hop, invoice and vehicle level.',
+    sheets: ['Reports', 'Details', 'Invoice Level Details', 'Delivery Aging', 'Vehicle Raw'],
+    columns: [
+      ['Trip Date', 'Number of Trips', 'Number of Vehicles', 'Total Trip (Km)', 'Delivered', 'Returned', 'Returned : Cancelled', 'Returned : Delivery Retry', 'Total Delivery Attempt', 'Net Sale Value', 'Return Value', 'Total Net Sale', 'Total Delivery Weight', 'Vehicle Vol. Capacity', 'Average Run Time (Min)', 'Average Run Time (Hr)', 'Weight Utilization', 'Delivery Point Utilization', 'Time Utilization'],
+      ['Trip Date', 'Trip Number', 'Buyer Name', 'Hop Type', 'Delivery status', 'Date & Time Stamp', 'Total Distance (km)', 'Hop Name', 'Travel Time', 'Unloading Time', 'Time taken', 'Latitude', 'Longitude', 'Hop Weight', 'Net Invoice Value'],
+      ['WD Name', 'WD Dest Code', 'Order ID', 'Invoice ID', 'Creation Date', 'Billing Date', 'Delivery Date', 'Store Name', 'Status', 'Net Invoice Value', 'Weight', 'Volumetric Weight', 'Order Type', 'Sales Beat Name', 'Sales Person Name', 'Return remark', 'LBNP Trip Number'],
+      ['Invoice ID', 'Creation Date', 'Billing Date', 'Delivery Date', 'Store Name', 'Status', 'Net Invoice Value', 'Weight', 'Volumetric Weight', 'Order Type', 'Sales Beat Name', 'Sales Person Name', 'Delivery Aging Bucket'],
+      ['ID', 'Name', 'Registration Number', 'Ownership Type', 'Volumetric Capacity', 'Status'],
+    ],
+    filters: [],
+    flags: [
+      { label: 'WD Dest Code — no source yet', variant: 'warning' },
+      { label: 'invoice-level ageing needs ETL', variant: 'warning' },
+    ],
+  },
   {
     key: 'ops-dispatch-register', domain: 'ops', scope: ['date', 'city', 'distributor'], name: 'Dispatch Register',
     desc: 'Every dispatch with vehicle, route, drop count and proof-of-delivery status.',
