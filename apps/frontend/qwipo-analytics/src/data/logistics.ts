@@ -238,9 +238,33 @@ export const runtimeByCity = [
   { city: 'Pune', slab: '> 6h', avg: '6h 10m', trips: 15 },
 ];
 
-/** Trips per day — 20 working days from the reference's trip-volume multipliers. */
-const tripMult = [1, 0.88, 1.06, 1.12, 0.95, 1.08, 0.72, 1, 0.91, 1.05, 1.09, 0.97, 1.03, 0.84, 0.9, 1.07, 1.11, 0.94, 1.02, 0.88];
-export const tripsDaily = tripMult.map((m, i) => ({ day: i + 1, trips: Math.round(14.6 * m) }));
+/** Trip status cards — the reference Trips page's top row. */
+export const tripStatusCards = [
+  { label: 'Planned', value: 18, bg: 'bg-chart-blue' },
+  { label: 'In Progress', value: 14, bg: 'bg-warning' },
+  { label: 'Completed', value: 92, bg: 'bg-success' },
+  { label: 'Cancelled', value: 4, bg: 'bg-border-strong' },
+];
+
+/** Trip volume profiles — the reference's weekday and weekly series, with avg vehicles. */
+export const tripsByWeekday = [
+  { day: 'Mon', trips: 48, avgVehicles: 82 },
+  { day: 'Tue', trips: 52, avgVehicles: 88 },
+  { day: 'Wed', trips: 51, avgVehicles: 85 },
+  { day: 'Thu', trips: 61, avgVehicles: 94 },
+  { day: 'Fri', trips: 59, avgVehicles: 96 },
+  { day: 'Sat', trips: 38, avgVehicles: 74 },
+  { day: 'Sun', trips: 22, avgVehicles: 42 },
+];
+export const tripsWeekly = [
+  { week: 'W1 Apr', trips: 220, avgVehicles: 84 },
+  { week: 'W2 Apr', trips: 248, avgVehicles: 89 },
+  { week: 'W3 Apr', trips: 261, avgVehicles: 91 },
+  { week: 'W4 Apr', trips: 204, avgVehicles: 79 },
+  { week: 'W1 May', trips: 242, avgVehicles: 88 },
+  { week: 'W2 May', trips: 271, avgVehicles: 93 },
+  { week: 'W3 May', trips: 239, avgVehicles: 87 },
+];
 
 /** Fleet rollups computed from the driver list (so every number agrees). */
 export const fleet = {
