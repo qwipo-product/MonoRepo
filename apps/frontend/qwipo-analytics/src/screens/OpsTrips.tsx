@@ -8,8 +8,9 @@ import { Columns, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
 import { EntityDrawer } from '../components/EntityDrawer';
+import { OpsDistributorsDrawer } from '../components/OpsDistributorsDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripStatusCards, tripsByWeekday, tripsWeekly, fleet, registry } from '../data/logistics';
+import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripStatusCards, tripsByWeekday, tripsWeekly, fleet } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
@@ -51,23 +52,7 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar />
-      {drawer === 'distributors' && (
-        <EntityDrawer
-          title="Distributor performance"
-          total={`${opsDistributors.length} distributors with metrics · ${registry.length} registered`}
-          rows={rankedDistributors.map((d) => ({
-            name: d.name,
-            sub: `${d.code} · ${d.city}, ${d.state} · ${d.vehicles} vehicles`,
-            mid: `Util ${d.vehicleUtil} · ${d.weightUtil} · ${d.timeUtil} · ${d.dpUtil} · fill rate ${d.fillRate}%`,
-            right: `${d.tripEfficiency}%`,
-            rightSub: `₹${d.invoiceL}L · ${d.returned} returns`,
-            tone: d.tripEfficiency < 87 ? ('warning' as const) : undefined,
-          }))}
-          report="ops-distributor-report"
-          onClose={() => setDrawer(null)}
-          go={go}
-        />
-      )}
+      {drawer === 'distributors' && <OpsDistributorsDrawer onClose={() => setDrawer(null)} go={go} />}
       {drawer === 'drivers' && (
         <EntityDrawer
           title={picked ? `Drivers · ${distName(picked)}` : 'Driver performance'}
