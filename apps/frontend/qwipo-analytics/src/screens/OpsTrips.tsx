@@ -11,15 +11,30 @@ import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripsDaily,
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
 
+/** Arc gauge, the reference's utilization dial: a 270° arc with the % centred.
+ *  `stroke` is a full token class so the Tailwind scanner sees it. */
+function ArcGauge({ pct: value, stroke }: { pct: number; stroke: string }) {
+  const r = 30, c = 2 * Math.PI * r, arc = 0.75 * c;
+  return (
+    <svg viewBox="0 0 80 80" className="h-20 w-20" role="img" aria-label={`${value}%`}>
+      <g transform="rotate(135 40 40)">
+        <circle cx={40} cy={40} r={r} className="fill-none stroke-background-sunken" strokeWidth={7} strokeLinecap="round" strokeDasharray={`${arc} ${c}`} />
+        <circle cx={40} cy={40} r={r} className={cn('fill-none', stroke)} strokeWidth={7} strokeLinecap="round" strokeDasharray={`${(arc * value) / 100} ${c}`} />
+      </g>
+      <text x={40} y={45} textAnchor="middle" className="fill-foreground text-[15px] font-semibold tabular-nums">{value}%</text>
+    </svg>
+  );
+}
+
 export default function OpsTrips() {
   const [picked, setPicked] = useState<string | null>(null);
   const shownDrivers = picked ? drivers.filter((d) => d.distributor === picked) : drivers;
   const successRate = pct(fleet.attempts - fleet.returnTrips, fleet.attempts);
   const utils = [
-    { label: 'Vehicle utilization', n: network.vehicleUtil, formula: 'Vehicles used ÷ vehicles available' },
-    { label: 'Weight utilization', n: network.weightUtil, formula: 'Load weight carried ÷ vehicle weight capacity' },
-    { label: 'Time utilization', n: network.timeUtil, formula: 'Active run hours ÷ available hours (e.g. 6/8 = 74%)' },
-    { label: 'Delivery point utilization', n: network.dpUtil, formula: 'Stops served ÷ vehicle stop capacity' },
+    { label: 'Vehicle utilization', n: network.vehicleUtil, formula: 'Vehicles used ÷ vehicles available', stroke: 'stroke-chart-blue' },
+    { label: 'Weight utilization', n: network.weightUtil, formula: 'Load weight carried ÷ vehicle weight capacity', stroke: 'stroke-chart-violet' },
+    { label: 'Time utilization', n: network.timeUtil, formula: 'Active run hours ÷ available hours (e.g. 6/8 = 74%)', stroke: 'stroke-chart-cyan' },
+    { label: 'Delivery point utilization', n: network.dpUtil, formula: 'Stops served ÷ vehicle stop capacity', stroke: 'stroke-success' },
   ];
 
   return (
@@ -39,14 +54,12 @@ export default function OpsTrips() {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-5" title="Fleet utilization" subtitle="Vehicle · weight · time · delivery-point efficiency">
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {utils.map((u) => (
-              <div key={u.label} className="type-caption grid grid-cols-[180px_1fr_40px] items-center gap-x-2.5">
-                <span>{u.label}<span className="block text-foreground-tertiary">{u.formula}</span></span>
-                <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
-                  <div className={cn('h-full rounded-sm', u.n >= 85 ? 'bg-success' : u.n >= 75 ? 'bg-chart-blue' : 'bg-warning')} style={{ width: `${u.n}%` }} />
-                </div>
-                <span className="text-right font-medium tabular-nums">{u.n}%</span>
+              <div key={u.label} className="flex flex-col items-center text-center">
+                <ArcGauge pct={u.n} stroke={u.stroke} />
+                <span className="type-label mt-1">{u.label}</span>
+                <span className="type-caption mt-0.5 text-foreground-tertiary">{u.formula}</span>
               </div>
             ))}
           </div>
