@@ -6,8 +6,10 @@ import { useState } from 'react';
 import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui';
 import { Columns, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
+import { Handoff } from '../components/Handoff';
 import { Panel, KpiCard } from '../components/dashboard';
 import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripsDaily, fleet } from '../data/logistics';
+import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
 
@@ -26,7 +28,7 @@ function ArcGauge({ pct: value, stroke }: { pct: number; stroke: string }) {
   );
 }
 
-export default function OpsTrips() {
+export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
   const [picked, setPicked] = useState<string | null>(null);
   const shownDrivers = picked ? drivers.filter((d) => d.distributor === picked) : drivers;
   const successRate = pct(fleet.attempts - fleet.returnTrips, fleet.attempts);
@@ -132,92 +134,64 @@ export default function OpsTrips() {
           </CardContent>
         </Card>
 
-        <Panel className="col-span-12" title="Distributor performance" subtitle="Trip efficiency & fleet use by distributor · select a distributor for driver-level detail">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="type-micro text-left text-foreground-tertiary">
-                <th className="py-2 pr-3 font-semibold">Distributor</th>
-                <th className="py-2 pr-3 font-semibold">City</th>
-                <th className="py-2 pr-3 text-right font-semibold">Orders</th>
-                <th className="py-2 pr-3 text-right font-semibold">Fulfilled</th>
-                <th className="py-2 pr-3 text-right font-semibold">Returns</th>
-                <th className="py-2 pr-3 text-right font-semibold">Invoice</th>
-                <th className="py-2 pr-3 text-right font-semibold">Vehicles</th>
-                <th className="py-2 pr-3 text-right font-semibold">Veh · Wt · Time · DP util</th>
-                <th className="py-2 pr-3 text-right font-semibold">Fill rate</th>
-                <th className="py-2 text-right font-semibold">Trip efficiency</th>
-              </tr>
-            </thead>
-            <tbody className="type-caption">
-              {opsDistributors.map((d) => (
-                <tr
-                  key={d.code}
-                  className={cn('cursor-pointer border-t border-border-subtle hover:bg-muted', picked === d.code && 'bg-primary-soft')}
-                  onClick={() => setPicked(picked === d.code ? null : d.code)}
-                >
-                  <td className="py-1.5 pr-3 font-medium">{d.name}<span className="ml-1.5 font-normal text-foreground-tertiary">{d.code}</span></td>
-                  <td className="py-1.5 pr-3">{d.city}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.orders}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.fulfilled}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.returned}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">₹{d.invoiceL}L</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.vehicles}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.vehicleUtil} · {d.weightUtil} · {d.timeUtil} · {d.dpUtil}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.fillRate}%</td>
-                  <td className="py-1.5 text-right tabular-nums">{d.tripEfficiency}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Panel className="col-span-7" title="Distributor performance" subtitle="Trip efficiency by distributor · click one for its drivers">
+          <div className="flex flex-col gap-2">
+            {[...opsDistributors].sort((a, b) => b.tripEfficiency - a.tripEfficiency).map((d) => (
+              <div
+                key={d.code}
+                className={cn(
+                  'type-caption grid cursor-pointer grid-cols-[210px_1fr_120px] items-center gap-2.5 rounded-md px-1 -mx-1 text-foreground hover:bg-muted',
+                  picked === d.code && 'bg-primary-soft hover:bg-primary-soft',
+                )}
+                onClick={() => setPicked(picked === d.code ? null : d.code)}
+              >
+                <span className="truncate">{d.name}<span className="ml-1.5 text-foreground-tertiary">{d.city}</span></span>
+                <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
+                  <div className={cn('h-full rounded-sm', d.tripEfficiency >= 90 ? 'bg-success' : d.tripEfficiency >= 87 ? 'bg-chart-blue' : 'bg-warning')} style={{ width: `${d.tripEfficiency}%` }} />
+                </div>
+                <span className="text-right tabular-nums">
+                  {d.tripEfficiency}% <small className="text-foreground-tertiary">₹{d.invoiceL}L · {d.returned} ret</small>
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="type-caption mt-3 text-foreground-secondary">Fill rate, utilization quad and vehicle counts per distributor are in the Distributor Report.</p>
         </Panel>
 
         <Panel
-          className="col-span-12"
-          title="Driver performance analytics"
-          subtitle="Overview of trips, distance covered, and delivery success metrics"
+          className="col-span-5"
+          title="Driver performance"
+          subtitle={picked ? 'Drivers of the selected distributor' : 'Trips per driver · success rate alongside'}
           right={picked ? (
             <Badge variant="info" className="cursor-pointer normal-case tracking-normal" onClick={() => setPicked(null)}>
-              {opsDistributors.find((d) => d.code === picked)?.name} · clear ✕
+              {opsDistributors.find((d) => d.code === picked)?.name} ✕
             </Badge>
           ) : undefined}
         >
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="type-micro text-left text-foreground-tertiary">
-                <th className="py-2 pr-3 font-semibold">Driver</th>
-                <th className="py-2 pr-3 font-semibold">Vehicle</th>
-                <th className="py-2 pr-3 font-semibold">Distributor</th>
-                <th className="py-2 pr-3 text-right font-semibold">Trips</th>
-                <th className="py-2 pr-3 text-right font-semibold">Distance (km)</th>
-                <th className="py-2 pr-3 text-right font-semibold">Attempts</th>
-                <th className="py-2 pr-3 text-right font-semibold">Returns</th>
-                <th className="py-2 pr-3 text-right font-semibold">Return %</th>
-                <th className="py-2 pr-3 text-right font-semibold">Success rate</th>
-                <th className="py-2 pr-3 text-right font-semibold">Runtime</th>
-                <th className="py-2 pr-3 text-right font-semibold">Net sale</th>
-                <th className="py-2 text-right font-semibold">Contribution</th>
-              </tr>
-            </thead>
-            <tbody className="type-caption">
-              {shownDrivers.map((d) => (
-                <tr key={d.name} className="border-t border-border-subtle">
-                  <td className="py-1.5 pr-3 font-medium">{d.name}</td>
-                  <td className="py-1.5 pr-3 tabular-nums">{(d.vehicles ?? [d.vehicle]).join(', ')}</td>
-                  <td className="py-1.5 pr-3">{opsDistributors.find((x) => x.code === d.distributor)?.name} · {d.city}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.trips}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.distanceKm}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.attempts}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.returns}</td>
-                  <td className={cn('py-1.5 pr-3 text-right tabular-nums', d.returnPct > 10 && 'text-error-foreground')}>{d.returnPct}%</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.successRate}%</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.runtime}</td>
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{d.netSale}</td>
-                  <td className="py-1.5 text-right tabular-nums">{d.contribution}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex flex-col gap-2">
+            {[...shownDrivers].sort((a, b) => b.trips - a.trips).map((d) => (
+              <div key={d.name} className="type-caption grid grid-cols-[150px_1fr_108px] items-center gap-2.5 text-foreground">
+                <span className="truncate">{d.name}<span className="block text-foreground-tertiary">{d.city} · {d.distanceKm} km</span></span>
+                <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
+                  <div className={cn('h-full rounded-sm', d.returnPct > 10 ? 'bg-warning' : 'bg-chart-cyan')} style={{ width: `${(d.trips / 25) * 100}%` }} />
+                </div>
+                <span className="text-right tabular-nums">
+                  {d.trips} trips <small className={cn(d.returnPct > 10 ? 'text-warning-foreground' : 'text-foreground-tertiary')}>{d.successRate}%</small>
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="type-caption mt-3 text-foreground-secondary">Amber = return rate over 10% · success rate shown beside trips.</p>
         </Panel>
+
+        <Handoff
+          className="col-span-12"
+          go={go}
+          report="ops-distributor-report"
+          title="Need the full distributor & driver tables?"
+          body="Orders, returns, utilization quad, fill rate, runtimes, net sale and vehicles per driver — all export via the Distributor Report with this scope."
+          cta="Run Distributor Report"
+        />
       </div>
     </div>
   );
