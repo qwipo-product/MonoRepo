@@ -9,7 +9,7 @@ import { Chip } from '../components/Chip';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
-  network, opsDistributors, agingBuckets, agingBucketLabels, agingRows, dailyVolume, volumeMeasures, taxonomies, type VolumeMeasure,
+  network, opsDistributors, agingBuckets, agingBucketLabels, agingRows, dailyVolume, orderStatusRows, volumeMeasures, taxonomies, type VolumeMeasure,
 } from '../data/logistics';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
@@ -90,8 +90,30 @@ export default function OpsOrders() {
           </div>
         </Panel>
 
+        <Panel className="col-span-4" title="Order status" subtitle="Share of all order outcomes">
+          <div className="flex flex-col gap-2.5">
+            {orderStatusRows.map((s) => {
+              const total = orderStatusRows.reduce((x, r) => x + r.n, 0);
+              const share = Math.round((s.n / total) * 100);
+              return (
+                <div key={s.label} className="rounded-lg bg-background-sunken px-3 py-2.5">
+                  <div className="type-caption flex items-center gap-1.5">
+                    <i className={cn('h-2 w-2 rounded-full', s.bg)} />
+                    <span className="flex-1">{s.label}</span>
+                    <b className="type-label tabular-nums">{s.n.toLocaleString('en-IN')}</b>
+                    <span className="text-foreground-tertiary tabular-nums">{share}%</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-card">
+                    <i className={cn('block h-full rounded-full', s.bg)} style={{ width: `${Math.max(share, 2)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+
         <Panel
-          className="col-span-12"
+          className="col-span-8"
           title="Order volume trend"
           subtitle="Daily volume · May 2026 · pick one or more measures"
           right={

@@ -8,7 +8,7 @@ import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
 import { EntityDrawer } from '../components/EntityDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, taxonomies, registry, opsDistributors } from '../data/logistics';
+import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, taxonomies, registry, opsDistributors, orderStatusRows } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
@@ -20,12 +20,7 @@ const tileDrawers: TileDrawer[] = ['companies', 'distributors', 'deliveries', 'i
 export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
   const [drawer, setDrawer] = useState<TileDrawer | null>(null);
   const deliveryRate = pct(network.fulfilled, network.totalOrders);
-  const statusRows = [
-    { label: 'Delivered', n: network.fulfilled, barClass: 'bg-success' },
-    { label: 'In planning', n: network.pending, barClass: 'bg-chart-blue' },
-    { label: 'Returned', n: network.returned, barClass: 'bg-warning' },
-    { label: 'Cancelled', n: network.cancelled, barClass: 'bg-error' },
-  ];
+  const statusRows = orderStatusRows.map((s) => ({ label: s.label, n: s.n, barClass: s.bg }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -156,9 +151,8 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
 
         <Panel className="col-span-5" title="Order status distribution" subtitle={`${network.totalOrders.toLocaleString('en-IN')} orders this period`}>
           <HBars
-            rows={statusRows.map((s) => ({ ...s, value: `${pct(s.n, network.totalOrders)}%` }))}
+            rows={statusRows.map((s) => ({ ...s, value: `${pct(s.n, statusRows.reduce((x, r) => x + r.n, 0))}%` }))}
           />
-          <p className="type-caption mt-3 text-foreground-tertiary">Partial return exists in the taxonomy; no separate count yet.</p>
         </Panel>
 
         <Panel className="col-span-5" title="Returns breakdown" subtitle="Returned: cancelled vs delivery retry">
