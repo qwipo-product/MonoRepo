@@ -16,10 +16,10 @@ export default function OpsTrips() {
   const shownDrivers = picked ? drivers.filter((d) => d.distributor === picked) : drivers;
   const successRate = pct(fleet.attempts - fleet.returnTrips, fleet.attempts);
   const utils = [
-    { label: 'Vehicle utilization', n: network.vehicleUtil },
-    { label: 'Weight utilization', n: network.weightUtil },
-    { label: 'Time utilization', n: network.timeUtil },
-    { label: 'Delivery point utilization', n: network.dpUtil },
+    { label: 'Vehicle utilization', n: network.vehicleUtil, formula: 'Vehicles used ÷ vehicles available' },
+    { label: 'Weight utilization', n: network.weightUtil, formula: 'Load weight carried ÷ vehicle weight capacity' },
+    { label: 'Time utilization', n: network.timeUtil, formula: 'Active run hours ÷ available hours (e.g. 6/8 = 74%)' },
+    { label: 'Delivery point utilization', n: network.dpUtil, formula: 'Stops served ÷ vehicle stop capacity' },
   ];
 
   return (
@@ -39,10 +39,10 @@ export default function OpsTrips() {
 
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-5" title="Fleet utilization" subtitle="Vehicle · weight · time · delivery-point efficiency">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             {utils.map((u) => (
-              <div key={u.label} className="type-caption grid grid-cols-[180px_1fr_40px] items-center gap-2.5">
-                <span>{u.label}</span>
+              <div key={u.label} className="type-caption grid grid-cols-[180px_1fr_40px] items-center gap-x-2.5">
+                <span>{u.label}<span className="block text-foreground-tertiary">{u.formula}</span></span>
                 <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
                   <div className={cn('h-full rounded-sm', u.n >= 85 ? 'bg-success' : u.n >= 75 ? 'bg-chart-blue' : 'bg-warning')} style={{ width: `${u.n}%` }} />
                 </div>
