@@ -2,10 +2,10 @@
 // Aggregates only, like the reference: order rows live in the Distributor
 // Report (Reports → Ops). Static figures; drill grammar comes in the UX round.
 import { Fragment, useState } from 'react';
-import { SegmentedControl, cn } from '@mockups/ui';
+import { cn } from '@mockups/ui';
 import { Columns } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
-import { TrendChart } from '../components/TrendChart';
+import { Chip } from '../components/Chip';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
@@ -14,18 +14,23 @@ import {
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
+const fmtFor = (measure: VolumeMeasure) => (v: number) =>
+  measure === 'amountL' ? `₹${v.toFixed(1)}L`
+  : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
+  : Math.round(v).toLocaleString('en-IN');
+
+// One colour per measure, spelled out in full for the Tailwind scanner.
+const MEASURE_BG: Record<VolumeMeasure, string> = {
+  orders: 'bg-chart-blue', amountL: 'bg-success', weightKg: 'bg-chart-violet', buyers: 'bg-warning',
+};
+
 export default function OpsOrders() {
-  const [measure, setMeasure] = useState<VolumeMeasure>('orders');
+  // Multi-select: each picked measure gets its own aligned bar row.
+  const [picked, setPicked] = useState<VolumeMeasure[]>(['orders']);
+  const toggleMeasure = (k: VolumeMeasure) =>
+    setPicked((s) => s.includes(k) ? (s.length > 1 ? s.filter((x) => x !== k) : s) : [...s, k]);
   const bucketTotals = agingBuckets.map((_, i) => sum(agingRows.map((r) => r.d[i])));
   const pending = sum(bucketTotals);
-  const maxDay = Math.max(...dailyVolume.map((d) => d[measure]));
-  // Round the axis top up to a clean half-step (413 → 450, 7.95 → 8, 2,855 → 3,000).
-  const p10 = 10 ** Math.floor(Math.log10(maxDay));
-  const niceMax = Math.ceil(maxDay / (p10 / 2)) * (p10 / 2);
-  const fmt = (v: number) =>
-    measure === 'amountL' ? `₹${v.toFixed(1)}L`
-    : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
-    : Math.round(v).toLocaleString('en-IN');
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,29 +94,52 @@ export default function OpsOrders() {
         <Panel
           className="col-span-12"
           title="Order volume trend"
-          subtitle="Daily volume · May 2026"
+          subtitle="Daily volume · May 2026 · pick one or more measures"
           right={
-            <SegmentedControl
-              className="w-auto"
-              options={volumeMeasures.map((m) => ({ value: m.key, label: m.label }))}
-              value={measure}
-              onChange={(v) => setMeasure(v as VolumeMeasure)}
-            />
+            <span className="flex flex-wrap gap-1.5">
+              {volumeMeasures.map((m) => (
+                <Chip
+                  key={m.key} value={m.label} active={picked.includes(m.key)} noCaret
+                  onClick={() => toggleMeasure(m.key)}
+                  onRemove={picked.includes(m.key) && picked.length > 1 ? () => toggleMeasure(m.key) : undefined}
+                />
+              ))}
+            </span>
           }
         >
-          <TrendChart
-            current={dailyVolume.map((d) => d[measure])}
-            yMax={niceMax}
-            grid={[{ v: niceMax / 2, label: fmt(niceMax / 2) }, { v: niceMax, label: fmt(niceMax) }]}
-            fmt={fmt}
-            seriesLabel={volumeMeasures.find((m) => m.key === measure)!.label}
-            tooltipTitle={(i) => `${i + 1} May 2026`}
-            xTicks={[0, 7, 14, 21, 29]}
-            xLabel={(i) => `${i + 1} May`}
-            extremaMode="minmax"
-          />
-          <div className="type-caption mt-2.5 flex gap-5 text-foreground-secondary">
-            <span>Total <b className="tabular-nums text-foreground">{fmt(measure === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[measure])))}</b></span>
+          <div className="flex flex-col gap-4">
+            {volumeMeasures.filter((m) => picked.includes(m.key)).map((m) => {
+              const series = dailyVolume.map((d) => d[m.key]);
+              const fmt = fmtFor(m.key);
+              const max = Math.max(...series);
+              const min = Math.min(...series);
+              const total = m.key === 'amountL' ? network.netSalesL : sum(series);
+              return (
+                <div key={m.key}>
+                  <div className="type-caption mb-1.5 flex flex-wrap items-center gap-x-4 text-foreground-secondary">
+                    <span className="flex items-center gap-1.5 font-medium text-foreground">
+                      <i className={cn('h-2.5 w-2.5 rounded-sm', MEASURE_BG[m.key])} />
+                      {m.label}
+                    </span>
+                    <span>Total <b className="tabular-nums text-foreground">{fmt(total)}</b></span>
+                    <span>Peak <b className="tabular-nums text-foreground">{fmt(max)}</b> · {series.indexOf(max) + 1} May</span>
+                    <span>Low <b className="tabular-nums text-foreground">{fmt(min)}</b> · {series.indexOf(min) + 1} May</span>
+                  </div>
+                  <div className={cn('flex items-end gap-[3px]', picked.length > 1 ? 'h-16' : 'h-28')}>
+                    {series.map((v, i) => (
+                      <div key={i} className="group flex h-full flex-1 items-end" title={`${i + 1} May · ${fmt(v)}`}>
+                        <i className={cn('block w-full rounded-t-sm opacity-85 group-hover:opacity-100', MEASURE_BG[m.key])} style={{ height: `${(v / max) * 100}%` }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="type-caption mt-1.5 flex justify-between text-foreground-secondary">
+            <span>1 May</span><span>8 May</span><span>15 May</span><span>22 May</span><span>30 May</span>
+          </div>
+          <div className="type-caption mt-2.5 flex gap-5 border-t border-border-subtle pt-2 text-foreground-secondary">
             <span>Unique buyers <b className="tabular-nums text-foreground">{network.uniqueCustomers.toLocaleString('en-IN')}</b></span>
             <span>Volumetric weight <b className="tabular-nums text-foreground">{network.volumetricWeightKg.toLocaleString('en-IN')} kg</b></span>
             <span>Statuses tracked: {taxonomies.trendStatuses.join(' · ')}</span>
