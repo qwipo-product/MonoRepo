@@ -26,10 +26,21 @@ export const network = {
   liveKm: 68470,
   uniqueCustomers: 7916,
   volumetricWeightKg: 78580,
-  /** Returned splits into two causes; "Partial return" exists in their taxonomy but carries no separate count. */
+  /** Returned splits into two causes. */
   returnedCancelled: 404,
   returnedDeliveryRetry: 218,
+  /** The reference derives Partial return as 41% of Returned on its status card. */
+  partialReturn: Math.round(622 * 0.41), // 255
 };
+
+/** The reference Orders page's status card — five rows, % of their combined total. */
+export const orderStatusRows = [
+  { label: 'Delivered', n: 10505, bg: 'bg-success' },
+  { label: 'In planning', n: 658, bg: 'bg-chart-blue' },
+  { label: 'Returned', n: 622, bg: 'bg-warning' },
+  { label: 'Partial return', n: Math.round(622 * 0.41), bg: 'bg-chart-age-3' },
+  { label: 'Cancelled', n: 248, bg: 'bg-error' },
+];
 
 /** Per-company operations totals — same shape as the network object, every field. */
 export interface CompanyOps {
