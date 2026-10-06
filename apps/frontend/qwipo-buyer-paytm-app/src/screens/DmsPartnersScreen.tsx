@@ -18,7 +18,7 @@ export function DmsPromoCard({ onClick }: { onClick: () => void }) {
           Register to order from more distributors
         </span>
         <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">
-          TCPL, HUL &amp; more sell only to registered shops — register once to unlock
+          Some companies sell only to registered shops — register once to unlock
           their catalogues
         </span>
       </span>
@@ -102,8 +102,9 @@ function PartnerCard({
   );
 }
 
-/* Register to Order — one list of gated companies. Every company opens the
-   same registration: "already a customer / new to <company>". */
+/* Register to Order — the list of gated companies. A company opens its own
+   registration: straight to the form where its DMS is wired into Qwipo,
+   otherwise a choice between linking a customer ID and registering new. */
 export function DmsPartnersScreen({
   statuses,
   onBack,
@@ -131,8 +132,8 @@ export function DmsPartnersScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-4">
         <p className="rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-foreground-secondary shadow-sm">
-          These companies sell only to registered shops. Register once, or link
-          your existing customer ID, to unlock their full catalogue on Qwipo.
+          These companies sell only to registered shops. Register once to unlock
+          their full catalogue on Qwipo.
         </p>
 
         {DMS_COMPANIES.map((c) => (

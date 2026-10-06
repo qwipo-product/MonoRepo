@@ -33,8 +33,10 @@ export interface DmsCompany {
   rejectedReason?: string;
 }
 
-/* TCPL and HUL start unregistered so the flow can be walked end to end; the
-   rest start at a fixed status (see App) to show how each one looks. */
+/* One company while the TCPL flow is what's being shown. The other five —
+   HUL, PepsiCo, Marico, Colgate, ITC — were here to demonstrate the customer-ID
+   path and the pending / review / registered / rejected cards; they are in git
+   if a second company is wanted back. */
 export const DMS_COMPANIES: DmsCompany[] = [
   {
     id: 'tcpl',
@@ -44,50 +46,6 @@ export const DMS_COMPANIES: DmsCompany[] = [
     brands: ['Tata Tea', 'Tata Salt', 'Tata Sampann', 'Tetley', 'Himalayan'],
     products: 126,
     dmsIntegrated: true,
-  },
-  {
-    id: 'hul',
-    company: 'Hindustan Unilever (HUL)',
-    shortName: 'HUL',
-    emoji: '🧴',
-    brands: ['Surf Excel', 'Dove', 'Lifebuoy', 'Brooke Bond', 'Horlicks'],
-    products: 240,
-    idHint: 'e.g. HUL-33812',
-  },
-  {
-    id: 'pepsico',
-    company: 'PepsiCo India',
-    shortName: 'PepsiCo',
-    emoji: '🥤',
-    brands: ["Lay's", 'Kurkure', 'Pepsi', 'Tropicana'],
-    products: 212,
-    idHint: 'e.g. PEP-582104',
-  },
-  {
-    id: 'marico',
-    company: 'Marico',
-    emoji: '🥥',
-    brands: ['Parachute', 'Saffola', 'Livon'],
-    products: 96,
-    idHint: 'e.g. MRC-77451',
-  },
-  {
-    id: 'colgate',
-    company: 'Colgate-Palmolive',
-    shortName: 'Colgate',
-    emoji: '🪥',
-    brands: ['Colgate', 'Palmolive', 'Halo'],
-    products: 148,
-    idHint: 'e.g. CLG-102938',
-  },
-  {
-    id: 'itc',
-    company: 'ITC',
-    emoji: '🍪',
-    brands: ['Sunfeast', 'Bingo!', 'Yippee!', 'Aashirvaad'],
-    products: 183,
-    idHint: 'e.g. ITC-90312',
-    rejectedReason: 'GSTIN could not be verified against the shop address on record.',
   },
 ];
 

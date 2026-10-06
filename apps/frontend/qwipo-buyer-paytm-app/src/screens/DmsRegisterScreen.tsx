@@ -4,7 +4,7 @@ import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
 import type { DmsStatus } from '../data/dmsPartners';
 
-/** The company the shop is registering with (TCPL, HUL, …). */
+/** The company the shop is registering with. */
 export interface DmsTarget {
   /** Company name used in sentences — the one approving the registration. */
   name: string;
@@ -63,14 +63,18 @@ export function DmsRegisterScreen({
   /** Called from the end states — sets the target's status and returns to the list. */
   onComplete: (status: DmsStatus) => void;
 }) {
-  const [step, setStep] = useState<Step>('choose');
+  /* Where the screen opens. A company whose DMS is wired into Qwipo has one
+     path, so the choose step would be a single card asking the buyer to agree
+     to the only thing on offer — it goes straight to the form instead. */
+  const firstStep: Step = target.dmsIntegrated ? 'form' : 'choose';
+  const [step, setStep] = useState<Step>(firstStep);
   const [customerId, setCustomerId] = useState('');
   const [consent, setConsent] = useState(false);
 
   const header = (
     <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
       <button
-        onClick={() => (step === 'form' ? setStep('choose') : onBack())}
+        onClick={() => (step === 'form' && firstStep !== 'form' ? setStep('choose') : onBack())}
         aria-label="Back"
         className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]"
       >
@@ -87,8 +91,9 @@ export function DmsRegisterScreen({
   );
 
   // Already in the pipeline (opened from a Pending / Under review / Rejected /
-  // Registered card) — show where the request stands instead of the entry form.
-  if (step === 'choose' && status !== 'none') {
+  // Registered card) — show where the request stands instead of the entry
+  // screen, whichever entry screen this company opens on.
+  if (step === firstStep && status !== 'none') {
     if (status === 'registered') {
       return (
         <div className="flex h-full flex-col">

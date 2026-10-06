@@ -259,14 +259,9 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
-  // DMS registrations, keyed by company id. TCPL and HUL start unregistered so
-  // the flow can be walked; the rest each sit at one status to show how it looks.
-  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({
-    pepsico: 'registered',
-    marico: 'review',
-    colgate: 'pending',
-    itc: 'rejected',
-  });
+  // DMS registrations, keyed by company id. TCPL starts unregistered so the
+  // flow can be walked end to end from the list.
+  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({});
   const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
 
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
