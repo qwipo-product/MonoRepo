@@ -21,6 +21,32 @@ http://localhost:5177
 - **Reports** — one table; Run, History and Schedule drawers that reuse the
   dashboard's filter controls.
 
+### Ops (Logistics)
+
+Data-point parity with the team's reference build
+(logistics-tech-dashboard.vercel.app, "Logistics Analytics Platform v2.4.1").
+Every figure in `src/data/logistics.ts` is lifted from that app's deployed
+bundle — network and per-company totals, the 13-distributor performance
+snapshot, 16 drivers, category mixes, the vehicle master — including panels
+the reference's own UI currently hides. Period modelled: May 2026, pan-India.
+Page names mirror the reference (Summary · Orders · Trips); renaming and the
+drill grammar are a UX-round decision.
+
+- **Summary** — this-year tiles and onboarded-company cards; network KPIs,
+  weekly trend, status distribution, returns split (cancelled vs delivery
+  retry), category contribution, company operations table, distributor
+  comparison.
+- **Orders** — order KPIs (dispatch vs net sales), D0 → D4+ delivery ageing
+  per distributor with overdue share, daily volume trend with a
+  count / amount / weight / unique-buyers toggle.
+- **Trips** — fleet KPIs, the utilization quad, trips per day, run-time
+  slabs by city, distributor trip-efficiency table (click → that
+  distributor's drivers), driver performance analytics, vehicle master.
+- **Reports → Ops** — the reference's two report shapes (Company Report,
+  Distributor Report) with their exact sheet and column contracts
+  ("Sheet columns" toggle in the catalogue). The three earlier placeholder
+  ops reports are kept pending a UX-round decision.
+
 ### DigiDukaan · Buyer (sales team)
 
 Data from the buyer-app database — Telangana, Maharashtra, Rajasthan.
