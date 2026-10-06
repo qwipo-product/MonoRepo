@@ -9,7 +9,7 @@ import { TrendChart } from '../components/TrendChart';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
-  network, opsDistributors, agingBuckets, agingRows, dailyVolume, volumeMeasures, taxonomies, type VolumeMeasure,
+  network, opsDistributors, agingBuckets, agingBucketLabels, agingRows, dailyVolume, volumeMeasures, taxonomies, type VolumeMeasure,
 } from '../data/logistics';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
@@ -44,7 +44,7 @@ export default function OpsOrders() {
       <div className="grid grid-cols-12 gap-4">
         <Panel className="col-span-5" title="Delivery ageing" subtitle={`${pending} in-progress orders · D0 same day → D4+ overdue`}>
           <Columns
-            items={agingBuckets.map((b, i) => ({ label: i === 0 ? 'D0 same day' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
+            items={agingBucketLabels.map((b, i) => ({ label: b, n: bucketTotals[i], bg: ageBg[i] }))}
           />
           <p className="type-caption mt-3 text-foreground-secondary">
             The Delivery Aging export sheet buckets as {taxonomies.exportAgingBuckets.join(' / ')}.

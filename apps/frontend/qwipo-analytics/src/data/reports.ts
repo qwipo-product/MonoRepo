@@ -100,6 +100,10 @@ export const reportDefs: ReportDef[] = [
       ['Trip Date', 'Order ID', 'Trip Number', 'Buyer Name', 'Start Date & Time', 'End Date & Time', 'Time Taken', 'Total Travel Time', 'Total Loading / Unloading Time', 'Total Trip (Km)', 'Total Delivered', 'Total Returned', 'Returned : Cancelled', 'Returned : Delivery Retry', 'Total Delivery Attempt', 'Net Sale Value', 'Return Value', 'Delivered Total Weight', 'Returned Total Weight', 'Total Net Sale', 'Total Delivery Weight', 'Vehicle Details', 'Driver Name', 'Vehicle Vol. Capacity', 'Run Time (Min)', 'Max Delivery Point', 'Delivery Point Utilization', 'Time Utilization', 'Vehicle Utilization'],
     ],
     filters: [],
+    flags: [
+      { label: 'max 30-day range per run', variant: 'info' },
+      { label: 'CSV exports the first sheet only', variant: 'info' },
+    ],
   },
   {
     key: 'ops-distributor-report', domain: 'ops', scope: ['date', 'company', 'distributor'], name: 'Distributor Report',
@@ -116,6 +120,8 @@ export const reportDefs: ReportDef[] = [
     flags: [
       { label: 'WD Dest Code — no source yet', variant: 'warning' },
       { label: 'invoice-level ageing needs ETL', variant: 'warning' },
+      { label: 'max 30-day range per run', variant: 'info' },
+      { label: 'CSV exports the first sheet only', variant: 'info' },
     ],
   },
   {

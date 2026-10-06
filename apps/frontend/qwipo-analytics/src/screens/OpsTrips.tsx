@@ -31,9 +31,9 @@ export default function OpsTrips() {
           <KpiCard label="Total fleet trips" value={fleet.trips.toLocaleString('en-IN')} change="→" trend="flat" note="This period" />
           <KpiCard label="Active distributors" value={String(opsDistributors.length)} change="→" trend="flat" note="in scope this period" />
           <KpiCard label="Avg run time" value={network.avgRunTime} change="→" trend="flat" note="per trip" />
-          <KpiCard label="Delivery success rate" value={`${successRate}%`} change="→" trend="flat" note={`${fleet.attempts} attempts`} />
-          <KpiCard label="Fleet efficiency" value={`${fleet.efficiency}%`} change="→" trend="flat" note="avg of 4 utilizations" />
-          <KpiCard label="Return trips" value={String(fleet.returnTrips)} change="→" trend="flat" inverse note={`${pct(fleet.returnTrips, fleet.attempts)}% of attempts`} />
+          <KpiCard label="Delivery success rate" value={`${successRate}%`} change="→" trend="flat" note="% successful deliveries per trip" />
+          <KpiCard label="Fleet efficiency" value={`${fleet.efficiency}%`} change="→" trend="flat" note="avg utilization across 4 metrics" />
+          <KpiCard label="Return trips" value={String(fleet.returnTrips)} change="→" trend="flat" inverse note="total returned orders/trips" />
         </div>
       </section>
 

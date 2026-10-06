@@ -130,6 +130,8 @@ export const opsDistributors: OpsDistributor[] = [
  *  distributors in proportion to order volume, split with the reference's bucket shape
  *  (≈50 / 27 / 14 / 6 / 3%). Buckets: D0 same day → D4+ overdue. */
 export const agingBuckets = ['D0', 'D1', 'D2', 'D3', 'D4+'] as const;
+/** The reference's bucket definitions. */
+export const agingBucketLabels = ['D0 · Same day', 'D1 · Next day', 'D2 · 2 days', 'D3 · 3 days', 'D4+ · Overdue'] as const;
 export const agingRows: { code: string; d: [number, number, number, number, number] }[] = [
   { code: 'DIS-HYD-004', d: [28, 15, 8, 3, 2] },
   { code: 'SECD123DIS', d: [23, 12, 6, 3, 2] },
