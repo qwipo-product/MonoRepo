@@ -172,6 +172,7 @@ export default function OpsTrips() {
             <thead>
               <tr className="type-micro text-left text-foreground-tertiary">
                 <th className="py-2 pr-3 font-semibold">Driver</th>
+                <th className="py-2 pr-3 font-semibold">Vehicle</th>
                 <th className="py-2 pr-3 font-semibold">Distributor</th>
                 <th className="py-2 pr-3 text-right font-semibold">Trips</th>
                 <th className="py-2 pr-3 text-right font-semibold">Distance (km)</th>
@@ -188,6 +189,7 @@ export default function OpsTrips() {
               {shownDrivers.map((d) => (
                 <tr key={d.name} className="border-t border-border-subtle">
                   <td className="py-1.5 pr-3 font-medium">{d.name}</td>
+                  <td className="py-1.5 pr-3 tabular-nums">{(d.vehicles ?? [d.vehicle]).join(', ')}</td>
                   <td className="py-1.5 pr-3">{opsDistributors.find((x) => x.code === d.distributor)?.name} · {d.city}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{d.trips}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{d.distanceKm}</td>

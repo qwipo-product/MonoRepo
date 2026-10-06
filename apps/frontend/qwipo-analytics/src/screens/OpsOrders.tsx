@@ -8,7 +8,7 @@ import { ScopeBar } from '../components/ScopeBar';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
-  network, opsDistributors, agingBuckets, agingRows, dailyVolume, volumeMeasures, type VolumeMeasure,
+  network, opsDistributors, agingBuckets, agingRows, dailyVolume, volumeMeasures, taxonomies, type VolumeMeasure,
 } from '../data/logistics';
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
@@ -39,6 +39,9 @@ export default function OpsOrders() {
           <Columns
             items={agingBuckets.map((b, i) => ({ label: i === 0 ? 'D0 same day' : i === 4 ? 'D4+ overdue' : b, n: bucketTotals[i], bg: ageBg[i] }))}
           />
+          <p className="type-caption mt-3 text-foreground-secondary">
+            The Delivery Aging export sheet buckets as {taxonomies.exportAgingBuckets.join(' / ')}.
+          </p>
         </Panel>
 
         <Panel className="col-span-7" title="Distributor ageing distribution" subtitle="D0 → D4+ ageing mix per distributor · overdue share">
@@ -103,6 +106,7 @@ export default function OpsOrders() {
             <span>Total <b className="tabular-nums text-foreground">{fmt(measure === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[measure])))}</b></span>
             <span>Unique buyers <b className="tabular-nums text-foreground">{network.uniqueCustomers.toLocaleString('en-IN')}</b></span>
             <span>Volumetric weight <b className="tabular-nums text-foreground">{network.volumetricWeightKg.toLocaleString('en-IN')} kg</b></span>
+            <span>Statuses tracked: {taxonomies.trendStatuses.join(' · ')}</span>
           </div>
         </Panel>
       </div>

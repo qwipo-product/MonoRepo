@@ -5,7 +5,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@mockups/ui';
 import { Columns, HBars, StackBar, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, opsDistributors } from '../data/logistics';
+import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, opsDistributors, taxonomies, registry } from '../data/logistics';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
 
@@ -100,6 +100,9 @@ export default function OpsSummary() {
           <div className="mt-4 flex gap-5">
             <Stat label="Total returns" value={network.returned.toLocaleString('en-IN')} note={`${network.returnRate}% of orders · ₹${network.returnL}L value`} />
           </div>
+          <p className="type-caption mt-3 text-foreground-secondary">
+            Return remarks in the export: {taxonomies.returnRemarks.map((r) => `“${r}”`).join(' · ')}
+          </p>
         </Panel>
 
         <Panel className="col-span-7" title="Category contribution" subtitle={`Revenue share across the network · ₹${network.invoiceL}L`}>
@@ -125,13 +128,13 @@ export default function OpsSummary() {
                   <th className="py-2 pr-3 text-right font-semibold">Orders</th>
                   <th className="py-2 pr-3 text-right font-semibold">Fulfilled</th>
                   <th className="py-2 pr-3 text-right font-semibold">Pending</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Returned</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Returned (Cxl / Retry)</th>
                   <th className="py-2 pr-3 text-right font-semibold">Cancelled</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Invoice</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Dispatch</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Return ₹</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Net sales</th>
                   <th className="py-2 pr-3 text-right font-semibold">Return %</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Vehicles</th>
-                  <th className="py-2 pr-3 text-right font-semibold">Veh · Wt · Time · DP util</th>
-                  <th className="py-2 text-right font-semibold">Avg run time</th>
+                  <th className="py-2 text-right font-semibold">Customers</th>
                 </tr>
               </thead>
               <tbody className="type-caption">
@@ -141,13 +144,13 @@ export default function OpsSummary() {
                     <td className="py-2 pr-3 text-right tabular-nums">{c.orders.toLocaleString('en-IN')}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{c.fulfilled.toLocaleString('en-IN')}</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{c.pending}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{c.returned}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.returned} ({c.returnedCancelled} / {c.returnedDeliveryRetry})</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{c.cancelled}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">₹{c.invoiceL}L</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">₹{c.dispatchL}L</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">₹{c.returnL}L</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">₹{c.netSalesL}L</td>
                     <td className="py-2 pr-3 text-right tabular-nums">{c.returnRate}%</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{c.vehiclesInUse}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{c.vehicleUtil} · {c.weightUtil} · {c.timeUtil} · {c.dpUtil}</td>
-                    <td className="py-2 text-right tabular-nums">{c.avgRunTime}</td>
+                    <td className="py-2 text-right tabular-nums">{c.uniqueCustomers.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -155,7 +158,41 @@ export default function OpsSummary() {
           </CardContent>
         </Card>
 
-        <Panel className="col-span-12" title="Distributor performance comparison" subtitle="Delivery rate, returns, invoice value · 13 distributors with metrics">
+        <Card className="col-span-12">
+          <CardHeader className="pb-3">
+            <CardTitle className="type-label">Company fleet</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="type-micro text-left text-foreground-tertiary">
+                  <th className="py-2 pr-3 font-semibold">Company</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Vehicles (avg / peak)</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Veh · Wt · Time · DP util</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Avg run time</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Planned km</th>
+                  <th className="py-2 pr-3 text-right font-semibold">Live km</th>
+                  <th className="py-2 text-right font-semibold">Volumetric weight</th>
+                </tr>
+              </thead>
+              <tbody className="type-caption">
+                {companyOps.map((c) => (
+                  <tr key={c.name} className="border-t border-border-subtle">
+                    <td className="py-2 pr-3 font-medium">{c.name}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.vehiclesInUse}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.vehicleUtil} · {c.weightUtil} · {c.timeUtil} · {c.dpUtil}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.avgRunTime}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.plannedKm.toLocaleString('en-IN')}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{c.liveKm.toLocaleString('en-IN')}</td>
+                    <td className="py-2 text-right tabular-nums">{c.volumetricWeightKg.toLocaleString('en-IN')} kg</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        <Panel className="col-span-12" title="Distributor performance comparison" subtitle={`Delivery rate, returns, invoice value · ${registry.length} registered distributors across ${new Set(registry.map((r) => r[2])).size} states · 13 carry metrics this period`}>
           <div className="grid grid-cols-2 gap-x-10">
             {[0, 1].map((half) => (
               <div key={half}>
