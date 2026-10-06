@@ -13,14 +13,21 @@ export interface DmsTarget {
   emoji: string;
   /** Who receives the KYC — the company itself. */
   distributor: string;
-  idHint: string;
+  idHint?: string;
+  dmsIntegrated?: boolean;
   rejectedReason?: string;
 }
 
 /* DMS registration with one company. Two paths:
    – already a customer → enter the customer ID → sent for approval;
    – new customer → read-only KYC summary + consent → "Request Registration".
-   Both end pending approval and follow the same status tracking. */
+   Both end pending approval and follow the same status tracking.
+
+   A company whose DMS is wired into Qwipo (TCPL) offers only the second. Its
+   existing customers never see this screen — their catalogue is already open
+   when they arrive — so asking them for a customer ID would be asking a
+   question that has no one to answer it, and its form lists no documents
+   because the company reads them from Qwipo rather than being sent them. */
 
 // Same shop profile shown in Account · Business Details — the pre-fill source.
 const KYC_PREFILL = {
@@ -270,19 +277,21 @@ export function DmsRegisterScreen({
                 </div>
               ))}
             </dl>
-            <div className="border-t border-border px-4 py-3">
-              <div className="text-xs text-foreground-secondary">Documents shared</div>
-              <ul className="mt-2 space-y-1.5">
-                {SHARED_DOCS.map((d) => (
-                  <li key={d} className="flex items-center justify-between text-sm text-foreground">
-                    <span className="flex items-center gap-2">
-                      <FileCheck2 className="h-4 w-4 text-success-foreground" /> {d}
-                    </span>
-                    <span className="text-xs font-medium text-success-foreground">Attached</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {!target.dmsIntegrated && (
+              <div className="border-t border-border px-4 py-3">
+                <div className="text-xs text-foreground-secondary">Documents shared</div>
+                <ul className="mt-2 space-y-1.5">
+                  {SHARED_DOCS.map((d) => (
+                    <li key={d} className="flex items-center justify-between text-sm text-foreground">
+                      <span className="flex items-center gap-2">
+                        <FileCheck2 className="h-4 w-4 text-success-foreground" /> {d}
+                      </span>
+                      <span className="text-xs font-medium text-success-foreground">Attached</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
           <p className="text-xs leading-relaxed text-foreground-secondary">
             Need to change something? Update it in My Account · Business Details first.
@@ -325,38 +334,42 @@ export function DmsRegisterScreen({
     <div className="flex h-full flex-col">
       {header}
       <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
-        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-foreground">
-            Already a customer of {target.name}?
-          </h2>
-          <p className="mt-1 text-xs leading-relaxed text-foreground-secondary">
-            Enter the customer ID from your {target.distributor} bills to link your shop.
-          </p>
-          <div className="mt-3">
-            <Field label="Customer ID">
-              <input
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                placeholder={target.idHint}
-                className={`${controlClass} placeholder:text-foreground-secondary`}
-              />
-            </Field>
-          </div>
-          <Button
-            size="lg"
-            className="mt-3 w-full"
-            disabled={!customerId.trim()}
-            onClick={() => setStep('linked')}
-          >
-            Link Customer ID
-          </Button>
-        </div>
+        {!target.dmsIntegrated && (
+          <>
+            <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground">
+                Already a customer of {target.name}?
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-foreground-secondary">
+                Enter the customer ID from your {target.distributor} bills to link your shop.
+              </p>
+              <div className="mt-3">
+                <Field label="Customer ID">
+                  <input
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    placeholder={target.idHint}
+                    className={`${controlClass} placeholder:text-foreground-secondary`}
+                  />
+                </Field>
+              </div>
+              <Button
+                size="lg"
+                className="mt-3 w-full"
+                disabled={!customerId.trim()}
+                onClick={() => setStep('linked')}
+              >
+                Link Customer ID
+              </Button>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1 bg-border" />
-          <span className="text-xs font-medium text-foreground-secondary">OR</span>
-          <span className="h-px flex-1 bg-border" />
-        </div>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-xs font-medium text-foreground-secondary">OR</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
 
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-foreground">New to {target.name}?</h2>
