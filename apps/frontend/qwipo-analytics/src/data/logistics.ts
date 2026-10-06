@@ -48,12 +48,13 @@ export const companyOps: CompanyOps[] = [
   { name: 'Dabur', orders: 1423, fulfilled: 1271, pending: 108, returned: 102, cancelled: 51, invoiceL: 28.6, dispatchL: 31.2, returnL: 2.6, netSalesL: 28.6, returnRate: 7.2, returnedCancelled: 66, returnedDeliveryRetry: 36, uniqueCustomers: 980, volumetricWeightKg: 9840, vehicleUtil: 73, weightUtil: 67, timeUtil: 68, dpUtil: 82, vehiclesInUse: '52 / 72', avgRunTime: '6h 18m', plannedKm: 9120, liveKm: 9680 },
 ];
 
-/** The reference Summary page's "this year" tiles and onboarded-company cards. */
+/** The reference Summary page's headline tiles and onboarded-company cards.
+ *  No period caption — the scope bar's date filter owns the period. */
 export const yearTiles = [
-  { label: 'Companies', value: '2', change: '→', note: 'This year' },
-  { label: 'Distributors', value: '20', change: '→', note: 'This year' },
-  { label: 'Deliveries', value: '22,682', change: '↑ 4.8%', note: 'This year' },
-  { label: 'Invoice value', value: '₹9.97Cr', change: '↑ 12.3%', note: 'This year' },
+  { label: 'Companies', value: '2', change: '→', note: '' },
+  { label: 'Distributors', value: '20', change: '→', note: '' },
+  { label: 'Deliveries', value: '22,682', change: '↑ 4.8%', note: 'vs previous period' },
+  { label: 'Invoice value', value: '₹9.97Cr', change: '↑ 12.3%', note: 'vs previous period' },
 ] as const;
 export const onboardedCompanies = [
   { name: 'ITC Limited', logo: 'ITC', onboarded: '15 Jan 2024', metrics: { Distributors: '17', Beats: '167', Vehicles: '327', Deliveries: '18,275', Revenue: '₹8.03Cr' } },
