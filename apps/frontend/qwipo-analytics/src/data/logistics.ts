@@ -151,12 +151,16 @@ export const agingRows: { code: string; d: [number, number, number, number, numb
 /** Order volume trend — 30 May days from the reference's daily multipliers on the
  *  network totals. Four measures, matching its toggle. */
 const dayMult = [0.91, 0.87, 1.05, 1.08, 0.97, 1.03, 0.95, 0.88, 1.02, 1.07, 0.94, 0.99, 1.04, 0.9, 0.86, 1.06, 1.09, 0.98, 1.01, 0.93, 0.89, 1.03, 1.07, 0.96, 1, 0.92, 0.85, 1.04, 1.08, 0.97];
+// Each measure gets its own deterministic texture around the shared pattern so
+// the combined trend chart can tell the lines apart; buyers swing less than
+// orders (repeat buyers), value and weight drift with basket size.
+const wiggle = (i: number, k: number) => 1 + 0.07 * Math.sin(i * k + k);
 export const dailyVolume = dayMult.map((m, i) => ({
   day: i + 1,
   orders: Math.round(379 * m),
-  amountL: +(7.29 * m).toFixed(2),
-  weightKg: Math.round(2619 * m),
-  buyers: Math.round(264 * m),
+  amountL: +(7.29 * m * wiggle(i, 2.1)).toFixed(2),
+  weightKg: Math.round(2619 * m * wiggle(i, 3.7)),
+  buyers: Math.round(264 * (1 + (m - 1) * 0.55)),
 }));
 export type VolumeMeasure = 'orders' | 'amountL' | 'weightKg' | 'buyers';
 export const volumeMeasures: { key: VolumeMeasure; label: string }[] = [

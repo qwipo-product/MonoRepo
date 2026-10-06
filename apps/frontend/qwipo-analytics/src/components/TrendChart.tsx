@@ -5,7 +5,7 @@
 // the optional props let other pages (Ops Orders) reuse it with their own
 // units, dates and scale.
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 function extrema(vals: number[]) {
   const out: { i: number; peak: boolean }[] = [];
@@ -137,3 +137,89 @@ export function TrendChart({
 }
 
 function cn(...a: (string | false | undefined)[]) { return a.filter(Boolean).join(' '); }
+
+/** One line per series, each on its own scale (for mixed units — count, ₹, kg).
+ *  Same visual language as TrendChart: hover guide + tooltip with every series'
+ *  real value; each line's highest day is labelled in its colour. */
+export interface TrendLine {
+  values: number[];
+  label: string;
+  /** token classes, written out in full so the Tailwind scanner sees them:
+   *  SVG stroke, legend/tooltip dot (bg-*), SVG point fill, SVG text fill */
+  stroke: string; dot: string; fill: string; textFill: string;
+  fmt: (v: number) => string;
+  /** value mapped near the top of the chart for this series */
+  yMax: number;
+}
+export function MultiTrendChart({
+  lines, tooltipTitle, xTicks, xLabel,
+}: {
+  lines: TrendLine[]; tooltipTitle: (i: number) => string; xTicks: number[]; xLabel: (i: number) => string;
+}) {
+  const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380;
+  const [hover, setHover] = useState<number | null>(null);
+  const n = lines[0].values.length;
+  const pts = (l: TrendLine) =>
+    l.values.map((v, i) => [X0 + (i * (X1 - X0)) / (n - 1), Y0 - v * (320 / l.yMax)] as const);
+  const all = lines.map(pts);
+
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.round(((px - X0) / (X1 - X0)) * (n - 1));
+    setHover(Math.max(0, Math.min(n - 1, i)));
+  };
+
+  return (
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max((all[0][hover][0] / W) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{tooltipTitle(hover)}</div>
+          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
+            {lines.map((l) => (
+              <Fragment key={l.label}>
+                <i className={cn('h-2 w-2 rounded-full', l.dot)} />
+                <span>{l.label} <b className="ml-1 text-foreground tabular-nums">{l.fmt(l.values[hover])}</b></span>
+              </Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img" aria-label="Daily volume, all measures" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        <line x1={X0} y1={Y0} x2={X1} y2={Y0} className="stroke-border" />
+        {[0.5, 1].map((f) => (
+          <line key={f} x1={X0} y1={Y0 - 320 * f} x2={X1} y2={Y0 - 320 * f} className="stroke-border" strokeDasharray="2 4" />
+        ))}
+        {lines.map((l, li) => {
+          const p = all[li];
+          const hi = l.values.indexOf(Math.max(...l.values));
+          return (
+            <g key={l.label}>
+              <polyline points={poly(p)} className={cn('fill-none', l.stroke)} strokeWidth={2} />
+              <circle cx={p[hi][0]} cy={p[hi][1]} r={3} className={l.fill} />
+              <text x={p[hi][0]} y={p[hi][1] - 8} textAnchor="middle" className={cn('text-[10px] font-medium', l.textFill)}>
+                {l.fmt(l.values[hi])}
+              </text>
+            </g>
+          );
+        })}
+        {xTicks.map((i) => (
+          <text key={i} x={all[0][i][0]} y={H - 4} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
+            {xLabel(i)}
+          </text>
+        ))}
+        {hover !== null && (
+          <g className="pointer-events-none">
+            <line x1={all[0][hover][0]} y1={40} x2={all[0][hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
+            {lines.map((l, li) => (
+              <circle key={l.label} cx={all[li][hover][0]} cy={all[li][hover][1]} r={4} className={cn(l.fill, 'stroke-card')} strokeWidth={2} />
+            ))}
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}

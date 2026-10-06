@@ -5,7 +5,7 @@ import { Fragment } from 'react';
 import { cn } from '@mockups/ui';
 import { Columns } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
-import { TrendChart } from '../components/TrendChart';
+import { MultiTrendChart } from '../components/TrendChart';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
@@ -23,6 +23,14 @@ const fmtFor = (measure: VolumeMeasure) => (v: number) =>
   measure === 'amountL' ? `₹${v.toFixed(1)}L`
   : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
   : Math.round(v).toLocaleString('en-IN');
+
+// One colour per measure, spelled out in full for the Tailwind scanner.
+const LINE_COLORS = [
+  { stroke: 'stroke-chart-blue', dot: 'bg-chart-blue', fill: 'fill-chart-blue', textFill: 'fill-chart-blue' },
+  { stroke: 'stroke-success', dot: 'bg-success', fill: 'fill-success', textFill: 'fill-success-foreground' },
+  { stroke: 'stroke-chart-violet', dot: 'bg-chart-violet', fill: 'fill-chart-violet', textFill: 'fill-chart-violet' },
+  { stroke: 'stroke-warning', dot: 'bg-warning', fill: 'fill-warning', textFill: 'fill-warning-foreground' },
+];
 
 export default function OpsOrders() {
   const bucketTotals = agingBuckets.map((_, i) => sum(agingRows.map((r) => r.d[i])));
@@ -87,38 +95,29 @@ export default function OpsOrders() {
           </div>
         </Panel>
 
-        <Panel className="col-span-12" title="Order volume trend" subtitle="Daily volume · May 2026 · all four measures">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-            {volumeMeasures.map((m) => {
-              const series = dailyVolume.map((d) => d[m.key]);
-              const fmt = fmtFor(m.key);
-              const niceMax = niceCeil(Math.max(...series));
-              const total = m.key === 'amountL' ? network.netSalesL : sum(series);
+        <Panel className="col-span-12" title="Order volume trend" subtitle="Daily volume · May 2026 · each line on its own scale">
+          <MultiTrendChart
+            lines={volumeMeasures.map((m, i) => ({
+              values: dailyVolume.map((d) => d[m.key]),
+              label: m.label,
+              ...LINE_COLORS[i],
+              fmt: fmtFor(m.key),
+              yMax: niceCeil(Math.max(...dailyVolume.map((d) => d[m.key]))),
+            }))}
+            tooltipTitle={(i) => `${i + 1} May 2026`}
+            xTicks={[0, 7, 14, 21, 29]}
+            xLabel={(i) => `${i + 1} May`}
+          />
+          <div className="type-caption mt-2 flex flex-wrap gap-x-5 gap-y-1 text-foreground-secondary">
+            {volumeMeasures.map((m, i) => {
+              const total = m.key === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[m.key]));
               return (
-                <div key={m.key}>
-                  <div className="type-caption mb-1 flex justify-between text-foreground-secondary">
-                    <b className="text-foreground">{m.label}</b>
-                    <span>Total <b className="tabular-nums text-foreground">{fmt(total)}</b></span>
-                  </div>
-                  <TrendChart
-                    compact
-                    current={series}
-                    yMax={niceMax}
-                    grid={[{ v: niceMax / 2, label: fmt(niceMax / 2) }, { v: niceMax, label: fmt(niceMax) }]}
-                    fmt={fmt}
-                    seriesLabel={m.label}
-                    tooltipTitle={(i) => `${i + 1} May 2026`}
-                    xTicks={[0, 14, 29]}
-                    xLabel={(i) => `${i + 1} May`}
-                    extremaMode="minmax"
-                  />
-                </div>
+                <span key={m.key} className="flex items-center gap-1.5">
+                  <i className={cn('h-2.5 w-2.5 rounded-sm', LINE_COLORS[i].dot)} />
+                  {m.label} · <b className="tabular-nums text-foreground">{fmtFor(m.key)(total)}</b>
+                </span>
               );
             })}
-          </div>
-          <div className="type-caption mt-3 flex gap-5 text-foreground-secondary">
-            <span>Unique buyers <b className="tabular-nums text-foreground">{network.uniqueCustomers.toLocaleString('en-IN')}</b></span>
-            <span>Volumetric weight <b className="tabular-nums text-foreground">{network.volumetricWeightKg.toLocaleString('en-IN')} kg</b></span>
             <span>Statuses tracked: {taxonomies.trendStatuses.join(' · ')}</span>
           </div>
         </Panel>
