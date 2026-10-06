@@ -3,12 +3,12 @@
 // data file and export via the Company and Distributor Reports (Reports → Ops).
 import { useState } from 'react';
 import { Card } from '@mockups/ui';
-import { Columns, HBars, Stat } from '@mockups/components';
+import { Columns, HBars } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
 import { EntityDrawer } from '../components/EntityDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, taxonomies, registry, opsDistributors, orderStatusRows } from '../data/logistics';
+import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, registry, opsDistributors, orderStatusRows } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
@@ -155,23 +155,7 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
           />
         </Panel>
 
-        <Panel className="col-span-5" title="Returns breakdown" subtitle="Returned: cancelled vs delivery retry">
-          <HBars
-            rows={[
-              { label: 'Returned · cancelled', n: network.returnedCancelled, value: pct(network.returnedCancelled, network.returned) + '%', barClass: 'bg-error' },
-              { label: 'Returned · delivery retry', n: network.returnedDeliveryRetry, value: pct(network.returnedDeliveryRetry, network.returned) + '%', barClass: 'bg-warning' },
-            ]}
-            wideLabel
-          />
-          <div className="mt-4 flex gap-5">
-            <Stat label="Total returns" value={network.returned.toLocaleString('en-IN')} note={`${network.returnRate}% of orders · ₹${network.returnL}L value`} />
-          </div>
-          <p className="type-caption mt-3 text-foreground-secondary">
-            Return remarks in the export: {taxonomies.returnRemarks.map((r) => `“${r}”`).join(' · ')}
-          </p>
-        </Panel>
-
-        <Panel className="col-span-7" title="Category contribution" subtitle={`Invoice value share across the network · ₹${network.invoiceL}L`}>
+        <Panel className="col-span-5" title="Category contribution" subtitle={`Invoice value share across the network · ₹${network.invoiceL}L`}>
           <HBars
             rows={categoryMix.All.map((c, i) => ({
               label: c.name, n: c.revenueL, value: `${c.share}%`,
