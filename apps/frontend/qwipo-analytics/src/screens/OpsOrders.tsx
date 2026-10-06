@@ -5,6 +5,7 @@ import { Fragment, useState } from 'react';
 import { SegmentedControl, cn } from '@mockups/ui';
 import { Columns } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
+import { TrendChart } from '../components/TrendChart';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
@@ -18,7 +19,13 @@ export default function OpsOrders() {
   const bucketTotals = agingBuckets.map((_, i) => sum(agingRows.map((r) => r.d[i])));
   const pending = sum(bucketTotals);
   const maxDay = Math.max(...dailyVolume.map((d) => d[measure]));
-  const fmt = (v: number) => measure === 'amountL' ? `₹${v}L` : v.toLocaleString('en-IN');
+  // Round the axis top up to a clean half-step (413 → 450, 7.95 → 8, 2,855 → 3,000).
+  const p10 = 10 ** Math.floor(Math.log10(maxDay));
+  const niceMax = Math.ceil(maxDay / (p10 / 2)) * (p10 / 2);
+  const fmt = (v: number) =>
+    measure === 'amountL' ? `₹${v.toFixed(1)}L`
+    : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
+    : Math.round(v).toLocaleString('en-IN');
 
   return (
     <div className="flex flex-col gap-5">
@@ -92,16 +99,17 @@ export default function OpsOrders() {
             />
           }
         >
-          <div className="flex h-[130px] items-end gap-1">
-            {dailyVolume.map((d) => (
-              <div key={d.day} className="group relative flex h-full flex-1 flex-col justify-end" title={`${d.day} May · ${fmt(d[measure])}`}>
-                <i className="block w-full rounded-t-sm bg-chart-blue group-hover:bg-chart-indigo" style={{ height: `${(d[measure] / maxDay) * 100}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="type-caption mt-1.5 flex justify-between text-foreground-secondary">
-            <span>1 May</span><span>15 May</span><span>30 May</span>
-          </div>
+          <TrendChart
+            current={dailyVolume.map((d) => d[measure])}
+            yMax={niceMax}
+            grid={[{ v: niceMax / 2, label: fmt(niceMax / 2) }, { v: niceMax, label: fmt(niceMax) }]}
+            fmt={fmt}
+            seriesLabel={volumeMeasures.find((m) => m.key === measure)!.label}
+            tooltipTitle={(i) => `${i + 1} May 2026`}
+            xTicks={[0, 7, 14, 21, 29]}
+            xLabel={(i) => `${i + 1} May`}
+            extremaMode="minmax"
+          />
           <div className="type-caption mt-2.5 flex gap-5 text-foreground-secondary">
             <span>Total <b className="tabular-nums text-foreground">{fmt(measure === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[measure])))}</b></span>
             <span>Unique buyers <b className="tabular-nums text-foreground">{network.uniqueCustomers.toLocaleString('en-IN')}</b></span>
