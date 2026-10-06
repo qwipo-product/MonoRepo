@@ -37,12 +37,11 @@ export default function OpsOrders() {
       <ScopeBar />
 
       <section>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <KpiCard label="Total orders" value={network.totalOrders.toLocaleString('en-IN')} change="→" trend="flat" note="All orders this period" />
           <KpiCard label="Delivered orders" value={network.fulfilled.toLocaleString('en-IN')} change="92.3%" trend="up" note="of all orders" />
-          <KpiCard label="Orders in progress" value={network.pending.toLocaleString('en-IN')} change="→" trend="flat" inverse note="Awaiting dispatch" />
-          <KpiCard label="Dispatch value" value={`₹${network.dispatchL}L`} change="→" trend="flat" note={`returns −₹${network.returnL}L`} />
-          <KpiCard label="Net sales value" value={`₹${network.netSalesL}L`} change="→" trend="flat" note="dispatch − returns" />
+          <KpiCard label="Pending orders" value={network.pending.toLocaleString('en-IN')} change="→" trend="flat" inverse note="Awaiting dispatch" />
+          <KpiCard label="Dispatch value" value={`₹${network.dispatchL}L`} change="→" trend="flat" note={`returns −₹${network.returnL}L · net ₹${network.netSalesL}L`} />
         </div>
       </section>
 
