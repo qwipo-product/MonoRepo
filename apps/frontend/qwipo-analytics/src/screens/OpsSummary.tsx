@@ -101,7 +101,7 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
           </p>
         </Panel>
 
-        <Panel className="col-span-7" title="Category contribution" subtitle={`Revenue share across the network · ₹${network.invoiceL}L`}>
+        <Panel className="col-span-7" title="Category contribution" subtitle={`Invoice value share across the network · ₹${network.invoiceL}L`}>
           <HBars
             rows={categoryMix.All.map((c, i) => ({
               label: c.name, n: c.revenueL, value: `${c.share}%`,
@@ -112,10 +112,10 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
           <p className="type-caption mt-3 text-foreground-secondary">Per-company category splits (ITC, HUL, Nestlé, Britannia, Dabur) are in the data behind the Company filter.</p>
         </Panel>
 
-        <Panel className="col-span-7" title="Companies compared" subtitle="Net sales this period · return rate alongside">
+        <Panel className="col-span-7" title="Companies compared" subtitle="Invoice value this period · return rate alongside">
           <HBars
             rows={companyOps.map((c) => ({
-              label: c.name, n: c.netSalesL, value: `${c.returnRate}% ret`,
+              label: c.name, n: c.invoiceL, value: `${c.returnRate}% ret`,
               barClass: c.returnRate > 6 ? 'bg-warning' : 'bg-chart-indigo',
             }))}
           />

@@ -57,8 +57,8 @@ export const yearTiles = [
   { label: 'Invoice value', value: '₹9.97Cr', change: '↑ 12.3%', note: 'vs previous period' },
 ] as const;
 export const onboardedCompanies = [
-  { name: 'ITC Limited', logo: 'ITC', onboarded: '15 Jan 2024', metrics: { Distributors: '17', Beats: '167', Vehicles: '327', Deliveries: '18,275', Revenue: '₹8.03Cr' } },
-  { name: 'Hindustan Unilever', logo: 'HUL', onboarded: '3 Aug 2025', metrics: { Distributors: '3', Beats: '34', Vehicles: '76', Deliveries: '4,407', Revenue: '₹1.95Cr' } },
+  { name: 'ITC Limited', logo: 'ITC', onboarded: '15 Jan 2024', metrics: { Distributors: '17', Beats: '167', Vehicles: '327', Deliveries: '18,275', 'Invoice value': '₹8.03Cr' } },
+  { name: 'Hindustan Unilever', logo: 'HUL', onboarded: '3 Aug 2025', metrics: { Distributors: '3', Beats: '34', Vehicles: '76', Deliveries: '4,407', 'Invoice value': '₹1.95Cr' } },
 ];
 
 /** Category contribution (₹L revenue + % share) — network blend and per company. */
