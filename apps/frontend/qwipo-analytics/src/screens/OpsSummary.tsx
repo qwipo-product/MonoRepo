@@ -49,7 +49,6 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
                     <div key={label}>
                       <div className="type-micro text-foreground-secondary">{label}</div>
                       <div className="type-label mt-0.5 tabular-nums">{value}</div>
-                      <div className="type-caption text-foreground-tertiary">This year</div>
                     </div>
                   ))}
                 </div>
@@ -59,7 +58,7 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
         </Panel>
 
         <section className="col-span-12">
-          <p className="type-caption mb-2 text-foreground-secondary">Network performance · May 2026 · all companies</p>
+          <p className="type-caption mb-2 text-foreground-secondary">Network performance · all companies</p>
           <div className="grid grid-cols-5 gap-3">
             <KpiCard label="Total orders" value={network.totalOrders.toLocaleString('en-IN')} change="→" trend="flat" note="This period" />
             <KpiCard label="Delivered" value={network.fulfilled.toLocaleString('en-IN')} change={`${deliveryRate}%`} trend="up" note="delivery rate" />
