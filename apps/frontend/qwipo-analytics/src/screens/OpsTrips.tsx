@@ -7,8 +7,8 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui
 import { Columns, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
-import { EntityDrawer } from '../components/EntityDrawer';
 import { OpsDistributorsDrawer } from '../components/OpsDistributorsDrawer';
+import { OpsDriversDrawer } from '../components/OpsDriversDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
 import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripStatusCards, tripsByWeekday, tripsWeekly, fleet } from '../data/logistics';
 import type { Page } from '../nav';
@@ -54,18 +54,9 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
       <ScopeBar />
       {drawer === 'distributors' && <OpsDistributorsDrawer onClose={() => setDrawer(null)} go={go} />}
       {drawer === 'drivers' && (
-        <EntityDrawer
-          title={picked ? `Drivers · ${distName(picked)}` : 'Driver performance'}
-          total={`${rankedDrivers.length} drivers · ${sumTrips(rankedDrivers)} trips`}
-          rows={rankedDrivers.map((d) => ({
-            name: d.name,
-            sub: `${distName(d.distributor)} · ${d.city} · ${(d.vehicles ?? [d.vehicle]).join(', ')}`,
-            mid: `${d.attempts} attempts · ${d.returns} returns (${d.returnPct}%) · runtime ${d.runtime}`,
-            right: `${d.trips} trips`,
-            rightSub: `${d.successRate}% success · ${d.distanceKm} km · ${d.netSale}`,
-            tone: d.returnPct > 10 ? ('warning' as const) : undefined,
-          }))}
-          report="ops-distributor-report"
+        <OpsDriversDrawer
+          title={picked ? `Drivers · ${distName(picked)}` : 'Driver performance analytics'}
+          drivers={rankedDrivers}
           onClose={() => setDrawer(null)}
           go={go}
         />
