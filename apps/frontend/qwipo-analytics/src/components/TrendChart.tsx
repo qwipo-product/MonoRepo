@@ -7,8 +7,6 @@
 
 import { useState } from 'react';
 
-const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380;
-
 function extrema(vals: number[]) {
   const out: { i: number; peak: boolean }[] = [];
   for (let i = 1; i < vals.length - 1; i++) {
@@ -31,6 +29,7 @@ export function TrendChart({
   xTicks = [0, 5, 10, 15, 21],
   xLabel = (i) => `${i + 1} Aug`,
   extremaMode = 'all',
+  compact = false,
 }: {
   current: number[]; previous?: number[]; delivered?: number[]; onPoint?: (i: number) => void;
   /** value that maps near the top of the chart; default keeps the fixed ₹L scale */
@@ -44,8 +43,12 @@ export function TrendChart({
   xLabel?: (i: number) => string;
   /** 'minmax' labels only the highest and lowest day — for noisy daily series */
   extremaMode?: 'all' | 'minmax';
+  /** half-size viewBox so the chart stays legible in a half-width panel */
+  compact?: boolean;
 }) {
-  const scale = yMax ? 320 / yMax : 105;
+  const W = compact ? 500 : 1000, H = compact ? 230 : 400;
+  const X0 = compact ? 40 : 50, X1 = W - 30, Y0 = H - 20;
+  const scale = yMax ? (compact ? 160 : 320) / yMax : 105;
   const pts = (vals: number[]) =>
     vals.map((v, i) => [X0 + (i * (X1 - X0)) / (vals.length - 1), Y0 - v * scale] as const);
   const c = pts(current), p = previous && pts(previous), d = delivered && pts(delivered);
@@ -116,13 +119,13 @@ export function TrendChart({
         </g>
       ))}
       {xTicks.map((i) => (
-        <text key={i} x={c[i][0]} y={396} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
+        <text key={i} x={c[i][0]} y={H - 4} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
           {xLabel(i)}
         </text>
       ))}
       {hover !== null && (
         <g className="pointer-events-none">
-          <line x1={c[hover][0]} y1={40} x2={c[hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
+          <line x1={c[hover][0]} y1={compact ? 20 : 40} x2={c[hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
           <circle cx={c[hover][0]} cy={c[hover][1]} r={4.5} className="fill-primary stroke-card" strokeWidth={2} />
           {d && <circle cx={d[hover][0]} cy={d[hover][1]} r={4} className="fill-success stroke-card" strokeWidth={2} />}
           {p && <circle cx={p[hover][0]} cy={p[hover][1]} r={3.5} className="fill-border-strong stroke-card" strokeWidth={2} />}
