@@ -7,8 +7,9 @@ import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from '@mockups/ui
 import { Columns, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
+import { EntityDrawer } from '../components/EntityDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripsDaily, fleet } from '../data/logistics';
+import { network, opsDistributors, drivers, vehicles, runtimeByCity, tripsDaily, fleet, registry } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
@@ -28,9 +29,17 @@ function ArcGauge({ pct: value, stroke }: { pct: number; stroke: string }) {
   );
 }
 
+const sumTrips = (list: { trips: number }[]) => list.reduce((s, d) => s + d.trips, 0);
+
 export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
   const [picked, setPicked] = useState<string | null>(null);
+  const [drawer, setDrawer] = useState<'distributors' | 'drivers' | null>(null);
   const shownDrivers = picked ? drivers.filter((d) => d.distributor === picked) : drivers;
+  const rankedDistributors = [...opsDistributors].sort((a, b) => b.tripEfficiency - a.tripEfficiency);
+  const rankedDrivers = [...shownDrivers].sort((a, b) => b.trips - a.trips);
+  const tail = rankedDistributors.slice(5);
+  const tailAvgEff = (tail.reduce((s, d) => s + d.tripEfficiency, 0) / tail.length).toFixed(1);
+  const distName = (code: string) => opsDistributors.find((x) => x.code === code)?.name ?? code;
   const successRate = pct(fleet.attempts - fleet.returnTrips, fleet.attempts);
   const utils = [
     { label: 'Vehicle utilization', n: network.vehicleUtil, formula: 'Vehicles used ÷ vehicles available', stroke: 'stroke-chart-blue' },
@@ -42,6 +51,40 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar />
+      {drawer === 'distributors' && (
+        <EntityDrawer
+          title="Distributor performance"
+          total={`${opsDistributors.length} distributors with metrics · ${registry.length} registered`}
+          rows={rankedDistributors.map((d) => ({
+            name: d.name,
+            sub: `${d.code} · ${d.city}, ${d.state} · ${d.vehicles} vehicles`,
+            mid: `Util ${d.vehicleUtil} · ${d.weightUtil} · ${d.timeUtil} · ${d.dpUtil} · fill rate ${d.fillRate}%`,
+            right: `${d.tripEfficiency}%`,
+            rightSub: `₹${d.invoiceL}L · ${d.returned} returns`,
+            tone: d.tripEfficiency < 87 ? ('warning' as const) : undefined,
+          }))}
+          report="ops-distributor-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
+      {drawer === 'drivers' && (
+        <EntityDrawer
+          title={picked ? `Drivers · ${distName(picked)}` : 'Driver performance'}
+          total={`${rankedDrivers.length} drivers · ${sumTrips(rankedDrivers)} trips`}
+          rows={rankedDrivers.map((d) => ({
+            name: d.name,
+            sub: `${distName(d.distributor)} · ${d.city} · ${(d.vehicles ?? [d.vehicle]).join(', ')}`,
+            mid: `${d.attempts} attempts · ${d.returns} returns (${d.returnPct}%) · runtime ${d.runtime}`,
+            right: `${d.trips} trips`,
+            rightSub: `${d.successRate}% success · ${d.distanceKm} km · ${d.netSale}`,
+            tone: d.returnPct > 10 ? ('warning' as const) : undefined,
+          }))}
+          report="ops-distributor-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
 
       <section>
         <div className="grid grid-cols-6 gap-3">
@@ -134,16 +177,21 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
           </CardContent>
         </Card>
 
-        <Panel className="col-span-7" title="Distributor performance" subtitle="Trip efficiency by distributor · click one for its drivers">
+        <Panel
+          className="col-span-7"
+          title="Distributor performance"
+          subtitle="Trip efficiency · top 5 · click a row for its drivers, the card for the full list"
+          onOpen={() => setDrawer('distributors')}
+        >
           <div className="flex flex-col gap-2">
-            {[...opsDistributors].sort((a, b) => b.tripEfficiency - a.tripEfficiency).map((d) => (
+            {rankedDistributors.slice(0, 5).map((d) => (
               <div
                 key={d.code}
                 className={cn(
                   'type-caption grid cursor-pointer grid-cols-[210px_1fr_120px] items-center gap-2.5 rounded-md px-1 -mx-1 text-foreground hover:bg-muted',
                   picked === d.code && 'bg-primary-soft hover:bg-primary-soft',
                 )}
-                onClick={() => setPicked(picked === d.code ? null : d.code)}
+                onClick={(e) => { e.stopPropagation(); setPicked(picked === d.code ? null : d.code); }}
               >
                 <span className="truncate">{d.name}<span className="ml-1.5 text-foreground-tertiary">{d.city}</span></span>
                 <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
@@ -155,21 +203,25 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
               </div>
             ))}
           </div>
-          <p className="type-caption mt-3 text-foreground-secondary">Fill rate, utilization quad and vehicle counts per distributor are in the Distributor Report.</p>
+          <div className="type-caption mt-2 flex justify-between border-t border-dashed border-border pt-2 text-foreground-secondary">
+            <span>{rankedDistributors.length - 5} others · avg {tailAvgEff}%</span>
+            <span className="text-link">Full list</span>
+          </div>
         </Panel>
 
         <Panel
           className="col-span-5"
           title="Driver performance"
-          subtitle={picked ? 'Drivers of the selected distributor' : 'Trips per driver · success rate alongside'}
+          subtitle={picked ? 'Drivers of the selected distributor' : 'Trips per driver · top 5'}
+          onOpen={() => setDrawer('drivers')}
           right={picked ? (
-            <Badge variant="info" className="cursor-pointer normal-case tracking-normal" onClick={() => setPicked(null)}>
+            <Badge variant="info" className="cursor-pointer normal-case tracking-normal" onClick={(e) => { e.stopPropagation(); setPicked(null); }}>
               {opsDistributors.find((d) => d.code === picked)?.name} ✕
             </Badge>
           ) : undefined}
         >
           <div className="flex flex-col gap-2">
-            {[...shownDrivers].sort((a, b) => b.trips - a.trips).map((d) => (
+            {rankedDrivers.slice(0, 5).map((d) => (
               <div key={d.name} className="type-caption grid grid-cols-[150px_1fr_108px] items-center gap-2.5 text-foreground">
                 <span className="truncate">{d.name}<span className="block text-foreground-tertiary">{d.city} · {d.distanceKm} km</span></span>
                 <div className="h-2.5 overflow-hidden rounded-sm bg-background-sunken">
@@ -181,7 +233,13 @@ export default function OpsTrips({ go }: { go: (p: Page | string) => void }) {
               </div>
             ))}
           </div>
-          <p className="type-caption mt-3 text-foreground-secondary">Amber = return rate over 10% · success rate shown beside trips.</p>
+          {rankedDrivers.length > 5 && (
+            <div className="type-caption mt-2 flex justify-between border-t border-dashed border-border pt-2 text-foreground-secondary">
+              <span>{rankedDrivers.length - 5} others · {sumTrips(rankedDrivers.slice(5))} trips</span>
+              <span className="text-link">Full list</span>
+            </div>
+          )}
+          <p className="type-caption mt-3 text-foreground-secondary">Amber = return rate over 10%.</p>
         </Panel>
 
         <Handoff
