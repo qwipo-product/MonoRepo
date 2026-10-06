@@ -1,11 +1,11 @@
 // Ops (Logistics) · Orders — order tracking, delivery ageing and fulfilment.
 // Aggregates only, like the reference: order rows live in the Distributor
 // Report (Reports → Ops). Static figures; drill grammar comes in the UX round.
-import { Fragment } from 'react';
-import { cn } from '@mockups/ui';
+import { Fragment, useState } from 'react';
+import { SegmentedControl, cn } from '@mockups/ui';
 import { Columns } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
-import { MultiTrendChart } from '../components/TrendChart';
+import { TrendChart } from '../components/TrendChart';
 import { Panel, KpiCard } from '../components/dashboard';
 import { ageBg } from '../components/chartClasses';
 import {
@@ -14,27 +14,18 @@ import {
 
 const sum = (a: number[]) => a.reduce((s, x) => s + x, 0);
 
-// Axis top rounded up to a clean half-step (413 → 450, 7.95 → 8, 2,855 → 3,000).
-const niceCeil = (v: number) => {
-  const p10 = 10 ** Math.floor(Math.log10(v));
-  return Math.ceil(v / (p10 / 2)) * (p10 / 2);
-};
-const fmtFor = (measure: VolumeMeasure) => (v: number) =>
-  measure === 'amountL' ? `₹${v.toFixed(1)}L`
-  : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
-  : Math.round(v).toLocaleString('en-IN');
-
-// One colour per measure, spelled out in full for the Tailwind scanner.
-const LINE_COLORS = [
-  { stroke: 'stroke-chart-blue', dot: 'bg-chart-blue', fill: 'fill-chart-blue', textFill: 'fill-chart-blue' },
-  { stroke: 'stroke-success', dot: 'bg-success', fill: 'fill-success', textFill: 'fill-success-foreground' },
-  { stroke: 'stroke-chart-violet', dot: 'bg-chart-violet', fill: 'fill-chart-violet', textFill: 'fill-chart-violet' },
-  { stroke: 'stroke-warning', dot: 'bg-warning', fill: 'fill-warning', textFill: 'fill-warning-foreground' },
-];
-
 export default function OpsOrders() {
+  const [measure, setMeasure] = useState<VolumeMeasure>('orders');
   const bucketTotals = agingBuckets.map((_, i) => sum(agingRows.map((r) => r.d[i])));
   const pending = sum(bucketTotals);
+  const maxDay = Math.max(...dailyVolume.map((d) => d[measure]));
+  // Round the axis top up to a clean half-step (413 → 450, 7.95 → 8, 2,855 → 3,000).
+  const p10 = 10 ** Math.floor(Math.log10(maxDay));
+  const niceMax = Math.ceil(maxDay / (p10 / 2)) * (p10 / 2);
+  const fmt = (v: number) =>
+    measure === 'amountL' ? `₹${v.toFixed(1)}L`
+    : measure === 'weightKg' ? `${Math.round(v).toLocaleString('en-IN')} kg`
+    : Math.round(v).toLocaleString('en-IN');
 
   return (
     <div className="flex flex-col gap-5">
@@ -95,29 +86,34 @@ export default function OpsOrders() {
           </div>
         </Panel>
 
-        <Panel className="col-span-12" title="Order volume trend" subtitle="Daily volume · May 2026 · each line on its own scale">
-          <MultiTrendChart
-            lines={volumeMeasures.map((m, i) => ({
-              values: dailyVolume.map((d) => d[m.key]),
-              label: m.label,
-              ...LINE_COLORS[i],
-              fmt: fmtFor(m.key),
-              yMax: niceCeil(Math.max(...dailyVolume.map((d) => d[m.key]))),
-            }))}
+        <Panel
+          className="col-span-12"
+          title="Order volume trend"
+          subtitle="Daily volume · May 2026"
+          right={
+            <SegmentedControl
+              className="w-auto"
+              options={volumeMeasures.map((m) => ({ value: m.key, label: m.label }))}
+              value={measure}
+              onChange={(v) => setMeasure(v as VolumeMeasure)}
+            />
+          }
+        >
+          <TrendChart
+            current={dailyVolume.map((d) => d[measure])}
+            yMax={niceMax}
+            grid={[{ v: niceMax / 2, label: fmt(niceMax / 2) }, { v: niceMax, label: fmt(niceMax) }]}
+            fmt={fmt}
+            seriesLabel={volumeMeasures.find((m) => m.key === measure)!.label}
             tooltipTitle={(i) => `${i + 1} May 2026`}
             xTicks={[0, 7, 14, 21, 29]}
             xLabel={(i) => `${i + 1} May`}
+            extremaMode="minmax"
           />
-          <div className="type-caption mt-2 flex flex-wrap gap-x-5 gap-y-1 text-foreground-secondary">
-            {volumeMeasures.map((m, i) => {
-              const total = m.key === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[m.key]));
-              return (
-                <span key={m.key} className="flex items-center gap-1.5">
-                  <i className={cn('h-2.5 w-2.5 rounded-sm', LINE_COLORS[i].dot)} />
-                  {m.label} · <b className="tabular-nums text-foreground">{fmtFor(m.key)(total)}</b>
-                </span>
-              );
-            })}
+          <div className="type-caption mt-2.5 flex gap-5 text-foreground-secondary">
+            <span>Total <b className="tabular-nums text-foreground">{fmt(measure === 'amountL' ? network.netSalesL : sum(dailyVolume.map((d) => d[measure])))}</b></span>
+            <span>Unique buyers <b className="tabular-nums text-foreground">{network.uniqueCustomers.toLocaleString('en-IN')}</b></span>
+            <span>Volumetric weight <b className="tabular-nums text-foreground">{network.volumetricWeightKg.toLocaleString('en-IN')} kg</b></span>
             <span>Statuses tracked: {taxonomies.trendStatuses.join(' · ')}</span>
           </div>
         </Panel>

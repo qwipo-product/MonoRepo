@@ -5,7 +5,9 @@
 // the optional props let other pages (Ops Orders) reuse it with their own
 // units, dates and scale.
 
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
+
+const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380;
 
 function extrema(vals: number[]) {
   const out: { i: number; peak: boolean }[] = [];
@@ -29,7 +31,6 @@ export function TrendChart({
   xTicks = [0, 5, 10, 15, 21],
   xLabel = (i) => `${i + 1} Aug`,
   extremaMode = 'all',
-  compact = false,
 }: {
   current: number[]; previous?: number[]; delivered?: number[]; onPoint?: (i: number) => void;
   /** value that maps near the top of the chart; default keeps the fixed ₹L scale */
@@ -43,12 +44,8 @@ export function TrendChart({
   xLabel?: (i: number) => string;
   /** 'minmax' labels only the highest and lowest day — for noisy daily series */
   extremaMode?: 'all' | 'minmax';
-  /** half-size viewBox so the chart stays legible in a half-width panel */
-  compact?: boolean;
 }) {
-  const W = compact ? 500 : 1000, H = compact ? 230 : 400;
-  const X0 = compact ? 40 : 50, X1 = W - 30, Y0 = H - 20;
-  const scale = yMax ? (compact ? 160 : 320) / yMax : 105;
+  const scale = yMax ? 320 / yMax : 105;
   const pts = (vals: number[]) =>
     vals.map((v, i) => [X0 + (i * (X1 - X0)) / (vals.length - 1), Y0 - v * scale] as const);
   const c = pts(current), p = previous && pts(previous), d = delivered && pts(delivered);
@@ -119,13 +116,13 @@ export function TrendChart({
         </g>
       ))}
       {xTicks.map((i) => (
-        <text key={i} x={c[i][0]} y={H - 4} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
+        <text key={i} x={c[i][0]} y={396} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
           {xLabel(i)}
         </text>
       ))}
       {hover !== null && (
         <g className="pointer-events-none">
-          <line x1={c[hover][0]} y1={compact ? 20 : 40} x2={c[hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
+          <line x1={c[hover][0]} y1={40} x2={c[hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
           <circle cx={c[hover][0]} cy={c[hover][1]} r={4.5} className="fill-primary stroke-card" strokeWidth={2} />
           {d && <circle cx={d[hover][0]} cy={d[hover][1]} r={4} className="fill-success stroke-card" strokeWidth={2} />}
           {p && <circle cx={p[hover][0]} cy={p[hover][1]} r={3.5} className="fill-border-strong stroke-card" strokeWidth={2} />}
@@ -137,89 +134,3 @@ export function TrendChart({
 }
 
 function cn(...a: (string | false | undefined)[]) { return a.filter(Boolean).join(' '); }
-
-/** One line per series, each on its own scale (for mixed units — count, ₹, kg).
- *  Same visual language as TrendChart: hover guide + tooltip with every series'
- *  real value; each line's highest day is labelled in its colour. */
-export interface TrendLine {
-  values: number[];
-  label: string;
-  /** token classes, written out in full so the Tailwind scanner sees them:
-   *  SVG stroke, legend/tooltip dot (bg-*), SVG point fill, SVG text fill */
-  stroke: string; dot: string; fill: string; textFill: string;
-  fmt: (v: number) => string;
-  /** value mapped near the top of the chart for this series */
-  yMax: number;
-}
-export function MultiTrendChart({
-  lines, tooltipTitle, xTicks, xLabel,
-}: {
-  lines: TrendLine[]; tooltipTitle: (i: number) => string; xTicks: number[]; xLabel: (i: number) => string;
-}) {
-  const W = 1000, H = 400, X0 = 50, X1 = 970, Y0 = 380;
-  const [hover, setHover] = useState<number | null>(null);
-  const n = lines[0].values.length;
-  const pts = (l: TrendLine) =>
-    l.values.map((v, i) => [X0 + (i * (X1 - X0)) / (n - 1), Y0 - v * (320 / l.yMax)] as const);
-  const all = lines.map(pts);
-
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const px = ((e.clientX - r.left) / r.width) * W;
-    const i = Math.round(((px - X0) / (X1 - X0)) * (n - 1));
-    setHover(Math.max(0, Math.min(n - 1, i)));
-  };
-
-  return (
-    <div className="relative">
-      {hover !== null && (
-        <div
-          className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
-          style={{ left: `${Math.min(Math.max((all[0][hover][0] / W) * 100, 12), 88)}%` }}
-        >
-          <div className="type-label whitespace-nowrap">{tooltipTitle(hover)}</div>
-          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
-            {lines.map((l) => (
-              <Fragment key={l.label}>
-                <i className={cn('h-2 w-2 rounded-full', l.dot)} />
-                <span>{l.label} <b className="ml-1 text-foreground tabular-nums">{l.fmt(l.values[hover])}</b></span>
-              </Fragment>
-            ))}
-          </div>
-        </div>
-      )}
-      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="img" aria-label="Daily volume, all measures" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
-        <line x1={X0} y1={Y0} x2={X1} y2={Y0} className="stroke-border" />
-        {[0.5, 1].map((f) => (
-          <line key={f} x1={X0} y1={Y0 - 320 * f} x2={X1} y2={Y0 - 320 * f} className="stroke-border" strokeDasharray="2 4" />
-        ))}
-        {lines.map((l, li) => {
-          const p = all[li];
-          const hi = l.values.indexOf(Math.max(...l.values));
-          return (
-            <g key={l.label}>
-              <polyline points={poly(p)} className={cn('fill-none', l.stroke)} strokeWidth={2} />
-              <circle cx={p[hi][0]} cy={p[hi][1]} r={3} className={l.fill} />
-              <text x={p[hi][0]} y={p[hi][1] - 8} textAnchor="middle" className={cn('text-[10px] font-medium', l.textFill)}>
-                {l.fmt(l.values[hi])}
-              </text>
-            </g>
-          );
-        })}
-        {xTicks.map((i) => (
-          <text key={i} x={all[0][i][0]} y={H - 4} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
-            {xLabel(i)}
-          </text>
-        ))}
-        {hover !== null && (
-          <g className="pointer-events-none">
-            <line x1={all[0][hover][0]} y1={40} x2={all[0][hover][0]} y2={Y0} className="stroke-border-strong" strokeDasharray="3 3" />
-            {lines.map((l, li) => (
-              <circle key={l.label} cx={all[li][hover][0]} cy={all[li][hover][1]} r={4} className={cn(l.fill, 'stroke-card')} strokeWidth={2} />
-            ))}
-          </g>
-        )}
-      </svg>
-    </div>
-  );
-}
