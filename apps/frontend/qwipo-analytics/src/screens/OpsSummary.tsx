@@ -1,17 +1,24 @@
 // Ops (Logistics) · Summary — dashboards, not reports: KPI cards first, then
 // comparisons as charts. The full company/distributor field sets live in the
 // data file and export via the Company and Distributor Reports (Reports → Ops).
+import { useState } from 'react';
 import { Card } from '@mockups/ui';
 import { Columns, HBars, Stat } from '@mockups/components';
 import { ScopeBar } from '../components/ScopeBar';
 import { Handoff } from '../components/Handoff';
+import { EntityDrawer } from '../components/EntityDrawer';
 import { Panel, KpiCard } from '../components/dashboard';
-import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, taxonomies, registry } from '../data/logistics';
+import { network, companyOps, yearTiles, onboardedCompanies, categoryMix, weeklyTrend, taxonomies, registry, opsDistributors } from '../data/logistics';
 import type { Page } from '../nav';
 
 const pct = (n: number, of: number) => +((n / of) * 100).toFixed(1);
 
+type TileDrawer = 'companies' | 'distributors' | 'deliveries' | 'invoice';
+/** Same order as yearTiles — each headline tile drills into its records. */
+const tileDrawers: TileDrawer[] = ['companies', 'distributors', 'deliveries', 'invoice'];
+
 export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
+  const [drawer, setDrawer] = useState<TileDrawer | null>(null);
   const deliveryRate = pct(network.fulfilled, network.totalOrders);
   const statusRows = [
     { label: 'Delivered', n: network.fulfilled, barClass: 'bg-success' },
@@ -23,11 +30,80 @@ export default function OpsSummary({ go }: { go: (p: Page | string) => void }) {
   return (
     <div className="flex flex-col gap-5">
       <ScopeBar />
+      {drawer === 'companies' && (
+        <EntityDrawer
+          title="Customer companies"
+          total={`${onboardedCompanies.length} onboarded companies`}
+          rows={onboardedCompanies.map((c) => ({
+            name: c.name,
+            sub: `Onboarded ${c.onboarded}`,
+            mid: `${c.metrics.Distributors} distributors · ${c.metrics.Beats} beats · ${c.metrics.Vehicles} vehicles`,
+            right: c.metrics['Invoice value'],
+            rightSub: `${c.metrics.Deliveries} deliveries`,
+          }))}
+          report="ops-company-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
+      {drawer === 'distributors' && (
+        <EntityDrawer
+          title="Distributors"
+          total={`${opsDistributors.length} with metrics · ${registry.length} registered`}
+          rows={[...opsDistributors].sort((a, b) => b.invoiceL - a.invoiceL).map((d) => ({
+            name: d.name,
+            sub: `${d.code} · ${d.city}, ${d.state}`,
+            mid: `${d.orders} orders · ${d.returned} returns · ${d.vehicles} vehicles`,
+            right: `₹${d.invoiceL}L`,
+            rightSub: `${d.fillRate}% fill rate`,
+          }))}
+          report="ops-distributor-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
+      {drawer === 'deliveries' && (
+        <EntityDrawer
+          title="Deliveries by company"
+          total={`${network.fulfilled.toLocaleString('en-IN')} delivered this period`}
+          rows={[...companyOps].sort((a, b) => b.fulfilled - a.fulfilled).map((c) => ({
+            name: c.name,
+            sub: `${c.orders.toLocaleString('en-IN')} orders`,
+            mid: `returns ${c.returned} (${c.returnedCancelled} cancelled · ${c.returnedDeliveryRetry} delivery retry)`,
+            right: `${c.fulfilled.toLocaleString('en-IN')} delivered`,
+            rightSub: `${pct(c.fulfilled, c.orders)}% delivery rate`,
+          }))}
+          report="ops-company-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
+      {drawer === 'invoice' && (
+        <EntityDrawer
+          title="Invoice value by company"
+          total={`₹${network.invoiceL}L this period`}
+          rows={[...companyOps].sort((a, b) => b.invoiceL - a.invoiceL).map((c) => ({
+            name: c.name,
+            sub: `${c.orders.toLocaleString('en-IN')} orders`,
+            mid: `returns ₹${c.returnL}L · ${c.returnRate}%`,
+            right: `₹${c.invoiceL}L`,
+            rightSub: `dispatch ₹${c.dispatchL}L`,
+            tone: c.returnRate > 6 ? ('warning' as const) : undefined,
+          }))}
+          report="ops-company-report"
+          onClose={() => setDrawer(null)}
+          go={go}
+        />
+      )}
 
       <section>
         <div className="grid grid-cols-4 gap-3">
-          {yearTiles.map((t) => (
-            <KpiCard key={t.label} label={t.label} value={t.value} change={t.change} trend={t.change === '→' ? 'flat' : 'up'} note={t.note} />
+          {yearTiles.map((t, i) => (
+            <KpiCard
+              key={t.label} label={t.label} value={t.value} change={t.change}
+              trend={t.change === '→' ? 'flat' : 'up'} note={t.note}
+              onOpen={() => setDrawer(tileDrawers[i])}
+            />
           ))}
         </div>
       </section>
