@@ -713,6 +713,7 @@ export default function App() {
           emoji: company.emoji,
           distributor: name,
           idHint: company.idHint,
+          dmsIntegrated: company.dmsIntegrated,
           rejectedReason: company.rejectedReason,
         };
         const targetId = company.id;
