@@ -54,7 +54,7 @@ export default function App() {
         ) : route.page === 'customers' ? (
           <Customers go={go} />
         ) : route.page === 'lg-summary' ? (
-          <OpsSummary />
+          <OpsSummary go={go} />
         ) : route.page === 'lg-orders' ? (
           <OpsOrders />
         ) : route.page === 'lg-trips' ? (
