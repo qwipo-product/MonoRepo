@@ -160,6 +160,81 @@ function Shop() {
   );
 }
 
+/* ---- Shop inside ------------------------------------------------------- */
+
+/** The same shop from the doorway — three stocked racks on the back wall and
+    the counter in front. Only the photo's quality varies (blurry / dark); an
+    inside photo has no board to frame, so `highlight` rings the racks. */
+export function ShopInsideArt({
+  scene = 'good',
+  highlight,
+  className,
+}: {
+  scene?: 'good' | 'blurry' | 'dark';
+  highlight?: boolean;
+  className?: string;
+}) {
+  const uid = useId().replace(/:/g, '');
+  return (
+    <svg
+      viewBox="0 0 160 120"
+      preserveAspectRatio="xMidYMid slice"
+      className={cn('block aspect-[4/3] w-full bg-card', className)}
+      aria-hidden
+    >
+      <defs>
+        <filter id={`inblur-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="2.4" />
+        </filter>
+      </defs>
+      <g filter={scene === 'blurry' ? `url(#inblur-${uid})` : undefined}>
+        <rect x="0" y="0" width="160" height="120" className="fill-card" />
+        <rect x="0" y="96" width="160" height="24" className="fill-muted" />
+        {/* tube light */}
+        <rect x="50" y="4" width="60" height="3" rx="1.5" className="fill-warning-subtle stroke-border-strong" strokeWidth="0.5" />
+        {/* racks — four shelves of stock each */}
+        {[6, 58, 110].map((x, r) => (
+          <g key={x}>
+            <rect x={x} y="14" width="44" height="82" className="fill-background-sunken stroke-border-strong" strokeWidth="1" />
+            {[34, 54, 74, 94].map((y, s) => (
+              <g key={y}>
+                {Array.from({ length: 6 }).map((_, i) => {
+                  const h = 9 + ((i + s + r) % 3) * 2;
+                  return (
+                    <rect
+                      key={i}
+                      x={x + 3 + i * 6.8}
+                      y={y - h}
+                      width="5"
+                      height={h}
+                      rx="0.8"
+                      className={GOODS[(i + s * 2 + r) % GOODS.length]}
+                    />
+                  );
+                })}
+                <rect x={x} y={y} width="44" height="2" className="fill-border-strong" />
+              </g>
+            ))}
+          </g>
+        ))}
+        {/* counter + billing machine */}
+        <rect x="30" y="82" width="100" height="18" rx="1" className="fill-border-strong" />
+        <rect x="30" y="82" width="100" height="2.5" className="fill-foreground-tertiary" />
+        <rect x="98" y="74" width="16" height="8" rx="1" className="fill-primary" />
+        <rect x="101" y="76" width="10" height="3" rx="0.5" className="fill-primary-foreground" />
+      </g>
+
+      {scene === 'dark' && (
+        <>
+          <rect x="0" y="0" width="160" height="120" className="fill-overlay" />
+          <rect x="0" y="0" width="160" height="120" className="fill-overlay" />
+        </>
+      )}
+      {highlight && <Ring x={3} y={11} w={154} h={88} />}
+    </svg>
+  );
+}
+
 /** Neighbouring buildings — only seen when the photo is taken from too far. */
 function Street() {
   const blocks = [
@@ -279,14 +354,18 @@ const DOC_TITLE: Partial<Record<IdType, string>> = {
 export function IdCardArt({
   scene = 'clear',
   type = 'aadhaar',
+  title,
   className,
 }: {
   scene?: IdScene;
   type?: IdType | null;
+  /** Certificate heading, where the document isn't one of the KYC types
+   *  (a GST certificate drawn as a certificate). Keep it to ~17 letters. */
+  title?: string;
   className?: string;
 }) {
   const kind = idKindOf(type);
-  if (kind !== 'card') return <DocArt scene={scene} kind={kind} title={DOC_TITLE[type ?? 'shopReg'] ?? 'CERTIFICATE'} className={className} />;
+  if (kind !== 'card') return <DocArt scene={scene} kind={kind} title={title ?? DOC_TITLE[type ?? 'shopReg'] ?? 'CERTIFICATE'} className={className} />;
   return <CardArt scene={scene} className={className} />;
 }
 

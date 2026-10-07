@@ -260,8 +260,8 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
-  // DMS registrations, keyed by company id. TCPL starts unregistered so the
-  // flow can be walked end to end from the list.
+  // DMS registrations, keyed by company id. TCPL and HUL start unregistered so
+  // both flows can be walked end to end from the list.
   const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({});
   const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
 
@@ -712,6 +712,7 @@ export default function App() {
           distributor: name,
           idHint: company.idHint,
           dmsIntegrated: company.dmsIntegrated,
+          collectsDetails: company.collectsDetails,
           rejectedReason: company.rejectedReason,
         };
         const targetId = company.id;

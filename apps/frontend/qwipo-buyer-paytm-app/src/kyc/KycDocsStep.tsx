@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Camera, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
+import { Camera, Clock, FileText, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
 import { Field, SelectField, controlClass } from '../components/formbits';
 import { IdCardArt, PinMapArt, ShopPhotoArt } from './KycArt';
@@ -295,7 +295,7 @@ function FieldBody({
   return <>{{ empty, checking, accepted, rejected, review }[status]}</>;
 }
 
-function EmptyUpload({ art, hint, button, onClick }: { art: ReactNode; hint: string; button: string; onClick: () => void }) {
+export function EmptyUpload({ art, hint, button, onClick }: { art: ReactNode; hint: string; button: string; onClick: () => void }) {
   return (
     <div className="overflow-hidden rounded-lg border-2 border-dashed border-border-strong bg-card">
       <div className="flex items-center gap-3 p-3">
@@ -408,7 +408,9 @@ function Coord({ label, value }: { label: string; value: string }) {
 
 /* ---- sheets ---------------------------------------------------------- */
 
-function UploadSheet({
+/* Also used by DMS registration (HUL's shop photos and business document),
+   which passes `onPdf` because a document may be a PDF rather than a photo. */
+export function UploadSheet({
   open,
   title,
   good,
@@ -417,6 +419,7 @@ function UploadSheet({
   onClose,
   onCamera,
   onGallery,
+  onPdf,
 }: {
   open: boolean;
   title: string;
@@ -426,6 +429,8 @@ function UploadSheet({
   onClose: () => void;
   onCamera: () => void;
   onGallery: () => void;
+  /** Adds a third choice, PDF, for a document that may not be a photo. */
+  onPdf?: () => void;
 }) {
   return (
     <Sheet
@@ -434,13 +439,18 @@ function UploadSheet({
       title={title}
       icon={<Camera className="h-5 w-5" />}
       footer={
-        <div className="grid grid-cols-2 gap-3">
+        <div className={cn('grid gap-3', onPdf ? 'grid-cols-3' : 'grid-cols-2')}>
           <Button className="h-16 w-full flex-col gap-1" onClick={onCamera}>
             <Camera className="h-6 w-6" /> Take Photo
           </Button>
           <Button variant="secondary" className="h-16 w-full flex-col gap-1" onClick={onGallery}>
             <ImageIcon className="h-6 w-6" /> Gallery
           </Button>
+          {onPdf && (
+            <Button variant="secondary" className="h-16 w-full flex-col gap-1" onClick={onPdf}>
+              <FileText className="h-6 w-6" /> PDF
+            </Button>
+          )}
         </div>
       }
     >

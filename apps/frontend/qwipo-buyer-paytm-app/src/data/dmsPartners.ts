@@ -10,6 +10,10 @@
 // registration screen is a new one — there is no customer ID to ask for. And
 // it reads the shop's documents from Qwipo itself, so the form has no list of
 // attachments to show.
+//
+// A company that `collectsDetails` (HUL) needs more than Qwipo's KYC holds: an
+// email, WhatsApp OTP consent, two shop photos and one business document. Its
+// form shows the KYC pre-filled and collects the rest beneath it.
 
 // none → pending (request sent) → review (verifying) → registered
 // or rejected (re-apply allowed).
@@ -30,13 +34,17 @@ export interface DmsCompany {
   /** The company's DMS is wired into Qwipo: it links its own customers and
    *  takes their documents directly, so registration asks for neither. */
   dmsIntegrated?: boolean;
+  /** The company needs details Qwipo's KYC doesn't hold, so its registration
+   *  form collects them (email, WhatsApp OTP, shop photos, a document). */
+  collectsDetails?: boolean;
   rejectedReason?: string;
 }
 
-/* One company while the TCPL flow is what's being shown. The other five —
-   HUL, PepsiCo, Marico, Colgate, ITC — were here to demonstrate the customer-ID
-   path and the pending / review / registered / rejected cards; they are in git
-   if a second company is wanted back. */
+/* TCPL and HUL — one of each registration form: TCPL's is the Qwipo KYC alone,
+   HUL's collects its own details too. The other four — PepsiCo, Marico,
+   Colgate, ITC — were here to demonstrate the customer-ID path and the
+   pending / review / registered / rejected cards; they are in git if wanted
+   back. */
 export const DMS_COMPANIES: DmsCompany[] = [
   {
     id: 'tcpl',
@@ -47,6 +55,51 @@ export const DMS_COMPANIES: DmsCompany[] = [
     products: 126,
     dmsIntegrated: true,
   },
+  {
+    id: 'hul',
+    company: 'Hindustan Unilever (HUL)',
+    shortName: 'HUL',
+    emoji: '🧴',
+    brands: ['Surf Excel', 'Dove', 'Lifebuoy', 'Brooke Bond', 'Horlicks'],
+    products: 240,
+    collectsDetails: true,
+  },
 ];
 
 export const dmsCompanyById = (id: string) => DMS_COMPANIES.find((c) => c.id === id);
+
+/** What a `collectsDetails` company's form collects on top of the KYC. */
+export interface CollectedDetails {
+  email: string;
+  whatsappOtp: '' | 'yes' | 'no';
+  boardPhoto: boolean;
+  insidePhoto: boolean;
+  docType: string;
+  docId: string;
+  docFile: '' | 'photo' | 'pdf';
+}
+
+export const NO_DETAILS: CollectedDetails = {
+  email: '',
+  whatsappOtp: '',
+  boardPhoto: false,
+  insidePhoto: false,
+  docType: '',
+  docId: '',
+  docFile: '',
+};
+
+export const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
+
+/** How many of the seven are still missing — Request Registration waits for 0. */
+export function detailsLeft(d: CollectedDetails) {
+  return [
+    emailOk(d.email),
+    d.whatsappOtp !== '',
+    d.boardPhoto,
+    d.insidePhoto,
+    d.docType !== '',
+    d.docId.trim() !== '',
+    d.docFile !== '',
+  ].filter((ok) => !ok).length;
+}

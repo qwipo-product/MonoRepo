@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ChevronLeft, Check, Clock, FileCheck2, FileSearch, XCircle, BadgeCheck, Lock } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
-import type { DmsStatus } from '../data/dmsPartners';
+import { NO_DETAILS, detailsLeft, type DmsStatus } from '../data/dmsPartners';
+import { DmsDetailsForm } from './DmsDetailsForm';
 
 /** The company the shop is registering with. */
 export interface DmsTarget {
@@ -15,6 +16,7 @@ export interface DmsTarget {
   distributor: string;
   idHint?: string;
   dmsIntegrated?: boolean;
+  collectsDetails?: boolean;
   rejectedReason?: string;
 }
 
@@ -27,15 +29,30 @@ export interface DmsTarget {
    existing customers never see this screen — their catalogue is already open
    when they arrive — so asking them for a customer ID would be asking a
    question that has no one to answer it, and its form lists no documents
-   because the company reads them from Qwipo rather than being sent them. */
+   because the company reads them from Qwipo rather than being sent them.
+
+   A company that needs details Qwipo doesn't hold (HUL) also opens straight
+   on the form. Its pre-filled box lists the profile field by field, and the
+   details it needs on top — email, WhatsApp OTP, shop photos, a business
+   document — are collected below it (DmsDetailsForm). Request Registration
+   waits for all of them as well as the consent. */
 
 // Same shop profile shown in Account · Business Details — the pre-fill source.
+// The field-by-field part (category, pincode, coordinates) matches the shop's
+// saved address, Shop 14, Lit Box Complex.
 const KYC_PREFILL = {
   shopName: 'Lit Box',
   ownerName: 'Rajesh Kumar',
   mobile: '9876543210',
   address: 'Rai Durg, Hitech City, Hyderabad',
   gstin: '36ABCDE1234F1Z5',
+  category: 'Grocer',
+  street: 'Shop 14, Lit Box Complex, Rai Durg, Hitech City',
+  pincode: '500032',
+  city: 'Hyderabad',
+  state: 'Telangana',
+  lat: '17.4296',
+  lng: '78.3827',
 };
 
 const KYC_ROWS: [string, string][] = [
@@ -44,6 +61,21 @@ const KYC_ROWS: [string, string][] = [
   ['Mobile Number', `+91 ${KYC_PREFILL.mobile}`],
   ['Shop Address', KYC_PREFILL.address],
   ['GSTIN', KYC_PREFILL.gstin],
+];
+
+// What a company collecting its own details gets pre-filled, in the order of
+// its field list (HUL's).
+const KYC_ROWS_FULL: [string, string][] = [
+  ['Owner Name', KYC_PREFILL.ownerName],
+  ['Mobile Number', `+91 ${KYC_PREFILL.mobile}`],
+  ['Shop Name', KYC_PREFILL.shopName],
+  ['Shop Category', KYC_PREFILL.category],
+  ['Pincode', KYC_PREFILL.pincode],
+  ['Address', KYC_PREFILL.street],
+  ['City', KYC_PREFILL.city],
+  ['State', KYC_PREFILL.state],
+  ['Store Latitude', KYC_PREFILL.lat],
+  ['Store Longitude', KYC_PREFILL.lng],
 ];
 
 const SHARED_DOCS =['Shop Image', 'Shop Owner Photo ID', 'GST Certificate'];
@@ -66,10 +98,12 @@ export function DmsRegisterScreen({
   /* Where the screen opens. A company whose DMS is wired into Qwipo has one
      path, so the choose step would be a single card asking the buyer to agree
      to the only thing on offer — it goes straight to the form instead. */
-  const firstStep: Step = target.dmsIntegrated ? 'form' : 'choose';
+  const firstStep: Step = target.dmsIntegrated || target.collectsDetails ? 'form' : 'choose';
   const [step, setStep] = useState<Step>(firstStep);
   const [customerId, setCustomerId] = useState('');
   const [consent, setConsent] = useState(false);
+  const [details, setDetails] = useState(NO_DETAILS);
+  const left = target.collectsDetails ? detailsLeft(details) : 0;
 
   const header = (
     <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -152,7 +186,9 @@ export function DmsRegisterScreen({
       {
         icon: Check,
         label: 'Request sent',
-        desc: `Your KYC was shared with ${target.distributor}.`,
+        desc: target.collectsDetails
+          ? `Your KYC, shop photos and document were shared with ${target.distributor}.`
+          : `Your KYC was shared with ${target.distributor}.`,
         state: 'done' as const,
       },
       {
@@ -262,8 +298,9 @@ export function DmsRegisterScreen({
         {header}
         <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
           <p className="rounded-lg border border-primary/30 bg-primary-soft p-3 text-xs leading-relaxed text-foreground">
-            These details come from your Qwipo KYC. Review them and send your registration request
-            to {target.distributor}.
+            {target.collectsDetails
+              ? `Most of this comes from your Qwipo KYC. ${target.name} needs a few more details — add them below and send your registration request.`
+              : `These details come from your Qwipo KYC. Review them and send your registration request to ${target.distributor}.`}
           </p>
 
           {/* Read-only summary — values come from Qwipo KYC and can't be edited here. */}
@@ -275,14 +312,15 @@ export function DmsRegisterScreen({
               </span>
             </div>
             <dl className="divide-y divide-border px-4">
-              {KYC_ROWS.map(([label, value]) => (
+              {(target.collectsDetails ? KYC_ROWS_FULL : KYC_ROWS).map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4 py-2.5">
                   <dt className="shrink-0 text-xs text-foreground-secondary">{label}</dt>
                   <dd className="text-right text-sm font-medium text-foreground">{value}</dd>
                 </div>
               ))}
             </dl>
-            {!target.dmsIntegrated && (
+            {/* A company collecting details takes its documents in the form below. */}
+            {!target.dmsIntegrated && !target.collectsDetails && (
               <div className="border-t border-border px-4 py-3">
                 <div className="text-xs text-foreground-secondary">Documents shared</div>
                 <ul className="mt-2 space-y-1.5">
@@ -301,6 +339,15 @@ export function DmsRegisterScreen({
           <p className="text-xs leading-relaxed text-foreground-secondary">
             Need to change something? Update it in My Account · Business Details first.
           </p>
+
+          {target.collectsDetails && (
+            <DmsDetailsForm
+              company={target.name}
+              mobile={`+91 ${KYC_PREFILL.mobile}`}
+              value={details}
+              onChange={setDetails}
+            />
+          )}
 
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
             <input
@@ -326,7 +373,13 @@ export function DmsRegisterScreen({
           </label>
         </div>
         <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Button size="lg" className="w-full" disabled={!consent} onClick={() => setStep('sent')}>
+          {/* Says why the button is still off, while there's something left to add. */}
+          {left > 0 && (
+            <p className="mb-2 text-center text-xs text-foreground-secondary">
+              {left} more {left === 1 ? 'detail' : 'details'} needed to register
+            </p>
+          )}
+          <Button size="lg" className="w-full" disabled={!consent || left > 0} onClick={() => setStep('sent')}>
             Request Registration
           </Button>
         </div>
