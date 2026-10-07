@@ -26,10 +26,21 @@ export const network = {
   liveKm: 68470,
   uniqueCustomers: 7916,
   volumetricWeightKg: 78580,
-  /** Returned splits into two causes; "Partial return" exists in their taxonomy but carries no separate count. */
+  /** Returned splits into two causes. */
   returnedCancelled: 404,
   returnedDeliveryRetry: 218,
+  /** The reference derives Partial return as 41% of Returned on its status card. */
+  partialReturn: Math.round(622 * 0.41), // 255
 };
+
+/** The reference Orders page's status card — five rows, % of their combined total. */
+export const orderStatusRows = [
+  { label: 'Delivered', n: 10505, bg: 'bg-success' },
+  { label: 'In planning', n: 658, bg: 'bg-chart-blue' },
+  { label: 'Returned', n: 622, bg: 'bg-warning' },
+  { label: 'Partial return', n: Math.round(622 * 0.41), bg: 'bg-chart-age-3' },
+  { label: 'Cancelled', n: 248, bg: 'bg-error' },
+];
 
 /** Per-company operations totals — same shape as the network object, every field. */
 export interface CompanyOps {
@@ -48,16 +59,17 @@ export const companyOps: CompanyOps[] = [
   { name: 'Dabur', orders: 1423, fulfilled: 1271, pending: 108, returned: 102, cancelled: 51, invoiceL: 28.6, dispatchL: 31.2, returnL: 2.6, netSalesL: 28.6, returnRate: 7.2, returnedCancelled: 66, returnedDeliveryRetry: 36, uniqueCustomers: 980, volumetricWeightKg: 9840, vehicleUtil: 73, weightUtil: 67, timeUtil: 68, dpUtil: 82, vehiclesInUse: '52 / 72', avgRunTime: '6h 18m', plannedKm: 9120, liveKm: 9680 },
 ];
 
-/** The reference Summary page's "this year" tiles and onboarded-company cards. */
+/** The reference Summary page's headline tiles and onboarded-company cards.
+ *  No period caption — the scope bar's date filter owns the period. */
 export const yearTiles = [
-  { label: 'Companies', value: '2', change: '→', note: 'This year' },
-  { label: 'Distributors', value: '20', change: '→', note: 'This year' },
-  { label: 'Deliveries', value: '22,682', change: '↑ 4.8%', note: 'This year' },
-  { label: 'Invoice value', value: '₹9.97Cr', change: '↑ 12.3%', note: 'This year' },
+  { label: 'Companies', value: '2', change: '→', note: '' },
+  { label: 'Distributors', value: '20', change: '→', note: '' },
+  { label: 'Deliveries', value: '22,682', change: '↑ 4.8%', note: 'vs previous period' },
+  { label: 'Invoice value', value: '₹9.97Cr', change: '↑ 12.3%', note: 'vs previous period' },
 ] as const;
 export const onboardedCompanies = [
-  { name: 'ITC Limited', logo: 'ITC', onboarded: '15 Jan 2024', metrics: { Distributors: '17', Beats: '167', Vehicles: '327', Deliveries: '18,275', Revenue: '₹8.03Cr' } },
-  { name: 'Hindustan Unilever', logo: 'HUL', onboarded: '3 Aug 2025', metrics: { Distributors: '3', Beats: '34', Vehicles: '76', Deliveries: '4,407', Revenue: '₹1.95Cr' } },
+  { name: 'ITC Limited', logo: 'ITC', onboarded: '15 Jan 2024', metrics: { Distributors: '17', Beats: '167', Vehicles: '327', Deliveries: '18,275', 'Invoice value': '₹8.03Cr' } },
+  { name: 'Hindustan Unilever', logo: 'HUL', onboarded: '3 Aug 2025', metrics: { Distributors: '3', Beats: '34', Vehicles: '76', Deliveries: '4,407', 'Invoice value': '₹1.95Cr' } },
 ];
 
 /** Category contribution (₹L revenue + % share) — network blend and per company. */
@@ -111,19 +123,19 @@ export interface OpsDistributor {
   fillRate: number; tripEfficiency: number;
 }
 export const opsDistributors: OpsDistributor[] = [
-  { code: 'DIS-HYD-004', name: 'Hyderabad Central', state: 'Telangana', city: 'Hyderabad', zone: 'Secunderabad', orders: 384, fulfilled: 358, returned: 22, cancelled: 4, invoiceL: 7.2, returnRate: 5.7, vehicles: 12, vehicleUtil: 87, weightUtil: 84, timeUtil: 79, dpUtil: 88, fillRate: 93.2, tripEfficiency: 91.4 },
-  { code: 'SECD123DIS', name: 'Secd123 Dist.', state: 'Telangana', city: 'Hyderabad', zone: 'Secunderabad', orders: 312, fulfilled: 287, returned: 19, cancelled: 6, invoiceL: 5.9, returnRate: 6.1, vehicles: 10, vehicleUtil: 83, weightUtil: 80, timeUtil: 74, dpUtil: 84, fillRate: 90.1, tripEfficiency: 88.7 },
-  { code: 'DIS-HYD-002', name: 'Kukatpally North', state: 'Telangana', city: 'Hyderabad', zone: 'Kukatpally', orders: 298, fulfilled: 274, returned: 17, cancelled: 7, invoiceL: 5.6, returnRate: 5.7, vehicles: 9, vehicleUtil: 81, weightUtil: 78, timeUtil: 72, dpUtil: 82, fillRate: 91.8, tripEfficiency: 89.2 },
-  { code: 'DIS-KRN-001', name: 'Karimnagar Central', state: 'Telangana', city: 'Karimnagar', zone: 'Central', orders: 271, fulfilled: 248, returned: 18, cancelled: 5, invoiceL: 5.1, returnRate: 6.6, vehicles: 9, vehicleUtil: 79, weightUtil: 76, timeUtil: 70, dpUtil: 80, fillRate: 88.4, tripEfficiency: 85.6 },
-  { code: 'DIS-MUM-012', name: 'Mumbai Metro', state: 'Maharashtra', city: 'Mumbai', zone: 'Central', orders: 512, fulfilled: 487, returned: 21, cancelled: 4, invoiceL: 9.4, returnRate: 4.1, vehicles: 16, vehicleUtil: 91, weightUtil: 89, timeUtil: 85, dpUtil: 92, fillRate: 95.1, tripEfficiency: 93.8 },
-  { code: 'DIS-MUM-001', name: 'Andheri East Dist.', state: 'Maharashtra', city: 'Mumbai', zone: 'Andheri', orders: 426, fulfilled: 398, returned: 20, cancelled: 8, invoiceL: 7.9, returnRate: 4.7, vehicles: 13, vehicleUtil: 88, weightUtil: 86, timeUtil: 82, dpUtil: 89, fillRate: 93.4, tripEfficiency: 92.1 },
-  { code: 'DIS-MUM-003', name: 'Malad North', state: 'Maharashtra', city: 'Mumbai', zone: 'Malad', orders: 378, fulfilled: 350, returned: 18, cancelled: 10, invoiceL: 7.1, returnRate: 4.8, vehicles: 12, vehicleUtil: 86, weightUtil: 83, timeUtil: 79, dpUtil: 87, fillRate: 92.6, tripEfficiency: 90.4 },
-  { code: 'DIS-BAN-007', name: 'Bengaluru North', state: 'Karnataka', city: 'Bengaluru', zone: 'North Zone', orders: 447, fulfilled: 416, returned: 26, cancelled: 5, invoiceL: 8.2, returnRate: 5.8, vehicles: 14, vehicleUtil: 88, weightUtil: 85, timeUtil: 81, dpUtil: 89, fillRate: 93, tripEfficiency: 90.8 },
-  { code: 'DIS-BAN-004', name: 'Koramangala North', state: 'Karnataka', city: 'Bengaluru', zone: 'Koramangala', orders: 362, fulfilled: 332, returned: 21, cancelled: 9, invoiceL: 6.7, returnRate: 5.8, vehicles: 11, vehicleUtil: 85, weightUtil: 82, timeUtil: 77, dpUtil: 86, fillRate: 91.7, tripEfficiency: 89.3 },
-  { code: 'DIS-CHN-003', name: 'Chennai East Dist.', state: 'Tamil Nadu', city: 'Chennai', zone: 'East Chennai', orders: 318, fulfilled: 296, returned: 17, cancelled: 5, invoiceL: 5.9, returnRate: 5.3, vehicles: 10, vehicleUtil: 82, weightUtil: 79, timeUtil: 73, dpUtil: 83, fillRate: 90.6, tripEfficiency: 88.1 },
-  { code: 'DIS-DEL-009', name: 'Delhi NCR Dist.', state: 'Delhi NCR', city: 'New Delhi', zone: 'Central Delhi', orders: 398, fulfilled: 371, returned: 20, cancelled: 7, invoiceL: 7.6, returnRate: 5, vehicles: 13, vehicleUtil: 86, weightUtil: 83, timeUtil: 79, dpUtil: 87, fillRate: 92.2, tripEfficiency: 90.5 },
-  { code: 'DIS-PUN-015', name: 'Pune Central Dist.', state: 'Maharashtra', city: 'Pune', zone: 'Central Pune', orders: 224, fulfilled: 205, returned: 14, cancelled: 5, invoiceL: 4.1, returnRate: 6.3, vehicles: 7, vehicleUtil: 76, weightUtil: 73, timeUtil: 68, dpUtil: 77, fillRate: 88.9, tripEfficiency: 86.2 },
-  { code: 'DIS-AHM-006', name: 'Ahmedabad Central', state: 'Gujarat', city: 'Ahmedabad', zone: 'Central', orders: 160, fulfilled: 147, returned: 10, cancelled: 3, invoiceL: 2.9, returnRate: 6.3, vehicles: 6, vehicleUtil: 72, weightUtil: 69, timeUtil: 64, dpUtil: 73, fillRate: 87.5, tripEfficiency: 84.8 },
+  { code: 'DIS-HYD-004', name: 'Sri Sai Traders', state: 'Telangana', city: 'Hyderabad', zone: 'Secunderabad', orders: 384, fulfilled: 358, returned: 22, cancelled: 4, invoiceL: 7.2, returnRate: 5.7, vehicles: 12, vehicleUtil: 87, weightUtil: 84, timeUtil: 79, dpUtil: 88, fillRate: 93.2, tripEfficiency: 91.4 },
+  { code: 'SECD123DIS', name: 'Dhenkara Distributors', state: 'Telangana', city: 'Hyderabad', zone: 'Secunderabad', orders: 312, fulfilled: 287, returned: 19, cancelled: 6, invoiceL: 5.9, returnRate: 6.1, vehicles: 10, vehicleUtil: 83, weightUtil: 80, timeUtil: 74, dpUtil: 84, fillRate: 90.1, tripEfficiency: 88.7 },
+  { code: 'DIS-HYD-002', name: 'Sri Venkateshwara Agencies', state: 'Telangana', city: 'Hyderabad', zone: 'Kukatpally', orders: 298, fulfilled: 274, returned: 17, cancelled: 7, invoiceL: 5.6, returnRate: 5.7, vehicles: 9, vehicleUtil: 81, weightUtil: 78, timeUtil: 72, dpUtil: 82, fillRate: 91.8, tripEfficiency: 89.2 },
+  { code: 'DIS-KRN-001', name: 'Bhavani Traders', state: 'Telangana', city: 'Karimnagar', zone: 'Central', orders: 271, fulfilled: 248, returned: 18, cancelled: 5, invoiceL: 5.1, returnRate: 6.6, vehicles: 9, vehicleUtil: 79, weightUtil: 76, timeUtil: 70, dpUtil: 80, fillRate: 88.4, tripEfficiency: 85.6 },
+  { code: 'DIS-MUM-012', name: 'Shree Ganesh Distributors', state: 'Maharashtra', city: 'Mumbai', zone: 'Central', orders: 512, fulfilled: 487, returned: 21, cancelled: 4, invoiceL: 9.4, returnRate: 4.1, vehicles: 16, vehicleUtil: 91, weightUtil: 89, timeUtil: 85, dpUtil: 92, fillRate: 95.1, tripEfficiency: 93.8 },
+  { code: 'DIS-MUM-001', name: 'Omkar Enterprises', state: 'Maharashtra', city: 'Mumbai', zone: 'Andheri', orders: 426, fulfilled: 398, returned: 20, cancelled: 8, invoiceL: 7.9, returnRate: 4.7, vehicles: 13, vehicleUtil: 88, weightUtil: 86, timeUtil: 82, dpUtil: 89, fillRate: 93.4, tripEfficiency: 92.1 },
+  { code: 'DIS-MUM-003', name: 'Mahalaxmi Agencies', state: 'Maharashtra', city: 'Mumbai', zone: 'Malad', orders: 378, fulfilled: 350, returned: 18, cancelled: 10, invoiceL: 7.1, returnRate: 4.8, vehicles: 12, vehicleUtil: 86, weightUtil: 83, timeUtil: 79, dpUtil: 87, fillRate: 92.6, tripEfficiency: 90.4 },
+  { code: 'DIS-BAN-007', name: 'Nandi Traders', state: 'Karnataka', city: 'Bengaluru', zone: 'North Zone', orders: 447, fulfilled: 416, returned: 26, cancelled: 5, invoiceL: 8.2, returnRate: 5.8, vehicles: 14, vehicleUtil: 88, weightUtil: 85, timeUtil: 81, dpUtil: 89, fillRate: 93, tripEfficiency: 90.8 },
+  { code: 'DIS-BAN-004', name: 'Sri Manjunatha Distributors', state: 'Karnataka', city: 'Bengaluru', zone: 'Koramangala', orders: 362, fulfilled: 332, returned: 21, cancelled: 9, invoiceL: 6.7, returnRate: 5.8, vehicles: 11, vehicleUtil: 85, weightUtil: 82, timeUtil: 77, dpUtil: 86, fillRate: 91.7, tripEfficiency: 89.3 },
+  { code: 'DIS-CHN-003', name: 'Murugan Agencies', state: 'Tamil Nadu', city: 'Chennai', zone: 'East Chennai', orders: 318, fulfilled: 296, returned: 17, cancelled: 5, invoiceL: 5.9, returnRate: 5.3, vehicles: 10, vehicleUtil: 82, weightUtil: 79, timeUtil: 73, dpUtil: 83, fillRate: 90.6, tripEfficiency: 88.1 },
+  { code: 'DIS-DEL-009', name: 'Aggarwal Trading Co.', state: 'Delhi NCR', city: 'New Delhi', zone: 'Central Delhi', orders: 398, fulfilled: 371, returned: 20, cancelled: 7, invoiceL: 7.6, returnRate: 5, vehicles: 13, vehicleUtil: 86, weightUtil: 83, timeUtil: 79, dpUtil: 87, fillRate: 92.2, tripEfficiency: 90.5 },
+  { code: 'DIS-PUN-015', name: 'Vitthal Distributors', state: 'Maharashtra', city: 'Pune', zone: 'Central Pune', orders: 224, fulfilled: 205, returned: 14, cancelled: 5, invoiceL: 4.1, returnRate: 6.3, vehicles: 7, vehicleUtil: 76, weightUtil: 73, timeUtil: 68, dpUtil: 77, fillRate: 88.9, tripEfficiency: 86.2 },
+  { code: 'DIS-AHM-006', name: 'Shree Ambica Traders', state: 'Gujarat', city: 'Ahmedabad', zone: 'Central', orders: 160, fulfilled: 147, returned: 10, cancelled: 3, invoiceL: 2.9, returnRate: 6.3, vehicles: 6, vehicleUtil: 72, weightUtil: 69, timeUtil: 64, dpUtil: 73, fillRate: 87.5, tripEfficiency: 84.8 },
 ];
 
 /** Delivery ageing per distributor — the network's 658 pending orders spread over the
@@ -238,9 +250,33 @@ export const runtimeByCity = [
   { city: 'Pune', slab: '> 6h', avg: '6h 10m', trips: 15 },
 ];
 
-/** Trips per day — 20 working days from the reference's trip-volume multipliers. */
-const tripMult = [1, 0.88, 1.06, 1.12, 0.95, 1.08, 0.72, 1, 0.91, 1.05, 1.09, 0.97, 1.03, 0.84, 0.9, 1.07, 1.11, 0.94, 1.02, 0.88];
-export const tripsDaily = tripMult.map((m, i) => ({ day: i + 1, trips: Math.round(14.6 * m) }));
+/** Trip status cards — the reference Trips page's top row. */
+export const tripStatusCards = [
+  { label: 'Planned', value: 18, bg: 'bg-chart-blue' },
+  { label: 'In Progress', value: 14, bg: 'bg-warning' },
+  { label: 'Completed', value: 92, bg: 'bg-success' },
+  { label: 'Cancelled', value: 4, bg: 'bg-border-strong' },
+];
+
+/** Trip volume profiles — the reference's weekday and weekly series, with avg vehicles. */
+export const tripsByWeekday = [
+  { day: 'Mon', trips: 48, avgVehicles: 82 },
+  { day: 'Tue', trips: 52, avgVehicles: 88 },
+  { day: 'Wed', trips: 51, avgVehicles: 85 },
+  { day: 'Thu', trips: 61, avgVehicles: 94 },
+  { day: 'Fri', trips: 59, avgVehicles: 96 },
+  { day: 'Sat', trips: 38, avgVehicles: 74 },
+  { day: 'Sun', trips: 22, avgVehicles: 42 },
+];
+export const tripsWeekly = [
+  { week: 'W1 Apr', trips: 220, avgVehicles: 84 },
+  { week: 'W2 Apr', trips: 248, avgVehicles: 89 },
+  { week: 'W3 Apr', trips: 261, avgVehicles: 91 },
+  { week: 'W4 Apr', trips: 204, avgVehicles: 79 },
+  { week: 'W1 May', trips: 242, avgVehicles: 88 },
+  { week: 'W2 May', trips: 271, avgVehicles: 93 },
+  { week: 'W3 May', trips: 239, avgVehicles: 87 },
+];
 
 /** Fleet rollups computed from the driver list (so every number agrees). */
 export const fleet = {
