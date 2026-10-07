@@ -351,9 +351,13 @@ export function DmsRegisterScreen({
             />
           )}
 
+          {/* `relative` is load-bearing: it keeps the hidden (sr-only) checkbox
+              inside this card. Without it the checkbox was placed against the
+              phone frame, far down a long form, and focusing it on a tap
+              scrolled the whole frame out of view — a blank screen. */}
           <label
             id="dms-consent"
-            className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
+            className="relative flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
           >
             <input
               type="checkbox"
