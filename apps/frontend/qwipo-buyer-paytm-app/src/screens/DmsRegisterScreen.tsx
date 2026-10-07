@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, Check, Clock, FileCheck2, FileSearch, XCircle, BadgeCheck, Lock } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
-import { NO_DETAILS, detailsLeft, type DmsStatus } from '../data/dmsPartners';
+import { NO_DETAILS, detailsMissing, type DmsStatus } from '../data/dmsPartners';
 import { DmsDetailsForm } from './DmsDetailsForm';
 
 /** The company the shop is registering with. */
@@ -103,7 +103,9 @@ export function DmsRegisterScreen({
   const [customerId, setCustomerId] = useState('');
   const [consent, setConsent] = useState(false);
   const [details, setDetails] = useState(NO_DETAILS);
-  const left = target.collectsDetails ? detailsLeft(details) : 0;
+  const missing = target.collectsDetails ? detailsMissing(details) : [];
+  const jumpTo = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   const header = (
     <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shadow-sm">
@@ -349,7 +351,10 @@ export function DmsRegisterScreen({
             />
           )}
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+          <label
+            id="dms-consent"
+            className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
+          >
             <input
               type="checkbox"
               checked={consent}
@@ -373,13 +378,41 @@ export function DmsRegisterScreen({
           </label>
         </div>
         <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          {/* Says why the button is still off, while there's something left to add. */}
-          {left > 0 && (
-            <p className="mb-2 text-center text-xs text-foreground-secondary">
-              {left} more {left === 1 ? 'detail' : 'details'} needed to register
+          {/* Whenever the button is off, say exactly why — each missing field is
+              a link that scrolls to it. A count alone ("1 more detail") left a
+              buyer with a grey button and nothing to go on, and once every
+              field was in, an unticked consent box said nothing at all. */}
+          {(missing.length > 0 || !consent) && (
+            <p className="mb-2 text-center text-xs leading-relaxed text-foreground-secondary">
+              {missing.length > 0 ? (
+                <>
+                  Still needed:{' '}
+                  {missing.map((m, i) => (
+                    <span key={m.id}>
+                      {i > 0 && ', '}
+                      <button
+                        type="button"
+                        onClick={() => jumpTo(m.id)}
+                        className="font-medium text-primary underline underline-offset-2"
+                      >
+                        {m.label}
+                      </button>
+                    </span>
+                  ))}
+                  {!consent && ', and the consent tick'}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => jumpTo('dms-consent')}
+                  className="font-medium text-primary underline underline-offset-2"
+                >
+                  Tick the consent box to send your request
+                </button>
+              )}
             </p>
           )}
-          <Button size="lg" className="w-full" disabled={!consent || left > 0} onClick={() => setStep('sent')}>
+          <Button size="lg" className="w-full" disabled={!consent || missing.length > 0} onClick={() => setStep('sent')}>
             Request Registration
           </Button>
         </div>

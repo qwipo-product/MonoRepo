@@ -68,8 +68,18 @@ export function DmsDetailsForm({
   return (
     <>
       <Section title="Contact" done={emailOk(value.email) && value.whatsappOtp !== ''}>
-        <Field label="Email ID" required>
+        {/* The error sits beside the label, not under the field: shown under
+            it, it appeared on blur — the moment the buyer pressed Yes / No —
+            pushed that control down mid-press, and the tap was lost. */}
+        <div id="dms-email" className="scroll-mt-4 space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="dms-email-input" className="text-sm font-medium text-foreground">
+              Email ID<span className="text-error"> *</span>
+            </label>
+            {emailError && <span className="text-xs text-error-foreground">Check the email format</span>}
+          </div>
           <input
+            id="dms-email-input"
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -79,11 +89,8 @@ export function DmsDetailsForm({
             placeholder="e.g. rajesh.litbox@gmail.com"
             className={cn(controlClass, 'placeholder:text-foreground-secondary', emailError && 'border-error')}
           />
-          {emailError && (
-            <p className="text-xs text-error-foreground">Enter a valid email, like name@gmail.com</p>
-          )}
-        </Field>
-        <Field label="WhatsApp OTP" required>
+        </div>
+        <div id="dms-whatsapp" className="scroll-mt-4"><Field label="WhatsApp OTP" required>
           <p className="-mt-1 text-xs leading-snug text-foreground-secondary">
             Can {company} send OTPs to {mobile} on WhatsApp?
           </p>
@@ -96,11 +103,11 @@ export function DmsDetailsForm({
             value={value.whatsappOtp}
             onChange={(v) => set({ whatsappOtp: v })}
           />
-        </Field>
+        </Field></div>
       </Section>
 
       <Section title="Shop photos" done={value.boardPhoto && value.insidePhoto}>
-        <Field label="Shop Image – Board" required>
+        <div id="dms-board" className="scroll-mt-4"><Field label="Shop Image – Board" required>
           {value.boardPhoto ? (
             <Added
               art={<ShopPhotoArt scene="good" />}
@@ -116,8 +123,8 @@ export function DmsDetailsForm({
               onClick={() => setSheet('board')}
             />
           )}
-        </Field>
-        <Field label="Shop Image – Inside" required>
+        </Field></div>
+        <div id="dms-inside" className="scroll-mt-4"><Field label="Shop Image – Inside" required>
           {value.insidePhoto ? (
             <Added
               art={<ShopInsideArt />}
@@ -133,21 +140,21 @@ export function DmsDetailsForm({
               onClick={() => setSheet('inside')}
             />
           )}
-        </Field>
+        </Field></div>
       </Section>
 
       <Section title="Business document" done={!!doc && value.docId.trim() !== '' && value.docFile !== ''}>
-        <SelectField
+        <div id="dms-doc-type" className="scroll-mt-4"><SelectField
           label="Document Type"
           required
           placeholder="Choose document"
           value={value.docType}
           options={DOCUMENTS.map((d) => d.label)}
-          // The number and the picture belong to the document, so a new
-          // document starts them over.
-          onChange={(t) => t !== value.docType && set({ docType: t, docId: '', docFile: '' })}
-        />
-        <Field label="Document ID" required>
+          // Keeps the ID and image already added — clearing them on a change
+          // of type made uploads vanish without a word. The buyer edits them.
+          onChange={(t) => set({ docType: t })}
+        /></div>
+        <div id="dms-doc-id" className="scroll-mt-4"><Field label="Document ID" required>
           <input
             value={value.docId}
             onChange={(e) => set({ docId: e.target.value })}
@@ -156,8 +163,8 @@ export function DmsDetailsForm({
             placeholder={doc?.placeholder ?? 'Choose the document first'}
             className={cn(controlClass, 'placeholder:text-foreground-secondary disabled:bg-muted')}
           />
-        </Field>
-        <Field label="Document Image" required>
+        </Field></div>
+        <div id="dms-doc-file" className="scroll-mt-4"><Field label="Document Image" required>
           {!doc ? (
             <p className="rounded-lg border-2 border-dashed border-border-strong bg-card p-3 text-sm text-foreground-secondary">
               Choose the document type, then add a photo or PDF of it.
@@ -189,7 +196,7 @@ export function DmsDetailsForm({
               onClick={() => setSheet('doc')}
             />
           )}
-        </Field>
+        </Field></div>
       </Section>
 
       {/* ---- sheets ---- */}

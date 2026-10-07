@@ -91,15 +91,19 @@ export const NO_DETAILS: CollectedDetails = {
 
 export const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
-/** How many of the seven are still missing — Request Registration waits for 0. */
-export function detailsLeft(d: CollectedDetails) {
+/** The fields of the seven still missing, in form order — Request
+ *  Registration waits for none. `id` is the field's element id on the form, so
+ *  the footer can scroll to it. */
+export function detailsMissing(d: CollectedDetails): { id: string; label: string }[] {
   return [
-    emailOk(d.email),
-    d.whatsappOtp !== '',
-    d.boardPhoto,
-    d.insidePhoto,
-    d.docType !== '',
-    d.docId.trim() !== '',
-    d.docFile !== '',
-  ].filter((ok) => !ok).length;
+    { id: 'dms-email', label: d.email.trim() ? 'a valid Email ID' : 'Email ID', ok: emailOk(d.email) },
+    { id: 'dms-whatsapp', label: 'WhatsApp OTP', ok: d.whatsappOtp !== '' },
+    { id: 'dms-board', label: 'Board photo', ok: d.boardPhoto },
+    { id: 'dms-inside', label: 'Inside photo', ok: d.insidePhoto },
+    { id: 'dms-doc-type', label: 'Document Type', ok: d.docType !== '' },
+    { id: 'dms-doc-id', label: 'Document ID', ok: d.docId.trim() !== '' },
+    { id: 'dms-doc-file', label: 'Document Image', ok: d.docFile !== '' },
+  ]
+    .filter((f) => !f.ok)
+    .map(({ id, label }) => ({ id, label }));
 }
