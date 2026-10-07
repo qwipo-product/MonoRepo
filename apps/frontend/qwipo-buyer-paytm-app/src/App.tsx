@@ -62,6 +62,7 @@ import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
 import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
 import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
+import { LoadingScreen } from './screens/LoadingScreen';
 import { DMS_COMPANIES, dmsCompanyById, type DmsStatus } from './data/dmsPartners';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
@@ -93,7 +94,7 @@ const BUILT = new Set<ScreenId>([
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'app-update', 'app-update-required', 'promo-banners', 'location-picker', 'address-details',
+  'app-update', 'app-update-required', 'promo-banners', 'loading', 'location-picker', 'address-details',
   'login-error', 'otp-error', 'cart-price-changes',
   'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
@@ -530,6 +531,8 @@ export default function App() {
         return <PaytmWelcomeScreen onProceed={() => go('login')} />;
       case 'splash':
         return <SplashScreen onContinue={() => go('login')} />;
+      case 'loading':
+        return <LoadingScreen />;
       case 'login-error':
         return <LoginScreen demoError onNext={() => go('otp')} />;
       case 'otp-error':
