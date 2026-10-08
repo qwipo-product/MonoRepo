@@ -330,7 +330,7 @@ server {
     }
     location ^~ /builds/ {
         rewrite ^(/builds.*)/$ $1/index.html last;
-        rewrite ^(/builds/[^/]+(/[^/.]+)?)$ $1/ permanent;
+        rewrite ^(/builds/[^/.]+(/[^/.]+)?)$ $1/ permanent;
         proxy_pass https://qwipo-mockups.blr1.digitaloceanspaces.com/${service}/;
         proxy_set_header Host qwipo-mockups.blr1.digitaloceanspaces.com;
         proxy_ssl_server_name on;
