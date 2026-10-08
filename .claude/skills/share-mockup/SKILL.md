@@ -45,7 +45,9 @@ Every push to a `dev/*` or `feature/*` branch is built and kept at
 
 with `<branch>` slugged (`dev/rahul-cart` → `dev-rahul-cart`) and `<sha>`
 the short commit. `/builds/` on any mockup host lists its branches and
-commits. It is live a few minutes after the push — the build pipeline run
+commits. The newest five builds of a branch are kept, older ones are
+pruned on the next push; `latest/` always survives. It is live a few minutes
+after the push — the build pipeline run
 prints the exact URLs at its end — and nothing is redeployed: the files sit
 in the DigitalOcean Space `qwipo-mockups` and the mockup's own nginx proxies
 them. Routes are on the hash (`/builds/…/#/orders/123`), so the full link

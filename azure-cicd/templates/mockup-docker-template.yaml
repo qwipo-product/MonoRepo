@@ -47,7 +47,8 @@
 #
 # ── Preview builds (dev/*, feature/*) ────────────────────────────────────────
 #
-# Every push to a personal branch is kept, forever, at a URL of its own:
+# Every push to a personal branch gets a URL of its own; the newest
+# PREVIEW_KEEP builds of a branch are kept, older ones are pruned on upload:
 #
 #   https://<service_name>.dev.bms.qwipo.com/builds/<branch>/<sha>/
 #   https://<service_name>.dev.bms.qwipo.com/builds/<branch>/latest/
@@ -126,6 +127,10 @@ variables:
     # Personal branches never become images: the site goes to the Space and
     # is served under /builds/. Widening this (e.g. to fix/*) is a one-line
     # edit here plus the branch in each app's docker-build.yml trigger.
+    # How many builds of one branch to keep in the Space (plus latest/). The
+    # oldest beyond this are deleted after each upload.
+    - name: PREVIEW_KEEP
+      value: 5
     - name: IS_PREVIEW
       ${{ if or(startsWith(variables['Build.SourceBranch'], 'refs/heads/dev/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/feature/')) }}:
           value: 'true'
@@ -406,6 +411,26 @@ jobs:
                     aws s3 sync /site "s3://$BUCKET/$PREFIX/latest/" --delete --acl public-read --no-progress \
                       --cache-control "public, max-age=0, must-revalidate"
 
+                    # Keep the newest $PREVIEW_KEEP builds of this branch, drop the rest.
+                    # Each build's index.html is its marker; LastModified orders them.
+                    aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "$PREFIX/" \
+                      --query "sort_by(Contents[?ends_with(Key, '/index.html')], &LastModified)[::-1].Key" \
+                      --output text \
+                    | tr '\t' '\n' \
+                    | while read -r key; do
+                        rel="${key#"$PREFIX/"}"
+                        case "$rel" in
+                          */index.html) sha="${rel%%/*}" ;;
+                          *) continue ;;
+                        esac
+                        if [ "$sha" != "latest" ]; then echo "$sha"; fi
+                      done \
+                    | tail -n +$((PREVIEW_KEEP + 1)) \
+                    | while read -r old; do
+                        echo "pruning $PREFIX/$old/ (keeping the newest $PREVIEW_KEEP)"
+                        aws s3 rm "s3://$BUCKET/$PREFIX/$old/" --recursive --quiet
+                      done
+
                     # Index pages — plain HTML, regenerated from a bucket listing so
                     # there is no state to corrupt. Each build's index.html is its
                     # marker; LastModified orders them.
@@ -461,3 +486,4 @@ jobs:
                 SPACES_ENDPOINT: $(SPACES_ENDPOINT)
                 SPACES_ACCESS_KEY_ID: $(SPACES_ACCESS_KEY_ID)
                 SPACES_SECRET_ACCESS_KEY: $(SPACES_SECRET_ACCESS_KEY)
+                PREVIEW_KEEP: $(PREVIEW_KEEP)
