@@ -138,10 +138,10 @@ export function useKycFlow() {
 
   return {
     kyc,
+    /** Whether one field is in hand — AI accepted it, or our team has it. */
+    done,
     /** Step 1 can move on once the customer's photo ID is in. */
     customerReady: done('ownerId'),
-    /** Step 2 needs the business location checked. */
-    locationReady: done('location'),
     /** Step 3 needs both shop photos; the certificates are optional. */
     documentsReady: done('photo') && done('photoInside'),
     /** Everything AI looks at is in — what Register waits for. */

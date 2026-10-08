@@ -71,6 +71,24 @@ export function CompleteKycScreen({
   const step1Valid = name.trim() !== '' && flow.customerReady;
   const step2Valid = businessName.trim() !== '' && businessType !== '' && location.trim() !== '';
 
+  /* How much of each step is answered, 0 to 1. The bar on top is not three
+     lamps switching on as the buyer walks past them: each segment fills by
+     the share of its own required answers that are in, so filling one of
+     step 2's three fields moves the bar a third of the way along that
+     segment. Progress is read from the answers themselves, not from which
+     step is open, so stepping back shows what is really done.
+
+     Only the required answers count. The email and the two certificates are
+     optional, and a bar that refused to fill until they were in would be
+     telling the buyer something the form doesn't ask of them. */
+  const share = (...answered: boolean[]) => answered.filter(Boolean).length / answered.length;
+  const FILL: Record<KycStep, number> = {
+    1: share(name.trim() !== '', flow.customerReady),
+    2: share(businessName.trim() !== '', location.trim() !== '', businessType !== ''),
+    3: share(flow.done('photo'), flow.done('photoInside')),
+  };
+  const overall = Math.round(((FILL[1] + FILL[2] + FILL[3]) / 3) * 100);
+
   return (
     <div className="relative flex h-full flex-col bg-background text-foreground">
       <div className="flex h-14 items-center gap-3 px-3">
@@ -87,9 +105,22 @@ export function CompleteKycScreen({
         </div>
       </div>
 
-      <div className="flex gap-2 px-4 py-3">
+      <div
+        className="flex gap-2 px-4 py-3"
+        role="progressbar"
+        aria-label="KYC progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={overall}
+        aria-valuetext={`${overall}% complete`}
+      >
         {([1, 2, 3] as KycStep[]).map((n) => (
-          <span key={n} className={`h-1 flex-1 rounded-full ${n <= step ? 'bg-primary' : 'bg-muted'}`} />
+          <div key={n} className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+              style={{ width: `${FILL[n] * 100}%` }}
+            />
+          </div>
         ))}
       </div>
 
