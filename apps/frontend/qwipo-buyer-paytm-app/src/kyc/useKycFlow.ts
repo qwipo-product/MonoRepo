@@ -154,6 +154,19 @@ export function useKycFlow() {
       setKyc((k) => ({ ...k, photoInside, fields: { ...k.fields, photoInside: { ...k.fields.photoInside, status: 'checking' } } })),
     addLocation: (location: KycLocation) =>
       setKyc((k) => ({ ...k, location, fields: { ...k.fields, location: { ...k.fields.location, status: 'checking' } } })),
+    /* A location picked on the map and confirmed on the address form. There is
+       no photo for AI to look at and no coordinates for it to parse — the
+       buyer has already pointed at the place and named it — so it is recorded
+       as accepted rather than sent round the checking loop. */
+    acceptLocation: (location: KycLocation) =>
+      setKyc((k) => ({
+        ...k,
+        location,
+        fields: {
+          ...k.fields,
+          location: { status: 'accepted', attempts: k.fields.location.attempts, result: { ok: true, aiNote: 'Confirmed on map' } },
+        },
+      })),
     addOwnerId: (idType: IdType, idScene: IdScene) =>
       setKyc((k) => ({ ...k, idType, idScene, fields: { ...k.fields, ownerId: { ...k.fields.ownerId, status: 'checking' } } })),
 

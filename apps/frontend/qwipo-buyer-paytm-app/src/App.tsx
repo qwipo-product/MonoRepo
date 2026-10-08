@@ -51,8 +51,9 @@ import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
-import { CompleteKycScreen, type KycStep } from './screens/auth/CompleteKycScreen';
+import { CompleteKycScreen, type KycForm, type KycStep } from './screens/auth/CompleteKycScreen';
 import { useKycFlow } from './kyc/useKycFlow';
+import { GPS_FIX } from './kyc/kycData';
 import { KycActiveScreen, KycManualReviewScreen } from './kyc/KycResultScreens';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { LocationPickerScreen } from './screens/LocationPickerScreen';
@@ -80,7 +81,7 @@ import {
   DEFAULT_ADDRESS_ID,
   type Address,
 } from './data/addresses';
-import { CURRENT_PLACE_ID, placeById, type Place } from './data/places';
+import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/places';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
@@ -223,6 +224,10 @@ export default function App() {
   // Location flow: map → address details → back to whoever started it.
   const [pickedPlace, setPickedPlace] = useState<Place>(() => placeById(CURRENT_PLACE_ID));
   const [addressFlowFrom, setAddressFlowFrom] = useState<ScreenId>('sub:addresses');
+  /* The KYC form — held here, not in the screen, because step 2 leaves for the
+     map and what has already been typed shouldn't go with it. */
+  const [kycForm, setKycForm] = useState<KycForm>({ name: '', email: '', businessName: '', businessType: '' });
+  const [kycLocation, setKycLocation] = useState('');
   /* KYC gate. The demo persona is already verified, so the existing flows work
      as before; walking a fresh signup clears it, and KYC Success
      sets it again. Ordering — not browsing — is what it blocks. */
@@ -592,6 +597,10 @@ export default function App() {
           <CompleteKycScreen
             step={stepOf(view)}
             flow={kycFlow}
+            form={kycForm}
+            onForm={(patch) => setKycForm((f) => ({ ...f, ...patch }))}
+            location={kycLocation}
+            onPickLocation={() => startLocationFlow('kyc-business')}
             onCancel={() => go(shell === 'paytm' ? 'home' : 'listing')}
             onStep={(s) => go(screenOf(s))}
             onRegister={registerKyc}
@@ -1020,11 +1029,20 @@ export default function App() {
             place={pickedPlace}
             onBack={goBack}
             onChangeLocation={() => go('location-picker')}
-            saveLabel="Save address"
+            saveLabel={addressFlowFrom === 'kyc-business' ? 'Confirm location' : 'Save address'}
             onSave={(address) => {
-              // Appended, not prepended: pending addresses belong at the
-              // bottom, and they don't take over delivery on their own.
-              setAddresses((list) => [...list, address]);
+              if (addressFlowFrom === 'kyc-business') {
+                /* Back to step 2 with the address in the field. The KYC record
+                   takes the shop's coordinates too, accepted as given: the
+                   buyer pointed at the place on a map, so there is nothing
+                   for AI to second-guess. */
+                setKycLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
+                kycFlow.acceptLocation({ ...GPS_FIX, source: 'gps' });
+              } else {
+                // Appended, not prepended: pending addresses belong at the
+                // bottom, and they don't take over delivery on their own.
+                setAddresses((list) => [...list, address]);
+              }
               go(addressFlowFrom);
             }}
           />

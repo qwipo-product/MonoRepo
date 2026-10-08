@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../../components/formbits';
 import { BusinessTypeField } from '../../components/BusinessTypeField';
@@ -23,6 +23,9 @@ import { TermsAgree } from '../../components/TermsAgree';
 
 export type KycStep = 1 | 2 | 3;
 
+/** What the buyer types across the three steps. */
+export type KycForm = { name: string; email: string; businessName: string; businessType: string };
+
 const TITLES: Record<KycStep, string> = {
   1: 'Customer information',
   2: 'Business information',
@@ -32,6 +35,10 @@ const TITLES: Record<KycStep, string> = {
 export function CompleteKycScreen({
   step,
   flow,
+  form,
+  onForm,
+  location,
+  onPickLocation,
   onCancel,
   onStep,
   onRegister,
@@ -40,6 +47,14 @@ export function CompleteKycScreen({
 }: {
   step: KycStep;
   flow: KycFlow;
+  /** The typed answers. Held by App: picking a location leaves this screen,
+   *  and what the buyer has already written shouldn't be lost on the way. */
+  form: KycForm;
+  onForm: (patch: Partial<KycForm>) => void;
+  /** The confirmed business address, empty until one is picked. */
+  location: string;
+  /** Opens the map → address-details flow. */
+  onPickLocation: () => void;
   onCancel: () => void;
   onStep: (s: KycStep) => void;
   onRegister: () => void;
@@ -47,17 +62,14 @@ export function CompleteKycScreen({
   onSkip: () => void;
   onManualReview: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [businessType, setBusinessType] = useState('');
+  const { name, email, businessName, businessType } = form;
   const [agreed, setAgreed] = useState(false);
 
   /* What each step is waiting for. The document fields carry their own AI
      verdict, so a step is done when its typed fields are filled and whatever
      it uploaded has come back accepted. */
   const step1Valid = name.trim() !== '' && flow.customerReady;
-  const step2Valid = businessName.trim() !== '' && businessType !== '' && flow.locationReady;
+  const step2Valid = businessName.trim() !== '' && businessType !== '' && location.trim() !== '';
 
   return (
     <div className="relative flex h-full flex-col bg-background text-foreground">
@@ -87,7 +99,7 @@ export function CompleteKycScreen({
             <Field label="Customer Name" required>
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => onForm({ name: e.target.value })}
                 placeholder="Enter your name"
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
@@ -96,7 +108,7 @@ export function CompleteKycScreen({
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => onForm({ email: e.target.value })}
                 placeholder="Enter your email"
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
@@ -110,13 +122,29 @@ export function CompleteKycScreen({
             <Field label="Business Name" required>
               <input
                 value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
+                onChange={(e) => onForm({ businessName: e.target.value })}
                 placeholder="Enter business name"
                 className={`${controlClass} placeholder:text-foreground-secondary`}
               />
             </Field>
-            <KycDocsStep flow={flow} section="business" onManualReview={onManualReview} />
-            <BusinessTypeField required value={businessType} onChange={setBusinessType} />
+            {/* The location isn't typed. The whole field opens the map, the
+                buyer confirms the address on the form after it, and comes
+                back here with it filled in — so what is saved always matches
+                a real place rather than something typed from memory. */}
+            <Field label="Business Location" required>
+              <button
+                type="button"
+                onClick={onPickLocation}
+                aria-label="Choose your business location on the map"
+                className={`${controlClass} justify-between text-left`}
+              >
+                <span className={`min-w-0 flex-1 truncate ${location ? 'text-foreground' : 'text-foreground-secondary'}`}>
+                  {location || 'Select on map'}
+                </span>
+                <MapPin className="h-5 w-5 shrink-0 text-primary" />
+              </button>
+            </Field>
+            <BusinessTypeField required value={businessType} onChange={(v) => onForm({ businessType: v })} />
           </>
         )}
 

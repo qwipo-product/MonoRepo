@@ -1,15 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Camera, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
+import { Camera, Clock, Image as ImageIcon } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
 import { Field, controlClass } from '../components/formbits';
-import { IdCardArt, PinMapArt, ShopPhotoArt } from './KycArt';
+import { IdCardArt, ShopPhotoArt } from './KycArt';
 import { ActionButton, AiAlert, DeleteConfirm, Mark, Verdict } from './kycBits';
 import {
   GALLERY_BAD_IDS,
   GALLERY_BAD_PHOTOS,
-  GPS_FIX,
   MAX_ATTEMPTS,
-  SHOP_ADDRESS,
   SHOP_PHOTOS,
   type Criterion,
   type IdScene,
@@ -21,7 +19,6 @@ import type { FieldStatus, KycFlow } from './useKycFlow';
    step — each belongs to the step that asks the question:
 
      customer   Customer Photo ID *   Upload → checking → ✓ or ✕
-     business   Business Location *   Current Location → checking → ✓ or ✕
      documents  Shop Photo outside *  Upload → checking → ✓ or ✕
                 Shop Photo inside  *  Upload → checking → ✓ or ✕
                 GST and Shop Registration certificates (optional)
@@ -31,8 +28,9 @@ import type { FieldStatus, KycFlow } from './useKycFlow';
    fix it, "Attempt n of 5" and one retry; the 5th ✕ sends it to manual review
    (App shows that screen). */
 
-/** Which step is being drawn. */
-export type KycSection = 'customer' | 'business' | 'documents';
+/** Which step is being drawn. Step 2's location is picked on a map, so it
+ *  has no AI-checked field here. */
+export type KycSection = 'customer' | 'documents';
 
 const CHECK_MS = 1600;
 
@@ -153,62 +151,6 @@ export function KycDocsStep({
       </Field>
       )}
 
-      {/* ---- Business Location (step 2) ---- */}
-      {section === 'business' && (
-      <Field label="Business Location" required>
-        <FieldBody
-          status={f.location.status}
-          empty={
-            <div className="space-y-3 rounded-lg border-2 border-dashed border-border-strong bg-card p-4">
-              <p className="text-sm text-foreground">📍 Stand inside your shop and tap the button.</p>
-              <Button
-                variant="outlinePrimary"
-                fullWidth
-                onClick={() => flow.addLocation({ ...GPS_FIX, source: 'gps' })}
-              >
-                <LocateFixed className="h-5 w-5" /> Current Location
-              </Button>
-              <HelpLink onClick={() => setSheet('location-help')}>Enter location manually</HelpLink>
-            </div>
-          }
-          checking={<Checking art={<PinMapArt variant="captured" className="aspect-[4/3]" />} text="Finding your shop location…" />}
-          accepted={
-            <Accepted
-              art={<PinMapArt variant="captured" className="aspect-[4/3]" />}
-              title="Location Valid"
-              text={SHOP_ADDRESS}
-              extra={
-                <div className="grid grid-cols-2 gap-2">
-                  <Coord label="Latitude" value={kyc.location?.lat ?? ''} />
-                  <Coord label="Longitude" value={kyc.location?.lng ?? ''} />
-                </div>
-              }
-              editKind="update"
-              onEdit={() => flow.addLocation({ ...GPS_FIX, source: 'gps' })}
-              onDelete={() => setDeleting('location')}
-            />
-          }
-          rejected={
-            <AiAlert
-              title="Invalid Shop Location"
-              why={f.location.result?.why ?? ''}
-              fix="Please check that your location is correctly captured and try again."
-              steps={f.location.result?.steps}
-              attempt={f.location.attempts}
-              action={
-                <RetryButton
-                  icon={<LocateFixed className="h-5 w-5" />}
-                  label="Update Location"
-                  onClick={() => flow.addLocation({ ...GPS_FIX, source: 'gps' })}
-                />
-              }
-            />
-          }
-          review={<InReview what="location" />}
-        />
-      </Field>
-      )}
-
       {/* ---- Customer Photo ID (step 1) ---- */}
       {section === 'customer' && (
       <div className="space-y-2">
@@ -316,18 +258,6 @@ export function KycDocsStep({
         }}
         onGallery={() => {
           flow.addOwnerId(idType, GALLERY_BAD_IDS[f.ownerId.attempts % GALLERY_BAD_IDS.length]);
-          setSheet(null);
-        }}
-      />
-      <LocationHelpSheet
-        open={sheet === 'location-help'}
-        onClose={() => setSheet(null)}
-        onGps={() => {
-          flow.addLocation({ ...GPS_FIX, source: 'gps' });
-          setSheet(null);
-        }}
-        onManual={(lat, lng) => {
-          flow.addLocation({ lat, lng, source: 'manual' });
           setSheet(null);
         }}
       />
@@ -467,25 +397,6 @@ function RetryButton({ icon, label, onClick }: { icon: ReactNode; label: string;
   );
 }
 
-function HelpLink({ onClick, children }: { onClick: () => void; children: ReactNode }) {
-  return (
-    <button onClick={onClick} className="flex w-full items-center justify-center gap-1.5 text-sm font-semibold text-primary">
-      <HelpCircle className="h-4 w-4" /> {children}
-    </button>
-  );
-}
-
-function Coord({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-border bg-background-subtle px-3 py-2">
-      <div className="text-xs font-medium text-foreground-secondary">{label}</div>
-      <div className="text-base font-semibold tabular-nums text-foreground">{value}</div>
-    </div>
-  );
-}
-
-/* ---- sheets ---------------------------------------------------------- */
-
 function UploadSheet({
   open,
   title,
@@ -547,75 +458,6 @@ function UploadSheet({
               <figcaption className="py-1 text-center text-sm font-bold text-error-foreground">{b.label}</figcaption>
             </figure>
           ))}
-        </div>
-      </div>
-    </Sheet>
-  );
-}
-
-function LocationHelpSheet({
-  open,
-  onClose,
-  onGps,
-  onManual,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onGps: () => void;
-  onManual: (lat: string, lng: string) => void;
-}) {
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  return (
-    <Sheet open={open} onClose={onClose} title="Shop Location" icon={<LocateFixed className="h-5 w-5" />}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          {[true, false].map((ok) => (
-            <figure key={String(ok)} className={cn('overflow-hidden rounded-lg border-2', ok ? 'border-success-border' : 'border-error-border')}>
-              <div className="relative">
-                <PinMapArt variant={ok ? 'on-shop' : 'away'} className="aspect-[5/4]" />
-                <span className="absolute right-1 top-1">
-                  <Mark ok={ok} size="sm" />
-                </span>
-              </div>
-              <figcaption className={cn('py-1.5 text-center text-sm font-bold', ok ? 'text-success-foreground' : 'text-error-foreground')}>
-                {ok ? '✓ Pin on your shop' : '✕ Pin away from shop'}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-        <p className="text-sm text-foreground-secondary">Please select the location where your shop is located.</p>
-        <Button variant="outlinePrimary" fullWidth onClick={onGps}>
-          <LocateFixed className="h-5 w-5" /> Current Location
-        </Button>
-
-        <div className="space-y-3 rounded-lg border border-border p-3">
-          {/* Just the heading. The two fields are labelled and their
-              placeholders already show the form a coordinate takes. */}
-          <div className="text-sm font-semibold text-foreground">Enter manually</div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Latitude">
-              <input
-                inputMode="decimal"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                placeholder="17.3850"
-                className={`${controlClass} text-sm placeholder:text-foreground-secondary`}
-              />
-            </Field>
-            <Field label="Longitude">
-              <input
-                inputMode="decimal"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                placeholder="78.4867"
-                className={`${controlClass} text-sm placeholder:text-foreground-secondary`}
-              />
-            </Field>
-          </div>
-          <Button variant="soft" fullWidth onClick={() => onManual(lat, lng)}>
-            Save Location
-          </Button>
         </div>
       </div>
     </Sheet>
