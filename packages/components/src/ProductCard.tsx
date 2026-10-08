@@ -40,6 +40,11 @@ export interface ProductCardProps {
      is the distributor's card or a wholesaler's, since there the two sit in
      one list and the card alone doesn't say. */
   badge?: React.ReactNode;
+  /* The seller has turned "Accept Orders" off. The card greys out under a red
+     "Currently Offline" badge and nothing on it works — no gallery, no pack
+     pills, no Add. A tap anywhere calls onOfflineTap (to explain why). */
+  offline?: boolean;
+  onOfflineTap?: () => void;
   className?: string;
 }
 
@@ -92,8 +97,44 @@ export function ProductCard({
   onDiscounts,
   footer,
   badge,
+  offline = false,
+  onOfflineTap,
   className,
 }: ProductCardProps) {
+  if (offline) {
+    return (
+      <Card className={cn('relative p-3', className)}>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {badge}
+          <Badge variant="destructive">Currently Offline</Badge>
+        </div>
+        {/* the card as it would be, greyed and inert */}
+        <div aria-hidden className="pointer-events-none select-none opacity-50 grayscale">
+          <ProductCard
+            name={name}
+            caseLabel={caseLabel}
+            image={image}
+            variants={variants}
+            selectedVariant={selectedVariant}
+            seller={seller}
+            delivery={delivery}
+            margin={margin}
+            price={price}
+            mrp={mrp}
+            priceSuffix={priceSuffix}
+            footer={footer}
+            className="border-0 p-0 shadow-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onOfflineTap}
+          aria-label={`${name}${seller ? ` from ${seller}` : ''} is unavailable: seller is currently offline`}
+          className="absolute inset-0 rounded-lg"
+        />
+      </Card>
+    );
+  }
   return (
     <Card className={cn('p-3', className)}>
       {badge && <div className="mb-2">{badge}</div>}

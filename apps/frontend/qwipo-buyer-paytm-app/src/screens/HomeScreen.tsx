@@ -8,6 +8,7 @@ import { BrandTile } from '../components/BrandTile';
 import { CarouselDots } from '../components/CarouselDots';
 import { useAutoAdvance } from '../components/useAutoAdvance';
 import { ProductTeaserRail } from '../components/ProductTeaserRail';
+import { OfflineBadge, useSellerOffline } from '../components/SellerOffline';
 import {
   HERO_BANNERS,
   DISTRIBUTORS,
@@ -73,6 +74,7 @@ export function HomeScreen({
   // serve: block the tab and mark it Coming Soon, rather than opening it onto an
   // empty page. The other tab becomes the active one.
   const distributors = DISTRIBUTORS;
+  const { isOffline, notify } = useSellerOffline();
   /* Repeat buys, one rail per side of the catalogue — a distributor tab
      never surfaces a wholesaler line, or the other way round. */
   const prevOrderedDistributor = previouslyOrdered('distributor');
@@ -184,25 +186,38 @@ export function HomeScreen({
             <section className="space-y-3">
               <SectionHeader title="Distributors" onSeeAll={() => onNavigate('distributors-list', { tab: 'sellers' })} />
               <div className={rail}>
-                {distributors.map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => onNavigate('storefront', { distributor: d })}
-                    className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
-                  >
-                    {/* No frame of its own: the card already draws one around
-                        the mark and the two lines, and a second outline just
-                        inside it read as a box in a box. */}
-                    <BrandLogo
-                      src={d.logo}
-                      alt={d.title}
-                      className="aspect-square w-full rounded"
-                      imgClassName="p-0 scale-110"
-                    />
-                    <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
-                    <div className="truncate text-xs text-foreground-secondary">{d.name}</div>
-                  </button>
-                ))}
+                {distributors.map((d) => {
+                  // Accept Orders OFF: greyed, red badge, and a tap explains instead of opening.
+                  const off = isOffline(d.name);
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => (off ? notify(d.name) : onNavigate('storefront', { distributor: d }))}
+                      aria-label={off ? `${d.name} is currently offline` : undefined}
+                      className={cn(
+                        'relative w-24 shrink-0 rounded-lg border p-1.5 text-center shadow-sm active:scale-[0.98]',
+                        off ? 'border-error-border bg-muted' : 'border-border bg-card'
+                      )}
+                    >
+                      {off && (
+                        <OfflineBadge className="absolute inset-x-1 top-1 z-10 justify-center px-1 text-[9px] tracking-normal" />
+                      )}
+                      {/* No frame of its own: the card already draws one around
+                          the mark and the two lines, and a second outline just
+                          inside it read as a box in a box. */}
+                      <div className={off ? 'opacity-50 grayscale' : undefined}>
+                        <BrandLogo
+                          src={d.logo}
+                          alt={d.title}
+                          className="aspect-square w-full rounded"
+                          imgClassName="p-0 scale-110"
+                        />
+                        <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
+                        <div className="truncate text-xs text-foreground-secondary">{d.name}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </section>
 

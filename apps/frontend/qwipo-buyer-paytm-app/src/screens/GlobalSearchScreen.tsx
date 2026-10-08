@@ -13,6 +13,7 @@ import { productById, defaultVariantId, skuFor } from '../data/products';
 import { WHOLESALER_PRODUCTS, cheapestVendorId } from '../data/wholesaler';
 import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { useSellerOffline } from '../components/SellerOffline';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { offerNameSuffix } from '../data/coupons';
 import { search, suggest, normalise, SEARCH_CARDS, CATEGORY_NAMES, type SearchCard, type Suggestion } from '../data/search';
@@ -133,6 +134,7 @@ export function GlobalSearchScreen({
   cartTotal?: number;
   cartFreight?: number;
 }) {
+  const { isOffline, notify } = useSellerOffline();
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>(SEEDED_RECENT);
@@ -247,6 +249,8 @@ export function GlobalSearchScreen({
         onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
           onDiscounts={() => setDiscountsProductId(p.id)}
         footer={deliveryFooter(p.seller)}
+        offline={isOffline(p.seller)}
+        onOfflineTap={() => notify(p.seller)}
       />
     );
   };

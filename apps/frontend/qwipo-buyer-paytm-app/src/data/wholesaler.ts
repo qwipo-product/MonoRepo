@@ -1,3 +1,4 @@
+import { isSellerOffline } from './sellerStatus';
 import { EXTRA_WHOLESALE } from './catalogExtra';
 // Wholesaler products — unlike the distributor catalog, the same product is
 // offered by MULTIPLE vendors at different prices + delivery fees. The buyer
@@ -218,10 +219,22 @@ const BASE_WHOLESALE: WholesalerProduct[] = [
 
 export const WHOLESALER_PRODUCTS: WholesalerProduct[] = [...BASE_WHOLESALE, ...EXTRA_WHOLESALE];
 
-/** Cheapest vendor id for a product (marked "Best"). */
+/* Vendors who are taking orders. An offline vendor (Accept Orders OFF in the
+   Seller Portal) is never the default and never "Best"; if every vendor of a
+   product is offline, the list falls back to all of them so the card can still
+   be drawn — greyed, as offline. */
+const onlineVendors = (p: WholesalerProduct) => {
+  const on = p.vendors.filter((v) => !isSellerOffline(v.name));
+  return on.length ? on : p.vendors;
+};
+
+/** True when no vendor of this product is taking orders. */
+export const allVendorsOffline = (p: WholesalerProduct) => p.vendors.every((v) => isSellerOffline(v.name));
+
+/** Cheapest vendor id for a product (marked "Best"), among vendors taking orders. */
 export function cheapestVendorId(p: WholesalerProduct): string {
-  return p.vendors.reduce((a, b) => (b.price < a.price ? b : a)).id;
+  return onlineVendors(p).reduce((a, b) => (b.price < a.price ? b : a)).id;
 }
 
 /** What the SKU costs at its cheapest vendor — what a list sorts and filters on. */
-export const minVendorPrice = (p: WholesalerProduct) => Math.min(...p.vendors.map((v) => v.price));
+export const minVendorPrice = (p: WholesalerProduct) => Math.min(...onlineVendors(p).map((v) => v.price));

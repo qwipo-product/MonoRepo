@@ -7,6 +7,8 @@ import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
 import { DemoStateProvider } from './review/demoState';
+import { SellerOfflineProvider } from './components/SellerOffline';
+import { DEMO_SELLERS, isSellerOffline, setAcceptOrders } from './data/sellerStatus';
 import { ShellChrome } from './shells/ShellChrome';
 import { PaytmWelcomeScreen } from './screens/PaytmWelcomeScreen';
 import { PaytmLauncherScreen } from './screens/PaytmLauncherScreen';
@@ -214,7 +216,36 @@ export default function App() {
   const [wholesaleVendor, setWholesaleVendor] = useState<Record<string, string>>({});
   // The live cart, rebuilt whenever any of the above changes — every screen
   // that shows cart contents reads from this one computed value.
-  const CART = useMemo(() => buildCart(qty, wholesaleQty, wholesaleVendor), [qty, wholesaleQty, wholesaleVendor]);
+  /* Seller Portal stand-in: each demo seller's Accept Orders. The status list
+     itself lives in data/sellerStatus.ts; this copy is what re-renders the app
+     when a switch flips. */
+  const [sellerAccepting, setSellerAccepting] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(DEMO_SELLERS.map((x) => [x.name, !x.startsOffline]))
+  );
+  const changeSellerStatus = (name: string, accepting: boolean) => {
+    setAcceptOrders(name, accepting);
+    setSellerAccepting((m) => ({ ...m, [name]: accepting }));
+  };
+  const CART = useMemo(
+    () => buildCart(qty, wholesaleQty, wholesaleVendor),
+    // sellerAccepting: an offline seller's lines leave the totals and checkout
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [qty, wholesaleQty, wholesaleVendor, sellerAccepting]
+  );
+  /* What can actually be ordered: the same cart minus any seller whose Accept
+     Orders is OFF. Checkout (alerts, Order Summary) reads this; Cart Summary
+     still shows the offline seller, greyed, so the buyer can remove it. */
+  const CHECKOUT = useMemo(() => ({ ...CART, sellers: CART.sellers.filter((s) => !s.offline) }), [CART]);
+  // Cart Summary → offline seller → Remove items.
+  const removeSeller = (sellerId: string) => {
+    const seller = CART.sellers.find((s) => s.id === sellerId);
+    if (!seller) return;
+    for (const item of seller.items) {
+      if (item.free) continue;
+      if (item.product.id.startsWith('wp')) setWholesaleLineQty(item.product.id, 0);
+      else setLineQty(item.product.id, 0);
+    }
+  };
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
@@ -843,6 +874,7 @@ export default function App() {
             onItemTap={(id) =>
               id.startsWith('wp') ? setWholesaleSheetId(id) : setSheetId(id)
             }
+            onRemoveSeller={removeSeller}
           />
         );
       case 'view-items':
@@ -859,7 +891,7 @@ export default function App() {
       case 'order-summary':
         return (
           <OrderSummaryScreen
-            cart={CART}
+            cart={CHECKOUT}
             onBack={goBack}
             onPlaceOrder={() => go('order-confirmation')}
             kycPending={!kycComplete}
@@ -1071,6 +1103,8 @@ export default function App() {
         onCapture={capture}
         emptyDemo={emptyDemo}
         onEmptyDemoChange={setEmptyDemo}
+        sellerStatus={DEMO_SELLERS.map((x) => ({ name: x.name, kind: x.kind, accepting: sellerAccepting[x.name] }))}
+        onSellerStatusChange={changeSellerStatus}
       />
 
       {/* The padding is the frame's drop shadow's room. The stage clips what
@@ -1099,6 +1133,7 @@ export default function App() {
             transformOrigin: 'top left',
           }}
         >
+          <SellerOfflineProvider>
           <DemoStateProvider empty={emptyDemo || emptyView}>
           <ShellChrome
             shell={shell}
@@ -1142,7 +1177,13 @@ export default function App() {
             vendor={
               wholesaleSheetProduct
                 ? wholesaleSheetProduct.vendors.find(
-                    (v) => v.id === (wholesaleVendor[wholesaleSheetProduct.id] ?? cheapestVendorId(wholesaleSheetProduct))
+                    (v) =>
+                      v.id ===
+                      (wholesaleSheetProduct.vendors.some(
+                        (x) => x.id === wholesaleVendor[wholesaleSheetProduct.id] && !isSellerOffline(x.name)
+                      )
+                        ? wholesaleVendor[wholesaleSheetProduct.id]
+                        : cheapestVendorId(wholesaleSheetProduct))
                   ) ?? wholesaleSheetProduct.vendors[0]
                 : null
             }
@@ -1158,7 +1199,9 @@ export default function App() {
 
           <CartAlertsSheet
             open={alertsOpen}
-            sellers={CART.sellers}
+            sellers={CHECKOUT.sellers}
+            offlineSellers={CART.sellers.filter((s) => s.offline)}
+            onRemoveSeller={removeSeller}
             onClose={() => setAlertsOpen(false)}
             onProceed={() => {
               setAlertsOpen(false);
@@ -1171,6 +1214,7 @@ export default function App() {
             seller={viewSeller}
             onClose={() => setOrderItemsOpen(false)}
           />
+          </SellerOfflineProvider>
         </div>
         </div>
       </main>

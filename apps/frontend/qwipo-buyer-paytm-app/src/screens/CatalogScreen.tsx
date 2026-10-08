@@ -8,6 +8,7 @@ import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { useSellerOffline } from '../components/SellerOffline';
 import { useEmptyable } from '../review/demoState';
 import { CartBar } from '../components/CartBar';
 
@@ -49,6 +50,7 @@ export function CatalogScreen({
   /** Delivery across the whole cart — see CartBar. */
   cartFreight?: number;
 }) {
+  const { isOffline, notify } = useSellerOffline();
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -173,6 +175,8 @@ export function CatalogScreen({
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}
               footer={deliveryFooter(p.seller)}
+              offline={isOffline(p.seller)}
+              onOfflineTap={() => notify(p.seller)}
             />
             );
           })

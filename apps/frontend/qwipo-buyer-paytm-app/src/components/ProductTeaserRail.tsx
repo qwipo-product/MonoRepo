@@ -3,6 +3,7 @@ import { PriceLabel, ProductImage } from '@mockups/components';
 import type { ProductTeaser } from '../data/teaser';
 import { CarouselDots } from './CarouselDots';
 import { useAutoAdvance } from './useAutoAdvance';
+import { OfflineBadge, useSellerOffline } from './SellerOffline';
 
 /* The Home product rail — two compact cards to a page, the pages walking
    sideways on their own. Used by Previously Ordered and Trending Products,
@@ -15,17 +16,21 @@ const PER_PAGE = 2;
 const ADVANCE_MS = 5000;
 
 function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: (id: string) => void }) {
+  const { notify } = useSellerOffline();
+  const off = p.offlineSeller;
   return (
     <button
       type="button"
-      onClick={() => onOpen(p.id)}
-      aria-label={p.name}
+      onClick={() => (off ? notify(off) : onOpen(p.id))}
+      aria-label={off ? `${p.name} is unavailable: ${off} is currently offline` : p.name}
       className="block w-full text-left active:scale-[0.99]"
     >
       {/* The plate is as tall as the text column beside it (two lines of name
           plus the price block), so the mark fills the card instead of
           floating in the middle of it. */}
-      <Card className="flex items-center gap-3 p-2.5">
+      <Card className="relative flex items-center gap-3 p-2.5">
+        {off && <OfflineBadge className="absolute right-2 top-2 z-10" />}
+        <div className={off ? 'flex min-w-0 flex-1 items-center gap-3 opacity-50 grayscale' : 'contents'}>
         <div className="grid h-22 w-22 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
           <ProductImage image={p.image} alt={p.name} />
         </div>
@@ -39,6 +44,7 @@ function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: (id: str
             <Badge variant="success">{p.margin}</Badge>
             <PriceLabel price={p.price} mrp={p.mrp} suffix="/pc" size="lg" />
           </div>
+        </div>
         </div>
       </Card>
     </button>

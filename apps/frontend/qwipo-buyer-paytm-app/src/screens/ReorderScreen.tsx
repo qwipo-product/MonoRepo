@@ -16,6 +16,7 @@ import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { VendorProductCard } from '../components/VendorProductCard';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { useSellerOffline } from '../components/SellerOffline';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters } from '../data/filters';
 import { useEmptyable } from '../review/demoState';
 import { CartBar } from '../components/CartBar';
@@ -265,6 +266,7 @@ function DistributorRow({
   onDiscounts: () => void;
   onImageClick?: () => void;
 }) {
+  const { isOffline, notify } = useSellerOffline();
   const sku = skuFor(item.product, selected);
   return (
     <ProductCard
@@ -284,6 +286,8 @@ function DistributorRow({
       onImageClick={onImageClick}
       onDiscounts={onDiscounts}
       footer={deliveryFooter(item.product.seller)}
+      offline={isOffline(item.product.seller)}
+      onOfflineTap={() => notify(item.product.seller)}
     />
   );
 }

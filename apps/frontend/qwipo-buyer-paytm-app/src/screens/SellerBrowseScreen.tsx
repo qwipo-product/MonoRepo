@@ -6,6 +6,7 @@ import type { Navigate } from '../nav';
 import { BrandTile } from '../components/BrandTile';
 import { deliveryFooter } from '../components/DeliveryFooter';
 import { SearchField } from '../components/SearchField';
+import { OfflineBadge, useSellerOffline } from '../components/SellerOffline';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
 import { useEmptyable } from '../review/demoState';
 
@@ -69,6 +70,7 @@ export function SellerBrowseScreen({
 
   const catList = useMemo(() => (q ? categories.filter((c) => c.name.toLowerCase().includes(q)) : categories), [q, categories]);
   const brandList = useMemo(() => (q ? brands.filter((b) => b.name.toLowerCase().includes(q)) : brands), [q, brands]);
+  const { isOffline, notify } = useSellerOffline();
   const sellerList = useMemo(() => (q ? sellers.filter((d) => d.name.toLowerCase().includes(q)) : sellers), [q, sellers]);
 
   const active = useEmptyable<HomeCategory | HomeBrand | Distributor>(
@@ -157,7 +159,34 @@ export function SellerBrowseScreen({
           </div>
         ) : (
           <div className="space-y-3">
-            {sellerList.map((d) => (
+            {sellerList.map((d) =>
+              isOffline(d.name) ? (
+                /* Accept Orders OFF: the same card, greyed under a red badge.
+                   Nothing inside opens; a tap anywhere says why. */
+                <div key={d.id} className="relative overflow-hidden rounded-lg border border-error-border bg-muted shadow-sm">
+                  <div className="flex items-center gap-3 p-3">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground-secondary">{d.name}</span>
+                    <OfflineBadge />
+                  </div>
+                  <div aria-hidden className="pointer-events-none select-none opacity-50 grayscale">
+                    <div className="px-3 pb-2.5 text-xs text-foreground-secondary">
+                      <div className="mb-1 text-xs font-semibold text-foreground">Delivery by</div>
+                      {deliveryFooter(d.name)}
+                    </div>
+                    <div className="no-scrollbar flex gap-2.5 overflow-x-hidden border-t border-border px-3 py-2.5">
+                      {brands.map((b) => (
+                        <BrandTile key={b.id} name={b.name} logo={b.logo} ariaLabel={b.name} className="w-18 shrink-0" onClick={() => {}} />
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => notify(d.name)}
+                    aria-label={`${d.name} is currently offline`}
+                    className="absolute inset-0"
+                  />
+                </div>
+              ) : (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
                   onClick={() => onNavigate('storefront', { distributor: d })}
@@ -204,7 +233,8 @@ export function SellerBrowseScreen({
                   ))}
                 </div>
               </div>
-            ))}
+              )
+            )}
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { Moon, Sun, UserRound, Camera, PackageOpen } from 'lucide-react';
-import { cn } from '@mockups/ui';
+import { Switch, cn } from '@mockups/ui';
 import { visibleGroups, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
 import { RoleSwitcher, type Role } from './RoleSwitcher';
@@ -26,6 +26,8 @@ export default function FlowIndex({
   onCapture,
   emptyDemo,
   onEmptyDemoChange,
+  sellerStatus,
+  onSellerStatusChange,
 }: {
   active: ScreenId;
   built: Set<ScreenId>;
@@ -46,6 +48,9 @@ export default function FlowIndex({
   /** Force every list empty, to review the zero-data designs. */
   emptyDemo: boolean;
   onEmptyDemoChange: (v: boolean) => void;
+  /** Seller Portal stand-in: each demo seller's Accept Orders switch. */
+  sellerStatus?: { name: string; kind: string; accepting: boolean }[];
+  onSellerStatusChange?: (name: string, accepting: boolean) => void;
 }) {
   let n = 0;
   // Paytm mini is customer-only — no salesperson persona there.
@@ -113,6 +118,34 @@ export default function FlowIndex({
           onOrientationChange={onOrientationChange}
         />
       </div>
+
+      {/* Seller Portal stand-in: flip a seller's Accept Orders and every
+          screen follows — offline badge, blocked adds, cart left out of
+          checkout — and back again. */}
+      {sellerStatus && sellerStatus.length > 0 && (
+        <div className="mt-2 rounded-lg border border-border bg-card p-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-foreground-secondary">
+            Seller Portal · Accept Orders
+          </div>
+          <div className="mt-2 space-y-2">
+            {sellerStatus.map((s) => (
+              <div key={s.name} className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{s.name}</div>
+                  <div className={cn('text-xs', s.accepting ? 'text-success-foreground' : 'text-error-foreground')}>
+                    {s.kind} · {s.accepting ? 'ON — accepting orders' : 'OFF — offline'}
+                  </div>
+                </div>
+                <Switch
+                  checked={s.accepting}
+                  onCheckedChange={(v) => onSellerStatusChange?.(s.name, v)}
+                  aria-label={`Accept Orders for ${s.name}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
         {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}

@@ -2,8 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Badge, Button, Card, Chip, QtyStepper } from '@mockups/ui';
 import { ProductImage, PriceLabel, formatInr } from '@mockups/components';
-import type { WholesalerProduct } from '../data/wholesaler';
+import { allVendorsOffline, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
+import { isSellerOffline } from '../data/sellerStatus';
 import { VendorPicker } from './VendorPicker';
+import { OfflineBadge, useSellerOffline } from './SellerOffline';
 
 /* The wholesale product card. Unlike the distributor card, the same SKU is
    offered by several vendors at different prices, so the card carries the
@@ -12,7 +14,32 @@ import { VendorPicker } from './VendorPicker';
 
    Exported from here rather than duplicated: the two screens must show the
    same card, or the same SKU looks like two products. */
-export function VendorProductCard({
+/* Every vendor of this SKU has Accept Orders OFF: the card greys out under the
+   red badge and a tap anywhere says the seller is offline. With at least one
+   vendor online the picker handles it instead (offline vendors can't be chosen). */
+export function VendorProductCard(props: Parameters<typeof VendorCardInner>[0]) {
+  const { notify } = useSellerOffline();
+  if (!allVendorsOffline(props.product)) return <VendorCardInner {...props} />;
+  const name = props.product.vendors[0].name;
+  return (
+    <div className="relative">
+      <div className="mb-1 flex justify-end">
+        <OfflineBadge />
+      </div>
+      <div aria-hidden className="pointer-events-none select-none opacity-50 grayscale">
+        <VendorCardInner {...props} />
+      </div>
+      <button
+        type="button"
+        onClick={() => notify(name)}
+        aria-label={`${props.product.name} is unavailable: seller is currently offline`}
+        className="absolute inset-0 rounded-lg"
+      />
+    </div>
+  );
+}
+
+function VendorCardInner({
   product,
   vendorId,
   onVendor,
@@ -35,6 +62,10 @@ export function VendorProductCard({
   badge?: ReactNode;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
+  /* A vendor chosen earlier may have since gone offline — fall back to the
+     cheapest one still taking orders. */
+  const chosen = product.vendors.find((v) => v.id === vendorId);
+  if (!chosen || isSellerOffline(chosen.name)) vendorId = cheapestVendorId(product);
   const selected = product.vendors.find((v) => v.id === vendorId) ?? product.vendors[0];
 
   return (

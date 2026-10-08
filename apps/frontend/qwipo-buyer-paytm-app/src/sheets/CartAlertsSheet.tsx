@@ -3,9 +3,13 @@ import { AlertTriangle, ChevronDown, MapPin, Package, Plus, ShoppingCart, Store,
 import { Button, Sheet } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { CartSeller } from '../data/cart';
+import { OfflineBadge } from '../components/SellerOffline';
 
 // Sections whose items can be removed individually via a Delete action.
-const DELETABLE = new Set(['unavailable', 'seller', 'location']);
+/* No fixed "Seller unavailable" group: a seller that isn't taking orders is
+   the live Seller Unavailable group above (Accept Orders OFF), so the sheet
+   never says it twice or contradicts the cart. */
+const DELETABLE = new Set(['unavailable', 'location']);
 
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 
@@ -58,15 +62,6 @@ const SECTIONS: AlertSection[] = [
     rows: [{ title: 'Mysore Sandal Soap', note: 'Out of stock — will be removed at checkout' }],
   },
   {
-    key: 'seller',
-    icon: Store,
-    label: 'Seller unavailable',
-    rows: [
-      { title: 'Omkar Enterprises', note: 'Not accepting orders today' },
-      { title: 'Karnataka Soaps & Detergents', note: 'Temporarily closed' },
-    ],
-  },
-  {
     key: 'location',
     icon: MapPin,
     label: 'Location not serviceable',
@@ -80,6 +75,8 @@ const SECTIONS: AlertSection[] = [
 export function CartAlertsSheet({
   open,
   sellers,
+  offlineSellers = [],
+  onRemoveSeller,
   onClose,
   onProceed,
 }: {
@@ -87,6 +84,10 @@ export function CartAlertsSheet({
   /** The live cart's sellers — MOV/MOW blockers are derived from these on
    * every render, so they stay in step with whatever's actually in the cart. */
   sellers: CartSeller[];
+  /** Sellers in the cart with Accept Orders OFF — their items won't be ordered. */
+  offlineSellers?: CartSeller[];
+  /** Takes an offline seller's items out of the cart. */
+  onRemoveSeller?: (sellerId: string) => void;
   onClose: () => void;
   onProceed: () => void;
 }) {
@@ -119,6 +120,46 @@ export function CartAlertsSheet({
       }
     >
       <div className="space-y-3">
+        {/* First, because it changes what gets ordered at all: an offline
+            seller's items are left out of this order. */}
+        {offlineSellers.length > 0 && (
+          <AlertGroup
+            icon={Store}
+            title={`Seller Unavailable (${offlineSellers.length} ${offlineSellers.length === 1 ? 'Seller' : 'Sellers'})`}
+            defaultOpen
+          >
+            <div className="space-y-2">
+              {offlineSellers.map((s) => (
+                <div key={s.id} className="rounded-lg border border-error-border bg-error-subtle p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 text-sm font-semibold text-foreground">{s.name}</div>
+                    <OfflineBadge />
+                  </div>
+                  <p className="mt-1.5 text-xs leading-snug text-error-foreground">
+                    This seller is currently offline and not accepting orders. These items won&apos;t be ordered.
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="text-xs text-foreground-secondary">
+                      {s.items.length} {s.items.length === 1 ? 'item' : 'items'} ·{' '}
+                      <span className="font-semibold tabular-nums text-foreground">{formatInr(s.subtotal)}</span>
+                    </div>
+                    {onRemoveSeller && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="border-error-border text-error-foreground"
+                        onClick={() => onRemoveSeller(s.id)}
+                      >
+                        <Trash2 size={14} /> Remove items
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AlertGroup>
+        )}
+
         {MOV_FAILS.length > 0 && (
         <AlertGroup
           icon={ShoppingCart}

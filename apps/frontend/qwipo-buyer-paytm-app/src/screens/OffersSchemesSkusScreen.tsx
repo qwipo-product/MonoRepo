@@ -6,6 +6,7 @@ import { PRODUCTS, defaultVariantId, skuFor } from '../data/products';
 import { offerNameSuffix, offerLabelsFor } from '../data/coupons';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { useSellerOffline } from '../components/SellerOffline';
 import { CartBar } from '../components/CartBar';
 
 /* Offers & Schemes SKU list — a shortcut one tap off Product List, for anyone
@@ -37,6 +38,7 @@ export function OffersSchemesSkusScreen({
   /** Delivery across the whole cart — see CartBar. */
   cartFreight?: number;
 }) {
+  const { isOffline, notify } = useSellerOffline();
   const [variant, setVariant] = useState<Record<string, string>>({});
   const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
 
@@ -83,6 +85,8 @@ export function OffersSchemesSkusScreen({
               onImageClick={onOpenGallery ? () => onOpenGallery(p.id) : undefined}
               onDiscounts={() => setDiscountsProductId(p.id)}
               footer={deliveryFooter(p.seller)}
+              offline={isOffline(p.seller)}
+              onOfflineTap={() => notify(p.seller)}
             />
             );
           })

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Tag, Trash2, Truck, ShoppingCart } from 'lucide-react';
 import { Button, SegmentedControl, EmptyState, cn } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
 import { isBeatDay } from '../data/delivery';
+import { OfflineBadge } from '../components/SellerOffline';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
@@ -19,6 +20,7 @@ export function CartScreen({
   onAddMore,
   onOpenCoupons,
   onItemTap,
+  onRemoveSeller,
 }: {
   /** The live cart, built from the same qty the buyer picked on the Product
    * List / Reorder / Wholesaler screens — App.tsx computes it once and shares
@@ -31,12 +33,19 @@ export function CartScreen({
   onOpenCoupons: () => void;
   /** Opens one SKU's selling-units sheet from a seller card's strip. */
   onItemTap?: (productId: string) => void;
+  /** Empties one seller from the cart (the offline card's Remove items). */
+  onRemoveSeller?: (sellerId: string) => void;
 }) {
   const { grandTotal, totalItems } = cart;
   const sellers = useEmptyable(cart.sellers);
   /* What delivery actually costs: each wholesaler's per-kilo freight, plus
      the flat fee a distributor charges under its free-delivery threshold. */
-  const deliveryFee = sellers.reduce((n, s) => n + (s.freight > 0 ? s.freight : s.deliveryFee), 0);
+  const deliveryFee = sellers
+    .filter((s) => !s.offline)
+    .reduce((n, s) => n + (s.freight > 0 ? s.freight : s.deliveryFee), 0);
+  // Nothing to check out when every seller in the cart is offline.
+  const canCheckout = sellers.some((s) => !s.offline);
+  const offlineNames = sellers.filter((s) => s.offline).map((s) => s.name);
 
   return (
     <div className="flex h-full flex-col">
@@ -89,7 +98,10 @@ export function CartScreen({
               <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
             </button>
 
-            {sellers.map((s) => (
+            {sellers.map((s) =>
+              s.offline ? (
+                <OfflineSellerCard key={s.id} seller={s} onRemove={() => onRemoveSeller?.(s.id)} />
+              ) : (
               <SellerCard
                 key={s.id}
                 seller={s}
@@ -97,12 +109,22 @@ export function CartScreen({
                 onAddMore={() => onAddMore(s.id)}
                 onItemTap={onItemTap}
               />
-            ))}
+              )
+            )}
           </div>
 
           {/* No blanket warning here: each seller's card now says exactly what
               it is short of, which is the thing the buyer can act on. */}
           <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
+            {/* Said again where the buyer taps Checkout, so nothing about an
+                offline seller comes as a surprise later. */}
+            {offlineNames.length > 0 && (
+              <p className="mb-2 rounded-md bg-error-subtle px-3 py-1.5 text-xs leading-snug text-error-foreground">
+                {canCheckout
+                  ? `${offlineNames.join(', ')} ${offlineNames.length === 1 ? 'is' : 'are'} offline — ${offlineNames.length === 1 ? 'their' : 'these'} items won't be ordered.`
+                  : 'All sellers in your cart are currently offline and not accepting orders.'}
+              </p>
+            )}
             <div className="flex items-center justify-between gap-3">
               <div className="leading-tight">
                 <div className="text-2xs uppercase tracking-wide text-foreground-secondary">
@@ -113,7 +135,7 @@ export function CartScreen({
                   {deliveryFee > 0 ? `+ ${formatInr(deliveryFee)} delivery fee` : 'Free delivery'}
                 </div>
               </div>
-              <Button className="px-8" onClick={onCheckout}>
+              <Button className="px-8" disabled={!canCheckout} onClick={onCheckout}>
                 Checkout
               </Button>
             </div>
@@ -305,5 +327,47 @@ function SellerCard({
           </Button>
         </div>
       </div>
+  );
+}
+
+/* A seller with Accept Orders OFF. The items stay so the buyer sees what
+   they had, but greyed and inert: they aren't in the total and won't be
+   ordered. The one thing to do is take them out. */
+function OfflineSellerCard({ seller, onRemove }: { seller: CartSeller; onRemove: () => void }) {
+  return (
+    <div className="rounded-lg border border-error-border bg-muted p-3 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs text-foreground-secondary">Buying from</div>
+          <div className="truncate text-sm font-semibold text-foreground-secondary">{seller.name}</div>
+          <div className="text-xs text-foreground-secondary">
+            {seller.items.length} {seller.items.length === 1 ? 'item' : 'items'}
+          </div>
+        </div>
+        <OfflineBadge />
+      </div>
+
+      <p className="mt-2.5 rounded-md bg-error-subtle px-3 py-2 text-xs leading-snug text-error-foreground">
+        This seller is currently offline and not accepting orders. These items won't be ordered.
+      </p>
+
+      <div aria-hidden className="no-scrollbar mt-3 flex gap-3 overflow-x-hidden opacity-50 grayscale">
+        {seller.items.map((item, i) => (
+          <div key={`${item.product.id}-${i}`} className="flex w-16 shrink-0 flex-col items-center">
+            <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
+              <ProductImage image={item.product.image} alt={item.product.name} />
+            </div>
+            <div className="mt-1 text-2xs text-foreground-secondary">×{item.quantity}</div>
+            <div className="text-2xs font-medium tabular-nums text-foreground-secondary line-through">
+              {formatInr(item.lineTotal)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Button variant="secondary" fullWidth className="mt-3 border-error-border text-error-foreground" onClick={onRemove}>
+        <Trash2 size={16} /> Remove items
+      </Button>
+    </div>
   );
 }

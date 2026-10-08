@@ -2,6 +2,7 @@ import { PRODUCTS, type Product } from './products';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from './wholesaler';
 import { deliveryFor, dayLabel } from './delivery';
 import { OFFERS } from './coupons';
+import { isSellerOffline } from './sellerStatus';
 
 /* Cart Summary reads the SAME quantities the buyer picked on the Product List /
    Reorder / Wholesaler List screens — `buildCart()` takes them as arguments
@@ -82,6 +83,9 @@ export const INITIAL_QTY: Record<string, number> = {
   p10: 2,
   p39: 20,
   p5: 4,
+  // Annapurna Traders has Accept Orders OFF (data/sellerStatus.ts) — shows the
+  // offline seller card in the cart.
+  p11: 2,
 };
 
 export const itemWeight = (item: CartItem): number =>
@@ -175,8 +179,11 @@ export interface CartSeller {
   belowWeight: boolean;
   /** kg still needed to clear the MOW (0 unless belowWeight). */
   weightRemaining: number;
-  /** Checkout is blocked when below MOV or below MOW. */
+  /** Checkout is blocked when below MOV or below MOW, or the seller is offline. */
   blocked: boolean;
+  /* Accept Orders is OFF for this seller. Their items stay in the cart, greyed,
+     but are left out of the totals and out of checkout. */
+  offline: boolean;
   /* What this seller charges to carry the order: their per-kilo rate across
      the kilos ordered. 0 for a distributor, and 0 for a wholesaler who
      delivers free. */
@@ -378,15 +385,18 @@ export function buildCart(
       weight,
       belowWeight,
       weightRemaining: belowWeight ? mow - weight : 0,
-      blocked: status === 'below' || belowWeight,
+      blocked: status === 'below' || belowWeight || isSellerOffline(name),
+      offline: isSellerOffline(name),
     });
   }
 
-  const grandTotal = sellers.reduce((s, x) => s + x.subtotal, 0);
+  // Totals cover only what can be ordered: offline sellers are left out.
+  const orderable = sellers.filter((x) => !x.offline);
+  const grandTotal = orderable.reduce((s, x) => s + x.subtotal, 0);
   /** Every seller's freight added up — what the cart costs to deliver. */
-  const freightTotal = sellers.reduce((s, x) => s + x.freight, 0);
+  const freightTotal = orderable.reduce((s, x) => s + x.freight, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.length, 0);
-  const anyBelow = sellers.some((s) => s.blocked);
+  const anyBelow = orderable.some((s) => s.blocked);
 
   const moved = sellers.flatMap((s) => s.items).filter((i) => !!i.priceDelta);
   const priceChanges: PriceChangeSummary = {

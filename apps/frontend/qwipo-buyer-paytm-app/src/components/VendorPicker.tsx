@@ -1,6 +1,7 @@
 import { cn } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { WholesalerVendor } from '../data/wholesaler';
+import { OfflineBadge, useSellerOffline } from './SellerOffline';
 
 /* Choose-vendor picker — labelled header + a selectable tile per vendor
    (price · name). Shared by the wholesaler product card and the selling-units
@@ -20,11 +21,19 @@ export function VendorPicker({
   onChange: (id: string) => void;
   className?: string;
 }) {
+  const { isOffline, notify } = useSellerOffline();
+  /* Offline vendors (Accept Orders OFF) stay visible — greyed, at the end, with
+     the red badge — but can't be chosen; tapping one says why. */
+  const ordered = [...vendors.filter((v) => !isOffline(v.name)), ...vendors.filter((v) => isOffline(v.name))];
+  const online = ordered.filter((v) => !isOffline(v.name)).length;
   return (
     <div className={className}>
       <div className="mb-1.5 flex items-center justify-between">
         <span className="text-xs font-medium text-foreground">Choose vendor</span>
-        <span className="text-xs text-foreground-secondary">{vendors.length} options</span>
+        <span className="text-xs text-foreground-secondary">
+          {online} {online === 1 ? 'option' : 'options'}
+          {online < vendors.length ? ` · ${vendors.length - online} offline` : ''}
+        </span>
       </div>
       {/* Each tile is as wide as the name inside it, not a share of the row:
           a vendor called Omkar Enterprises doesn't need the same space as one
@@ -32,7 +41,28 @@ export function VendorPicker({
           marooned in the middle of a wide empty tile. Past the edge they
           scroll. */}
       <div className="no-scrollbar flex gap-2 overflow-x-auto" role="radiogroup" aria-label="Vendor">
-        {vendors.map((vn) => {
+        {ordered.map((vn) => {
+          if (isOffline(vn.name)) {
+            return (
+              <button
+                key={vn.id}
+                role="radio"
+                aria-checked={false}
+                aria-disabled
+                aria-label={`${vn.name} is currently offline`}
+                onClick={() => notify(vn.name)}
+                className="w-fit shrink-0 rounded-lg border border-border bg-muted p-2.5 text-left"
+              >
+                <OfflineBadge className="mb-1 px-1.5 text-[10px]" />
+                <div className="opacity-60 grayscale">
+                  <div className="text-xs font-bold tabular-nums text-foreground-secondary line-through">
+                    {formatInr(vn.price)}
+                  </div>
+                  <div className="max-w-40 truncate text-xs font-medium text-foreground-secondary">{vn.name}</div>
+                </div>
+              </button>
+            );
+          }
           const on = vn.id === value;
           return (
             <button
