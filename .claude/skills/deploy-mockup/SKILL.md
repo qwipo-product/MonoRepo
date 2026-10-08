@@ -194,8 +194,8 @@ no ArgoCD. `azure-cicd/templates/mockup-docker-template.yaml` builds the
 Dockerfile to its `builder` stage, copies the app's output directory out
 (`out_dir`, default `dist`; the generator writes `storybook-static` for a
 catalog) and `aws s3 sync`s it to the DigitalOcean Space `qwipo-mockups`
-under `<service>/<branch>/<sha>/` and `.../latest/`, then rewrites two plain
-HTML index pages. The `nginx.conf` the generator writes carries a
+under `<service>/<branch>/<sha>/` and `.../latest/`, prunes the branch to its newest five builds
+(`PREVIEW_KEEP` in the template), then rewrites two plain HTML index pages. The `nginx.conf` the generator writes carries a
 `location ^~ /builds/` block that proxies that bucket prefix, so
 `https://<service>.dev.bms.qwipo.com/builds/<branch>/<sha>/` serves the build
 as soon as the upload ends — provided the image with that nginx.conf has been
