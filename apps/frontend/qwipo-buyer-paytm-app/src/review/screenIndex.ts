@@ -29,11 +29,11 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     // onboard and complete KYC before they can order.
     title: 'Onboarding & KYC',
     items: [
-      { id: 'onboarding', label: 'Onboarding' },
       { id: 'location-picker', label: 'Select Location (map)' },
       { id: 'address-details', label: 'Address Details' },
-      { id: 'kyc-complete', label: 'Complete KYC · Basic Info' },
-      { id: 'kyc-docs', label: 'Complete KYC · ID Proofs' },
+      { id: 'kyc-complete', label: 'Complete KYC · 1 Customer Info' },
+      { id: 'kyc-business', label: 'Complete KYC · 2 Business Info' },
+      { id: 'kyc-docs', label: 'Complete KYC · 3 ID Proofs' },
       { id: 'kyc-docs-rejected', label: 'ID Proofs · Photo Rejected (1 of 5)' },
       { id: 'kyc-docs-attempt-2', label: 'ID Proofs · Photo Rejected (2 of 5)' },
       { id: 'kyc-docs-done', label: 'ID Proofs · All Accepted' },

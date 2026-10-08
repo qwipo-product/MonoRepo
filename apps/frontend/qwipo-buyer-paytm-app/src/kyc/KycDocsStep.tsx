@@ -1,14 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Camera, Clock, HelpCircle, Image as ImageIcon, LocateFixed } from 'lucide-react';
 import { Button, Sheet, cn } from '@mockups/ui';
-import { Field, SelectField, controlClass } from '../components/formbits';
+import { Field, controlClass } from '../components/formbits';
 import { IdCardArt, PinMapArt, ShopPhotoArt } from './KycArt';
 import { ActionButton, AiAlert, DeleteConfirm, Mark, Verdict } from './kycBits';
 import {
   GALLERY_BAD_IDS,
   GALLERY_BAD_PHOTOS,
   GPS_FIX,
-  ID_TYPES,
   MAX_ATTEMPTS,
   SHOP_ADDRESS,
   SHOP_PHOTOS,
@@ -18,37 +17,49 @@ import {
 } from './kycData';
 import type { FieldStatus, KycFlow } from './useKycFlow';
 
-/* Complete KYC · Step 2 (ID Proofs) — the existing step, now with three
-   mandatory fields that AI checks the moment they're added:
+/* The checked fields of Complete KYC. They no longer sit together on one
+   step — each belongs to the step that asks the question:
 
-     Shop Image *     Upload → Camera / Gallery → checking → ✓ or ✕
-     Shop Location *  Current Location → checking → ✓ or ✕
-     Owner ID *       pick document → Upload → checking → ✓ or ✕
+     customer   Customer Photo ID *   Upload → checking → ✓ or ✕
+     business   Business Location *   Current Location → checking → ✓ or ✕
+     documents  Shop Photo outside *  Upload → checking → ✓ or ✕
+                Shop Photo inside  *  Upload → checking → ✓ or ✕
+                GST and Shop Registration certificates (optional)
 
-   ✓ shows a one-line reason and [Edit] [Delete]. ✕ shows the problem,
-   numbered steps to fix it, "Attempt n of 5" and one retry button. The 5th ✕
-   sends the field to manual review (App shows that screen). */
+   The behaviour of a field is the same wherever it is rendered: ✓ shows a
+   one-line reason and [Edit] [Delete]; ✕ shows the problem, numbered steps to
+   fix it, "Attempt n of 5" and one retry; the 5th ✕ sends it to manual review
+   (App shows that screen). */
+
+/** Which step is being drawn. */
+export type KycSection = 'customer' | 'business' | 'documents';
 
 const CHECK_MS = 1600;
 
 export function KycDocsStep({
   flow,
+  section,
   onManualReview,
 }: {
   flow: KycFlow;
+  section: KycSection;
   /** The 5th rejection on any field. */
   onManualReview: () => void;
 }) {
   const { kyc } = flow;
   const [sheet, setSheet] = useState<Criterion | 'location-help' | null>(null);
   const [deleting, setDeleting] = useState<Criterion | null>(null);
-  const [idType, setIdType] = useState(kyc.idType ?? 'aadhaar');
+  /* The buyer no longer says which ID it is — the back end works that out —
+     but the demo art still needs something to draw, so it stays an Aadhaar. */
+  const idType = kyc.idType ?? 'aadhaar';
   const [gst, setGst] = useState(false);
+  const [shopReg, setShopReg] = useState(false);
 
   // AI answers a moment after something is added.
-  const statuses = `${kyc.fields.photo.status}|${kyc.fields.location.status}|${kyc.fields.ownerId.status}`;
+  const WATCHED: Criterion[] = ['photo', 'photoInside', 'location', 'ownerId'];
+  const statuses = WATCHED.map((c) => kyc.fields[c].status).join('|');
   useEffect(() => {
-    const checking = (['photo', 'location', 'ownerId'] as Criterion[]).find((c) => kyc.fields[c].status === 'checking');
+    const checking = WATCHED.find((c) => kyc.fields[c].status === 'checking');
     if (!checking) return;
     const t = setTimeout(() => {
       if (flow.resolve(checking) === 'review') onManualReview();
@@ -58,19 +69,19 @@ export function KycDocsStep({
   }, [statuses]);
 
   const f = kyc.fields;
-  const idLabel = ID_TYPES.find((t) => t.id === idType)?.label ?? 'ID';
 
   return (
     <>
-      {/* ---- Shop Image ---- */}
-      <Field label="Shop Image" required>
+      {/* ---- Shop Photo · outside (step 3) ---- */}
+      {section === 'documents' && (
+      <Field label="Shop Photo · Outside" required>
         <FieldBody
           status={f.photo.status}
           empty={
             <EmptyUpload
               art={<ShopPhotoArt scene="good" highlight="board" />}
               hint="Photo of your shop from the front. Name board should be visible."
-              button="Upload Shop Photo"
+              button="Upload"
               onClick={() => setSheet('photo')}
             />
           }
@@ -102,9 +113,49 @@ export function KycDocsStep({
           review={<InReview what="photo" />}
         />
       </Field>
+      )}
 
-      {/* ---- Shop Location ---- */}
-      <Field label="Shop Location" required>
+      {/* ---- Shop Photo · inside (step 3) ---- */}
+      {section === 'documents' && (
+      <Field label="Shop Photo · Inside" required>
+        <FieldBody
+          status={f.photoInside.status}
+          empty={
+            <EmptyUpload
+              art={<ShopPhotoArt scene="good" highlight="whole" />}
+              hint="Photo from inside your shop. Shelves and stock should be visible."
+              button="Upload"
+              onClick={() => setSheet('photoInside')}
+            />
+          }
+          checking={<Checking art={kyc.photoInside && <ShopPhotoArt scene={kyc.photoInside} />} text="AI is checking your photo…" />}
+          accepted={
+            <Accepted
+              art={kyc.photoInside && <ShopPhotoArt scene={kyc.photoInside} />}
+              title="Photo accepted"
+              text="Inside of the shop is clearly visible."
+              onEdit={() => setSheet('photoInside')}
+              onDelete={() => setDeleting('photoInside')}
+            />
+          }
+          rejected={
+            <AiAlert
+              title="Photo not accepted"
+              art={kyc.photoInside && <ShopPhotoArt scene={kyc.photoInside} />}
+              why={f.photoInside.result?.why ?? ''}
+              steps={f.photoInside.result?.steps}
+              attempt={f.photoInside.attempts}
+              action={<RetryButton icon={<Camera className="h-5 w-5" />} label="Take Photo Again" onClick={() => setSheet('photoInside')} />}
+            />
+          }
+          review={<InReview what="photo" />}
+        />
+      </Field>
+      )}
+
+      {/* ---- Business Location (step 2) ---- */}
+      {section === 'business' && (
+      <Field label="Business Location" required>
         <FieldBody
           status={f.location.status}
           empty={
@@ -156,31 +207,24 @@ export function KycDocsStep({
           review={<InReview what="location" />}
         />
       </Field>
+      )}
 
-      {/* ---- Owner ID ---- */}
+      {/* ---- Customer Photo ID (step 1) ---- */}
+      {section === 'customer' && (
       <div className="space-y-2">
+        {/* No document-type picker: the buyer uploads whichever photo ID they
+            have and the back end works out what it is. Asking them to classify
+            it first was a question only the system needed answered. */}
         <label className="block text-sm font-medium text-foreground">
-          Owner ID<span className="text-error"> *</span>
+          Customer Photo ID<span className="text-error"> *</span>
         </label>
-        {(f.ownerId.status === 'empty' || f.ownerId.status === 'rejected') && (
-          /* No "Document type" label above the picker: the placeholder already
-             says Choose document, and the sheet it opens is titled. */
-          <SelectField
-            hideLabel
-            label="Document type"
-            placeholder="Choose document"
-            value={idLabel}
-            options={ID_TYPES.map((t) => t.label)}
-            onChange={(label) => setIdType(ID_TYPES.find((t) => t.label === label)?.id ?? 'aadhaar')}
-          />
-        )}
         <FieldBody
           status={f.ownerId.status}
           empty={
             <EmptyUpload
               art={<IdCardArt scene="clear" type={idType} />}
-              hint="All 4 corners visible. Name should be clear."
-              button={`Upload ${idLabel}`}
+              hint="Aadhaar, PAN, Voter ID or Driving Licence. All 4 corners visible, name clear."
+              button="Upload"
               onClick={() => setSheet('ownerId')}
             />
           }
@@ -188,7 +232,7 @@ export function KycDocsStep({
           accepted={
             <Accepted
               art={kyc.idScene && <IdCardArt scene={kyc.idScene} type={kyc.idType} />}
-              title={`${ID_TYPES.find((t) => t.id === kyc.idType)?.label ?? 'Document'} accepted`}
+              title="Photo ID accepted"
               text="Name is clear and readable."
               onEdit={() => setSheet('ownerId')}
               onDelete={() => setDeleting('ownerId')}
@@ -207,16 +251,15 @@ export function KycDocsStep({
           review={<InReview what="document" />}
         />
       </div>
+      )}
 
-      {/* ---- optional, as before ---- */}
-      <Field label="GST Certificate">
-        <div className={`${controlClass} justify-between`}>
-          <span className={gst ? 'text-foreground' : 'text-foreground-secondary'}>{gst ? 'uploaded.jpg' : 'Upload here (optional)'}</span>
-          <button onClick={() => setGst((g) => !g)} className={cn('text-sm font-semibold', gst ? 'text-error' : 'text-primary')}>
-            {gst ? 'Delete' : 'Upload'}
-          </button>
-        </div>
-      </Field>
+      {/* ---- the two certificates: wanted, not required (step 3) ---- */}
+      {section === 'documents' && (
+        <>
+          <OptionalDoc label="GST Certificate" on={gst} onToggle={() => setGst((g) => !g)} />
+          <OptionalDoc label="Shop Registration Certificate" on={shopReg} onToggle={() => setShopReg((g) => !g)} />
+        </>
+      )}
 
       {/* ---- sheets ---- */}
       <UploadSheet
@@ -239,8 +282,27 @@ export function KycDocsStep({
         }}
       />
       <UploadSheet
+        open={sheet === 'photoInside'}
+        title="Shop Photo · Inside"
+        good={<ShopPhotoArt scene="good" highlight="whole" />}
+        goodText="Shelves and stock clearly visible"
+        bad={(['blurry', 'dark'] as ShopScene[]).map((sc) => ({
+          art: <ShopPhotoArt scene={sc} />,
+          label: sc === 'blurry' ? 'Blurry' : 'Too dark',
+        }))}
+        onClose={() => setSheet(null)}
+        onCamera={() => {
+          flow.addPhotoInside('good');
+          setSheet(null);
+        }}
+        onGallery={() => {
+          flow.addPhotoInside(GALLERY_BAD_PHOTOS[f.photoInside.attempts % GALLERY_BAD_PHOTOS.length]);
+          setSheet(null);
+        }}
+      />
+      <UploadSheet
         open={sheet === 'ownerId'}
-        title={idLabel}
+        title="Photo ID"
         good={<IdCardArt scene="clear" type={idType} />}
         goodText="All 4 corners, name clear"
         bad={(['blurry', 'cut'] as IdScene[]).map((s) => ({
@@ -271,7 +333,7 @@ export function KycDocsStep({
       />
       <DeleteConfirm
         open={deleting !== null}
-        what={deleting === 'photo' ? 'photo' : deleting === 'location' ? 'location' : 'document'}
+        what={deleting === 'photo' || deleting === 'photoInside' ? 'photo' : deleting === 'location' ? 'location' : 'document'}
         onCancel={() => setDeleting(null)}
         onConfirm={() => {
           if (deleting) flow.clear(deleting);
@@ -279,6 +341,22 @@ export function KycDocsStep({
         }}
       />
     </>
+  );
+}
+
+/** A certificate KYC would like but doesn't insist on. */
+function OptionalDoc({ label, on, onToggle }: { label: string; on: boolean; onToggle: () => void }) {
+  return (
+    <Field label={label}>
+      <div className={`${controlClass} justify-between`}>
+        <span className={on ? 'text-foreground' : 'text-foreground-secondary'}>
+          {on ? 'uploaded.jpg' : 'Upload here (optional)'}
+        </span>
+        <button onClick={onToggle} className={cn('text-sm font-semibold', on ? 'text-error' : 'text-primary')}>
+          {on ? 'Delete' : 'Upload'}
+        </button>
+      </div>
+    </Field>
   );
 }
 

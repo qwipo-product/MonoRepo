@@ -227,15 +227,20 @@ export function checkLocation(lat: string, lng: string): LocationCheck {
 
 export const MAX_ATTEMPTS = 5;
 
-export type Criterion = 'photo' | 'location' | 'ownerId';
+/* The four things AI checks, now spread across the three KYC steps:
+   `ownerId` is the customer's photo ID in step 1, `location` is the business
+   location in step 2, and the two shop photos are step 3. `photo` is the shot
+   from outside — the name board — and `photoInside` is the one from within. */
+export type Criterion = 'photo' | 'photoInside' | 'location' | 'ownerId';
 
 export type CriterionResult = { ok: boolean; why?: string; fix?: string; aiNote: string };
 export type AiResult = Record<Criterion, CriterionResult>;
 
 export const CRITERIA: { id: Criterion; title: string; lines: [string, string] }[] = [
-  { id: 'photo', title: 'Shop Photo', lines: ['Upload clear shop photo', 'Name board should be visible'] },
-  { id: 'location', title: 'Shop Location', lines: ['Add your shop location', 'Location should match your shop'] },
-  { id: 'ownerId', title: 'Owner ID', lines: ['Upload Owner ID or a shop document', 'Name should be clear'] },
+  { id: 'photo', title: 'Shop Photo — Outside', lines: ['Upload clear shop photo', 'Name board should be visible'] },
+  { id: 'photoInside', title: 'Shop Photo — Inside', lines: ['Upload a photo from inside', 'Shelves should be visible'] },
+  { id: 'location', title: 'Business Location', lines: ['Add your business location', 'Location should match your shop'] },
+  { id: 'ownerId', title: 'Customer Photo ID', lines: ['Upload your photo ID', 'Name should be clear'] },
 ];
 
 /* ---- BMS ---------------------------------------------------------------- */

@@ -41,6 +41,8 @@ export type Field = {
 
 export type KycState = {
   photo: ShopScene | null;
+  /** The shot from inside the shop — step 3 asks for both. */
+  photoInside: ShopScene | null;
   location: KycLocation | null;
   idType: IdType | null;
   idScene: IdScene | null;
@@ -53,12 +55,16 @@ export type KycState = {
 
 const EMPTY: Field = { status: 'empty', attempts: 0, result: null };
 
+/** Every field AI judges, in the order the steps ask for them. */
+const ALL: Criterion[] = ['ownerId', 'location', 'photo', 'photoInside'];
+
 const FRESH: KycState = {
   photo: null,
+  photoInside: null,
   location: null,
   idType: null,
   idScene: null,
-  fields: { photo: EMPTY, location: EMPTY, ownerId: EMPTY },
+  fields: { photo: EMPTY, photoInside: EMPTY, location: EMPTY, ownerId: EMPTY },
   photoHistory: [],
   status: 'not-started',
   submittedAt: null,
@@ -70,11 +76,15 @@ const GPS: KycLocation = { ...GPS_FIX, source: 'gps' };
 const REVIEW_PHOTOS: ShopScene[] = ['board-hidden', 'blurry', 'dark', 'blocked', 'board-hidden'];
 
 /** What AI says about each field. Also used by BMS. */
-export function aiCheck(s: Pick<KycState, 'photo' | 'location' | 'idScene'>): AiResult {
-  const p = s.photo ? SHOP_PHOTOS[s.photo] : null;
-  const photo: CriterionResult = p
-    ? { ok: p.ok, why: p.why, fix: p.fix, aiNote: p.aiNote }
-    : { ok: false, why: 'Shop photo is missing.', fix: 'Please add a photo of your shop.', aiNote: 'No image' };
+export function aiCheck(s: Pick<KycState, 'photo' | 'photoInside' | 'location' | 'idScene'>): AiResult {
+  const shot = (scene: ShopScene | null, what: string): CriterionResult => {
+    const p = scene ? SHOP_PHOTOS[scene] : null;
+    return p
+      ? { ok: p.ok, why: p.why, fix: p.fix, aiNote: p.aiNote }
+      : { ok: false, why: `${what} is missing.`, fix: 'Please add the photo.', aiNote: 'No image' };
+  };
+  const photo = shot(s.photo, 'Shop photo');
+  const photoInside = shot(s.photoInside, 'Inside photo');
   const loc = checkLocation(s.location?.lat ?? '', s.location?.lng ?? '');
   const location: CriterionResult = loc.ok
     ? { ok: true, aiNote: s.location?.source === 'gps' ? 'Valid GPS location' : 'Valid location' }
@@ -83,11 +93,12 @@ export function aiCheck(s: Pick<KycState, 'photo' | 'location' | 'idScene'>): Ai
   const ownerId: CriterionResult = idp
     ? { ok: idp.ok, why: idp.why, fix: idp.fix, aiNote: idp.ok ? 'Validated' : idp.aiNote }
     : { ok: false, why: 'Owner ID is missing.', fix: 'Please add your ID.', aiNote: 'No ID' };
-  return { photo, location, ownerId };
+  return { photo, photoInside, location, ownerId };
 }
 
-function stepsFor(c: Criterion, s: Pick<KycState, 'photo' | 'location' | 'idScene'>): string[] | undefined {
+function stepsFor(c: Criterion, s: Pick<KycState, 'photo' | 'photoInside' | 'location' | 'idScene'>): string[] | undefined {
   if (c === 'photo') return s.photo ? PHOTO_FIX_STEPS[s.photo] : undefined;
+  if (c === 'photoInside') return s.photoInside ? PHOTO_FIX_STEPS[s.photoInside] : undefined;
   if (c === 'ownerId') return s.idScene ? ID_FIX_STEPS[s.idScene] : undefined;
   const k = checkLocation(s.location?.lat ?? '', s.location?.lng ?? '').kind;
   return k ? LOCATION_FIX_STEPS[k] : undefined;
@@ -107,7 +118,12 @@ function judge(k: KycState, c: Criterion): KycState {
   return {
     ...k,
     fields: { ...k.fields, [c]: { status, attempts, result: { ...r, steps: stepsFor(c, k) } } },
-    photoHistory: c === 'photo' && k.photo ? [...k.photoHistory, k.photo] : k.photoHistory,
+    photoHistory:
+      c === 'photo' && k.photo
+        ? [...k.photoHistory, k.photo]
+        : c === 'photoInside' && k.photoInside
+          ? [...k.photoHistory, k.photoInside]
+          : k.photoHistory,
     submittedAt: stamp(k.photoHistory.length),
   };
 }
@@ -122,12 +138,20 @@ export function useKycFlow() {
 
   return {
     kyc,
-    /** All three mandatory fields are accepted or with our team. */
-    ready: done('photo') && done('location') && done('ownerId'),
-    anyInReview: (['photo', 'location', 'ownerId'] as Criterion[]).some((c) => kyc.fields[c].status === 'review'),
+    /** Step 1 can move on once the customer's photo ID is in. */
+    customerReady: done('ownerId'),
+    /** Step 2 needs the business location checked. */
+    locationReady: done('location'),
+    /** Step 3 needs both shop photos; the certificates are optional. */
+    documentsReady: done('photo') && done('photoInside'),
+    /** Everything AI looks at is in — what Register waits for. */
+    ready: done('photo') && done('photoInside') && done('location') && done('ownerId'),
+    anyInReview: ALL.some((c) => kyc.fields[c].status === 'review'),
 
     /** Add a photo / location / ID — starts the AI check. */
     addPhoto: (photo: ShopScene) => setKyc((k) => ({ ...k, photo, fields: { ...k.fields, photo: { ...k.fields.photo, status: 'checking' } } })),
+    addPhotoInside: (photoInside: ShopScene) =>
+      setKyc((k) => ({ ...k, photoInside, fields: { ...k.fields, photoInside: { ...k.fields.photoInside, status: 'checking' } } })),
     addLocation: (location: KycLocation) =>
       setKyc((k) => ({ ...k, location, fields: { ...k.fields, location: { ...k.fields.location, status: 'checking' } } })),
     addOwnerId: (idType: IdType, idScene: IdScene) =>
@@ -144,16 +168,22 @@ export function useKycFlow() {
     clear: (c: Criterion) =>
       setKyc((k) => ({
         ...k,
-        ...(c === 'photo' ? { photo: null } : c === 'location' ? { location: null } : { idType: null, idScene: null }),
+        ...(c === 'photo'
+          ? { photo: null }
+          : c === 'photoInside'
+            ? { photoInside: null }
+            : c === 'location'
+              ? { location: null }
+              : { idType: null, idScene: null }),
         fields: { ...k.fields, [c]: { ...k.fields[c], status: 'empty', result: null } },
       })),
     setField,
     setStatus: (status: KycStatus) => setKyc((k) => ({ ...k, status })),
     reset: () => setKyc(FRESH),
 
-    /** Register: Active if AI accepted all three, otherwise Pending (manual review). */
+    /** Register: Active if AI accepted every field, otherwise Pending (manual review). */
     submit: (): 'active' | 'pending' => {
-      const allOk = (['photo', 'location', 'ownerId'] as Criterion[]).every((c) => kyc.fields[c].status === 'accepted');
+      const allOk = ALL.every((c) => kyc.fields[c].status === 'accepted');
       setKyc((k) => ({ ...k, status: allOk ? 'active' : 'pending' }));
       return allOk ? 'active' : 'pending';
     },
@@ -165,8 +195,17 @@ export function useKycFlow() {
         for (const p of photos) k = judge({ ...k, photo: p }, 'photo');
         return { ...k, ...extra };
       };
+      /* Everything the outside photo isn't: the inside shot, the business
+         location and the customer's ID, all accepted — so a seeded "done"
+         state really is done under the four-field gate. */
       const withRest = (k: KycState) =>
-        judge(judge({ ...k, location: GPS, idType: 'aadhaar', idScene: 'clear' }, 'location'), 'ownerId');
+        judge(
+          judge(
+            judge({ ...k, photoInside: 'good', location: GPS, idType: 'aadhaar', idScene: 'clear' }, 'photoInside'),
+            'location'
+          ),
+          'ownerId'
+        );
       switch (id) {
         case 'kyc-complete':
         case 'kyc-docs':

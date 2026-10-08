@@ -6,7 +6,7 @@ import { CustomerCareCard } from '../components/CustomerCareCard';
 import { TermsAgree } from '../components/TermsAgree';
 import { CRITERIA, MAX_ATTEMPTS } from './kycData';
 
-/* The two KYC outcome screens: KYC Active (AI accepted all three) and
+/* The two KYC outcome screens: KYC Active (AI accepted everything) and
    Manual Review Required (a field was rejected MAX_ATTEMPTS times). */
 
 /* ---- KYC Active --------------------------------------------------------- */
@@ -23,7 +23,7 @@ export function KycActiveScreen({ onContinue }: { onContinue: () => void }) {
         </span>
         <h1 className="mt-3 text-2xl font-bold">Your shop is verified! 🎉</h1>
         <p className="mt-2 max-w-[16rem] text-sm leading-relaxed text-foreground-secondary">
-          All 3 details are accepted. You can now place orders.
+          All your details are accepted. You can now place orders.
         </p>
 
         <div className="mt-5 w-full space-y-2 text-left">

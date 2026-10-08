@@ -8,7 +8,7 @@ import { isDeliverable, type Address } from '../data/addresses';
    carries a green "Delivering here" pill.
 
    "Add new address" opens the map rather than a blank form — same two-step
-   flow as onboarding (pin → address details), so a saved address always has
+   flow (pin → address details), so a saved address always has
    coordinates behind it. The list and the selection both live in App, since
    adding one leaves this screen. */
 export function SavedAddressesScreen({
