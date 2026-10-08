@@ -16,6 +16,7 @@ import {
   Repeat,
   Phone,
   Moon,
+  CalendarDays,
 } from 'lucide-react';
 import { Switch, useTheme } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
@@ -34,6 +35,7 @@ type Item = { icon: typeof Briefcase; label: string; to: ScreenId; badge?: numbe
 
 const ACCOUNT: Item[] = [
   { icon: Briefcase, label: 'My Orders', to: 'my-orders' },
+  { icon: CalendarDays, label: 'Delivery Schedule', to: 'delivery-schedule' },
   { icon: MapPin, label: 'Saved Addresses', to: 'sub:addresses' },
   { icon: CreditCard, label: 'Payments', to: 'sub:payment' },
   { icon: Users, label: 'Credit Partners', to: 'sub:credit' },

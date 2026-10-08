@@ -1,9 +1,11 @@
-import { Home, RotateCcw, Headset, ShoppingCart } from 'lucide-react';
+import { Home, RotateCcw, Headset, ShoppingCart, CalendarDays } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 
 /* Buyer-shell bottom tab bar (Home · Reorder · Contact us · Cart). Shown only
-   on root screens; pushed/detail screens carry their own header instead. */
+   on root screens; pushed/detail screens carry their own header instead.
+   A salesperson also gets Beat Schedule next to Reorder: the delivery days of
+   whichever customer they have switched to. */
 const TABS = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'reorder', icon: RotateCcw, label: 'Reorder' },
@@ -11,18 +13,35 @@ const TABS = [
   { id: 'cart', icon: ShoppingCart, label: 'Cart' },
 ] as const;
 
+const SP_TABS = [
+  TABS[0],
+  TABS[1],
+  { id: 'sp:beat-schedule', icon: CalendarDays, label: 'Beat Schedule' },
+  TABS[2],
+  TABS[3],
+] as const;
+
 export function BottomNav({
   active,
   cartCount = 0,
   onNavigate,
+  salesperson = false,
 }: {
   active: ScreenId;
   cartCount?: number;
   onNavigate: (id: ScreenId) => void;
+  /** Salesperson persona: five tabs, with Beat Schedule after Reorder. */
+  salesperson?: boolean;
 }) {
+  const tabs = salesperson ? SP_TABS : TABS;
   return (
-    <nav className="grid flex-shrink-0 grid-cols-4 border-t border-border bg-card pb-[max(0.25rem,env(safe-area-inset-bottom))]">
-      {TABS.map(({ id, icon: Icon, label }) => (
+    <nav
+      className={cn(
+        'grid flex-shrink-0 border-t border-border bg-card pb-[max(0.25rem,env(safe-area-inset-bottom))]',
+        salesperson ? 'grid-cols-5' : 'grid-cols-4'
+      )}
+    >
+      {tabs.map(({ id, icon: Icon, label }) => (
         <button
           key={id}
           onClick={() => onNavigate(id)}

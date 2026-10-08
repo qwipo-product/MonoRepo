@@ -6,7 +6,14 @@ import { SWITCH_CUSTOMERS, NEARBY_RADIUS_M, type SwitchCustomer } from '../../da
 /* Salesperson · Switch Customer — find a retailer by mobile or nearby, then
    switch into their account to place an order on their behalf. Switching lands
    on the customer Home (acting-as that retailer). */
-export function SwitchCustomerScreen({ onBack, onSwitch }: { onBack: () => void; onSwitch: () => void }) {
+export function SwitchCustomerScreen({
+  onBack,
+  onSwitch,
+}: {
+  onBack: () => void;
+  /** The customer switched to: the Beat Schedule follows their location. */
+  onSwitch: (customer: SwitchCustomer) => void;
+}) {
   const [mobile, setMobile] = useState('');
   const [selected, setSelected] = useState<SwitchCustomer | null>(null);
   const [nearby, setNearby] = useState<SwitchCustomer[]>([]);
@@ -86,7 +93,7 @@ export function SwitchCustomerScreen({ onBack, onSwitch }: { onBack: () => void;
 
       {selected && (
         <div className="border-t border-border bg-card p-3">
-          <Button fullWidth onClick={onSwitch}>
+          <Button fullWidth onClick={() => onSwitch(selected)}>
             <Repeat size={16} /> Switch to {selected.businessName}
           </Button>
         </div>

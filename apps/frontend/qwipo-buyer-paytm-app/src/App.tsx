@@ -37,7 +37,10 @@ import { CustomerOrdersScreen } from './screens/salesperson/CustomerOrdersScreen
 import { SwitchCustomerScreen } from './screens/salesperson/SwitchCustomerScreen';
 import { CustomerListScreen } from './screens/salesperson/CustomerListScreen';
 import { CustomerDetailsScreen } from './screens/salesperson/CustomerDetailsScreen';
-import { SALESPERSON_PHONE } from './data/salesperson';
+import { SALESPERSON_PHONE, type SwitchCustomer } from './data/salesperson';
+import { DeliveryScheduleScreen, BeatSchedulePrompt } from './screens/DeliveryScheduleScreen';
+import { CompanyScheduleScreen } from './screens/CompanyScheduleScreen';
+import { OWN_SHOP_ADDRESS, zoneForAddress, type Zone } from './data/beatSchedule';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
@@ -100,6 +103,7 @@ const BUILT = new Set<ScreenId>([
   'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
   'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
+  'delivery-schedule', 'company-schedule', 'sp:beat-schedule',
 ]);
 
 /* Empty-state screens. `empty:<id>` renders the real screen <id> with its data
@@ -122,7 +126,7 @@ const baseScreenOf = (id: ScreenId): ScreenId => {
 for (const id of [...BUILT]) BUILT.add(EMPTY_PREFIX + id);
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
-const ROOT_SCREENS = new Set<ScreenId>(['home', 'kyc-pending', 'reorder', 'sub:help', 'profile', 'storefront']);
+const ROOT_SCREENS = new Set<ScreenId>(['home', 'kyc-pending', 'reorder', 'sub:help', 'profile', 'storefront', 'sp:beat-schedule']);
 
 // Complete KYC step 2 (ID Proofs) — the plain screen plus its review-gallery states.
 const KYC_DOCS_SCREENS = new Set<ScreenId>(['kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done']);
@@ -242,6 +246,12 @@ export default function App() {
   const [loginPhone, setLoginPhone] = useState<string>('');
   const [taskId, setTaskId] = useState<string>('tk1');
   const [spCustomerId, setSpCustomerId] = useState<string>('c1');
+  /* Salesperson: the customer they have switched into (Switch Customer). The
+     Beat Schedule tab shows THAT shop's timetable, and changes with it. */
+  const [actingFor, setActingFor] = useState<SwitchCustomer | null>(null);
+  /* Delivery / Beat Schedule -> company page: which company, for which area. */
+  const [scheduleCompany, setScheduleCompany] = useState('itc');
+  const [scheduleZone, setScheduleZone] = useState<Zone>(() => zoneForAddress(OWN_SHOP_ADDRESS));
   // Persona: salesperson unlocks the beat-day features (Home task icon, My
   // Account section, sidebar group). Set by login 9000000001 or the switcher.
   const [role, setRole] = useState<Role>('customer');
@@ -977,7 +987,61 @@ export default function App() {
       case 'sp:orders':
         return <CustomerOrdersScreen onBack={goBack} onOpenOrder={(o) => openOrder(o)} />;
       case 'sp:switch-customer':
-        return <SwitchCustomerScreen onBack={goBack} onSwitch={() => go('home')} />;
+        return (
+          <SwitchCustomerScreen
+            onBack={goBack}
+            onSwitch={(c) => {
+              setActingFor(c);
+              go('home');
+            }}
+          />
+        );
+      case 'delivery-schedule': {
+        // The buyer's own shop decides the timetable.
+        const zone = zoneForAddress(OWN_SHOP_ADDRESS);
+        return (
+          <DeliveryScheduleScreen
+            title="Delivery Schedule"
+            zone={zone}
+            onBack={goBack}
+            onOpenCompany={(id) => {
+              setScheduleCompany(id);
+              setScheduleZone(zone);
+              go('company-schedule');
+            }}
+          />
+        );
+      }
+      case 'sp:beat-schedule': {
+        if (!actingFor) return <BeatSchedulePrompt onSwitch={() => go('sp:switch-customer')} />;
+        const zone = zoneForAddress(actingFor.address);
+        return (
+          <DeliveryScheduleScreen
+            key={actingFor.id}
+            title="Beat Schedule"
+            zone={zone}
+            forShop={{
+              name: actingFor.businessName,
+              area: `${actingFor.address} · Beat area: ${zone.name}`,
+              onChange: () => go('sp:switch-customer'),
+            }}
+            onOpenCompany={(id) => {
+              setScheduleCompany(id);
+              setScheduleZone(zone);
+              go('company-schedule');
+            }}
+          />
+        );
+      }
+      case 'company-schedule':
+        return (
+          <CompanyScheduleScreen
+            companyId={scheduleCompany}
+            zone={scheduleZone}
+            onBack={goBack}
+            onShop={(d) => go('storefront', { distributor: d })}
+          />
+        );
       case 'sp:customers':
         return (
           <CustomerListScreen
@@ -1113,6 +1177,7 @@ export default function App() {
                   active={screen}
                   cartCount={cartCount}
                   onNavigate={go}
+                  salesperson={isSalesperson}
                 />
               ) : undefined
             }

@@ -490,6 +490,10 @@ export const SWITCH_CUSTOMERS: SwitchCustomer[] = [
   { id: 'c1', businessName: 'Sri Venkateswara Kirana Store', ownerName: 'Rajesh Kumar', mobile: '9876543210', address: 'Shop 12, Rai Durg Main Road, Hitech City', distanceM: 40 },
   { id: 'c2', businessName: 'Lakshmi General Stores', ownerName: 'Padma Reddy', mobile: '9876500011', address: '4-7-22, Madhapur Cross Roads', distanceM: 120 },
   { id: 'c3', businessName: 'Anjaneya Super Market', ownerName: 'Venkat Rao', mobile: '9848012345', address: 'Plot 9, Kondapur Main Road', distanceM: 210 },
+  // Further out: found by mobile, not by "nearby". Different areas, so their
+  // Beat Schedule differs (data/beatSchedule.ts zones).
+  { id: 'c6', businessName: 'Ganesh Traders', ownerName: 'Mohan Das', mobile: '9012345678', address: '1-8-9, Kukatpally Housing Board', distanceM: 6400 },
+  { id: 'c7', businessName: 'Al-Madina Super Bazar', ownerName: 'Farhan Ali', mobile: '9032109876', address: '5-2-30, Tolichowki Main Road', distanceM: 11200 },
 ];
 
 /** Radius (m) used by "Locate retailers nearby" (salesPersonConfig default). */
