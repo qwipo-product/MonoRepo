@@ -187,6 +187,30 @@ Repositories → Security). Already done if any mockup has cut a release. Until
 then the first `main` build fails at "push semver git tag" with a 403, before
 anything touches the registry; `dev`/`testing`/`staging` builds don't care.
 
+## Preview builds (dev/*, feature/*) — what the fileset also gives you
+
+The same `docker-build.yml` handles personal branches differently: no image,
+no ArgoCD. `azure-cicd/templates/mockup-docker-template.yaml` builds the
+Dockerfile to its `builder` stage, copies the app's output directory out
+(`out_dir`, default `dist`; the generator writes `storybook-static` for a
+catalog) and `aws s3 sync`s it to the DigitalOcean Space `qwipo-mockups`
+under `<service>/<branch>/<sha>/` and `.../latest/`, then rewrites two plain
+HTML index pages. The `nginx.conf` the generator writes carries a
+`location ^~ /builds/` block that proxies that bucket prefix, so
+`https://<service>.dev.bms.qwipo.com/builds/<branch>/<sha>/` serves the build
+as soon as the upload ends — provided the image with that nginx.conf has been
+deployed to dev once. Credentials: variable group `mockups-spaces`
+(bucket, region, endpoint, and the `mockups-ci` key scoped to that bucket);
+it is authorized for every pipeline.
+
+Two things the app must do, or its preview is blank: build with
+`base: "./"` and route on the URL hash. `bun run new` scaffolds both; an
+imported app needs them added (`import-mockup`). Root-relative `/images/x.png`
+strings in the source break too — write them `./images/x.png`.
+
+Adding a branch pattern is two edits: `IS_PREVIEW` in the template and the
+`trigger.branches` list in each app's `docker-build.yml` (plus the generator).
+
 ## Rules that cause silent failures
 
 - **The build pipeline's display name is load-bearing.** The release YAML binds
