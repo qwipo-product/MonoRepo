@@ -8,6 +8,15 @@
 # `extends:` this file and passes four parameters. Only the `qwipo-global`
 # variable group is shared with the k8s repo.
 #
+# ── Three kinds of branch ────────────────────────────────────────────────────
+#
+#   main                      → release: semver tag + image, deployed via ArgoCD
+#   dev / testing / staging   → image `<branch>-<sha>`, deployed via ArgoCD
+#   dev/* and feature/*       → PREVIEW: no image, no deploy. The built site is
+#                               uploaded to the DigitalOcean Space `qwipo-mockups`
+#                               and every mockup's nginx serves that bucket under
+#                               /builds/ on its own host. See "Preview builds".
+#
 # ── Versioning model ─────────────────────────────────────────────────────────
 #
 # main builds get a semver:
@@ -35,6 +44,41 @@
 # @mockups/version-badge shows in the corner of every mockup. One image is one
 # version, in every environment — the badge can never name an image that is
 # not the one serving the page.
+#
+# ── Preview builds (dev/*, feature/*) ────────────────────────────────────────
+#
+# Every push to a personal branch is kept, forever, at a URL of its own:
+#
+#   https://<service_name>.dev.bms.qwipo.com/builds/<branch>/<sha>/
+#   https://<service_name>.dev.bms.qwipo.com/builds/<branch>/latest/
+#   https://<service_name>.dev.bms.qwipo.com/builds/            (all branches)
+#
+# How: the SAME Dockerfile is built, stopped after the `builder` stage, and
+# the app's output directory (`out_dir`) is copied out and `aws s3 sync`ed to
+# the bucket under `<service_name>/<branch>/<sha>/` and `.../latest/`. Both
+# commands run in containers (oven/bun via the Dockerfile, amazon/aws-cli for
+# the upload) because the agents ship nothing but docker. A plain HTML index
+# of branches and commits is regenerated on every upload.
+#
+# The bucket is served by the mockup's own nginx (see the `/builds/` block in
+# each app's nginx.conf), so a preview is live the moment the upload finishes
+# — nothing is deployed and ArgoCD is never involved. The release pipeline
+# ignores these branches by its own trigger filter.
+#
+# Two things the apps had to do for this to work, and must keep doing:
+#   - build with a relative base (`base: './'` in vite.config.ts), because the
+#     site is served from a sub-path the build can't know;
+#   - route on the URL hash (HashRouter), because the bucket has no fallback
+#     document — only `/builds/<branch>/<sha>/index.html` exists.
+#
+# `<branch>` is the full branch name with every non-alphanumeric character
+# turned into `-` (`dev/rahul-cart` → `dev-rahul-cart`). Not truncated: it is
+# a path segment, not a docker tag.
+#
+# Credentials: variable group `mockups-spaces` (SPACES_BUCKET, SPACES_REGION,
+# SPACES_ENDPOINT, and the secrets SPACES_ACCESS_KEY_ID /
+# SPACES_SECRET_ACCESS_KEY of the `mockups-ci` key, which can only touch
+# this one bucket).
 #
 # ── One-time permission ──────────────────────────────────────────────────────
 #
@@ -64,13 +108,26 @@ parameters:
           - patch
           - minor
           - major
+    - name: out_dir
+      displayName: Build output directory inside the app (dist for Vite, storybook-static for Storybook) — preview builds copy this out
+      type: string
+      default: dist
 
 variables:
     - group: qwipo-global
+    - group: mockups-spaces
     # The one branch that cuts releases. Every step below keys off IS_RELEASE,
     # so moving the release branch is this single edit.
     - name: IS_RELEASE
       ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+          value: 'true'
+      ${{ else }}:
+          value: 'false'
+    # Personal branches never become images: the site goes to the Space and
+    # is served under /builds/. Widening this (e.g. to fix/*) is a one-line
+    # edit here plus the branch in each app's docker-build.yml trigger.
+    - name: IS_PREVIEW
+      ${{ if or(startsWith(variables['Build.SourceBranch'], 'refs/heads/dev/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/feature/')) }}:
           value: 'true'
       ${{ else }}:
           value: 'false'
@@ -99,6 +156,10 @@ jobs:
                     if [[ ! "$BRANCH_NAME" =~ ^(dev|testing|staging|master|main)$ ]]; then
                       BRANCH_NAME=$(echo "$BRANCH_NAME" | sed -E 's/[^a-zA-Z0-9]/-/g')
                       BRANCH_NAME=${BRANCH_NAME:0:20}
+                    fi
+                    if [ "$(IS_PREVIEW)" = "true" ]; then
+                      # Untruncated: this is a URL path segment, not a docker tag.
+                      BRANCH_NAME=$(echo $(Build.SourceBranch) | sed -E 's|refs/heads/||; s/[^a-zA-Z0-9]/-/g')
                     fi
 
                     SERVICE_NAME='${{ parameters.service_name }}'
@@ -134,7 +195,11 @@ jobs:
                       GIT_TAG=""
                       VERSION=""
                       IMAGE_GIT_DIGEST="$BRANCH_NAME-$SHORT_SHA"
-                      echo "branch build: $IMAGE_GIT_DIGEST (no git tag)"
+                      if [ "$(IS_PREVIEW)" = "true" ]; then
+                        echo "preview build: $IMAGE_GIT_DIGEST (no image, no deploy — uploaded to the Space)"
+                      else
+                        echo "branch build: $IMAGE_GIT_DIGEST (no git tag)"
+                      fi
                     fi
 
                     echo "##vso[task.setvariable variable=SERVICE_NAME]$SERVICE_NAME"
@@ -194,8 +259,11 @@ jobs:
                       exit 1
                     fi
 
+          # ── image flow (main, dev, testing, staging) ─────────────────────────
+
           - task: CmdLine@2
             displayName: build using the dockerfile
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
             inputs:
                 script: |
                     set -e
@@ -212,6 +280,7 @@ jobs:
 
           - task: CmdLine@2
             displayName: tag the image
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
             inputs:
                 script: |
                     set -e
@@ -229,12 +298,14 @@ jobs:
 
           - task: CmdLine@2
             displayName: authenticate to docr
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
             inputs:
                 script: |
                     echo $DOCR_CI_PAT | docker login -u $DOCR_CI_USER --password-stdin $CONTAINER_REGISTRY_URL
 
           - task: CmdLine@2
             displayName: push the image
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
             inputs:
                 script: |
                     set -e
@@ -253,6 +324,7 @@ jobs:
 
           - task: CmdLine@2
             displayName: save variables to artifact
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
             inputs:
                 script: |
                     cat <<EOT > $(Build.ArtifactStagingDirectory)/build_vars.env
@@ -262,3 +334,130 @@ jobs:
 
           - task: PublishBuildArtifacts@1
             displayName: publish build variables artifact
+            condition: and(succeeded(), ne(variables.IS_PREVIEW, 'true'))
+
+          # ── preview flow (dev/*, feature/*) ─────────────────────────────────
+
+          - task: CmdLine@2
+            displayName: 'preview: build the site (builder stage of the same Dockerfile)'
+            condition: and(succeeded(), eq(variables.IS_PREVIEW, 'true'))
+            inputs:
+                script: |
+                    set -e
+
+                    APP_PATH=$(dirname "$DOCKERFILE_PATH")
+                    OUT_DIR='${{ parameters.out_dir }}'
+                    SITE="$(Build.ArtifactStagingDirectory)/site"
+
+                    # Same Dockerfile, same build args, same version stamp as an
+                    # image build — stopped after the builder stage. A fixed tag
+                    # keeps the layer cache warm across builds on this agent.
+                    docker buildx build --target builder \
+                      --build-arg APP_VERSION=$IMAGE_GIT_DIGEST \
+                      --build-arg APP_COMMIT=$SHORT_SHA \
+                      --file $DOCKERFILE_PATH \
+                      --tag $SERVICE_NAME:builder \
+                      .
+
+                    # Copy the built site out. docker cp gives the files to the
+                    # invoking user, so the next run's rm -rf can clean up.
+                    rm -rf "$SITE"
+                    CID=$(docker create $SERVICE_NAME:builder)
+                    docker cp "$CID:/workspace/$APP_PATH/$OUT_DIR" "$SITE"
+                    docker rm -v "$CID" > /dev/null
+
+                    if [ ! -f "$SITE/index.html" ]; then
+                      echo "##vso[task.logissue type=error]$APP_PATH/$OUT_DIR has no index.html — is out_dir right for this app? (dist for Vite, storybook-static for Storybook)"
+                      exit 1
+                    fi
+                    du -sh "$SITE"
+
+          - task: CmdLine@2
+            displayName: 'preview: upload to the Space, refresh the index pages'
+            condition: and(succeeded(), eq(variables.IS_PREVIEW, 'true'))
+            inputs:
+                script: |
+                    set -e
+
+                    SITE="$(Build.ArtifactStagingDirectory)/site"
+                    WORK="$(Build.ArtifactStagingDirectory)/index"
+                    rm -rf "$WORK" && mkdir -p "$WORK"
+
+                    BUCKET="$SPACES_BUCKET"
+                    PREFIX="$SERVICE_NAME/$BRANCH_NAME"
+                    HOST="$SERVICE_NAME.dev.bms.qwipo.com"
+
+                    # The agent has no aws cli; run it in a container. Mounts are
+                    # read-only so nothing root-owned is left behind on the agent.
+                    aws() {
+                      docker run --rm \
+                        -v "$SITE:/site:ro" -v "$WORK:/work:ro" \
+                        -e AWS_ACCESS_KEY_ID="$SPACES_ACCESS_KEY_ID" \
+                        -e AWS_SECRET_ACCESS_KEY="$SPACES_SECRET_ACCESS_KEY" \
+                        -e AWS_DEFAULT_REGION=us-east-1 \
+                        amazon/aws-cli:2.24.0 --endpoint-url "$SPACES_ENDPOINT" "$@"
+                    }
+
+                    # One build, two prefixes. <sha>/ never changes once written,
+                    # so it is cached forever; latest/ moves with every push, so
+                    # every request revalidates (ETag — cheap).
+                    aws s3 sync /site "s3://$BUCKET/$PREFIX/$SHORT_SHA/" --acl public-read --no-progress \
+                      --cache-control "public, max-age=31536000, immutable"
+                    aws s3 sync /site "s3://$BUCKET/$PREFIX/latest/" --delete --acl public-read --no-progress \
+                      --cache-control "public, max-age=0, must-revalidate"
+
+                    # Index pages — plain HTML, regenerated from a bucket listing so
+                    # there is no state to corrupt. Each build's index.html is its
+                    # marker; LastModified orders them.
+                    page() {  # $1 = title; stdin = <li> lines
+                      printf '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%s</title>' "$1"
+                      printf '<style>body{font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;margin:2rem auto;max-width:48rem;padding:0 1rem;color:#222}a{color:#0a58ca}small{color:#888;margin-left:.5rem}</style>'
+                      printf '<h1>%s</h1><ul>' "$1"
+                      cat
+                      printf '</ul>'
+                    }
+
+                    {
+                      printf '<li><a href="./latest/">latest</a><small>%s · %s</small></li>\n' "$SHORT_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+                      aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "$PREFIX/" \
+                        --query "sort_by(Contents[?ends_with(Key, '/index.html')], &LastModified)[::-1].[Key, LastModified]" \
+                        --output text \
+                      | while read -r key when; do
+                          rel="${key#"$PREFIX/"}"
+                          case "$rel" in
+                            */index.html) sha="${rel%%/*}" ;;
+                            *) continue ;;
+                          esac
+                          if [ "$sha" != "latest" ]; then
+                            printf '<li><a href="./%s/">%s</a><small>%s</small></li>\n' "$sha" "$sha" "$when"
+                          fi
+                        done
+                    } | page "$SERVICE_NAME / $BRANCH_NAME" > "$WORK/branch.html"
+
+                    aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "$SERVICE_NAME/" --delimiter / \
+                      --query 'CommonPrefixes[].Prefix' --output text \
+                    | tr '\t ' '\n\n' \
+                    | while read -r p; do
+                        b="${p#"$SERVICE_NAME/"}"; b="${b%/}"
+                        if [ -n "$b" ] && [ "$b" != "None" ]; then
+                          printf '<li><a href="./%s/">%s</a></li>\n' "$b" "$b"
+                        fi
+                      done \
+                    | page "$SERVICE_NAME / builds" > "$WORK/app.html"
+
+                    aws s3 cp /work/branch.html "s3://$BUCKET/$PREFIX/index.html" --acl public-read --no-progress \
+                      --content-type text/html --cache-control "no-cache"
+                    aws s3 cp /work/app.html "s3://$BUCKET/$SERVICE_NAME/index.html" --acl public-read --no-progress \
+                      --content-type text/html --cache-control "no-cache"
+
+                    echo ""
+                    echo "preview:  https://$HOST/builds/$BRANCH_NAME/$SHORT_SHA/"
+                    echo "latest:   https://$HOST/builds/$BRANCH_NAME/latest/"
+                    echo "branches: https://$HOST/builds/"
+                    echo "##vso[build.addbuildtag]preview"
+                    echo "##vso[build.addbuildtag]$BRANCH_NAME"
+            env:
+                SPACES_BUCKET: $(SPACES_BUCKET)
+                SPACES_ENDPOINT: $(SPACES_ENDPOINT)
+                SPACES_ACCESS_KEY_ID: $(SPACES_ACCESS_KEY_ID)
+                SPACES_SECRET_ACCESS_KEY: $(SPACES_SECRET_ACCESS_KEY)

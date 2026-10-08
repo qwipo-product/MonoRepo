@@ -23,6 +23,11 @@
  * run manually on a tag — an existing release image, which is also how a
  * mockup is rolled back.
  *
+  * Pushes to dev/* and feature/* are PREVIEW builds: the same Dockerfile is
+ * built to its builder stage, the output directory is uploaded to the
+ * DigitalOcean Space qwipo-mockups, and the nginx.conf written here proxies
+ * that bucket under /builds/ on the mockup.s host. No image, no deploy.
+ *
  * The image's own tag is handed to `docker build` as APP_VERSION, the
  * Dockerfile exports it as VITE_APP_VERSION, and @mockups/version-badge
  * shows it in the corner of every page. No runtime config is involved.
@@ -310,14 +315,43 @@ server {
         expires    -1;
     }
 
+    # Preview builds. Every push to dev/* or feature/* uploads the built site to
+    # the DigitalOcean Space qwipo-mockups under <service>/<branch>/<sha>/ (see
+    # azure-cicd/templates/mockup-docker-template.yaml) and this host serves
+    # the bucket under /builds/. Nothing below is on disk in this image.
+    #   /builds/                    every branch
+    #   /builds/<branch>/           every commit of that branch, plus latest/
+    #   /builds/<branch>/<sha>/     one build
+    # The bucket has no index document and no fallback, so a directory URL is
+    # turned into its index.html here and a missing object is a plain 404. The
+    # apps route on the URL hash, so no other path ever reaches the bucket.
+    location = /builds {
+        return 301 /builds/;
+    }
+    location ^~ /builds/ {
+        rewrite ^(/builds/.*)/$ $1/index.html last;
+        rewrite ^(/builds/[^/]+(/[^/.]+)?)$ $1/ permanent;
+        proxy_pass https://qwipo-mockups.blr1.digitaloceanspaces.com/${service}/;
+        proxy_set_header Host qwipo-mockups.blr1.digitaloceanspaces.com;
+        proxy_ssl_server_name on;
+        proxy_hide_header x-amz-request-id;
+        proxy_hide_header x-amz-id-2;
+        proxy_intercept_errors on;
+        error_page 403 404 = @no_such_build;
+    }
+    location @no_such_build {
+        default_type text/plain;
+        return 404 "No such build. The list is at /builds/\n";
+    }
+
 ${
   isCatalog
     ? `    # Storybook serves each story through iframe.html, which is a real file on
     # disk, so try_files finds it before the fallback ever runs.`
     : routes
-      ? `    # SPA fallback — LOAD-BEARING. This app routes on real URLs, so a deep
-    # link or a refresh on /orders/123 arrives as a path with no file behind
-    # it. Delete this line and every route except / starts 404ing.`
+      ? `    # SPA fallback. This app routes on the URL hash (#/orders/123) — it must,
+    # for preview builds — so nothing depends on this today. Kept because it is
+    # the right default: a stray real path lands on the app instead of a 404.`
       : `    # SPA fallback. This app has no router — it switches screens on component
     # state — so nothing depends on this today. Kept because it is the right
     # default: the moment someone adds react-router, deep links just work.`
@@ -353,6 +387,9 @@ const dockerBuild = `# Build pipeline — ${app} (${what} behind nginx).
 #     main       → next semver from the \`${tagPrefix}-v*\` git tags; the tag
 #                  \`${tagPrefix}-v<semver>\` is pushed, the image is <semver>
 #     other      → <branch>-<sha>, no git tag
+#     dev/*, feature/* → PREVIEW: no image, the built site is uploaded to the
+#                  qwipo-mockups Space and served at
+#                  https://${host}/builds/<branch>/<sha>/
 #
 # \`bump\` only matters on main. An auto-triggered run always takes patch; run
 # the pipeline by hand and pick minor/major for a bigger step.
@@ -372,6 +409,8 @@ trigger:
             - dev
             - testing
             - staging
+            - dev/*
+            - feature/*
     paths:
         include:
             - '${appPath}/**'
@@ -396,7 +435,7 @@ extends:
         service_name: '${service}'
         tag_prefix: '${tagPrefix}'
         dockerfile: ${appPath}/Dockerfile
-        bump: \${{ parameters.bump }}
+${outDir === "dist" ? "" : `        out_dir: ${outDir}\n`}        bump: \${{ parameters.bump }}
 `;
 
 const azureRelease = `# Release pipeline — ${app}.
