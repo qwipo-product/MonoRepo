@@ -329,7 +329,7 @@ server {
         return 301 /builds/;
     }
     location ^~ /builds/ {
-        rewrite ^(/builds/.*)/$ $1/index.html last;
+        rewrite ^(/builds.*)/$ $1/index.html last;
         rewrite ^(/builds/[^/]+(/[^/.]+)?)$ $1/ permanent;
         proxy_pass https://qwipo-mockups.blr1.digitaloceanspaces.com/${service}/;
         proxy_set_header Host qwipo-mockups.blr1.digitaloceanspaces.com;
@@ -340,6 +340,7 @@ server {
         error_page 403 404 = @no_such_build;
     }
     location @no_such_build {
+        types { }
         default_type text/plain;
         return 404 "No such build. The list is at /builds/\n";
     }
