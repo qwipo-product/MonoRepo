@@ -4,10 +4,12 @@ import { ChevronDown, X } from 'lucide-react';
 import { cn } from '@mockups/ui';
 
 export function Chip({
-  label, value, active, tone, onClick, onRemove,
+  label, value, active, tone, onClick, onRemove, noCaret,
 }: {
   label?: string; value: string; active?: boolean; tone?: 'drill';
   onClick?: () => void; onRemove?: () => void;
+  /** multi-select toggle chips: no dropdown caret */
+  noCaret?: boolean;
 }) {
   return (
     <span
@@ -27,7 +29,7 @@ export function Chip({
     >
       {label && <span className={cn(!active && tone !== 'drill' && 'text-foreground-secondary')}>{label} ·</span>}
       {value}
-      {onClick && !onRemove && <ChevronDown size={12} className={cn(tone !== 'drill' && !active && 'text-foreground-tertiary')} />}
+      {onClick && !onRemove && !noCaret && <ChevronDown size={12} className={cn(tone !== 'drill' && !active && 'text-foreground-tertiary')} />}
       {onRemove && (
         <button
           type="button"

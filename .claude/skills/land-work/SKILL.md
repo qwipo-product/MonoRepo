@@ -21,7 +21,8 @@ to `packages/**` touches all of them.
 
 ## Landing a branch on dev
 
-1. `git status --short` clean. Invoke `review` — the shallow tidy pass,
+1. `git status --short` clean — no `??` folder under `apps/` or `packages/`
+   either (`start-work`, step 1). Invoke `review` — the shallow tidy pass,
    which runs `design-language` — then `verify`. A red gate ends the
    conversation about merging until it's fixed.
 2. Bring `dev` into the branch first, so conflicts are resolved where only
@@ -83,7 +84,7 @@ reading the other. The common ones here:
 
 | File | Resolution |
 | --- | --- |
-| `bun.lock` | don't hand-merge it — take either side, then `bun install`, which rewrites it from every `package.json`. That is fixing the cause, not regenerating to dodge an install error |
+| `bun.lock` | don't hand-merge it — take either side, then `bun install`, which rewrites it from every `package.json` on disk (so no `??` folder under `apps/` — it would be written in too). That is fixing the cause, not regenerating to dodge an install error |
 | root `package.json` `catalog` | keep both added lines, sorted |
 | an app `package.json` | keep both dependencies |
 | `routes.tsx`, `nav.ts`, a screen index | keep both routes / entries |

@@ -181,6 +181,34 @@
 }
 
 /* ---- Expose to Tailwind v4 utilities ------------------------------------ */
+
+/* ---- Type scale ----------------------------------------------------------
+   Owned here, not inherited from Tailwind's defaults, so the scale is a thing
+   the design system can change and every app follows. `2xs` is the smallest
+   label in the system — badges, counts, pill text, uppercase eyebrows; below
+   it there is nothing. Anything that needs a size not on this list is a
+   question for the design system, not an arbitrary value in a screen. */
+@theme {
+  --text-2xs: 0.625rem;        /*  10px */
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.75rem;          /*  12px */
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;         /*  14px */
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;           /*  16px */
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;         /*  18px */
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;          /*  20px */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;          /*  24px */
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;        /*  30px */
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;         /*  36px */
+  --text-4xl--line-height: 2.5rem;
+}
+
 @theme inline {
   --font-sans: var(--font-sans);
 
@@ -325,9 +353,22 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* A screen arriving. Short and small on purpose: enough to show that one
+   screen replaced another, not enough to make a tap feel slow. */
+@keyframes qwipo-screen-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @layer utilities {
   .animate-sheet { animation: qwipo-sheet-in 0.22s cubic-bezier(0, 0, 0.2, 1); }
   .animate-overlay { animation: qwipo-overlay-in 0.2s ease-out; }
+  .animate-screen { animation: qwipo-screen-in 0.18s cubic-bezier(0, 0, 0.2, 1); }
+
+  /* Someone who has asked their system for less motion gets the change
+     without the movement. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-screen { animation: qwipo-overlay-in 0.12s ease-out; }
+  }
 
   /* Scroll without a visible scrollbar (device-like). */
   .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

@@ -37,7 +37,16 @@ export interface SheetProps {
   /** 'auto' grows to content up to 90%; 'tall' pins to 90%. */
   size?: 'auto' | 'tall';
   showHandle?: boolean;
+  /* Hide the ✕. For a sheet there is no way out of — a required update — a
+     close button that does nothing is worse than none at all. */
+  showClose?: boolean;
   className?: string;
+  /* Override the body's own padding. The default suits a form; a sheet whose
+     content is one big picture wants it tighter so the picture can be wider. */
+  bodyClassName?: string;
+  /* Same for the title row, for the same reason: the picture sheet wants the
+     heading to take less height so more of the sheet is the picture. */
+  headerClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -51,9 +60,40 @@ export function Sheet({
   footer,
   size = 'auto',
   showHandle = true,
+  showClose = true,
   className,
+  bodyClassName,
+  headerClassName,
   children,
 }: SheetProps) {
+  /* Drag the grab area down to dismiss. The handle used to be a picture of an
+     affordance — it looked draggable and wasn't. A sheet with no handle is one
+     there is no way out of (a required update), so it does not drag either. */
+  const [dragY, setDragY] = React.useState(0);
+  const dragFrom = React.useRef<number | null>(null);
+  const DISMISS_AT = 96;
+
+  const onDragStart = (e: React.PointerEvent) => {
+    // A press on a control is that control's, not the start of a drag.
+    if (!showHandle || (e.target as HTMLElement).closest('button')) return;
+    dragFrom.current = e.clientY;
+    /* Capture, or the drag ends the moment the pointer leaves the grab area —
+       which is a few pixels down, long before the sheet has been pulled far
+       enough to mean anything. */
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onDragMove = (e: React.PointerEvent) => {
+    if (dragFrom.current === null) return;
+    setDragY(Math.max(0, e.clientY - dragFrom.current));
+  };
+  const onDragEnd = () => {
+    if (dragFrom.current === null) return;
+    const far = dragY > DISMISS_AT;
+    dragFrom.current = null;
+    setDragY(0);
+    if (far) onClose();
+  };
+
   if (!open) return null;
   return (
     <div
@@ -70,11 +110,23 @@ export function Sheet({
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
+        style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
       >
-        {showHandle && <div className="mx-auto mt-2 h-1 w-9 rounded-full bg-muted" />}
+        {/* The grab area: handle plus header, so a sheet can be pulled down
+            from either. The handle's row is always this tall — otherwise a
+            sheet without one (a required update) sat its heading higher than
+            every other sheet. */}
+        <div
+          className={cn('shrink-0 pt-2', showHandle && 'cursor-grab touch-none active:cursor-grabbing')}
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragEnd}
+        >
+          <div className={cn('mx-auto h-1 w-9 rounded-full bg-muted', !showHandle && 'invisible')} />
 
         {(title || icon) && (
-          <div className="flex items-center gap-3 border-b border-border p-4">
+          <div className={cn('flex items-center gap-3 border-b border-border p-4', headerClassName)}>
             {icon && (
               <div
                 className={cn(
@@ -89,18 +141,23 @@ export function Sheet({
               {title && <div className="truncate text-base font-semibold leading-tight">{title}</div>}
               {subtitle && <div className="truncate text-xs text-foreground-secondary">{subtitle}</div>}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-foreground-secondary hover:bg-muted"
-            >
-              <XIcon />
-            </button>
+            {showClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-foreground-secondary hover:bg-muted"
+              >
+                <XIcon />
+              </button>
+            )}
           </div>
         )}
+        </div>
 
-        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+        <div className={cn('no-scrollbar min-h-0 flex-1 overflow-y-auto p-4', bodyClassName)}>
+          {children}
+        </div>
 
         {footer && (
           <div className="border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

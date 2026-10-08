@@ -1,11 +1,13 @@
 // ProductCard — the single product card. Merges the app's near-duplicate
 // ProductCard + ShopProductCard by composition: Card + Chip (pack pills) +
-// Badge (margin / source) + PriceLabel + QtyStepper + Button. Distributor vs
+// Badge (margin / seller) + PriceLabel + QtyStepper + Button. Distributor vs
 // wholesaler, in-cart vs not, discounts — all props, not separate cards.
 
 import * as React from 'react';
 import { Badge, Button, Card, Chip, cn } from '@mockups/ui';
-import { PriceLabel, formatInr } from './PriceLabel';
+import { PriceLabel } from './PriceLabel';
+import { ProductImage } from './ProductImage';
+import { QtyPill } from './QtyPill';
 
 export interface PackPill {
   id: string;
@@ -22,37 +24,51 @@ export interface ProductCardProps {
   onSelectVariant?: (id: string) => void;
   seller?: string;
   delivery?: string;
-  source?: 'distributor' | 'wholesaler';
   margin?: string;
   price: number;
   mrp?: number;
   priceSuffix?: string;
-  /** When > 0, the Add button is replaced by a QtyStepper. */
+  /** When > 0, the Add button is replaced by the quantity control. */
   qty?: number;
-  onQty?: (n: number) => void;
   onAdd?: () => void;
   /** Tap the thumbnail to open an image gallery. Falls back to onAdd if unset. */
   onImageClick?: () => void;
   onDiscounts?: () => void;
-  /** Line total (selling price × selected qty). Shows a Total row when > 0. */
-  subtotal?: number;
-  /** Label for the total row, e.g. "Total (12 pcs)". */
-  subtotalLabel?: string;
   /** Optional footer strip (e.g. delivery day + MOV). */
   footer?: React.ReactNode;
+  /* Optional strip above the name — Global Search uses it to say whether this
+     is the distributor's card or a wholesaler's, since there the two sit in
+     one list and the card alone doesn't say. */
+  badge?: React.ReactNode;
   className?: string;
 }
 
+/* Drawn here rather than pulled from an icon set: this package has no icon
+   dependency, and @mockups/ui draws its own the same way. A real glyph sits on
+   the text baseline, which the "⌄" character never did. */
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 function Thumb({ image, name }: { image?: string; name: string }) {
-  const isUrl = !!image && /^https?:\/\//.test(image);
   // Fixed square — equal width and height.
   return (
-    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-4xl">
-      {isUrl ? (
-        <img src={image} alt={name} className="h-full w-full object-contain" />
-      ) : (
-        <span aria-hidden>{image ?? '📦'}</span>
-      )}
+    <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-4xl">
+      <ProductImage image={image} alt={name} />
     </div>
   );
 }
@@ -66,23 +82,21 @@ export function ProductCard({
   onSelectVariant,
   seller,
   delivery,
-  source,
   margin,
   price,
   mrp,
   priceSuffix = '/pc',
   qty = 0,
-  onQty,
   onAdd,
   onImageClick,
   onDiscounts,
-  subtotal,
-  subtotalLabel = 'Total',
   footer,
+  badge,
   className,
 }: ProductCardProps) {
   return (
     <Card className={cn('p-3', className)}>
+      {badge && <div className="mb-2">{badge}</div>}
       {/* image (left) + info (right). items-stretch + aspect-square makes the
           image a square sized to the info column's height (name/case/pills).
           Image opens the gallery; the title opens the selling-units sheet —
@@ -138,22 +152,7 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* seller line (+ optional source badge), then delivery line */}
-      {(seller || delivery || source) && (
-        <div className="mt-2.5 space-y-0.5">
-          {(seller || source) && (
-            <div className="flex items-center gap-2">
-              {seller && <span className="text-sm text-foreground">{seller}</span>}
-              {source && (
-                <Badge variant={source === 'distributor' ? 'info' : 'warning'}>
-                  {source === 'distributor' ? 'Distributor' : 'Wholesaler'}
-                </Badge>
-              )}
-            </div>
-          )}
-          {delivery && <span className="block text-sm text-success-foreground">{delivery}</span>}
-        </div>
-      )}
+      {delivery && <div className="mt-2.5 text-sm text-success-foreground">{delivery}</div>}
 
       {/* margin + price */}
       <div className="mt-3 flex items-end justify-between gap-3">
@@ -161,49 +160,48 @@ export function ProductCard({
         <PriceLabel price={price} mrp={mrp} suffix={priceSuffix} size="lg" />
       </div>
 
-      {/* actions — Discounts + Add/Qty keep fixed widths so the row never
-          reflows when qty changes (Add ⇄ stepper swap inside a fixed box). */}
-      <div className="mt-3 flex items-center gap-2">
-        {onDiscounts && (
-          <Button variant="soft" className="flex-1" onClick={onDiscounts}>
-            Discounts ⌄
+      {/* actions — each button is as wide as what's in it, Discounts on the
+          left and Add on the right, rather than two halves of a row. Both are
+          40px tall in every state, so nothing grows or shrinks when a product
+          goes into the cart. */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        {onDiscounts ? (
+          <Button variant="soft" className="h-10 font-medium" onClick={onDiscounts}>
+            Discounts
+            <ChevronDownIcon />
           </Button>
+        ) : (
+          <span />
         )}
-        <div className={onDiscounts ? 'w-28 shrink-0' : 'flex-1'}>
+        <div>
           {qty > 0 ? (
-            // Whole control opens the selling-units sheet (the qty editor) —
-            // tapping anywhere (− , value, +) triggers it, so it's one button,
-            // not an inline stepper.
-            <button
-              type="button"
-              onClick={onAdd}
-              aria-label="Edit quantity"
-              className="flex h-9 w-full items-center justify-between rounded-md bg-primary-soft px-3 text-primary-soft-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:opacity-80"
-            >
-              <span className="text-lg font-medium leading-none">−</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">{qty}</span>
-              <span className="text-lg font-medium leading-none">+</span>
-            </button>
+            <QtyPill qty={qty} onEdit={onAdd} label={name} />
           ) : (
-            <Button className="w-full" onClick={onAdd}>
+            <Button className="h-10" onClick={onAdd}>
               + Add
             </Button>
           )}
         </div>
       </div>
 
-      {subtotal != null && subtotal > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-            {subtotalLabel}
-          </span>
-          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(subtotal)}</span>
-        </div>
-      )}
-
-      {footer && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-foreground-secondary">
-          {footer}
+      {/* who it's from, then when it comes — both under the rule, below the
+          actions. The seller wears the badge the Distributor label used to:
+          which of the two it is follows from the list you're on, but WHICH
+          seller doesn't, so that's the part worth stating. */}
+      {(seller || footer) && (
+        <div className="mt-3 border-t border-border pt-2">
+          {seller && (
+            <Badge variant="info" className="max-w-full truncate">
+              {seller}
+            </Badge>
+          )}
+          {footer && (
+            <div
+              className={`flex items-center justify-between text-xs text-foreground-secondary${seller ? ' mt-1.5' : ''}`}
+            >
+              {footer}
+            </div>
+          )}
         </div>
       )}
     </Card>

@@ -1,6 +1,8 @@
 // Shared product-list filter model (mirrors v1's FiltersSheet), applied to both
 // the distributor and wholesaler product lists.
 
+import { OFFERS } from './coupons';
+
 // Applied navigation filter — the category/brand/distributor context a product
 // list is opened WITH (from a Home tile, a browse tab, or a storefront). Shown
 // as removable chips; separate from the manual FiltersSheet model below.
@@ -9,12 +11,6 @@ export interface AppliedFilter {
   type: AppliedType;
   value: string;
 }
-export const APPLIED_LABEL: Record<AppliedType, string> = {
-  category: 'Category',
-  brand: 'Brand',
-  distributor: 'Distributor',
-};
-
 export type Stock = 'available' | 'limited' | 'out';
 export type SortKey = 'recommended' | 'price_asc' | 'price_desc' | 'margin_desc';
 
@@ -45,7 +41,12 @@ const MARGIN: Record<string, number> = {
   p1: 12, p2: 9, p3: 11, p4: 10, p5: 12, p6: 14, p7: 11, p8: 13, p9: 15, p10: 12,
   wp1: 12, wp2: 11, wp3: 13, wp4: 10,
 };
-const SCHEME = new Set(['p1', 'p3', 'p5', 'p8', 'wp1', 'wp3']);
+// "Schemes only" reads live off the real offer data — a product id shows up
+// here the moment an Offer in data/coupons.ts names it in `needs`, so this
+// filter can never drift out of sync with what Apply Offer / the Discounts
+// sheet actually show for that SKU (the earlier version was a fixed id list
+// that stopped matching reality the moment a new offer was added).
+const SCHEME = new Set(OFFERS.flatMap((o) => o.needs?.map((n) => n.productId) ?? []));
 
 export const stockOf = (id: string): Stock => STOCK[id] ?? 'available';
 export const marginOf = (id: string): number => MARGIN[id] ?? 0;

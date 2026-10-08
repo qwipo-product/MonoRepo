@@ -1,6 +1,6 @@
 import { ShoppingBag } from 'lucide-react';
 import { Button, Sheet } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
+import { ProductImage, formatInr } from '@mockups/components';
 import type { CartItem, CartSeller } from '../data/cart';
 
 /* Order Summary · View Items — read-only bottom sheet listing every line in one
@@ -28,7 +28,7 @@ export function OrderItemsSheet({
       footer={
         <div className="flex items-center gap-3">
           <div>
-            <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
+            <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">
               Order total
             </div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(seller.subtotal)}</div>
@@ -52,11 +52,11 @@ function ItemRow({ item }: { item: CartItem }) {
   const { product, quantity, lineTotal, free } = item;
   return (
     <div className="flex gap-3 rounded-lg border border-border p-3">
-      <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl">
-        {product.image}
+      <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
+        <ProductImage image={product.image} alt={product.name} />
         {free && (
-          <span className="absolute -top-1.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-white">
-            FREE
+          <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
+            Free
           </span>
         )}
       </div>
@@ -81,7 +81,7 @@ function ItemRow({ item }: { item: CartItem }) {
             Qty ×{quantity}
           </span>
           <div className="text-right leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">Total</div>
+            <div className="text-2xs uppercase tracking-wide text-foreground-secondary">Total</div>
             <div className="text-sm font-bold tabular-nums text-foreground">{formatInr(lineTotal)}</div>
           </div>
         </div>

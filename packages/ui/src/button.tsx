@@ -12,6 +12,12 @@ import { cn } from './cn';
 const PRIMARY =
   'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active';
 const SECONDARY = 'border border-border bg-card text-foreground hover:bg-muted';
+/* Quiet, but unmistakably an action: the brand colour in an outline rather
+   than a fill. For the repeatable step inside a form — "Upload Shop Photo",
+   "Use My Current Location" — where a filled primary shouts over the one
+   button that actually commits the screen. */
+const OUTLINE_PRIMARY =
+  'border border-primary bg-card text-primary hover:bg-primary-soft active:bg-primary-soft';
 const SIZE_MD = 'h-11 gap-2 px-4 text-sm';
 
 const buttonVariants = cva(
@@ -26,6 +32,7 @@ const buttonVariants = cva(
         default: PRIMARY, // alias
         secondary: SECONDARY,
         outline: SECONDARY, // alias
+        outlinePrimary: OUTLINE_PRIMARY,
         ghost: 'bg-transparent text-foreground hover:bg-muted',
         soft: 'bg-primary-soft text-primary-soft-foreground hover:opacity-90', // tonal ("Discounts")
         destructive: 'bg-error text-white hover:opacity-90',

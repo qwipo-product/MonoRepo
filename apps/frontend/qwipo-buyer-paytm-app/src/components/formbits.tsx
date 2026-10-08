@@ -1,6 +1,58 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, ChevronLeft } from 'lucide-react';
 import { Sheet, useTheme, cn } from '@mockups/ui';
+
+/* AuthShell — the shared frame for Login and OTP Verification.
+
+   Both screens must line up pixel for pixel: same logo position, same heading,
+   subheading, field row and primary button. They drifted when each owned its
+   own markup (the Back button pushed OTP's logo down 23px, the sheets had
+   different padding, and a two-line subtitle moved the field 22px). One shell
+   means they can't drift again.
+
+   Keep subtitles to a single line — a wrapping subtitle is the one thing that
+   still shifts everything below it on that screen only. */
+export function AuthShell({
+  onBack,
+  title,
+  subtitle,
+  footer,
+  children,
+}: {
+  /** Renders a Back control. Positioned absolutely so it never moves the logo. */
+  onBack?: () => void;
+  title: ReactNode;
+  subtitle: ReactNode;
+  /** Extra line pinned to the bottom of the sheet (Login's terms copy). */
+  footer?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex h-full flex-col bg-background text-foreground">
+      {/* top half — brand, centred identically whether or not Back is shown */}
+      <div className="relative flex flex-1 items-center justify-center">
+        {onBack && (
+          <button
+            onClick={onBack}
+            aria-label="Back"
+            className="absolute left-3 top-3 grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        )}
+        <AuthBrand />
+      </div>
+
+      {/* bottom half — elevated sheet */}
+      <div className="flex flex-1 flex-col rounded-t-2xl border-t border-border bg-background p-6 pb-8 shadow-bar-top">
+        <h1 className="text-xl font-semibold">{title}</h1>
+        <p className="mt-1 text-sm text-foreground-secondary">{subtitle}</p>
+        {children}
+        {footer && <div className="mt-auto pt-5">{footer}</div>}
+      </div>
+    </div>
+  );
+}
 
 /** Qwipo brand lockup (real SVG assets) — swaps to the white mark in dark mode. */
 export function AuthBrand() {
@@ -45,6 +97,7 @@ export const controlClass =
 /** Select-style control that opens a bottom Sheet of a simple text option list. */
 export function SelectField({
   label,
+  hideLabel,
   required,
   placeholder,
   value,
@@ -52,6 +105,9 @@ export function SelectField({
   onChange,
 }: {
   label: string;
+  /* Drop the label above the control where the placeholder already says what
+     to pick. The sheet the control opens still carries it as its title. */
+  hideLabel?: boolean;
   required?: boolean;
   placeholder: string;
   value: string;
@@ -59,8 +115,8 @@ export function SelectField({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  return (
-    <Field label={label} required={required}>
+  const control = (
+    <>
       <button type="button" onClick={() => setOpen(true)} className={cn(controlClass, 'justify-between')}>
         <span className={value ? 'text-foreground' : 'text-foreground-secondary'}>{value || placeholder}</span>
         <ChevronDown className="h-5 w-5 text-foreground-secondary" />
@@ -85,6 +141,13 @@ export function SelectField({
           ))}
         </div>
       </Sheet>
+    </>
+  );
+  return hideLabel ? (
+    control
+  ) : (
+    <Field label={label} required={required}>
+      {control}
     </Field>
   );
 }

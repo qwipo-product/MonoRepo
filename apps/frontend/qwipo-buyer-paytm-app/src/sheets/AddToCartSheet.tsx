@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
-import { packTiers, type Product } from '../data/products';
+import { ProductImage, formatInr } from '@mockups/components';
+import { defaultVariantId, packTiers, skuFor, splitIntoPacks, type Product } from '../data/products';
 import { PackTierRow } from './PackTierRow';
 
 // Distributor selling-units sheet (screen 14). Content mirrors the source:
@@ -10,13 +10,15 @@ import { PackTierRow } from './PackTierRow';
 // with a per-unit price, line total, and its own Add · Total-cart-value footer.
 export function AddToCartSheet({
   product,
-  cartTotal,
+  qty,
   onAdd,
   onContinue,
   onClose,
 }: {
   product: Product | null;
-  cartTotal: number;
+  /** Pieces of THIS product in the cart — the footer totals the line, not the
+   * whole cart, so the number moves as the tier rows below are stepped. */
+  qty: number;
   onAdd: (pcs: number) => void;
   onContinue: () => void;
   onClose: () => void;
@@ -26,7 +28,13 @@ export function AddToCartSheet({
     return <Sheet open={false} onClose={onClose} />;
   }
   const tiers = packTiers(product.caseSize);
-  const activeVariant = variant || product.variants[0].id;
+  // What's in the cart, expressed as packs of these tiers.
+  const inCart = splitIntoPacks(qty, tiers);
+  /* The pack on show, and its own picture and price. The cards already read
+     these per pack; the sheet was still quoting the product's base figures,
+     so Freedom opened on the 500 ml pouch priced like a 1 L one. */
+  const activeVariant = variant || defaultVariantId(product);
+  const sku = skuFor(product, activeVariant);
 
   return (
     <Sheet
@@ -38,10 +46,12 @@ export function AddToCartSheet({
       footer={
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-              Total cart value
+            <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">
+              Total value
             </div>
-            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(cartTotal)}</div>
+            <div className="text-lg font-bold tabular-nums text-foreground">
+              {formatInr(sku.price * qty)}
+            </div>
           </div>
           <Button className="px-8" onClick={onContinue}>
             Continue
@@ -51,8 +61,8 @@ export function AddToCartSheet({
     >
       {/* product header */}
       <div className="flex items-center gap-3">
-        <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-2xl ring-2 ring-warning/70">
-          {product.image}
+        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-3xl">
+          <ProductImage image={sku.image} alt={product.name} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">{product.shortName}</div>
@@ -74,22 +84,29 @@ export function AddToCartSheet({
       {/* MRP / SP / Margin bar */}
       <div className="mt-4 flex items-center gap-5 rounded-lg bg-muted p-3">
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
           <div className="text-sm font-medium tabular-nums text-foreground-secondary line-through">
-            {formatInr(product.mrp)}
+            {formatInr(sku.mrp)}
           </div>
         </div>
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
-          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(product.price)}</div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
+          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(sku.price)}</div>
         </div>
-        <div className="ml-auto text-sm font-semibold text-success-foreground">{product.margin}</div>
+        <div className="ml-auto text-sm font-semibold text-success-foreground">{sku.margin}</div>
       </div>
 
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
-          <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={product.price} onDelta={onAdd} />
+          <PackTierRow
+            key={t.id}
+            label={t.label}
+            pcs={t.pcs}
+            unitPrice={sku.price}
+            initialPacks={inCart[t.id] ?? 0}
+            onDelta={onAdd}
+          />
         ))}
       </div>
     </Sheet>

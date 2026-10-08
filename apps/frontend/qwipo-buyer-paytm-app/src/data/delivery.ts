@@ -37,6 +37,10 @@ export const DISTRIBUTOR_DELIVERY: Record<string, DistributorDelivery> = {
     options: [{ day: 'Tomorrow' }],
     freeDeliveryAt: 3000,
   },
+  'Tata Consumer Products': {
+    options: [{ day: 'Monday', beat: true, mov: 2000 }, { day: 'Tomorrow', mov: 3000 }],
+    freeDeliveryAt: 4000,
+  },
 };
 
 export const DEFAULT_DELIVERY: DistributorDelivery = {
@@ -49,3 +53,7 @@ export const deliveryFor = (seller: string): DistributorDelivery =>
 
 /** "Monday (Beat Day)" / "Tomorrow" — the display label for one option. */
 export const dayLabel = (o: DeliveryOption): string => (o.beat ? `${o.day} (Beat Day)` : o.day);
+
+/* Whether a display label names a beat day. The cart only has the labels, not
+   the options behind them, and the suffix is this module's to know about. */
+export const isBeatDay = (label: string): boolean => label.endsWith(' (Beat Day)');

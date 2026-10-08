@@ -18,6 +18,8 @@ export interface OrderListCardProps {
   totalLabel?: string;
   rightLabel?: string;
   rightValue?: ReactNode;
+  /** A line under the value — e.g. what a delivery window means. */
+  rightNote?: string;
   /** Present → title + "Order details" link open the shared Order Details. */
   onOpenDetails?: () => void;
   /** Button row (Cancel/Track, Invoice, Pay, …). */
@@ -36,6 +38,7 @@ export function OrderListCard({
   totalLabel = 'Grand total',
   rightLabel,
   rightValue,
+  rightNote,
   onOpenDetails,
   actions,
   hint,
@@ -73,19 +76,22 @@ export function OrderListCard({
 
       <div className="mt-2 flex items-center justify-between rounded-md bg-background-subtle p-2.5">
         <div>
-          <div className="text-[11px] text-foreground-secondary">{totalLabel}</div>
+          <div className="text-xs text-foreground-secondary">{totalLabel}</div>
           <div className="text-sm font-semibold tabular-nums text-foreground">{formatInrExact(total)}</div>
         </div>
         {rightLabel && (
           <div className="text-right">
-            <div className="text-[11px] text-foreground-secondary">{rightLabel}</div>
+            <div className="text-xs text-foreground-secondary">{rightLabel}</div>
             <div className="text-sm font-medium text-foreground">{rightValue}</div>
+            {/* What the window means, under the window — the same sentence the
+                cart and the order summary gave before the order was placed. */}
+            {rightNote && <div className="text-xs text-foreground-secondary">{rightNote}</div>}
           </div>
         )}
       </div>
 
       {actions && <div className="mt-3">{actions}</div>}
-      {hint && <div className="mt-2 text-[11px] text-foreground-secondary">{hint}</div>}
+      {hint && <div className="mt-2 text-xs text-foreground-secondary">{hint}</div>}
     </div>
   );
 }

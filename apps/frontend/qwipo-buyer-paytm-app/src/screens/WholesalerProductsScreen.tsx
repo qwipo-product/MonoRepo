@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
-import { Badge, Button, Card, Chip, EmptyState, QtyStepper } from '@mockups/ui';
-import { PriceLabel, formatInr } from '@mockups/components';
-import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct } from '../data/wholesaler';
+import { EmptyState } from '@mockups/ui';
+import { WHOLESALER_PRODUCTS, cheapestVendorId, minVendorPrice, type WholesalerProduct } from '../data/wholesaler';
 import { WholesalerUnitsSheet } from '../sheets/WholesalerUnitsSheet';
 import { ProductImagesSheet } from '../sheets/ProductImagesSheet';
-import { VendorPicker } from '../components/VendorPicker';
+import { VendorProductCard } from '../components/VendorProductCard';
 import { DiscountsSheet } from '../sheets/DiscountsSheet';
-import { AppliedFilterBar } from '../components/AppliedFilterBar';
 import { FiltersSheet } from '../sheets/FiltersSheet';
 import { DEFAULT_FILTERS, applyFilters, countActiveFilters, type Filters, type AppliedFilter } from '../data/filters';
 import { useEmptyable } from '../review/demoState';
+import { CartBar } from '../components/CartBar';
 
-const minPrice = (p: WholesalerProduct) => Math.min(...p.vendors.map((v) => v.price));
 const brandOf = (name: string) => name.split(' ')[0];
 const BRAND_OPTIONS = [...new Set(WHOLESALER_PRODUCTS.map((p) => brandOf(p.name)))];
 
@@ -26,27 +24,44 @@ const matchesApplied = (p: WholesalerProduct, a: AppliedFilter) =>
 
 /* Wholesaler Product List — replica of the distributor list, but each product
    is offered by MULTIPLE vendors (price + fee). The buyer selects a vendor per
-   line; the cheapest is tagged "Best". Add opens the selling-units sheet. */
+   line. Add opens the selling-units sheet. */
 export function WholesalerProductsScreen({
   applied: appliedProp = [],
+  qty,
+  onSetQty,
+  vendorSel,
+  onSetVendor,
   onBack,
   onSearch,
   onGoToCart,
+  cartCount,
+  cartTotal,
+  cartFreight,
   initialSheet = false,
 }: {
   applied?: AppliedFilter[];
+  /** Live quantities, shared with Cart Summary — App.tsx owns this state. */
+  qty: Record<string, number>;
+  onSetQty: (id: string, n: number) => void;
+  vendorSel: Record<string, string>;
+  onSetVendor: (id: string, vendorId: string) => void;
   onBack: () => void;
   onSearch?: () => void;
   onGoToCart: () => void;
+  /* The whole cart, both channels — the bar says "total cart value", and a
+     wholesale-only subtotal would have made it mean something different here
+     than on every other list. */
+  cartCount: number;
+  cartTotal: number;
+  /** Delivery across the whole cart — see CartBar. */
+  cartFreight?: number;
   initialSheet?: boolean;
 }) {
-  const [qty, setQty] = useState<Record<string, number>>({});
-  const [vendorSel, setVendorSel] = useState<Record<string, string>>({});
   const [sheetId, setSheetId] = useState<string | null>(initialSheet ? WHOLESALER_PRODUCTS[0].id : null);
   const [galleryId, setGalleryId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [discountsOpen, setDiscountsOpen] = useState(false);
+  const [discountsProductId, setDiscountsProductId] = useState<string | null>(null);
   const [applied, setApplied] = useState<AppliedFilter[]>(appliedProp);
   useEffect(() => setApplied(appliedProp), [appliedProp]);
 
@@ -54,17 +69,27 @@ export function WholesalerProductsScreen({
   const products = useEmptyable(applyFilters(base, filters, {
     id: (p) => p.id,
     brand: (p) => brandOf(p.name),
-    price: minPrice,
+    price: minVendorPrice,
   }));
   const activeFilters = countActiveFilters(filters);
+
+  /* Same two lines as the distributor list: what was tapped, then what it is.
+     No breadcrumb — it only repeated the heading. */
+  const heading = applied.length ? applied[applied.length - 1].value : 'Product List';
+
+  /* A wholesale SKU is quoted by several vendors, so a list almost always
+     spans more than one — but it is read off the list rather than assumed,
+     so a list that happens to carry a single vendor names them. */
+  const vendorNames = Array.from(new Set(products.flatMap((p) => p.vendors.map((v) => v.name))));
+  const subtitle = `${products.length} products · ${
+    vendorNames.length === 1 ? vendorNames[0] : 'multiple vendors'
+  }`;
 
   const vendorFor = (p: WholesalerProduct) => {
     const id = vendorSel[p.id] ?? cheapestVendorId(p);
     return p.vendors.find((v) => v.id === id) ?? p.vendors[0];
   };
 
-  const cartCount = Object.values(qty).reduce((n, x) => n + x, 0);
-  const cartTotal = WHOLESALER_PRODUCTS.reduce((s, p) => s + vendorFor(p).price * (qty[p.id] ?? 0), 0);
 
   const sheetProduct = sheetId ? WHOLESALER_PRODUCTS.find((p) => p.id === sheetId) ?? null : null;
 
@@ -75,8 +100,8 @@ export function WholesalerProductsScreen({
           <ChevronLeft size={18} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold leading-tight">Product List</h1>
-          <p className="text-xs text-foreground-secondary">{products.length} products · multiple vendors</p>
+          <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
+          <p className="truncate text-xs text-foreground-secondary">{subtitle}</p>
         </div>
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
@@ -88,15 +113,17 @@ export function WholesalerProductsScreen({
         >
           <SlidersHorizontal size={18} />
           {activeFilters > 0 && (
-            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-2xs font-semibold text-primary-foreground">
               {activeFilters}
             </span>
           )}
         </button>
       </header>
 
-      <AppliedFilterBar applied={applied} onRemove={(i) => setApplied((a) => a.filter((_, idx) => idx !== i))} />
-
+      {/* No "Filtered by" chip row: the header above already names the
+          category or brand this list was opened from, so the chip repeated it
+          one line below. The filter still applies, and the Filters sheet still
+          shows what is active. */}
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {products.length === 0 ? (
           <EmptyState
@@ -110,12 +137,12 @@ export function WholesalerProductsScreen({
               key={p.id}
               product={p}
               vendorId={vendorSel[p.id] ?? cheapestVendorId(p)}
-              onVendor={(vid) => setVendorSel((s) => ({ ...s, [p.id]: vid }))}
+              onVendor={(vid) => onSetVendor(p.id, vid)}
               qty={qty[p.id] ?? 0}
-              onQty={(n) => setQty((s) => ({ ...s, [p.id]: Math.max(0, n) }))}
+              onQty={(n) => onSetQty(p.id, Math.max(0, n))}
+              onDiscounts={() => setDiscountsProductId(p.id)}
               onAdd={() => setSheetId(p.id)}
               onImageClick={() => setGalleryId(p.id)}
-              onDiscounts={() => setDiscountsOpen(true)}
             />
           ))
         )}
@@ -124,9 +151,9 @@ export function WholesalerProductsScreen({
       <WholesalerUnitsSheet
         product={sheetProduct}
         vendor={sheetProduct ? vendorFor(sheetProduct) : null}
-        cartTotal={cartTotal}
+        qty={sheetId ? (qty[sheetId] ?? 0) : 0}
         onAdd={(pcs) => {
-          if (sheetId) setQty((s) => ({ ...s, [sheetId]: (s[sheetId] ?? 0) + pcs }));
+          if (sheetId) onSetQty(sheetId, (qty[sheetId] ?? 0) + pcs);
         }}
         onContinue={() => setSheetId(null)}
         onClose={() => setSheetId(null)}
@@ -137,22 +164,14 @@ export function WholesalerProductsScreen({
         onClose={() => setGalleryId(null)}
       />
 
-      {cartCount > 0 && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
-              {cartCount} {cartCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="text-lg font-bold tabular-nums">{formatInr(cartTotal)}</div>
-            <div className={cartTotal >= 3000 ? 'text-xs text-success-foreground' : 'text-xs text-foreground-secondary'}>
-              {cartTotal >= 3000 ? 'Free delivery' : `+ ${formatInr(30)} delivery fee`}
-            </div>
-          </div>
-          <Button className="px-8" onClick={onGoToCart}>
-            Go to cart
-          </Button>
-        </div>
-      )}
+      <CartBar count={cartCount} total={cartTotal} freight={cartFreight} onGoToCart={onGoToCart} />
+
+      <DiscountsSheet
+        open={!!discountsProductId}
+        productId={discountsProductId}
+        qty={{ ...qty }}
+        onClose={() => setDiscountsProductId(null)}
+      />
 
       <FiltersSheet
         open={filterOpen}
@@ -161,110 +180,6 @@ export function WholesalerProductsScreen({
         onApply={setFilters}
         onClose={() => setFilterOpen(false)}
       />
-
-      <DiscountsSheet open={discountsOpen} onClose={() => setDiscountsOpen(false)} />
     </div>
-  );
-}
-
-function VendorProductCard({
-  product,
-  vendorId,
-  onVendor,
-  qty,
-  onQty,
-  onAdd,
-  onImageClick,
-  onDiscounts,
-}: {
-  product: WholesalerProduct;
-  vendorId: string;
-  onVendor: (id: string) => void;
-  qty: number;
-  onQty: (n: number) => void;
-  onAdd: () => void;
-  onImageClick: () => void;
-  onDiscounts: () => void;
-}) {
-  const [variant, setVariant] = useState(product.variants[0].id);
-  const cheapest = cheapestVendorId(product);
-  const selected = product.vendors.find((v) => v.id === vendorId) ?? product.vendors[0];
-
-  return (
-    <Card className="p-3">
-      {/* image (left) + info (right); square image sized to the info column's
-          height — same layout as the distributor card. Image opens the gallery. */}
-      <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={onImageClick}
-          aria-label={`View images of ${product.name}`}
-          className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-muted text-4xl active:scale-[0.98]"
-        >
-          {product.image}
-        </button>
-        <div className="min-w-0 flex-1">
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label={`Open selling units for ${product.name}`}
-            className="block w-full text-left active:scale-[0.99]"
-          >
-            <div className="text-sm font-semibold leading-snug text-foreground">{product.name}</div>
-            <div className="mt-0.5 text-xs text-foreground-secondary">{product.caseLabel}</div>
-          </button>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {product.variants.map((v) => (
-              <Chip key={v.id} selected={v.id === variant} onClick={() => setVariant(v.id)} className="px-2.5 py-1">
-                {v.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <VendorPicker
-        className="mt-3"
-        vendors={product.vendors}
-        value={vendorId}
-        onChange={onVendor}
-        cheapestId={cheapest}
-      />
-
-      {/* selected vendor: margin + delivery date + price (with discount) */}
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <Badge variant="success">{selected.margin}</Badge>
-          <div className="text-sm text-success-foreground">{selected.delivery}</div>
-        </div>
-        <PriceLabel price={selected.price} mrp={selected.mrp} suffix="/pc" size="lg" />
-      </div>
-
-      {/* actions — fixed widths so the row never reflows when qty changes. */}
-      <div className="mt-3 flex items-center gap-2">
-        <Button variant="soft" className="flex-1" onClick={onDiscounts}>
-          Discounts ⌄
-        </Button>
-        <div className="w-28 shrink-0">
-          {qty > 0 ? (
-            <QtyStepper value={qty} onChange={onQty} tone="soft" className="w-full" />
-          ) : (
-            <Button className="w-full" onClick={onAdd}>
-              + Add
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* total for the selected qty */}
-      {qty > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-            Total ({qty} pcs)
-          </span>
-          <span className="text-base font-bold tabular-nums text-foreground">{formatInr(selected.price * qty)}</span>
-        </div>
-      )}
-    </Card>
   );
 }

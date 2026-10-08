@@ -3,7 +3,8 @@ import { deliveryFor, dayLabel } from '../data/delivery';
 
 /* Product-card footer: the distributor's delivery day(s) + per-day MOV. One row
    per option; MOV omitted when a day has none (e.g. Omkar). Shared by the
-   Product List and Reorder so their cards stay identical. */
+   Product List, Reorder and the seller cards on Authorised Distributors, so a
+   seller's terms read the same wherever they appear. */
 export function deliveryFooter(seller: string) {
   const d = deliveryFor(seller);
   return (

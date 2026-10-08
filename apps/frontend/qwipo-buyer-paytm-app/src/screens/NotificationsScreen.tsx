@@ -60,12 +60,12 @@ export function NotificationsScreen({ onBack }: { onBack: () => void }) {
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-sm font-semibold text-foreground">{n.title}</span>
                   {n.unread && (
-                    <span className="mt-0.5 shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                    <span className="mt-0.5 shrink-0 rounded-full bg-primary px-2 py-0.5 text-2xs font-semibold text-primary-foreground">
                       New
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 text-[11px] text-foreground-secondary">{n.time}</div>
+                <div className="mt-0.5 text-xs text-foreground-secondary">{n.time}</div>
                 <div className="mt-1 text-xs text-foreground-secondary">{n.body}</div>
               </div>
             </button>

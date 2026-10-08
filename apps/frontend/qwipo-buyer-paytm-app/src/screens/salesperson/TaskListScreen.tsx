@@ -81,7 +81,7 @@ export function TaskListScreen({
               lat={t.customer.lat}
               lng={t.customer.lng}
               topRight={
-                <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium', STATUS_TONE[t.status])}>
+                <span className={cn('shrink-0 rounded-md px-2 py-0.5 text-2xs font-medium', STATUS_TONE[t.status])}>
                   {TASK_STATUS_LABEL[t.status]}
                 </span>
               }

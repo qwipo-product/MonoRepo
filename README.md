@@ -71,7 +71,7 @@ apps/
     seller-store/           Distributor + super-admin console               →  :5174
     rirn/                   Retailer identity network — company console     →  :5173
     rirn-retailer/          Retailer-facing RIRN pages (phone/WebView)      →  :5176
-    qwipo-analytics/        DigiDukaan analytics console + Reports (desktop) →  :5177
+    qwipo-analytics/        The analytics dashboard: DigiDukaan console, Reports, Buyer app analytics (desktop) →  :5177
     storybook/              Catalog for the mobile kit                      →  :6006
     storybook-web/          Catalog for the web kit                         →  :6007
   backend/
@@ -262,6 +262,7 @@ following the `docker-cd-*` / `argocd-*` convention the service repos use.
 | `storybook-web` | `mockups-storybook-web` | mockups-storybook-web.dev.bms.qwipo.com | Storybook Web - Build | Storybook Web - Deploy |
 | `storybook` | `mockups-storybook` | mockups-storybook.dev.bms.qwipo.com | Storybook - Build | Storybook - Deploy |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
+| `qwipo-analytics` | `mockups-analytics` | mockups-analytics.dev.bms.qwipo.com | Analytics - Build | Analytics - Deploy |
 
 `mock-api` is **not** on this path, deliberately. Nothing calls it — every
 mockup bundles `@mockups/mock-data` at build time — so it was never built and

@@ -1,8 +1,9 @@
-import { Banknote, ChevronLeft, ChevronRight, MapPin, Tag } from 'lucide-react';
-import { Button } from '@mockups/ui';
+import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
+import { Button, InlineMessage } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
-import { buildCart, type CartSeller } from '../data/cart';
+import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
+import { isBeatDay } from '../data/delivery';
 
 /* Order Summary — read-only review before Place Order. One bill card per
    seller (brand · item summary + chosen delivery window), then the overall
@@ -12,17 +13,26 @@ import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 const brandOf = (name: string) => name.split(' ')[0];
 
 export function OrderSummaryScreen({
+  cart,
   onBack,
   onPlaceOrder,
-  onOpenCoupons,
   onViewItems,
+  kycPending = false,
+  kycUnderReview = false,
+  onCompleteKyc,
 }: {
+  /** The live cart App.tsx built from the buyer's actual picked quantities. */
+  cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onPlaceOrder: () => void;
-  onOpenCoupons: () => void;
   onViewItems: (sellerId: string) => void;
+  /** First order waits on account verification. */
+  kycPending?: boolean;
+  /** KYC is submitted and with our team (manual review) — nothing to do but wait. */
+  kycUnderReview?: boolean;
+  onCompleteKyc?: () => void;
 }) {
-  const { sellers, grandTotal } = buildCart();
+  const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.reduce((a, i) => a + i.quantity, 0), 0);
   const grandSavings = sellers.reduce((n, s) => n + s.savings, 0);
@@ -46,21 +56,6 @@ export function OrderSummaryScreen({
         {sellers.map((s) => (
           <SellerBill key={s.id} seller={s} onViewItems={() => onViewItems(s.id)} />
         ))}
-
-        {/* Apply coupon */}
-        <button
-          onClick={onOpenCoupons}
-          className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
-        >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-            <Tag className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
-            <span className="block text-xs text-foreground-secondary">Offers available — tap to view &amp; apply</span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-        </button>
 
         {/* Bill details */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -113,14 +108,37 @@ export function OrderSummaryScreen({
         </div>
       </div>
 
-      <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+      <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
+        {kycPending && kycUnderReview && (
+          <InlineMessage
+            className="mb-3"
+            variant="warning"
+            title="KYC Pending"
+            description="Your KYC is under review. You can place orders once it is approved."
+          />
+        )}
+        {kycPending && !kycUnderReview && (
+          <InlineMessage
+            className="mb-3"
+            variant="warning"
+            title="Complete KYC to place this order"
+            description="Your account needs to be verified before your first order."
+            action={
+              onCompleteKyc ? (
+                <Button size="sm" variant="soft" onClick={onCompleteKyc}>
+                  Complete KYC
+                </Button>
+              ) : undefined
+            }
+          />
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
+            <div className="text-2xs uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
-            <div className="text-[11px] font-medium text-primary">Cash on Delivery</div>
+            <div className="text-xs font-medium text-primary">Cash on Delivery</div>
           </div>
-          <Button className="px-8" onClick={onPlaceOrder}>
+          <Button className="px-8" disabled={kycPending} onClick={onPlaceOrder}>
             Place order
           </Button>
         </div>
@@ -168,10 +186,19 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
         </button>
       </div>
 
-      {/* delivery window */}
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 text-sm">
-        <span className="text-foreground-secondary">Delivery by</span>
-        <span className="font-semibold text-foreground">{seller.windows[0]}</span>
+      {/* delivery window — a beat day is the day the van is in the area, not
+          the hour the goods arrive, so it carries the window the seller works
+          to. Same words as the cart said, so nothing changes at checkout. */}
+      <div className="mt-3 border-t border-border pt-2.5 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-foreground-secondary">Delivery by</span>
+          <span className="font-semibold text-foreground">{seller.windows[0]}</span>
+        </div>
+        {isBeatDay(seller.windows[0]) && (
+          <div className="mt-0.5 text-right text-xs font-medium text-foreground-secondary">
+            Delivered within 24–48 hrs
+          </div>
+        )}
       </div>
     </div>
   );

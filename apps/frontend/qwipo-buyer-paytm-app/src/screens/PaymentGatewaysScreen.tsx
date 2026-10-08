@@ -81,7 +81,7 @@ export function PaymentGatewaysScreen({
 
             {/* gateway options */}
             <div className="space-y-2">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+              <div className="text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
                 Pay using
               </div>
               {gateways.map((g) => (
@@ -159,7 +159,7 @@ export function PaymentGatewaysScreen({
 function Limit({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-[11px] text-foreground-secondary">{label} limit</div>
+      <div className="text-xs text-foreground-secondary">{label} limit</div>
       <div className="text-xs font-semibold tabular-nums text-foreground">{formatInrExact(value)}</div>
     </div>
   );

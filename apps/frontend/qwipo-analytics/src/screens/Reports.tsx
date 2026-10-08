@@ -87,6 +87,14 @@ export default function Reports({ go, drill }: { go: (p: Page | string) => void;
                   <td className="py-2.5 pl-5 pr-3">
                     <span className="type-label">{def.name}</span>
                     <span className="type-caption block max-w-[360px] text-foreground-tertiary">{def.desc}</span>
+                    {def.columns && (
+                      <details className="type-caption mt-1 max-w-[360px]">
+                        <summary className="cursor-pointer text-link">Sheet columns</summary>
+                        {def.sheets.map((s, i) => (
+                          <p key={s} className="mt-1 text-foreground-tertiary"><b className="text-foreground-secondary">{s}</b> · {def.columns![i].join(', ')}</p>
+                        ))}
+                      </details>
+                    )}
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-3">
                     {last ? (
@@ -476,7 +484,6 @@ function Register({ go }: { go: (p: Page | string) => void }) {
         <Button variant="ghost" size="sm" className="ml-2 text-link" onClick={() => go('reports')}>← Back to Reports</Button>
       </div>
       <ScopeBar line="Live register · pages straight from the warehouse · the XLSX export carries all 32 columns" />
-
       <Card className="flex flex-col">
         <div className="flex items-center gap-3 border-b border-border-subtle px-5 py-3">
           <div className="relative flex-1">

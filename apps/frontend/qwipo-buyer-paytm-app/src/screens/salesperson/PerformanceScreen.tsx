@@ -81,7 +81,7 @@ export function PerformanceScreen({ onBack }: { onBack: () => void }) {
 function Group({ title, children, last }: { title: string; children: ReactNode; last?: boolean }) {
   return (
     <div className={cn('p-4', !last && 'border-b border-border')}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">{title}</div>
+      <div className="text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">{title}</div>
       <div className="mt-2 space-y-2.5">{children}</div>
     </div>
   );

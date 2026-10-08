@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Aashirvaad, 25% off whole wheat atta">
+  <defs>
+    <linearGradient id="aa-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10B981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <clipPath id="aa-clip"><rect width="240" height="240" rx="16"/></clipPath>
+  </defs>
+  <g clip-path="url(#aa-clip)">
+    <rect width="240" height="240" fill="url(#aa-bg)"/>
+    <circle cx="204" cy="210" r="76" fill="#FFFFFF" opacity="0.10"/>
+    <circle cx="24" cy="18" r="44" fill="#FFFFFF" opacity="0.08"/>
+    <g opacity="0.22" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+      <path d="M198 36v54"/>
+      <path d="M198 46c-10-2-16-8-18-16 10 0 16 6 18 16z"/>
+      <path d="M198 46c10-2 16-8 18-16-10 0-16 6-18 16z"/>
+      <path d="M198 68c-10-2-16-8-18-16 10 0 16 6 18 16z"/>
+      <path d="M198 68c10-2 16-8 18-16-10 0-16 6-18 16z"/>
+    </g>
+
+    <text x="20" y="40" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="13" font-weight="700" letter-spacing="1.6" fill="#FFFFFF" opacity="0.85">AASHIRVAAD</text>
+
+    <text x="20" y="98" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="19" font-weight="600" fill="#FFFFFF" opacity="0.9">FLAT</text>
+    <text x="20" y="150" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="52" font-weight="800" fill="#FFFFFF">25% OFF</text>
+
+    <text x="20" y="176" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="14" font-weight="500" fill="#FFFFFF" opacity="0.88">Whole wheat atta</text>
+
+    <g transform="translate(20 194)">
+      <rect width="116" height="28" rx="14" fill="#FFFFFF"/>
+      <text x="16" y="19" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+            font-size="13" font-weight="700" fill="#047857">Shop now</text>
+      <path d="M94 14h8m-3-3.5 3.5 3.5-3.5 3.5" stroke="#047857" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+</svg>

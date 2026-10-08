@@ -1,416 +1,254 @@
-// DigiDukaan · Buyer — Sales Dashboard, for the sales team.
-// Scoped by the buyer scope bar (dd-mm-yyyy range + State / City /
-// Distributor), shared with BA performance and Customers. Cards, Distributors
-// and Orders all aggregate the same order ledger, so they stay consistent.
-import { useMemo, useRef, useState } from 'react';
-import { Download } from 'lucide-react';
-import { Badge, Button, Card, cn, type BadgeProps } from '@mockups/ui';
-import { makeTh, type Sort } from '../components/tableSort';
-import { BuyerScopeBar, ClearBtn, EmptyRow, FilterSelect, Pager, SearchBox, SectionHead, useFlash } from '../components/buyerKit';
-import { buyerChips, dmy, dmyTime, downloadCsv, fileTag, inr, lakh, num, pctOf, rangeText, sortBy } from '../components/buyerFormat';
-import { distributorsIn, scopedOrders, stateCode, type BuyerOrder, type BuyerScope, type OrderStatus, type CancelSource } from '../data/buyer';
-import { addRun } from '../data/reports';
+// DigiDukaan · Buyer — Sales Dashboard, for a sales head chasing a number.
+// Reads top-down the way the team talks: how far are we from this month's
+// target and what do we need per day; what came in today / this week / this
+// month; the range's five numbers; then plain bar charts and pies — who is
+// selling, which sellers (distributors vs wholesalers), how orders came in.
+// No tables: row-level data is the Customer Orders / Distributor Orders reports.
+import { useMemo } from 'react';
+import { Badge, Card, cn } from '@mockups/ui';
+import { KpiCard, Panel } from '../components/dashboard';
+import { Handoff } from '../components/Handoff';
+import { AttentionCard, BuyerScopeBar } from '../components/buyerKit';
+import { Bars, Donut, RankBars, TargetBar, type Tone } from '../components/buyerCharts';
+import { useBuyerDrill } from '../components/buyerDrillContext';
+import { inr, kpiDelta, lakh, num } from '../components/buyerFormat';
+import { TODAY, sellerTypeOf, scopedOrders, type BuyerOrder } from '../data/buyer';
+import {
+  PACE_LOW, PACE_OK, baStats, buckets, customerStats, distributorStats, monthPlan, previousScope, pulse, rangeDays, summarize,
+} from '../data/buyerMetrics';
 import { useBuyerScope } from '../scope';
+import type { Page } from '../nav';
 
-const statusBadge: Record<OrderStatus, NonNullable<BadgeProps['variant']>> = {
-  Active: 'info', 'In Transit': 'warning', Delivered: 'success', Cancelled: 'danger',
-};
-const srcShort: Record<CancelSource, string> = { BA: 'BA', Distributor: 'Dist', Retailer: 'Ret' };
+const DAY = 86400000;
+const sum = (os: BuyerOrder[]) => os.reduce((a, o) => a + o.value, 0);
+const isWholesale = (o: BuyerOrder) => sellerTypeOf.get(o.distributor) === 'Wholesaler';
+const paceTone = (pct: number): Tone => (pct >= PACE_OK ? 'success' : pct >= PACE_LOW ? 'warning' : 'error');
 
-type BeatF = 'All' | 'Beat' | 'Non-Beat';
-const byBeat = (o: BuyerOrder, b: BeatF) => b === 'All' || (b === 'Beat') === o.beat;
-type StatusF = 'All' | OrderStatus | `Cancelled by ${CancelSource}`;
-const byStatus = (o: BuyerOrder, st: StatusF) =>
-  st === 'All' || (st.startsWith('Cancelled by ') ? o.cancelledBy === st.slice(13) : o.status === st);
-
-export default function BuyerSales() {
+export default function BuyerSales({ go }: { go: (p: Page | string) => void }) {
   const { s: scope } = useBuyerScope();
-  const [toast, flash] = useFlash();
-  const ordersRef = useRef<HTMLDivElement>(null);
-  const [orderStatus, setOrderStatus] = useState<StatusF>('All');
+  const drill = useBuyerDrill();
+  const orders = useMemo(() => scopedOrders(scope), [scope]);
+  const s = useMemo(() => summarize(orders), [orders]);
+  const before = useMemo(() => {
+    const p = previousScope(scope);
+    return p ? { s: summarize(scopedOrders(p)), newShops: customerStats(p).filter((c) => c.isNew).length } : null;
+  }, [scope]);
+  const prev = before?.s;
+  const periods = useMemo(() => pulse(scope), [scope]);
+  const plan = useMemo(() => monthPlan(scope), [scope]);
+  const people = useMemo(() => baStats(scope), [scope]);
+  const sellers = useMemo(() => distributorStats(scope), [scope]);
+  const shops = useMemo(() => customerStats(scope), [scope]);
+  const series = useMemo(() => buckets(orders, scope), [orders, scope]);
 
-  const inRange = useMemo(() => scopedOrders(scope), [scope]);
-  const dists = useMemo(
-    () => distributorsIn(scope).filter((d) => scope.distributor === 'All' || d.name === scope.distributor),
-    [scope],
-  );
+  const showOrders = (title: string, where: (o: BuyerOrder) => boolean, range?: [Date, Date]) => drill.open({ kind: 'orders', title, where, range });
+  const prevNote = (v: string) => (prev ? `${v} before` : 'no earlier period');
+  const newShops = shops.filter((c) => c.isNew).length;
+  const sellerFiltered = scope.sellerType !== 'All' || scope.distributor !== 'All';
 
-  const s = useMemo(() => {
-    const count = (fn: (o: BuyerOrder) => boolean) => inRange.filter(fn).length;
-    const activeDists = new Set(inRange.map((o) => o.distributor));
-    const active = dists.filter((d) => activeDists.has(d.name)).length;
-    return {
-      total: inRange.length,
-      value: inRange.reduce((a, o) => a + o.value, 0),
-      beat: count((o) => o.beat),
-      nonBeat: count((o) => !o.beat),
-      delivered: count((o) => o.status === 'Delivered'),
-      cancelled: count((o) => o.status === 'Cancelled'),
-      transit: count((o) => o.status === 'In Transit'),
-      active: count((o) => o.status === 'Active'),
-      cBA: count((o) => o.cancelledBy === 'BA'),
-      cDist: count((o) => o.cancelledBy === 'Distributor'),
-      cRet: count((o) => o.cancelledBy === 'Retailer'),
-      dists: dists.length,
-      activeDists: active,
-      inactiveDists: dists.length - active,
-    };
-  }, [inRange, dists]);
+  // A goal line on the sales chart: the month's target spread evenly over its days.
+  const days = rangeDays(scope);
+  const perDayTarget = plan.target / (plan.daysGone + plan.daysLeft);
+  const barGoal = days === 1 ? undefined : days > 45 ? perDayTarget * 7 : perDayTarget;
 
-  const pct = (n: number) => pctOf(n, s.total);
+  const silentBAs = people.filter((r) => r.today === 0);
+  const dormant = shops.filter((c) => c.status === 'Dormant');
+  const waiting = orders.filter((o) => o.status === 'Active' && (TODAY.getTime() - o.at.getTime()) / DAY > 2);
+  const cancelled = orders.filter((o) => o.status === 'Cancelled');
 
-  const showOrders = (st: StatusF) => {
-    setOrderStatus(st);
-    ordersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const exportSummary = () => {
-    downloadCsv(`sales_summary_${fileTag(scope)}.csv`, ['Metric', 'Value'], [
-      ['Date range', rangeText(scope)], ['State', scope.state], ['City', scope.city], ['Distributor', scope.distributor],
-      ['Total Orders', s.total], ['Total Value', Math.round(s.value)],
-      ['Beat Orders', s.beat], ['Non-Beat Orders', s.nonBeat],
-      ['Active', s.active], ['In Transit', s.transit], ['Delivered', s.delivered], ['Cancelled', s.cancelled],
-      ['Cancelled by BA', s.cBA], ['Cancelled by Distributor', s.cDist], ['Cancelled by Retailer', s.cRet],
-      ['Total Distributors', s.dists], ['Active Distributors', s.activeDists], ['Inactive Distributors', s.inactiveDists],
-    ]);
-    addRun('buyer-sales-summary', buyerChips(scope));
-    flash('Summary exported · also saved in Reports › DigiDukaan · Buyer');
-  };
+  const topPeople = [...people].sort((a, b) => b.s.value - a.s.value).slice(0, 8);
+  const topSellers = sellers.filter((d) => d.s.orders > 0).sort((a, b) => b.s.value - a.s.value).slice(0, 8);
+  const viaDist = orders.filter((o) => !isWholesale(o));
+  const viaWhole = orders.filter(isWholesale);
+  const cities = useMemo(() => {
+    const m = new Map<string, { v: number; n: number }>();
+    for (const o of orders) { const e = m.get(o.city) ?? { v: 0, n: 0 }; e.v += o.value; e.n++; m.set(o.city, e); }
+    return [...m.entries()].sort((a, b) => b[1].v - a[1].v).slice(0, 8);
+  }, [orders]);
 
   return (
     <div className="flex flex-col gap-5">
-      {toast}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="type-body text-foreground-secondary">Orders, distributors and cancellations at a glance.</p>
-          <p className="type-caption mt-0.5 text-foreground-tertiary">Source: DigiDukaan buyer app · customer-wise, salesperson (BA)-wise</p>
-        </div>
-        <Button size="sm" onClick={exportSummary}><Download size={14} /> Export Summary</Button>
-      </div>
-
       <BuyerScopeBar />
 
-      <div className="grid grid-cols-4 gap-3">
-        <SummaryCard title="Orders" headline={num(s.total)} sub={`${lakh(s.value)} order value`}
-          rows={[
-            { label: 'Beat', value: num(s.beat), hint: pct(s.beat) },
-            { label: 'Non-Beat', value: num(s.nonBeat), hint: pct(s.nonBeat) },
-          ]}
-          onRow={() => showOrders('All')}
-        />
-        <SummaryCard title="Order status" headline={num(s.delivered)} sub={`delivered · ${pct(s.delivered)}`}
-          rows={[
-            { label: 'Active', value: num(s.active), dot: 'bg-info', onClick: () => showOrders('Active') },
-            { label: 'In Transit', value: num(s.transit), dot: 'bg-warning', onClick: () => showOrders('In Transit') },
-            { label: 'Delivered', value: num(s.delivered), dot: 'bg-success', onClick: () => showOrders('Delivered') },
-            { label: 'Cancelled', value: num(s.cancelled), dot: 'bg-error', onClick: () => showOrders('Cancelled') },
-          ]}
-        />
-        <SummaryCard title="Cancellations" headline={num(s.cancelled)} sub={`cancelled · ${pct(s.cancelled)} of orders`} tone="error"
-          rows={[
-            { label: 'Cancelled by BA', value: num(s.cBA), onClick: () => showOrders('Cancelled by BA') },
-            { label: 'Cancelled by Distributor', value: num(s.cDist), onClick: () => showOrders('Cancelled by Distributor') },
-            { label: 'Cancelled by Retailer', value: num(s.cRet), onClick: () => showOrders('Cancelled by Retailer') },
-          ]}
-        />
-        <SummaryCard title="Distributors" headline={num(s.dists)} sub="total onboarded in scope"
-          rows={[
-            { label: 'Active', value: num(s.activeDists), dot: 'bg-success' },
-            { label: 'Inactive', value: num(s.inactiveDists), dot: 'bg-border-strong' },
-          ]}
-          foot="Active = at least one order in the selected range"
-        />
+      <div className="grid grid-cols-12 gap-4">
+        <Panel className="col-span-7" title={`${plan.month} target`} subtitle={`Monthly targets of ${people.length} salesperson${people.length === 1 ? "" : "s"} in scope · day ${plan.daysGone} of ${plan.daysGone + plan.daysLeft}`}>
+          {sellerFiltered ? (
+            <div className="rounded-lg bg-background-subtle px-4 py-3">
+              <div className="type-h1 tabular-nums">{lakh(plan.achieved)}</div>
+              <p className="type-caption text-foreground-secondary">
+                sold this month through {scope.distributor !== 'All' ? scope.distributor : `${scope.sellerType.toLowerCase()}s`} · {lakh(plan.perDay)} a day
+              </p>
+              <p className="type-caption mt-2 text-warning-foreground">Targets count sales through every seller — clear Seller type and Seller to track the {plan.month} target.</p>
+            </div>
+          ) : (
+            <>
+              <TargetBar achieved={plan.achieved} target={plan.target} expected={plan.expected}
+                achievedText={lakh(plan.achieved)} targetText={lakh(plan.target)} expectedText={lakh(plan.expected)} />
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <Big label="Still to go" value={plan.toGo ? lakh(plan.toGo) : 'Done'} note={`${plan.daysLeft} days left in ${plan.month}`} tone={plan.toGo ? undefined : 'success'} />
+                <Big label="Needed per day" value={lakh(plan.needPerDay)} note="to hit target from tomorrow" tone={plan.needPerDay > plan.perDay * 1.15 ? 'error' : undefined} />
+                <Big label="Doing per day" value={lakh(plan.perDay)} note={plan.perDay >= plan.needPerDay ? 'on track' : `${lakh(plan.needPerDay - plan.perDay)} a day short`} tone={plan.perDay >= plan.needPerDay ? 'success' : 'warning'} />
+              </div>
+            </>
+          )}
+        </Panel>
+
+        <div className="col-span-5 grid grid-rows-3 gap-3">
+          {periods.map((p) => (
+            <Card
+              key={p.key} variant="interactive" className="grid grid-cols-[96px_1fr_1fr_1fr] items-center gap-3 px-4 py-2.5"
+              onClick={() => showOrders(`${p.label} · ${p.sub}`, () => true, [p.from, TODAY])}
+            >
+              <span className="leading-tight">
+                <span className="type-label block">{p.label}</span>
+                <span className="type-caption block text-foreground-tertiary">{p.sub}</span>
+              </span>
+              <Mini label="Orders" value={num(p.s.orders)} />
+              <Mini label="Sales" value={lakh(p.s.value)} />
+              <Mini label="Shops · new" value={`${num(p.s.customers)} · ${num(p.newShops)}`} />
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <DistributorsSection orders={inRange} scope={scope} dists={dists} onExport={flash} />
-      <div ref={ordersRef} className="scroll-mt-4">
-        <OrdersSection orders={inRange} scope={scope} status={orderStatus} setStatus={setOrderStatus} onExport={flash} />
+      <section className="grid grid-cols-5 gap-3">
+        <KpiCard label="Sales" value={lakh(s.value)} {...kpiDelta(s.value, prev?.value)} note={prevNote(lakh(prev?.value ?? 0))}
+          onOpen={() => showOrders('All orders', () => true)} />
+        <KpiCard label="Orders" value={num(s.orders)} {...kpiDelta(s.orders, prev?.orders)} note={prevNote(num(prev?.orders ?? 0))}
+          onOpen={() => showOrders('All orders', () => true)} />
+        <KpiCard label="Shops ordered" value={num(s.customers)} {...kpiDelta(s.customers, prev?.customers)} note={`of ${num(shops.length)} shops`}
+          onOpen={() => drill.open({ kind: 'customers', title: 'Shops that ordered', where: (c) => c.orders > 0 })} />
+        <KpiCard label="New shops onboarded" value={num(newShops)} {...kpiDelta(newShops, before?.newShops)} note={before ? `${num(before.newShops)} before` : 'joined in the range'}
+          onOpen={() => drill.open({ kind: 'customers', title: 'New shops', where: (c) => c.isNew })} />
+        <KpiCard label="Avg order value" value={inr(s.aov)} {...kpiDelta(s.aov, prev?.aov)} note={prevNote(inr(prev?.aov ?? 0))} />
+      </section>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Panel className="col-span-8" title={`Sales per ${days === 1 ? 'hour' : days > 45 ? 'week' : 'day'}`} subtitle={`${lakh(s.value)} from ${num(s.orders)} orders · click a bar for its orders`}>
+          <Bars
+            height={190}
+            items={series.map((b) => ({ key: b.title, label: b.label, title: b.title, value: b.beat + b.nonBeat, display: lakh(b.beat + b.nonBeat), note: `${b.orders} orders` }))}
+            target={barGoal && !sellerFiltered ? { value: barGoal, label: `${days > 45 ? 'weekly' : 'daily'} target ${lakh(barGoal)}` } : undefined}
+            onBar={(k) => { const b = series.find((x) => x.title === k)!; showOrders(`Orders · ${b.title}`, (o) => o.at >= b.from && o.at < b.to); }}
+          />
+        </Panel>
+
+        <AttentionCard
+          className="col-span-4"
+          items={[
+            { count: silentBAs.length, title: 'Salespersons with no order today', detail: `${people.length - silentBAs.length} of ${people.length} have booked today`, tone: 'error',
+              onClick: () => drill.open({ kind: 'bas', title: 'No order today', where: (r) => r.today === 0 }) },
+            { count: dormant.length, title: 'Shops not ordered in 30 days', detail: 'call them back this week', tone: 'warning',
+              onClick: () => drill.open({ kind: 'customers', title: 'Shops not ordered in 30 days', where: (c) => c.status === 'Dormant' }) },
+            { count: waiting.length, title: 'Orders waiting over 2 days', detail: `${lakh(sum(waiting))} not yet dispatched by the seller`, tone: 'warning',
+              onClick: () => showOrders('Waiting over 2 days', (o) => o.status === 'Active' && (TODAY.getTime() - o.at.getTime()) / DAY > 2) },
+            { count: cancelled.length, title: 'Orders cancelled', detail: `${lakh(sum(cancelled))} of sales lost`, tone: 'error',
+              onClick: () => showOrders('Cancelled orders', (o) => o.status === 'Cancelled') },
+          ]}
+        />
+
+        <Panel className="col-span-6" title="Salesperson leaderboard" subtitle="Sales in the range · tick = target due for these dates · click a name"
+          onOpen={() => drill.open({ kind: 'bas', title: 'All salespersons', where: () => true })}>
+          <RankBars
+            rows={topPeople.map((r) => ({ key: r.name, label: r.name, sub: `${r.city} · ${r.achievement.toFixed(0)}% of what's due`, value: r.s.value, display: lakh(r.s.value), target: r.target, tone: paceTone(r.achievement) }))}
+            onRow={(k) => drill.open({ kind: 'ba', name: k })}
+          />
+          <div className="type-caption mt-3 flex gap-4 text-foreground-secondary">
+            <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-success" />On target</span>
+            <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-warning" />Slightly behind</span>
+            <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-error" />Behind</span>
+          </div>
+        </Panel>
+
+        <Panel className="col-span-6" title="Top sellers" subtitle="Distributors and wholesalers by sales in the range · click a seller"
+          onOpen={() => drill.open({ kind: 'distributors', title: 'All sellers', where: () => true })}>
+          {topSellers.length ? (
+            <RankBars
+              rows={topSellers.map((d) => ({
+                key: d.name, label: d.name, sub: `${d.d.city} · ${num(d.s.orders)} orders`, value: d.s.value, display: lakh(d.s.value),
+                badge: <Badge variant={d.d.type === 'Wholesaler' ? 'accent' : 'info'}>{d.d.type === 'Wholesaler' ? 'W' : 'D'}</Badge>,
+              }))}
+              onRow={(k) => drill.open({ kind: 'distributor', name: k })}
+            />
+          ) : <p className="type-caption text-foreground-secondary">No orders in this scope.</p>}
+          <p className="type-caption mt-3 text-foreground-secondary">D = distributor · W = wholesaler</p>
+        </Panel>
+
+        <Panel className="col-span-4" title="Distributors vs wholesalers" subtitle="Share of sales · click a slice">
+          <Donut
+            center={lakh(s.value)} centerLabel="total sales"
+            parts={[
+              { key: 'Distributor', label: 'Distributors', value: sum(viaDist), display: lakh(sum(viaDist)), colour: 'bg-chart-blue' },
+              { key: 'Wholesaler', label: 'Wholesalers', value: sum(viaWhole), display: lakh(sum(viaWhole)), colour: 'bg-chart-violet' },
+            ]}
+            onPart={(k) => showOrders(`Sales via ${k.toLowerCase()}s`, (o) => isWholesale(o) === (k === 'Wholesaler'))}
+          />
+          <p className="type-caption mt-3 text-foreground-secondary">
+            Avg order · distributor {inr(summarize(viaDist).aov)} · wholesaler {inr(summarize(viaWhole).aov)}
+          </p>
+        </Panel>
+
+        <Panel className="col-span-4" title="How orders came in" subtitle="Booked by the salesperson on a beat visit, or placed by the shop in the app">
+          <Donut
+            center={num(s.orders)} centerLabel="orders"
+            parts={[
+              { key: 'beat', label: 'Beat visit', value: s.beat, display: num(s.beat), colour: 'bg-chart-teal' },
+              { key: 'self', label: 'Shop self-order', value: s.orders - s.beat, display: num(s.orders - s.beat), colour: 'bg-chart-sky' },
+            ]}
+            onPart={(k) => showOrders(k === 'beat' ? 'Beat orders' : 'Shop self-orders', (o) => o.beat === (k === 'beat'))}
+          />
+        </Panel>
+
+        <Panel className="col-span-4" title="Order status" subtitle="Where the orders in the range are now">
+          <Donut
+            center={num(s.orders)} centerLabel="orders"
+            parts={[
+              { key: 'Delivered', label: 'Delivered', value: s.delivered, display: num(s.delivered), colour: 'bg-success' },
+              { key: 'open', label: 'On the way', value: s.active + s.transit, display: num(s.active + s.transit), colour: 'bg-info' },
+              { key: 'Cancelled', label: 'Cancelled', value: s.cancelled, display: num(s.cancelled), colour: 'bg-error' },
+            ]}
+            onPart={(k) => showOrders(k === 'open' ? 'Orders on the way' : `${k} orders`, (o) => (k === 'open' ? o.status === 'Active' || o.status === 'In Transit' : o.status === k))}
+          />
+        </Panel>
+
+        <Panel className="col-span-7" title="Sales by city" subtitle="Top cities in the range · click a city for its orders">
+          {cities.length ? (
+            <RankBars
+              ranked={false}
+              rows={cities.map(([city, e]) => ({ key: city, label: city, sub: `${num(e.n)} orders`, value: e.v, display: lakh(e.v) }))}
+              onRow={(c) => showOrders(`Orders · ${c}`, (o) => o.city === c)}
+            />
+          ) : <p className="type-caption text-foreground-secondary">No orders in this scope.</p>}
+        </Panel>
+
+        <Handoff
+          className="col-span-5"
+          go={go}
+          report="buyer-customer-orders"
+          title="Need the order-level data?"
+          body="Customer Orders (salesperson-wise) and Distributor Orders run with these filters and download as Excel."
+          cta="Run Customer Orders report"
+        />
       </div>
     </div>
   );
 }
 
-/* ------------------------------- summary card ------------------------------ */
-
-function SummaryCard({ title, headline, sub, rows, tone, foot, onRow }: {
-  title: string; headline: string; sub: string; tone?: 'error'; foot?: string; onRow?: () => void;
-  rows: { label: string; value: string; hint?: string; dot?: string; onClick?: () => void }[];
-}) {
+function Big({ label, value, note, tone }: { label: string; value: string; note: string; tone?: 'success' | 'warning' | 'error' }) {
   return (
-    <Card className={cn('flex flex-col px-4 py-3.5', tone === 'error' && 'border-l-[3px] border-l-error')}>
-      <div className="type-caption text-foreground-secondary">{title}</div>
-      <div className="type-display my-0.5 tabular-nums tracking-tight">{headline}</div>
-      <div className="type-caption text-foreground-secondary">{sub}</div>
-      <div className="mt-3 flex flex-col border-t border-border-subtle pt-2">
-        {rows.map((r) => {
-          const click = r.onClick ?? onRow;
-          return (
-            <button
-              key={r.label}
-              type="button"
-              onClick={click}
-              disabled={!click}
-              className="type-caption -mx-1.5 flex items-center gap-2 rounded-md px-1.5 py-1 text-left enabled:hover:bg-muted disabled:cursor-default"
-            >
-              {r.dot && <i className={cn('h-2 w-2 shrink-0 rounded-full', r.dot)} />}
-              <span className="flex-1 text-foreground-secondary">{r.label}</span>
-              {r.hint && <span className="tabular-nums text-foreground-tertiary">{r.hint}</span>}
-              <b className="font-semibold tabular-nums text-foreground">{r.value}</b>
-            </button>
-          );
-        })}
-      </div>
-      {foot && <div className="type-caption mt-auto pt-2 text-foreground-tertiary">{foot}</div>}
-    </Card>
+    <div className="rounded-lg bg-background-subtle px-3 py-2.5">
+      <div className="type-caption text-foreground-secondary">{label}</div>
+      <div className={cn('type-h1 tabular-nums', tone === 'success' && 'text-success-foreground', tone === 'warning' && 'text-warning-foreground', tone === 'error' && 'text-error-foreground')}>{value}</div>
+      <div className="type-caption text-foreground-tertiary">{note}</div>
+    </div>
   );
 }
 
-/* ------------------------------- distributors ------------------------------ */
-
-type DistRow = {
-  name: string; area: string; state: string; orders: number; value: number; beat: number; nonBeat: number;
-  status: 'Active' | 'Inactive'; cancels: Record<CancelSource, number>; stamp?: Date;
-};
-type DistKey = 'name' | 'area' | 'state' | 'orders' | 'value' | 'beat' | 'nonBeat' | 'status' | 'stamp';
-
-function DistributorsSection({ orders, scope, dists, onExport }: {
-  orders: BuyerOrder[]; scope: BuyerScope; dists: ReturnType<typeof distributorsIn>; onExport: (m: string) => void;
-}) {
-  const [q, setQ] = useState('');
-  const [dist, setDist] = useState('All');
-  const [beat, setBeat] = useState<BeatF>('All');
-  const [status, setStatus] = useState<'All' | 'Active' | 'Inactive'>('All');
-  const [sort, setSort] = useState<Sort<DistKey>>({ k: 'value', dir: -1 });
-  const [page, setPage] = useState(0);
-  const th = makeTh(sort, (fn) => { setSort(fn); setPage(0); }, (k) => (k === 'name' || k === 'area' || k === 'state' ? 1 : -1));
-
-  const rows = useMemo(() => {
-    const all: DistRow[] = dists.map((d) => {
-      const mine = orders.filter((o) => o.distributor === d.name);
-      const shown = mine.filter((o) => byBeat(o, beat));
-      const last = mine.reduce<Date | undefined>((a, o) => (!a || o.at > a ? o.at : a), undefined);
-      return {
-        name: d.name, area: `${d.locality}, ${d.city}`, state: d.state,
-        orders: shown.length,
-        value: shown.reduce((a, o) => a + o.value, 0),
-        beat: mine.filter((o) => o.beat).length,
-        nonBeat: mine.filter((o) => !o.beat).length,
-        status: mine.length ? 'Active' : 'Inactive',
-        cancels: {
-          BA: shown.filter((o) => o.cancelledBy === 'BA').length,
-          Distributor: shown.filter((o) => o.cancelledBy === 'Distributor').length,
-          Retailer: shown.filter((o) => o.cancelledBy === 'Retailer').length,
-        },
-        stamp: last,
-      };
-    });
-    const needle = q.trim().toLowerCase();
-    return sortBy(
-      all.filter((r) => (dist === 'All' || r.name === dist) && (status === 'All' || r.status === status))
-        .filter((r) => !needle || `${r.name} ${r.area} ${r.state}`.toLowerCase().includes(needle)),
-      sort.k, sort.dir,
-    );
-  }, [orders, dists, q, dist, beat, status, sort]);
-
-  const PER = 8;
-  const shown = rows.slice(page * PER, page * PER + PER);
-  const filtered = q || dist !== 'All' || beat !== 'All' || status !== 'All';
-
-  const doExport = () => {
-    downloadCsv(`distributors_${fileTag(scope)}.csv`,
-      ['Dist Name', 'Area', 'State', 'Total Orders', 'Total Value', 'Beat', 'Non Beat', 'Status', 'Cancelled by BA', 'Cancelled by Distributor', 'Cancelled by Retailer', 'Time Stamp'],
-      rows.map((r) => [r.name, r.area, r.state, r.orders, Math.round(r.value), r.beat, r.nonBeat, r.status, r.cancels.BA, r.cancels.Distributor, r.cancels.Retailer, r.stamp ? dmyTime(r.stamp) : '']));
-    addRun('buyer-distributors', buyerChips(scope, filtered ? [{ value: 'Filtered view' }] : []));
-    onExport(`${rows.length} distributors exported · also saved in Reports › DigiDukaan · Buyer`);
-  };
-
+function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="flex flex-col">
-      <SectionHead title="Distributors" sub={`${rows.length} of ${dists.length} distributors · ${rangeText(scope)}`} onExport={doExport} />
-      <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-5 py-3">
-        <SearchBox value={q} onChange={(v) => { setQ(v); setPage(0); }} placeholder="Search distributor or area" />
-        <FilterSelect label="Distributor" value={dist} onChange={(v) => { setDist(v); setPage(0); }} options={dists.map((d) => d.name)} />
-        <FilterSelect label="Beat" value={beat} onChange={(v) => { setBeat(v as BeatF); setPage(0); }} options={['Beat', 'Non-Beat']} />
-        <FilterSelect label="Status" value={status} onChange={(v) => { setStatus(v as typeof status); setPage(0); }} options={['Active', 'Inactive']} />
-        {filtered && <ClearBtn onClick={() => { setQ(''); setDist('All'); setBeat('All'); setStatus('All'); setPage(0); }} />}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1100px] border-collapse">
-          <thead>
-            <tr className="type-micro text-left text-foreground-tertiary [&>th:first-child]:pl-5 [&>th]:whitespace-nowrap">
-              {th('name', 'Dist Name')}
-              {th('area', 'Area')}
-              {th('state', 'State')}
-              {th('orders', 'Total Orders', true)}
-              {th('value', 'Total Value', true)}
-              {th('beat', 'Beat', true)}
-              {th('nonBeat', 'Non Beat', true)}
-              {th('status', 'Status')}
-              <th className="py-2 pr-3 font-semibold">Cancelled By</th>
-              {th('stamp', 'Time Stamp')}
-            </tr>
-          </thead>
-          <tbody className="type-caption">
-            {shown.map((r) => (
-              <tr key={r.name} className="border-t border-border-subtle">
-                <td className="whitespace-nowrap py-2.5 pl-5 pr-3 font-medium">{r.name}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 text-foreground-secondary">{r.area}</td>
-                <td className="py-2.5 pr-3 text-foreground-secondary">{r.state}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">{num(r.orders)}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">{inr(r.value)}</td>
-                <td className={cn('py-2.5 pr-3 text-right tabular-nums', beat === 'Non-Beat' && 'text-foreground-tertiary')}>{num(r.beat)}</td>
-                <td className={cn('py-2.5 pr-3 text-right tabular-nums', beat === 'Beat' && 'text-foreground-tertiary')}>{num(r.nonBeat)}</td>
-                <td className="py-2.5 pr-3"><Badge variant={r.status === 'Active' ? 'success' : 'neutral'}>{r.status}</Badge></td>
-                <td className="py-2.5 pr-3"><CancelChips c={r.cancels} /></td>
-                <td className="whitespace-nowrap py-2.5 pr-5 tabular-nums text-foreground-secondary">{r.stamp ? dmyTime(r.stamp) : '—'}</td>
-              </tr>
-            ))}
-            {shown.length === 0 && <EmptyRow cols={10} text="No distributors match these filters" />}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} per={PER} total={rows.length} unit="distributors" onPage={setPage} />
-    </Card>
-  );
-}
-
-function CancelChips({ c }: { c: Record<CancelSource, number> }) {
-  const parts = (Object.keys(c) as CancelSource[]).filter((k) => c[k] > 0);
-  if (!parts.length) return <span className="text-foreground-tertiary">—</span>;
-  return (
-    <span className="flex flex-wrap gap-1">
-      {parts.map((k) => (
-        <span key={k} className="whitespace-nowrap rounded-md border border-error-border bg-error-subtle px-1.5 py-px font-medium tabular-nums text-error-foreground" title={`Cancelled by ${k}`}>
-          {srcShort[k]} {c[k]}
-        </span>
-      ))}
+    <span className="leading-tight">
+      <span className="type-caption block text-foreground-secondary">{label}</span>
+      <span className="type-h3 block tabular-nums">{value}</span>
     </span>
-  );
-}
-
-/* ------------------------------ customer orders ---------------------------- */
-
-type CustRow = {
-  customerId: string; customer: string; mobile: string; distributor: string; ba: string; baMobile: string;
-  area: string; orders: number; value: number; last: Date; beat: number; nonBeat: number;
-};
-type CustKey = 'customer' | 'distributor' | 'ba' | 'area' | 'orders' | 'value' | 'last' | 'beat' | 'nonBeat';
-
-function OrdersSection({ orders, scope, status, setStatus, onExport }: {
-  orders: BuyerOrder[]; scope: BuyerScope; status: StatusF; setStatus: (s: StatusF) => void; onExport: (m: string) => void;
-}) {
-  const [q, setQ] = useState('');
-  const [cust, setCust] = useState('All');
-  const [dist, setDist] = useState('All');
-  const [ba, setBa] = useState('All');
-  const [beat, setBeat] = useState<BeatF>('All');
-  const [sort, setSort] = useState<Sort<CustKey>>({ k: 'value', dir: -1 });
-  const [page, setPage] = useState(0);
-  const th = makeTh(sort, (fn) => { setSort(fn); setPage(0); }, (k) => (k === 'customer' || k === 'distributor' || k === 'ba' || k === 'area' ? 1 : -1));
-  const reset = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(0); };
-
-  const options = useMemo(() => {
-    const uniq = (f: (o: BuyerOrder) => string) => [...new Set(orders.map(f))].sort();
-    return { customers: uniq((o) => o.customer), distributors: uniq((o) => o.distributor), bas: uniq((o) => o.ba) };
-  }, [orders]);
-
-  const { rows, orderCount } = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    const matched = orders.filter((o) =>
-      (cust === 'All' || o.customer === cust) && (dist === 'All' || o.distributor === dist) && (ba === 'All' || o.ba === ba)
-      && byBeat(o, beat) && byStatus(o, status)
-      && (!needle || `${o.customer} ${o.customerId} ${o.mobile} ${o.distributor} ${o.ba} ${o.locality} ${o.city}`.toLowerCase().includes(needle)));
-    const map = new Map<string, CustRow>();
-    for (const o of matched) {
-      const r = map.get(o.customerId) ?? {
-        customerId: o.customerId, customer: o.customer, mobile: o.mobile, distributor: o.distributor,
-        ba: o.ba, baMobile: o.baMobile, area: `${o.locality}, ${o.city}, ${stateCode[o.state]}`,
-        orders: 0, value: 0, last: o.at, beat: 0, nonBeat: 0,
-      };
-      r.orders++; r.value += o.value;
-      if (o.at > r.last) r.last = o.at;
-      if (o.beat) r.beat++; else r.nonBeat++;
-      map.set(o.customerId, r);
-    }
-    return { rows: sortBy([...map.values()], sort.k, sort.dir), orderCount: matched.length };
-  }, [orders, q, cust, dist, ba, beat, status, sort]);
-
-  const PER = 10;
-  const shown = rows.slice(page * PER, page * PER + PER);
-  const filtered = q || cust !== 'All' || dist !== 'All' || ba !== 'All' || beat !== 'All' || status !== 'All';
-
-  const doExport = () => {
-    downloadCsv(`customer_orders_${fileTag(scope)}.csv`,
-      ['Customer Name', 'Customer ID', 'Mobile Number', 'Distributor Name', 'BA Name', 'BA Mobile Number', 'Area [Geo]', 'Total Orders', 'Total Value', 'Ordered Date', 'Beat', 'Non Beat'],
-      rows.map((r) => [r.customer, r.customerId, r.mobile, r.distributor, r.ba, r.baMobile, r.area, r.orders, Math.round(r.value), dmy(r.last), r.beat, r.nonBeat]));
-    addRun('buyer-customer-orders', buyerChips(scope, [...(status !== 'All' ? [{ label: 'Status', value: status }] : []), ...(ba !== 'All' ? [{ label: 'BA', value: ba }] : [])]));
-    onExport(`${rows.length} customers exported · also saved in Reports › DigiDukaan · Buyer`);
-  };
-
-  return (
-    <Card className="flex flex-col">
-      <SectionHead
-        title="Orders"
-        sub={`${num(rows.length)} customers · ${num(orderCount)} orders · ${rangeText(scope)} · one row per customer`}
-        onExport={doExport}
-      />
-      <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-5 py-3">
-        <SearchBox value={q} onChange={reset(setQ)} placeholder="Search customer, ID, mobile, BA" />
-        <FilterSelect label="Customer" value={cust} onChange={reset(setCust)} options={options.customers} />
-        <FilterSelect label="Distributor" value={dist} onChange={reset(setDist)} options={options.distributors} />
-        <FilterSelect label="BA" value={ba} onChange={reset(setBa)} options={options.bas} />
-        <FilterSelect label="Beat" value={beat} onChange={(v) => reset(setBeat)(v as BeatF)} options={['Beat', 'Non-Beat']} />
-        <FilterSelect
-          label="Status" value={status} onChange={(v) => reset(setStatus)(v as StatusF)}
-          options={['Active', 'In Transit', 'Delivered', 'Cancelled', 'Cancelled by BA', 'Cancelled by Distributor', 'Cancelled by Retailer']}
-        />
-        {filtered && <ClearBtn onClick={() => { setQ(''); setCust('All'); setDist('All'); setBa('All'); setBeat('All'); setStatus('All'); setPage(0); }} />}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1360px] border-collapse">
-          <thead>
-            <tr className="type-micro text-left text-foreground-tertiary [&>th:first-child]:pl-5 [&>th]:whitespace-nowrap">
-              {th('customer', 'Customer Name')}
-              <th className="py-2 pr-3 font-semibold">Customer ID</th>
-              <th className="py-2 pr-3 font-semibold">Mobile Number</th>
-              {th('distributor', 'Distributor Name')}
-              {th('ba', 'BA Name')}
-              <th className="py-2 pr-3 font-semibold">BA Mobile</th>
-              {th('area', 'Area [Geo]')}
-              {th('orders', 'Total Orders', true)}
-              {th('value', 'Total Value', true)}
-              {th('last', 'Ordered Date')}
-              {th('beat', 'Beat', true)}
-              {th('nonBeat', 'Non Beat', true)}
-            </tr>
-          </thead>
-          <tbody className="type-caption">
-            {shown.map((r) => (
-              <tr key={r.customerId} className="border-t border-border-subtle">
-                <td className="whitespace-nowrap py-2.5 pl-5 pr-3 font-medium">{r.customer}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-foreground-secondary">{r.customerId}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-foreground-secondary">{r.mobile}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3">{r.distributor}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3">{r.ba}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-foreground-secondary">{r.baMobile}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 text-foreground-secondary">{r.area}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">{num(r.orders)}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">{inr(r.value)}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-foreground-secondary" title="Latest order in range">{dmy(r.last)}</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums">{num(r.beat)}</td>
-                <td className="py-2.5 pr-5 text-right tabular-nums">{num(r.nonBeat)}</td>
-              </tr>
-            ))}
-            {shown.length === 0 && <EmptyRow cols={12} text="No orders match these filters" />}
-          </tbody>
-        </table>
-      </div>
-      <Pager page={page} per={PER} total={rows.length} unit="customers" onPage={setPage} />
-      {status !== 'All' && (
-        <div className="type-caption flex items-center gap-2 border-t border-border-subtle px-5 py-2 text-foreground-secondary">
-          Counting only <Badge variant={statusBadge[status.startsWith('Cancelled') ? 'Cancelled' : (status as OrderStatus)]}>{status}</Badge> orders
-        </div>
-      )}
-    </Card>
   );
 }

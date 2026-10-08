@@ -1,11 +1,11 @@
 import { ChevronLeft, Clock, Mail, Phone, MapPin } from 'lucide-react';
+import { CustomerCareCard } from '../components/CustomerCareCard';
 
 /* Account · Contact Us — support details + the shop's business advisor. */
 
 const CONTACT = [
   { icon: <Clock className="h-4 w-4" />, label: 'Office Timing', value: '09:00 AM to 6:00 PM · IST' },
   { icon: <Mail className="h-4 w-4" />, label: 'Email Address', value: 'info@qwipo.com' },
-  { icon: <Phone className="h-4 w-4" />, label: 'Customer Care Number', value: '9121222836' },
 ];
 
 const ADVISOR = { name: 'Vinodkumar Musku', phone: '9100466765' };
@@ -30,6 +30,10 @@ export function ContactUsScreen({ onBack }: { onBack: () => void }) {
           <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="mx-auto mt-3 h-7 dark:hidden" />
           <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="mx-auto mt-3 hidden h-7 dark:block" />
         </div>
+
+        {/* Customer care leads: it sits above the timings and the address
+            rather than inside that list. */}
+        <CustomerCareCard />
 
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           {CONTACT.map((c) => (

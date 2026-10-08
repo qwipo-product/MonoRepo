@@ -3,7 +3,7 @@ import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { Navigate } from '../nav';
 import type { AppliedFilter } from '../data/filters';
-import { BrandLogo } from '../components/BrandLogo';
+import { BrandTile } from '../components/BrandTile';
 import { DIST_CATEGORIES, BRANDS, type Distributor } from '../data/home';
 import { PRODUCTS } from '../data/products';
 import { deliveryFor, dayLabel } from '../data/delivery';
@@ -37,7 +37,6 @@ export function StorefrontScreen({
       applied: extra
         ? [{ type: 'distributor', value: distributor.name }, extra]
         : [{ type: 'distributor', value: distributor.name }],
-      backTo: 'storefront',
     });
   return (
     <div className="flex h-full flex-col">
@@ -62,19 +61,12 @@ export function StorefrontScreen({
       <div className="no-scrollbar flex-1 overflow-y-auto bg-background">
         {/* distributor hero */}
         <div className="bg-gradient-to-br from-primary to-primary-active px-4 pb-4 pt-4 text-primary-foreground">
-          <div className="flex items-center gap-3">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-white text-sm font-bold text-primary">
-              {distributor.short}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate text-base font-bold">{distributor.name}</span>
-                <BadgeCheck className="h-4 w-4 shrink-0" />
-              </div>
-              <span className="mt-1 inline-flex items-center rounded-full bg-success/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                Authorised
-              </span>
-            </div>
+          {/* Just the name. The tile beside it held the distributor's initials
+              standing in for a logo there is no artwork for, and the badge
+              under it repeated the page's own title. */}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-base font-bold">{distributor.name}</span>
+            <BadgeCheck className="h-4 w-4 shrink-0" />
           </div>
 
           {/* delivery days — one cell per option, each with its own MOV (info only) */}
@@ -84,9 +76,9 @@ export function StorefrontScreen({
                 key={i}
                 className="flex-1 border-l border-primary-foreground/20 px-3 py-2.5 text-center first:border-l-0"
               >
-                <div className="text-[11px] text-primary-foreground/70">Delivery by</div>
+                <div className="text-xs text-primary-foreground/70">Delivery by</div>
                 <div className="mt-0.5 text-sm font-bold">{dayLabel(o)}</div>
-                <div className="mt-1 text-[11px] font-medium text-primary-foreground/80 tabular-nums">
+                <div className="mt-1 text-xs font-medium text-primary-foreground/80 tabular-nums">
                   {o.mov != null ? `Min. order ${formatInr(o.mov)}` : 'No minimum'}
                 </div>
               </div>
@@ -104,7 +96,7 @@ export function StorefrontScreen({
           {/* shop by category — only this distributor's categories */}
           {myCategories.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Shop by category</h2>
+            <h2 className="text-sm font-medium text-foreground">Shop by category</h2>
             <div className="no-scrollbar flex gap-3 overflow-x-auto">
               {myCategories.map((c) => (
                 <button
@@ -112,8 +104,8 @@ export function StorefrontScreen({
                   onClick={() => openList({ type: 'category', value: c.name })}
                   className="flex w-28 shrink-0 flex-col items-center gap-1.5 active:scale-[0.98]"
                 >
-                  <span className="grid aspect-[2/1] w-full place-items-center overflow-hidden rounded-lg bg-muted">
-                    <img src={encodeURI(c.image)} alt={c.name} className="h-full w-full object-cover" />
+                  <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
+                    <img src={encodeURI(c.image)} alt={c.name} className="aspect-[400/268] w-full object-cover" />
                   </span>
                   <span className="w-full truncate text-center text-xs text-foreground">{c.name}</span>
                 </button>
@@ -125,17 +117,15 @@ export function StorefrontScreen({
           {/* top brands — only this distributor's brands */}
           {myBrands.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Top brands</h2>
+            <h2 className="text-sm font-medium text-foreground">Top brands</h2>
             <div className="grid grid-cols-4 gap-3">
               {myBrands.map((b) => (
-                <button
+                <BrandTile
                   key={b.id}
+                  name={b.name}
+                  logo={b.logo}
                   onClick={() => openList({ type: 'brand', value: b.name })}
-                  className="flex flex-col items-center gap-1.5 active:scale-[0.98]"
-                >
-                  <BrandLogo src={b.logo} alt={b.name} className="h-14 w-14 rounded-full border border-border shadow-sm" />
-                  <span className="w-full truncate text-center text-xs text-foreground">{b.name}</span>
-                </button>
+                />
               ))}
             </div>
           </section>

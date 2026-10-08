@@ -1,19 +1,40 @@
-import { useEffect, useState } from 'react';
 import { ChevronLeft, MapPin } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { Field, controlClass } from '../../components/formbits';
 import { BusinessTypeField } from '../../components/BusinessTypeField';
 
-export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; onProceed: () => void }) {
-  const [location, setLocation] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [businessType, setBusinessType] = useState('');
+/* On Boarding — delivery location, business name, business type.
 
-  // GPS resolves on load (mirrors the source flow).
-  useEffect(() => {
-    setLocation('Rai Durg, Hitech City, Hyderabad');
-  }, []);
+   The location isn't typed. It's picked on the map (LocationPickerScreen) and
+   confirmed on the address form, so the saved address always matches real
+   coordinates. One way in: the field itself, marked with a map pin. Two
+   separate buttons under it both opened the same map, which read as a choice
+   that didn't exist.
 
+   Form state lives in App: picking a location leaves this screen, and the
+   business name shouldn't be lost on the way back. */
+
+export function OnboardingScreen({
+  onBack,
+  onProceed,
+  location,
+  onPickLocation,
+  businessName,
+  onBusinessName,
+  businessType,
+  onBusinessType,
+}: {
+  onBack: () => void;
+  onProceed: () => void;
+  /** Resolved address, empty until one is picked. */
+  location: string;
+  /** Opens the map picker. */
+  onPickLocation: () => void;
+  businessName: string;
+  onBusinessName: (v: string) => void;
+  businessType: string;
+  onBusinessType: (v: string) => void;
+}) {
   const valid = location.trim() && businessName.trim() && businessType;
 
   return (
@@ -26,30 +47,30 @@ export function OnboardingScreen({ onBack, onProceed }: { onBack: () => void; on
       </div>
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-2">
-        <Field label="Shop Location" required>
-          <div className={controlClass}>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Fetch using GPS"
-              className="h-full flex-1 bg-transparent outline-none placeholder:text-foreground-secondary"
-            />
-            <button onClick={() => setLocation('Rai Durg, Hitech City, Hyderabad')} aria-label="Use GPS" className="text-primary">
-              <MapPin className="h-5 w-5" />
-            </button>
-          </div>
+        <Field label="Delivery Location" required>
+          <button
+            type="button"
+            onClick={onPickLocation}
+            aria-label="Choose delivery location on the map"
+            className={`${controlClass} justify-between text-left`}
+          >
+            <span className={`min-w-0 flex-1 truncate ${location ? 'text-foreground' : 'text-foreground-secondary'}`}>
+              {location || 'Select on map'}
+            </span>
+            <MapPin className="h-5 w-5 shrink-0 text-primary" />
+          </button>
         </Field>
 
         <Field label="Business Name" required>
           <input
             value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
+            onChange={(e) => onBusinessName(e.target.value)}
             placeholder="Enter Business name"
             className={`${controlClass} placeholder:text-foreground-secondary`}
           />
         </Field>
 
-        <BusinessTypeField required value={businessType} onChange={setBusinessType} />
+        <BusinessTypeField required value={businessType} onChange={onBusinessType} />
 
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <img src="/onboarding-illustration.png" alt="" className="h-full w-full object-contain" />

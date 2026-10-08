@@ -6,7 +6,6 @@ export interface Distributor {
   id: string;
   logo: string;
   title: string;
-  short: string;
   /** Full seller name — scopes the storefront + its product list (p.seller). */
   name: string;
 }
@@ -29,12 +28,13 @@ export const HERO_BANNERS = [
 ];
 
 export const DISTRIBUTORS: Distributor[] = [
-  { id: 'd1', logo: '/brand-logos/Freedon Oil.png', title: 'Freedom Oil', short: 'SSKT', name: 'Sri Sai Krishna Traders' },
-  { id: 'd2', logo: '/brand-logos/Aashirvaad.png', title: 'Aashirvaad Atta', short: 'KSDL', name: 'Karnataka Soaps & Detergents' },
-  { id: 'd3', logo: '/brand-logos/Sri Lalitha.png', title: 'Sona Masoori Rice', short: 'Annapurna', name: 'Annapurna Traders' },
-  { id: 'd4', logo: '/brand-logos/Cow.png', title: 'Cow Ghee', short: 'Sri Krishna', name: 'Sri Krishna Agencies' },
-  { id: 'd5', logo: '/brand-logos/MTR.png', title: 'MTR Masala', short: 'Balaji', name: 'Balaji Distributors' },
-  { id: 'd6', logo: '/brand-logos/Double Horse.png', title: 'Double Horse', short: 'Vijaya', name: 'Vijaya Traders' },
+  { id: 'd1', logo: '/brand-logos/Freedon Oil.png', title: 'Freedom Oil', name: 'Sri Sai Krishna Traders' },
+  { id: 'd2', logo: '/brand-logos/Aashirvaad.png', title: 'Aashirvaad Atta', name: 'Karnataka Soaps & Detergents' },
+  { id: 'd3', logo: '/brand-logos/Sri Lalitha.png', title: 'Sona Masoori Rice', name: 'Annapurna Traders' },
+  { id: 'd4', logo: '/brand-logos/Cow.png', title: 'Cow Ghee', name: 'Sri Krishna Agencies' },
+  { id: 'd5', logo: '/brand-logos/MTR.png', title: 'MTR Masala', name: 'Balaji Distributors' },
+  { id: 'd6', logo: '/brand-logos/Double Horse.png', title: 'Double Horse', name: 'Vijaya Traders' },
+  { id: 'd7', logo: '/brand-logos/Tata.png', title: 'Tata Salt & Tea', name: 'Tata Consumer Products' },
 ];
 
 export const DIST_CATEGORIES: HomeCategory[] = [
@@ -66,32 +66,58 @@ export const BRANDS: HomeBrand[] = [
 ];
 
 // Level-1 category tiles shown at the top of the Wholesaler feed.
-export const WHOLESALER_L1: HomeCategory[] = [
-  { id: 'l1-groceries', name: 'Groceries', image: '/home-category-cards/groceries.png' },
-  { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png' },
-];
-
-export interface HomeOffer {
-  id: string;
-  headline: string;
-  brand: string;
-  sub: string;
-  emoji: string;
-  tone: 'primary' | 'success' | 'warning';
+/* The wholesale catalogue hangs off two level-1 groups. Each one opens its
+   own screen listing the categories underneath it — they are separate trades,
+   and a buyer restocking shampoo isn't looking through rice. */
+export type WholesalerL1 = 'Groceries' | 'FMCG';
+export interface WholesalerCategory extends HomeCategory {
+  l1: WholesalerL1;
 }
 
-// Exclusive-offer promo cards (Wholesaler feed).
-export const WHOLESALER_OFFERS: HomeOffer[] = [
-  { id: 'o1', headline: 'UP TO 30% OFF', brand: 'Tata Sampann', sub: 'Premium Quality Staples', emoji: '🌾', tone: 'warning' },
-  { id: 'o2', headline: 'SAVE ₹150', brand: 'Surf Excel', sub: 'Stain-Free Clean', emoji: '🧼', tone: 'primary' },
-  { id: 'o3', headline: '25% OFF', brand: 'Aashirvaad', sub: 'Whole Wheat Atta', emoji: '🌾', tone: 'success' },
+export const WHOLESALER_L1: (HomeCategory & { l1: WholesalerL1 })[] = [
+  { id: 'l1-groceries', name: 'Groceries', image: '/home-category-cards/groceries.png', l1: 'Groceries' },
+  { id: 'l1-fmcg', name: 'FMCG', image: '/home-category-cards/fmcg.png', l1: 'FMCG' },
 ];
 
-export const WHOLESALER_CATEGORIES: HomeCategory[] = [
-  { id: 'w1', name: 'Cooking Oils & Ghee', image: '/wholesaler-category-images/Cooking Oils & Ghee.png' },
-  { id: 'w2', name: 'Rice & Rice Products', image: '/wholesaler-category-images/Rice & Rice Products.png' },
-  { id: 'w3', name: 'Dals & Pulses', image: '/wholesaler-category-images/Dals & Pulses.png' },
-  { id: 'w4', name: 'Sugar & Spices', image: '/wholesaler-category-images/Sugar & Spices.png' },
-  { id: 'w5', name: 'Dry Fruits', image: '/wholesaler-category-images/Dry Fruits.png' },
-  { id: 'w6', name: 'Beverages', image: '/wholesaler-category-images/Beverages.png' },
+/* An exclusive offer is artwork, the way a hero banner is — a promotion is
+   something a brand designs, not a headline the app sets in its own type.
+   `label` is what a screen reader reads and never appears on screen; `brand`
+   is what the tap filters the wholesale list by, so it has to match a brand
+   the catalogue actually carries. */
+export interface HomeOffer {
+  id: string;
+  image: string;
+  label: string;
+  brand: string;
+}
+
+/* Exclusive-offer promo cards (Wholesaler feed). Eight of them, so the rail
+   runs well past the edge of the screen and reads as something to scroll —
+   three tiles barely filled the width and looked like the whole list. Each
+   brand here carries wholesale stock, so no banner opens an empty list. */
+export const WHOLESALER_OFFERS: HomeOffer[] = [
+  { id: 'o1', image: '/offer-banners/tata-30.svg', label: 'Tata — up to 30% off premium staples', brand: 'Tata' },
+  { id: 'o2', image: '/offer-banners/surf-excel-150.svg', label: 'Surf Excel — save ₹150 on every case', brand: 'Surf Excel' },
+  { id: 'o3', image: '/offer-banners/aashirvaad-25.svg', label: 'Aashirvaad — 25% off whole wheat atta', brand: 'Aashirvaad' },
+  { id: 'o4', image: '/offer-banners/freedom-25.svg', label: 'Freedom — extra ₹25 off per 15 L tin', brand: 'Freedom' },
+  { id: 'o5', image: '/offer-banners/red-label-bogo.svg', label: 'Red Label — buy 10 cases, get 1 free', brand: 'Red Label' },
+  { id: 'o6', image: '/offer-banners/grb-18.svg', label: 'GRB — flat 18% off pure cow ghee', brand: 'GRB' },
+  { id: 'o7', image: '/offer-banners/maggi-12.svg', label: 'Maggi — flat 12% off cases of 24', brand: 'Maggi' },
+  { id: 'o8', image: '/offer-banners/madhur-200.svg', label: 'Madhur — save ₹200 on bulk sugar', brand: 'Madhur' },
 ];
+
+export const WHOLESALER_CATEGORIES: WholesalerCategory[] = [
+  { id: 'w1', l1: 'Groceries', name: 'Cooking Oils & Ghee', image: '/wholesaler-category-images/Cooking Oils & Ghee.png' },
+  { id: 'w2', l1: 'Groceries', name: 'Rice & Rice Products', image: '/wholesaler-category-images/Rice & Rice Products.png' },
+  { id: 'w3', l1: 'Groceries', name: 'Dals & Pulses', image: '/wholesaler-category-images/Dals & Pulses.png' },
+  { id: 'w4', l1: 'Groceries', name: 'Sugar & Spices', image: '/wholesaler-category-images/Sugar & Spices.png' },
+  { id: 'w5', l1: 'Groceries', name: 'Dry Fruits', image: '/wholesaler-category-images/Dry Fruits.png' },
+  { id: 'w6', l1: 'FMCG', name: 'Beverages', image: '/wholesaler-category-images/Beverages.png' },
+  { id: 'w7', l1: 'FMCG', name: 'Snacks & Namkeen', image: '/wholesaler-category-images/Biscuits, Snacks & Namkeen.png' },
+  { id: 'w8', l1: 'FMCG', name: 'Personal Care', image: '/wholesaler-category-images/Personal Care.png' },
+  { id: 'w9', l1: 'FMCG', name: 'Cleaning & Household', image: '/wholesaler-category-images/Cleaning & Household.png' },
+];
+
+/** The categories under one level-1 group — what its own screen lists. */
+export const wholesalerCategoriesIn = (l1: WholesalerL1) =>
+  WHOLESALER_CATEGORIES.filter((c) => c.l1 === l1);

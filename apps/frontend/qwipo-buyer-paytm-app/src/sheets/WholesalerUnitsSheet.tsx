@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Store } from 'lucide-react';
 import { Button, Chip, Sheet } from '@mockups/ui';
-import { formatInr } from '@mockups/components';
-import { packTiers } from '../data/products';
-import { cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from '../data/wholesaler';
+import { ProductImage, formatInr } from '@mockups/components';
+import { packTiers, splitIntoPacks } from '../data/products';
+import type { WholesalerProduct, WholesalerVendor } from '../data/wholesaler';
 import { PackTierRow } from './PackTierRow';
 import { VendorPicker } from '../components/VendorPicker';
 
@@ -13,14 +13,16 @@ import { VendorPicker } from '../components/VendorPicker';
 export function WholesalerUnitsSheet({
   product,
   vendor,
-  cartTotal,
+  qty,
   onAdd,
   onContinue,
   onClose,
 }: {
   product: WholesalerProduct | null;
   vendor: WholesalerVendor | null;
-  cartTotal: number;
+  /** Pieces of THIS product in the cart — the footer totals the line at the
+   * chosen vendor's price, not the whole cart. */
+  qty: number;
   onAdd: (pcs: number) => void;
   onContinue: () => void;
   onClose: () => void;
@@ -39,14 +41,14 @@ export function WholesalerUnitsSheet({
       onClose={onClose}
       icon={<Store size={18} />}
       title="Add to Cart"
-      subtitle="Select the quantity to add to your cart"
+      subtitle="Please select the quantity to add to your cart"
       footer={
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-foreground-secondary">
-              Total cart value
+            <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">
+              Total value
             </div>
-            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(cartTotal)}</div>
+            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(sel.price * qty)}</div>
           </div>
           <Button className="px-8" onClick={onContinue}>
             Continue
@@ -56,8 +58,11 @@ export function WholesalerUnitsSheet({
     >
       {/* product header */}
       <div className="flex items-center gap-3">
-        <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-card text-2xl ring-2 ring-warning/70">
-          {product.image}
+        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-3xl">
+          {/* Follows the pack the buyer picked, the same as the wholesale card
+              and the distributor sheet — the sheet was holding one picture
+              whichever pack was selected. */}
+          <ProductImage image={product.images?.[activeVariant] ?? product.image} alt={product.name} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">{product.name}</div>
@@ -77,13 +82,36 @@ export function WholesalerUnitsSheet({
         vendors={product.vendors}
         value={sel.id}
         onChange={setVendorId}
-        cheapestId={cheapestVendorId(product)}
       />
+
+      {/* MRP / SP / Margin bar — the same strip the distributor sheet carries.
+          Here the figures are the chosen vendor's, so picking a different
+          seller above rewrites all three. */}
+      <div className="mt-4 flex items-center gap-5 rounded-lg bg-muted p-3">
+        <div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">MRP</div>
+          <div className="text-sm font-medium tabular-nums text-foreground-secondary line-through">
+            {formatInr(sel.mrp)}
+          </div>
+        </div>
+        <div>
+          <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">SP</div>
+          <div className="text-sm font-semibold tabular-nums text-foreground">{formatInr(sel.price)}</div>
+        </div>
+        <div className="ml-auto text-sm font-semibold text-success-foreground">{sel.margin}</div>
+      </div>
 
       {/* pack tiers */}
       <div className="mt-4 flex flex-col gap-2.5">
         {tiers.map((t) => (
-          <PackTierRow key={t.id} label={t.label} pcs={t.pcs} unitPrice={sel.price} onDelta={onAdd} />
+          <PackTierRow
+            key={t.id}
+            label={t.label}
+            pcs={t.pcs}
+            unitPrice={sel.price}
+            initialPacks={splitIntoPacks(qty, tiers)[t.id] ?? 0}
+            onDelta={onAdd}
+          />
         ))}
       </div>
     </Sheet>

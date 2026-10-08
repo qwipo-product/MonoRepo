@@ -10,6 +10,8 @@
 export type OrderStatus = 'Active' | 'In Transit' | 'Delivered' | 'Cancelled';
 export type CancelSource = 'BA' | 'Distributor' | 'Retailer';
 export type Kyc = 'Verified' | 'Pending' | 'Rejected';
+/** Qwipo is a marketplace: brand distributors and wholesalers both list and sell. */
+export type SellerType = 'Distributor' | 'Wholesaler';
 
 export const TODAY = new Date(2026, 7, 22);
 export const FIRST_DAY = new Date(2026, 4, 1); // order ledger starts 1 May 2026
@@ -62,11 +64,14 @@ const mobile = () => `${pick(['9', '8', '7'])}${Math.floor(1000 + rnd() * 8999)}
 
 export interface BuyerDistributor {
   name: string; state: string; city: string; locality: string;
+  type: SellerType;
   /** stopped taking orders on this date → shows Inactive on later ranges */
   lastActive?: Date;
 }
 
-export const buyerDistributors: BuyerDistributor[] = [
+const WHOLESALERS = new Set(['Annapurna Traders', 'S R Enterprises', 'Mauli Traders', 'Godavari Enterprises', 'Pink City Enterprises', 'Marudhar Traders']);
+
+export const buyerDistributors: BuyerDistributor[] = ([
   { name: 'Sri Balaji Agencies', state: 'Telangana', city: 'Hyderabad', locality: 'Kukatpally' },
   { name: 'Annapurna Traders', state: 'Telangana', city: 'Hyderabad', locality: 'Ameerpet' },
   { name: 'Sai Krishna Agencies', state: 'Telangana', city: 'Hyderabad', locality: 'LB Nagar' },
@@ -88,7 +93,8 @@ export const buyerDistributors: BuyerDistributor[] = [
   { name: 'Marudhar Traders', state: 'Rajasthan', city: 'Jodhpur', locality: 'Sardarpura' },
   { name: 'Mewar Agencies', state: 'Rajasthan', city: 'Udaipur', locality: 'Hiran Magri' },
   { name: 'Hadoti Traders', state: 'Rajasthan', city: 'Kota', locality: 'Talwandi', lastActive: new Date(2026, 6, 10) },
-];
+] as Omit<BuyerDistributor, 'type'>[]).map((d) => ({ ...d, type: WHOLESALERS.has(d.name) ? 'Wholesaler' : 'Distributor' }));
+export const sellerTypeOf = new Map(buyerDistributors.map((d) => [d.name, d.type]));
 
 /** Buyer-app launch per state — customers onboard (and order) only after it. */
 export const launch: Record<string, Date> = {
@@ -106,6 +112,8 @@ export interface BA {
   beats: Beat[];
   /** how well this BA converts — drives order volume */
   pull: number;
+  /** share of this BA's orders taken on a planned beat visit (vs retailer self-orders) */
+  beatRate: number;
 }
 
 const baSeed: [string, string, string, number][] = [
@@ -141,6 +149,7 @@ export const bas: BA[] = baSeed.map(([name, city, lead, target], i) => {
     // seed values are the plan; calibrated to what the network actually runs at
     target: Math.round((target * 0.62) / 10000) * 10000,
     pull: 0.55 + rnd() * 0.75,
+    beatRate: 0.38 + rnd() * 0.48,
     beats: Array.from({ length: n }, (_, k) => {
       const locality = locs[(start + k) % locs.length];
       return { name: `${locality} Beat`, locality, days: beatDays[k] };
@@ -255,6 +264,10 @@ function status(at: Date): { status: OrderStatus; cancelledBy?: CancelSource } {
 export const buyerOrders: BuyerOrder[] = (() => {
   const out: BuyerOrder[] = [];
   const dist = new Map(buyerDistributors.map((d) => [d.name, d]));
+  const baBeat = new Map(bas.map((b) => [b.name, b.beatRate]));
+  // Some distributors push retailers to self-order in the app; others rely on BA visits.
+  const distBeat = new Map(buyerDistributors.map((d, i) => [d.name, 0.78 + ((i * 37) % 9) / 18]));
+  const wholesale = new Set(buyerDistributors.filter((d) => d.type === 'Wholesaler').map((d) => d.name));
   let seq = 48100;
   for (let t = FIRST_DAY.getTime(); t <= TODAY.getTime(); t += DAY) {
     const day = new Date(t);
@@ -273,8 +286,8 @@ export const buyerOrders: BuyerOrder[] = (() => {
         customerId: c.id, customer: c.name, mobile: c.mobile,
         state: c.state, city: c.city, locality: c.locality,
         distributor: to, ba: c.ba, baMobile: c.baMobile, lead: c.lead, beatName: c.beat,
-        value: Math.round((1500 + rnd() * rnd() * 16000) / 10) * 10,
-        beat: rnd() < 0.62,
+        value: Math.round(((1500 + rnd() * rnd() * 16000) * (wholesale.has(to) ? 1.5 : 1)) / 10) * 10,
+        beat: rnd() < Math.min(0.94, baBeat.get(c.ba)! * distBeat.get(to)! * (wholesale.has(to) ? 0.6 : 1)),
         ...status(at),
       });
     }
@@ -288,6 +301,10 @@ export type Preset = 'Today' | 'Last 7 Days' | 'Last 30 Days' | 'Month to date' 
 export interface BuyerScope {
   preset: Preset; from: Date; to: Date;
   state: string; city: string; distributor: string; // 'All' = no filter
+  /** Distributor or Wholesaler — 'All' = both */
+  sellerType: 'All' | SellerType;
+  /** sales team (team lead's name) — 'All' = every team */
+  team: string;
 }
 
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -298,28 +315,34 @@ export const presetRange = (p: Preset): [Date, Date] =>
         : p === 'Month to date' ? [new Date(2026, 7, 1), TODAY]
           : [FIRST_DAY, TODAY];
 
+// Targets are monthly, so the sales pages open on the month so far.
 export const DEFAULT_SCOPE: BuyerScope = {
-  preset: 'Last 30 Days', from: presetRange('Last 30 Days')[0], to: TODAY,
-  state: 'All', city: 'All', distributor: 'All',
+  preset: 'Month to date', from: presetRange('Month to date')[0], to: TODAY,
+  state: 'All', city: 'All', distributor: 'All', sellerType: 'All', team: 'All',
 };
 
 const geoMatch = (x: { state: string; city: string }, s: BuyerScope) =>
   (s.state === 'All' || x.state === s.state) && (s.city === 'All' || x.city === s.city);
 
-export const distributorsIn = (s: Pick<BuyerScope, 'state' | 'city'>) =>
-  buyerDistributors.filter((d) => geoMatch(d, s as BuyerScope));
+export const distributorsIn = (s: Pick<BuyerScope, 'state' | 'city'> & { sellerType?: BuyerScope['sellerType'] }) =>
+  buyerDistributors.filter((d) => geoMatch(d, s as BuyerScope) && (!s.sellerType || s.sellerType === 'All' || d.type === s.sellerType));
 
 /** Orders inside the date range and geography. */
 export function scopedOrders(s: BuyerScope) {
   const start = new Date(s.from.getFullYear(), s.from.getMonth(), s.from.getDate());
   const end = addDays(s.to, 1);
   return buyerOrders.filter((o) => o.at >= start && o.at < end && geoMatch(o, s)
-    && (s.distributor === 'All' || o.distributor === s.distributor));
+    && (s.distributor === 'All' || o.distributor === s.distributor)
+    && (s.sellerType === 'All' || sellerTypeOf.get(o.distributor) === s.sellerType)
+    && (s.team === 'All' || o.lead === s.team));
 }
 
 /** Customers in the geography (the base — not date dependent). */
 export function scopedCustomers(s: BuyerScope) {
-  return buyerCustomers.filter((c) => geoMatch(c, s) && (s.distributor === 'All' || c.distributor === s.distributor));
+  return buyerCustomers.filter((c) => geoMatch(c, s)
+    && (s.distributor === 'All' || c.distributor === s.distributor)
+    && (s.sellerType === 'All' || sellerTypeOf.get(c.distributor) === s.sellerType)
+    && (s.team === 'All' || c.lead === s.team));
 }
 
 /** Customer's orders by id, over the whole ledger — for last-order / dormancy. */

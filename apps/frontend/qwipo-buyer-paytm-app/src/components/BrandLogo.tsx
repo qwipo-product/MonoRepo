@@ -4,7 +4,19 @@ import { cn } from '@mockups/ui';
 /* Brand logo on a white plate (brand marks are designed for white in both
    themes — the plate stays white by design). Falls back to initials if the
    image is missing. */
-export function BrandLogo({ src, alt, className }: { src?: string; alt: string; className?: string }) {
+export function BrandLogo({
+  src,
+  alt,
+  className,
+  /** Inset around the mark. Defaults to `p-2`; a tile that wants the logo to
+   *  fill its plate passes something tighter. */
+  imgClassName = 'p-2',
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  imgClassName?: string;
+}) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) {
     return (
@@ -19,7 +31,7 @@ export function BrandLogo({ src, alt, className }: { src?: string; alt: string; 
         src={encodeURI(src)}
         alt={alt}
         onError={() => setFailed(true)}
-        className="h-full w-full object-contain p-2"
+        className={cn('h-full w-full object-contain', imgClassName)}
       />
     </span>
   );
