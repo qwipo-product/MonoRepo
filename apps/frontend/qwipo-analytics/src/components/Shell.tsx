@@ -126,7 +126,7 @@ export function Shell({ page, drill, onNavigate, children }: Props) {
     <div className="flex h-dvh bg-background-subtle text-foreground">
       <aside className={cn('flex shrink-0 flex-col border-r border-border bg-card transition-all', collapsed ? 'w-14' : 'w-56')}>
         <div className={cn('flex h-14 items-center border-b border-border', collapsed ? 'justify-center' : 'justify-between px-4')}>
-          {!collapsed && <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />}
+          {!collapsed && <img src="./qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />}
           <button
             type="button"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
