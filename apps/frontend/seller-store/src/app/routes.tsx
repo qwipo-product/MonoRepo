@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createHashRouter } from "react-router";
 import { RootLayout } from "./components/root-layout";
 import { ProtectedRoute } from "./components/protected-route";
 import { Dashboard } from "./pages/dashboard";
@@ -53,7 +53,9 @@ import { AdminCategories } from "./pages/admin/categories";
 import { ErrorScreensDemo } from "./pages/demos/error-screens";
 import { LoadingScreensDemo } from "./pages/demos/loading-screens";
 
-export const router = createBrowserRouter([
+// Hash routing (#/orders/123), not real paths: preview builds are served from
+// /builds/<branch>/<sha>/ on the host, where no path fallback exists.
+export const router = createHashRouter([
   {
     path: "/login",
     Component: Login,

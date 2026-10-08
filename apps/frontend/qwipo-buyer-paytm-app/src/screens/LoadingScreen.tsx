@@ -72,7 +72,7 @@ export function LoadingScreen() {
             back: inverting alone turned the label from amber to blue, while
             leaving the black and white exactly where the inversion put them. */}
         <img
-          src="/loading/unboxing.gif"
+          src="./loading/unboxing.gif"
           alt="Loading"
           className="h-28 w-28 dark:hue-rotate-180 dark:invert"
         />

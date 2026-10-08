@@ -62,16 +62,16 @@ const BASE_PRODUCTS: Product[] = [
   {
     id: 'p1', name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos', shortName: 'Freedom Refined Sunflower Oil',
     category: 'Cooking Oils & Ghee', caseLabel: 'Case: 16 pc', caseSize: 16,
-    image: '/product-images/freedom/1l-pouch.png',
+    image: './product-images/freedom/1l-pouch.png',
     /* Freedom is the one SKU that has been photographed, so it is the one with
        a real gallery: the pack it is listed at first, then the rest of the
        range. Everything else opens as its single picture. */
     gallery: [
-      '/product-images/freedom/1l-pouch.png',
-      '/product-images/freedom/1l-bottle.png',
-      '/product-images/freedom/500ml-pouch.png',
-      '/product-images/freedom/5l.png',
-      '/product-images/freedom/15l.png',
+      './product-images/freedom/1l-pouch.png',
+      './product-images/freedom/1l-bottle.png',
+      './product-images/freedom/500ml-pouch.png',
+      './product-images/freedom/5l.png',
+      './product-images/freedom/15l.png',
     ],
     variants: [
       { id: '500ml-pouch', label: '500 ml Pouch' }, { id: '500ml-bottle', label: '500 ml Bottle' },
@@ -84,13 +84,13 @@ const BASE_PRODUCTS: Product[] = [
     /* The 1 L pouch is the pack the product is listed at, so its figures match
        the ones above — the cart and the order fixtures are priced on it. */
     skus: {
-      '500ml-pouch': { image: '/product-images/freedom/500ml-pouch.png', price: 86, mrp: 95, margin: '11% Net Margin' },
-      '500ml-bottle': { image: '/product-images/freedom/500ml-bottle.png', price: 95, mrp: 105, margin: '11% Net Margin' },
-      '1l-pouch': { image: '/product-images/freedom/1l-pouch.png', price: 165, mrp: 185, margin: '12% Net Margin' },
-      '1l-bottle': { image: '/product-images/freedom/1l-bottle.png', price: 178, mrp: 199, margin: '12% Net Margin' },
-      '5l': { image: '/product-images/freedom/5l.png', price: 805, mrp: 890, margin: '13% Net Margin' },
-      '10l': { image: '/product-images/freedom/10l.png', price: 1590, mrp: 1750, margin: '13% Net Margin' },
-      '15l': { image: '/product-images/freedom/15l.png', price: 2390, mrp: 2650, margin: '14% Net Margin' },
+      '500ml-pouch': { image: './product-images/freedom/500ml-pouch.png', price: 86, mrp: 95, margin: '11% Net Margin' },
+      '500ml-bottle': { image: './product-images/freedom/500ml-bottle.png', price: 95, mrp: 105, margin: '11% Net Margin' },
+      '1l-pouch': { image: './product-images/freedom/1l-pouch.png', price: 165, mrp: 185, margin: '12% Net Margin' },
+      '1l-bottle': { image: './product-images/freedom/1l-bottle.png', price: 178, mrp: 199, margin: '12% Net Margin' },
+      '5l': { image: './product-images/freedom/5l.png', price: 805, mrp: 890, margin: '13% Net Margin' },
+      '10l': { image: './product-images/freedom/10l.png', price: 1590, mrp: 1750, margin: '13% Net Margin' },
+      '15l': { image: './product-images/freedom/15l.png', price: 2390, mrp: 2650, margin: '14% Net Margin' },
     },
   },
   {

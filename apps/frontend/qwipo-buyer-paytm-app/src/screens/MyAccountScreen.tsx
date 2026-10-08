@@ -80,8 +80,8 @@ export function MyAccountScreen({
     <div className="flex h-full flex-col">
       <div className="flex h-14 shrink-0 items-center border-b border-border bg-card px-4">
         <h1 className="sr-only">My Account</h1>
-        <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6 dark:hidden" />
-        <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 dark:block" />
+        <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="h-6 dark:hidden" />
+        <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 dark:block" />
       </div>
 
       <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">

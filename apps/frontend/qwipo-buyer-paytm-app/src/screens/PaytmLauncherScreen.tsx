@@ -70,7 +70,7 @@ function MiniApp({ label, icon, onClick, highlight }: { label: string; icon?: Re
     <button onClick={onClick} className="flex w-14 flex-col items-center gap-1 active:opacity-80">
       {highlight ? (
         <span className="h-12 w-12 overflow-hidden rounded-full">
-          <img src="/brand/qwipo-primary.svg" alt="Qwipo" className="h-12 w-12 object-cover object-top" />
+          <img src="./brand/qwipo-primary.svg" alt="Qwipo" className="h-12 w-12 object-cover object-top" />
         </span>
       ) : (
         <span className="grid h-12 w-12 place-items-center rounded-full border border-paytm-line text-paytm-navy">

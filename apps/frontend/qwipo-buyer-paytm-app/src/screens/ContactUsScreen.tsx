@@ -27,8 +27,8 @@ export function ContactUsScreen({ onBack }: { onBack: () => void }) {
       <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
         <div className="text-center">
           <p className="text-sm text-foreground-secondary">If you have any query or need any further help</p>
-          <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="mx-auto mt-3 h-7 dark:hidden" />
-          <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="mx-auto mt-3 hidden h-7 dark:block" />
+          <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="mx-auto mt-3 h-7 dark:hidden" />
+          <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="mx-auto mt-3 hidden h-7 dark:block" />
         </div>
 
         {/* Customer care leads: it sits above the timings and the address

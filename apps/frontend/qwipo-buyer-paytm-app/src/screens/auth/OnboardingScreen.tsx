@@ -73,7 +73,7 @@ export function OnboardingScreen({
         <BusinessTypeField required value={businessType} onChange={onBusinessType} />
 
         <div className="flex min-h-0 flex-1 items-center justify-center">
-          <img src="/onboarding-illustration.png" alt="" className="h-full w-full object-contain" />
+          <img src="./onboarding-illustration.png" alt="" className="h-full w-full object-contain" />
         </div>
       </div>
 
