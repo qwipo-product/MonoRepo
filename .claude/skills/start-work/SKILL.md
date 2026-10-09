@@ -12,9 +12,14 @@ the dev URL for the person demoing it that afternoon.
 
 ## Branch names
 
-`<app>/<what-changes>`: `buyer-app/cod-checkout`,
-`seller-store/kyc-empty-state`, `rirn-admin/scaffold`. Short, kebab-case,
+`dev/<app>-<what-changes>`: `dev/buyer-app-cod-checkout`,
+`dev/seller-store-kyc-empty-state`, `dev/rirn-admin-scaffold`. Short, kebab-case,
 saying what will be different when it lands.
+
+The `dev/` prefix is what gets the branch a preview link: every push to a
+`dev/*` branch is built and hosted at
+`https://mockups-<service>.dev.bms.qwipo.com/builds/<branch>/<sha>/` (see
+`share-mockup`). A branch without it builds nothing until it lands.
 
 Not a person's name (`vikas`, `Omkar_prototype`) — a branch outlives the
 session and nobody can tell what's in it. Not a date, not `test`, not
@@ -26,7 +31,7 @@ session and nobody can tell what's in it. Not a date, not `test`, not
 git status --short                                     # 1. uncommitted edits? see below
 git fetch origin
 git switch dev && git pull --ff-only origin dev        # 2. dev is current
-git switch -c <app>/<what> && git push -u origin HEAD  # 3. branch from it, tracked from the start
+git switch -c dev/<app>-<what> && git push -u origin HEAD  # 3. branch from it, tracked from the start
 ```
 
 Step 1 matters: switching branches with uncommitted edits either carries
@@ -77,5 +82,5 @@ merge is fine here and nobody reads the graph.
 
 ## Report
 
-"On `seller-store/kyc-empty-state`, branched from today's dev, pushed." If
+"On `dev/seller-store-kyc-empty-state`, branched from today's dev, pushed." If
 uncommitted work came along, say what it was.
