@@ -11,7 +11,7 @@ import {
   type Place,
 } from '../data/places';
 
-/* Select delivery location — the map step shared by onboarding and
+/* Select delivery location — the map step used by
    Saved Addresses → Add new address.
 
    The pin is fixed at the centre and the map moves under it, which is the

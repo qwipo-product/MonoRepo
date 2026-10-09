@@ -51,9 +51,9 @@ import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
-import { OnboardingScreen } from './screens/auth/OnboardingScreen';
-import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
+import { CompleteKycScreen, type KycForm, type KycStep } from './screens/auth/CompleteKycScreen';
 import { useKycFlow } from './kyc/useKycFlow';
+import { GPS_FIX } from './kyc/kycData';
 import { KycActiveScreen, KycManualReviewScreen } from './kyc/KycResultScreens';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { LocationPickerScreen } from './screens/LocationPickerScreen';
@@ -86,7 +86,7 @@ import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/pla
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
-  'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
+  'splash', 'login', 'otp', 'kyc-complete', 'kyc-business', 'kyc-success',
   'kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done', 'kyc-manual-review', 'kyc-pending',
   'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list', 'dms-partners', 'dms-register',
@@ -131,7 +131,7 @@ const KYC_DOCS_SCREENS = new Set<ScreenId>(['kyc-docs', 'kyc-docs-rejected', 'ky
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
 
 // Qwipo-app-only screens. The Paytm mini runs the same sign-in (phone → OTP)
-// and the same onboarding + KYC; the only thing it never shows is the app
+// and the same KYC; the only thing it never shows is the app
 // splash, because it launches from inside Paytm rather than cold-starting.
 const QWIPO_ONLY_SCREENS = new Set<ScreenId>(['splash']);
 
@@ -157,7 +157,7 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id.startsWith('sub:') || id.startsWith('sp:')) return 'profile';
   if (id === 'checkout' || id === 'coupons' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
-  if (id === 'onboarding') return 'otp';
+  if (id === 'kyc-complete') return 'otp';
   if (id === 'order-details') return 'my-orders';
   if (id === 'address-details') return 'location-picker';
   if (id === 'offer-skus' || id === 'storefront') return 'listing';
@@ -170,7 +170,7 @@ function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
   const s = params.get('screen');
   // Paytm mini boots into the Paytm launcher
-  // (→ search → welcome/consent → login → OTP → onboarding → home).
+  // (→ search → welcome/consent → login → OTP → home).
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
@@ -224,12 +224,12 @@ export default function App() {
   // Location flow: map → address details → back to whoever started it.
   const [pickedPlace, setPickedPlace] = useState<Place>(() => placeById(CURRENT_PLACE_ID));
   const [addressFlowFrom, setAddressFlowFrom] = useState<ScreenId>('sub:addresses');
-  // Onboarding form — held here so picking a location doesn't wipe the rest.
-  const [obLocation, setObLocation] = useState('');
-  const [obBusinessName, setObBusinessName] = useState('');
-  const [obBusinessType, setObBusinessType] = useState('');
+  /* The KYC form — held here, not in the screen, because step 2 leaves for the
+     map and what has already been typed shouldn't go with it. */
+  const [kycForm, setKycForm] = useState<KycForm>({ name: '', email: '', businessName: '', businessType: '' });
+  const [kycLocation, setKycLocation] = useState('');
   /* KYC gate. The demo persona is already verified, so the existing flows work
-     as before; walking a fresh signup (onboarding) clears it, and KYC Success
+     as before; walking a fresh signup clears it, and KYC Success
      sets it again. Ordering — not browsing — is what it blocks. */
   const [kycComplete, setKycComplete] = useState(true);
   /* The KYC flow itself — photo, location, owner ID, AI attempts. Its status
@@ -501,11 +501,26 @@ export default function App() {
           </Button>
         }
       />
+    ) : !kycComplete ? (
+      /* Step 3 was left for later. The buyer is in and can look round the
+         whole catalogue; the one thing shut to them is placing an order, so
+         the prompt stays on Home until the shop photos are in. */
+      <InlineMessage
+        variant="warning"
+        title="Complete your KYC"
+        description="Add your shop photos to finish. You can browse until then, but you won't be able to place an order."
+        action={
+          <Button size="sm" variant="soft" onClick={() => go('kyc-docs')}>
+            Finish KYC
+          </Button>
+        }
+      />
     ) : undefined;
 
   /* Start the map → address-details flow. `from` is where Save returns to and
-     where Back unwinds to, so the same two screens serve onboarding and
-     Saved Addresses without either knowing about the other. */
+     where Back unwinds to, so the two screens serve any caller without
+     knowing about it. Saved Addresses is the only one left: KYC captures the
+     business location itself, from GPS or typed coordinates. */
   const startLocationFlow = (from: ScreenId) => {
     setAddressFlowFrom(from);
     go('location-picker');
@@ -536,7 +551,7 @@ export default function App() {
       case 'login-error':
         return <LoginScreen demoError onNext={() => go('otp')} />;
       case 'otp-error':
-        return <OtpScreen demoError onBack={goBack} onVerify={() => go('onboarding')} />;
+        return <OtpScreen demoError onBack={goBack} onVerify={() => go('kyc-complete')} />;
       case 'login':
         return (
           <LoginScreen
@@ -553,47 +568,48 @@ export default function App() {
             onVerify={() => {
               const isSp = loginPhone === SALESPERSON_PHONE;
               setRole(isSp ? 'salesperson' : 'customer');
-              go(isSp ? 'home' : 'onboarding');
-            }}
-          />
-        );
-      case 'onboarding':
-        return (
-          <OnboardingScreen
-            onBack={goBack}
-            // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
-            onProceed={() => {
+              if (isSp) return go('home');
+              // A new buyer starts KYC; the Paytm shell drops them on Home.
               setKycComplete(false);
               kycFlow.reset();
               go(shell === 'paytm' ? 'home' : 'kyc-complete');
             }}
-            location={obLocation}
-            onPickLocation={() => startLocationFlow('onboarding')}
-            businessName={obBusinessName}
-            onBusinessName={setObBusinessName}
-            businessType={obBusinessType}
-            onBusinessType={setObBusinessType}
           />
         );
       case 'kyc-complete':
+      case 'kyc-business':
       case 'kyc-docs':
       case 'kyc-docs-rejected':
       case 'kyc-docs-attempt-2':
       case 'kyc-docs-done': {
-        /* The existing two-step Complete KYC. Step 2 (ID Proofs) checks Shop
-           Image, Shop Location and Owner ID with AI as each is added. */
+        /* Complete KYC, three steps: customer, business, documents. Each
+           uploaded field is checked by AI as it is added. */
         const registerKyc = () => {
           const outcome = kycFlow.submit();
           setKycComplete(outcome === 'active');
           go(outcome === 'active' ? 'kyc-success' : 'home');
         };
+        const stepOf = (id: ScreenId): KycStep =>
+          KYC_DOCS_SCREENS.has(id) ? 3 : id === 'kyc-business' ? 2 : 1;
+        const screenOf = (s: KycStep): ScreenId =>
+          s === 3 ? 'kyc-docs' : s === 2 ? 'kyc-business' : 'kyc-complete';
         return (
           <CompleteKycScreen
-            step={KYC_DOCS_SCREENS.has(view) ? 2 : 1}
+            step={stepOf(view)}
             flow={kycFlow}
+            form={kycForm}
+            onForm={(patch) => setKycForm((f) => ({ ...f, ...patch }))}
+            location={kycLocation}
+            onPickLocation={() => startLocationFlow('kyc-business')}
             onCancel={() => go(shell === 'paytm' ? 'home' : 'listing')}
-            onStep={(s) => go(s === 2 ? 'kyc-docs' : 'kyc-complete')}
+            onStep={(s) => go(screenOf(s))}
             onRegister={registerKyc}
+            /* Step 3 left for later: Home, with KYC still outstanding, so the
+               prompt stays and ordering is still shut. */
+            onSkip={() => {
+              setKycComplete(false);
+              go('home');
+            }}
             onManualReview={() => {
               setKycComplete(false);
               go('kyc-manual-review');
@@ -602,12 +618,12 @@ export default function App() {
         );
       }
       case 'kyc-success':
-        /* AI accepted all three — KYC is Active and ordering unlocks now.
+        /* AI accepted every checked field — KYC is Active and ordering unlocks now.
            (Before AI checks, this was "KYC Submitted · under review 24–48h";
            that wait now only happens after 5 failed attempts.) */
         return <KycActiveScreen onContinue={() => go('home')} />;
       case 'kyc-manual-review': {
-        const remaining = (['photo', 'location', 'ownerId'] as const).filter(
+        const remaining = (['photo', 'photoInside', 'location', 'ownerId'] as const).filter(
           (c) => !['accepted', 'review'].includes(kycFlow.kyc.fields[c].status)
         ).length;
         return (
@@ -615,7 +631,7 @@ export default function App() {
             remaining={remaining}
             onFinishKyc={() => go('kyc-docs')}
             onContinue={() => {
-              // All three are in: register now; the case waits in BMS "KYC Review".
+              // Everything is in: register now; the case waits in BMS "KYC Review".
               kycFlow.setStatus('pending');
               setKycComplete(false);
               go('home');
@@ -1013,11 +1029,15 @@ export default function App() {
             place={pickedPlace}
             onBack={goBack}
             onChangeLocation={() => go('location-picker')}
-            saveLabel={addressFlowFrom === 'onboarding' ? 'Confirm location' : 'Save address'}
+            saveLabel={addressFlowFrom === 'kyc-business' ? 'Confirm location' : 'Save address'}
             onSave={(address) => {
-              if (addressFlowFrom === 'onboarding') {
-                // Onboarding shows the picked address in its Delivery Location field.
-                setObLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
+              if (addressFlowFrom === 'kyc-business') {
+                /* Back to step 2 with the address in the field. The KYC record
+                   takes the shop's coordinates too, accepted as given: the
+                   buyer pointed at the place on a map, so there is nothing
+                   for AI to second-guess. */
+                setKycLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
+                kycFlow.acceptLocation({ ...GPS_FIX, source: 'gps' });
               } else {
                 // Appended, not prepended: pending addresses belong at the
                 // bottom, and they don't take over delivery on their own.
