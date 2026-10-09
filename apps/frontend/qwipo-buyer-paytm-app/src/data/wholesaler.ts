@@ -46,22 +46,22 @@ export interface WholesalerProduct {
 const BASE_WHOLESALE: WholesalerProduct[] = [
   {
     id: 'wp1', name: 'Refined Sunflower Oil', category: 'Cooking Oils & Ghee', brand: 'Freedom', caseLabel: 'Case: 16 pc', caseSize: 16, unitKg: 1,
-    image: '/product-images/freedom/1l-pouch.png',
+    image: './product-images/freedom/1l-pouch.png',
     variants: [
       { id: '1l', label: '1 Ltr' }, { id: '500ml', label: '500 ml' },
       { id: '5l', label: '5 Ltr' }, { id: '15kg', label: '15 Kg' },
     ],
     gallery: [
-      '/product-images/freedom/1l-pouch.png',
-      '/product-images/freedom/500ml-pouch.png',
-      '/product-images/freedom/5l.png',
-      '/product-images/freedom/15l.png',
+      './product-images/freedom/1l-pouch.png',
+      './product-images/freedom/500ml-pouch.png',
+      './product-images/freedom/5l.png',
+      './product-images/freedom/15l.png',
     ],
     images: {
-      '1l': '/product-images/freedom/1l-pouch.png',
-      '500ml': '/product-images/freedom/500ml-pouch.png',
-      '5l': '/product-images/freedom/5l.png',
-      '15kg': '/product-images/freedom/15l.png',
+      '1l': './product-images/freedom/1l-pouch.png',
+      '500ml': './product-images/freedom/500ml-pouch.png',
+      '5l': './product-images/freedom/5l.png',
+      '15kg': './product-images/freedom/15l.png',
     },
     vendors: [
       { id: 'omkar', name: 'Omkar Enterprises', price: 158, mrp: 185, margin: '14% Net Margin', delivery: 'Delivery by Tomorrow', fee: '₹2/kg' },

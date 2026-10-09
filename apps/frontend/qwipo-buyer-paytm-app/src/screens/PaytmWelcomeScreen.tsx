@@ -12,13 +12,13 @@ export function PaytmWelcomeScreen({ onProceed }: { onProceed: () => void }) {
     <div className="flex h-full flex-col bg-background px-6 pb-6 text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center">
         <div className="text-2xl font-bold">Welcome to</div>
-        <img src="/brand/qwipo-primary.svg" alt="Qwipo" className="mt-5 h-64 w-auto dark:hidden" />
-        <img src="/brand/qwipo-primary-white.svg" alt="Qwipo" aria-hidden className="mt-5 hidden h-64 w-auto dark:block" />
+        <img src="./brand/qwipo-primary.svg" alt="Qwipo" className="mt-5 h-64 w-auto dark:hidden" />
+        <img src="./brand/qwipo-primary-white.svg" alt="Qwipo" aria-hidden className="mt-5 hidden h-64 w-auto dark:block" />
       </div>
 
       <div className="mb-6 flex flex-col items-center gap-2">
         <div className="text-2xs font-semibold uppercase tracking-[0.2em] text-foreground-secondary">Powered by</div>
-        <img src="/brand/digidukaan-logo.svg" alt="ONDC DigiDukaan" className="h-7 w-auto" />
+        <img src="./brand/digidukaan-logo.svg" alt="ONDC DigiDukaan" className="h-7 w-auto" />
       </div>
 
       <button

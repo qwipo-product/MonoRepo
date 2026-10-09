@@ -60,11 +60,11 @@ export function AuthBrand() {
   return (
     <div className="flex flex-col items-center gap-3">
       <img
-        src={isDark ? '/brand/qwipo-primary-white.svg' : '/brand/qwipo-primary.svg'}
+        src={isDark ? './brand/qwipo-primary-white.svg' : './brand/qwipo-primary.svg'}
         alt="Qwipo"
         className="h-[130px] w-auto"
       />
-      <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-9 w-auto" />
+      <img src="./brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-9 w-auto" />
     </div>
   );
 }

@@ -36,7 +36,7 @@ to `packages/**` touches all of them.
 3. Land:
    ```bash
    git switch dev && git pull --ff-only origin dev
-   git merge --no-ff <app>/<what>
+   git merge --no-ff dev/<app>-<what>
    git push origin dev
    ```
    `--no-ff` keeps one merge commit per piece of work, so a whole feature
@@ -116,7 +116,7 @@ to before the merge, nothing lost.
 
 ## Report
 
-"Landed `buyer-app/cod-checkout` on dev (merge `abc1234`); the buyer app
+"Landed `dev/buyer-app-cod-checkout` on dev (merge `abc1234`); the buyer app
 rebuilds and mockups-buyer-app.dev.bms.qwipo.com updates in a few minutes.
 Two conflicts in `mockData.ts`, kept both sets of orders." Name what's live
 where and what's waiting on whom.

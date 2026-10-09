@@ -36,6 +36,26 @@ Say them with the link, every time. `seller-store`: five personas, OTP
 `1234`. `rirn`: sign in as ITC, HUL or Britannia. Don't make the person
 guess.
 
+## A link to a branch, right now
+
+Every push to a `dev/*` or `feature/*` branch is built and kept at
+
+    https://mockups-<service>.dev.bms.qwipo.com/builds/<branch>/<sha>/
+    https://mockups-<service>.dev.bms.qwipo.com/builds/<branch>/latest/
+
+with `<branch>` slugged (`dev/rahul-cart` → `dev-rahul-cart`) and `<sha>`
+the short commit. `/builds/` on any mockup host lists its branches and
+commits. The newest five builds of a branch are kept, older ones are
+pruned on the next push; `latest/` always survives. It is live a few minutes
+after the push — the build pipeline run
+prints the exact URLs at its end — and nothing is redeployed: the files sit
+in the DigitalOcean Space `qwipo-mockups` and the mockup's own nginx proxies
+them. Routes are on the hash (`/builds/…/#/orders/123`), so the full link
+including the hash is the thing to send. Share the `<sha>` form for "this
+exact build", the `latest/` form for "whatever I push next".
+
+Not for `dev` itself — that still redeploys the plain host URL.
+
 ## A link that lasts
 
 `deploy-mockup`. Set expectations honestly: the first deploy of a new app

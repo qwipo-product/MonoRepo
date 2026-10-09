@@ -16,8 +16,8 @@ export function SplashScreen({ onContinue }: { onContinue: () => void }) {
       className="splash-screen-v2"
     >
       <span className="splash-stage" aria-hidden="true">
-        <img className="splash-logo splash-logo-white" src="/brand/qwipo-primary-white.svg" alt="" />
-        <img className="splash-logo splash-logo-primary" src="/brand/qwipo-primary.svg" alt="Qwipo" />
+        <img className="splash-logo splash-logo-white" src="./brand/qwipo-primary-white.svg" alt="" />
+        <img className="splash-logo splash-logo-primary" src="./brand/qwipo-primary.svg" alt="Qwipo" />
       </span>
     </button>
   );
