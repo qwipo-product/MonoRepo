@@ -31,9 +31,9 @@ Never `git checkout -- .` or `reset --hard` as a first move.
 Not pushed yet: move the commits to a branch and put dev back.
 
 ```bash
-git branch <app>/<what>            # the branch now holds the commits
+git branch dev/<app>-<what>            # the branch now holds the commits
 git reset --hard origin/dev        # dev back to what origin has — confirm first
-git switch <app>/<what>
+git switch dev/<app>-<what>
 ```
 
 Pushed already: it's on the dev URL now. Don't force-push. Either it was
@@ -46,7 +46,7 @@ Usually from checking out a tag or a commit. Work done here is safe but
 unnamed:
 
 ```bash
-git switch -c <app>/<what>        # names it; carries any commits along
+git switch -c dev/<app>-<what>        # names it; carries any commits along
 ```
 
 Then carry on with `start-work`.
