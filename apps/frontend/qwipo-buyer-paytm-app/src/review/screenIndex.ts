@@ -73,10 +73,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'notifications', label: 'Notifications' },
       { id: 'sub:business-details', label: 'Account · Business Details' },
       { id: 'sub:addresses', label: 'Account · Saved Addresses' },
-      { id: 'sub:payment', label: 'Account · Payments' },
-      { id: 'sub:payment-orders', label: 'Account · Payments · Orders' },
-      { id: 'sub:payment-gateways', label: 'Account · Payments · Pay' },
-      { id: 'sub:credit', label: 'Account · Credit Partners' },
       { id: 'sub:language', label: 'Account · Language' },
       { id: 'sub:help', label: 'Account · Contact Us' },
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
@@ -133,6 +129,16 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
 ];
+
+/** Existing account links now open the matching empty-state screen. */
+const SCREEN_REPLACEMENTS = new Map<ScreenId, ScreenId>([
+  ['sub:payment', 'empty:sub:payment'],
+  ['sub:payment-orders', 'empty:sub:payment-orders'],
+  ['sub:payment-gateways', 'empty:sub:payment-gateways'],
+  ['sub:credit', 'empty:sub:credit'],
+]);
+
+export const resolveScreenId = (id: ScreenId): ScreenId => SCREEN_REPLACEMENTS.get(id) ?? id;
 
 /** Flat list in display order — handy for prev/next and index lookups. */
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
