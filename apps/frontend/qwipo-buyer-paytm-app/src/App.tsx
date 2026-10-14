@@ -17,7 +17,6 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
 import { ViewItemsScreen } from './screens/ViewItemsScreen';
 import { OrderSummaryScreen } from './screens/OrderSummaryScreen';
-import { CouponsScreen } from './screens/CouponsScreen';
 import { OrderConfirmationScreen } from './screens/OrderConfirmationScreen';
 import { MyOrdersScreen } from './screens/MyOrdersScreen';
 import { OrderDetailsScreen } from './screens/OrderDetailsScreen';
@@ -79,7 +78,7 @@ const BUILT = new Set<ScreenId>([
   'distributors-list',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
-  'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
+  'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'app-update', 'app-update-required', 'promo-banners', 'loading',
   'login-error', 'otp-error', 'cart-price-changes',
@@ -140,7 +139,7 @@ const TRAIL_MAX = 24;
    means "up one level", which is the best that can be said. */
 function fallbackBack(id: ScreenId): ScreenId {
   if (id.startsWith('sub:') || id.startsWith('sp:')) return 'profile';
-  if (id === 'checkout' || id === 'coupons' || id === 'view-items') return 'cart';
+  if (id === 'checkout' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
   if (id === 'order-details') return 'my-orders';
   if (id === 'storefront') return 'listing';
@@ -666,8 +665,6 @@ export default function App() {
             }}
           />
         );
-      case 'coupons':
-        return <CouponsScreen cart={CART} onBack={goBack} onApply={() => go('cart')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={goBack} />;
       case 'reorder':
