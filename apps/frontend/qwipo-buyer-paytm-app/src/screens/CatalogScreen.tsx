@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Search, SlidersHorizontal, PackageOpen, BadgePercent } from 'lucide-react';
+import { ChevronLeft, Search, SlidersHorizontal, PackageOpen } from 'lucide-react';
 import { EmptyState, Button } from '@mockups/ui';
 import { ProductCard } from '@mockups/components';
 import { PRODUCTS, defaultVariantId, skuFor, type Product } from '../data/products';
@@ -26,7 +26,6 @@ export function CatalogScreen({
   applied: appliedProp = [],
   onBack,
   onSearch,
-  onOffers,
   qty,
   onOpenSheet,
   onOpenGallery,
@@ -38,8 +37,6 @@ export function CatalogScreen({
   applied?: AppliedFilter[];
   onBack?: () => void;
   onSearch?: () => void;
-  /** "Which SKU has which offer" shortcut, one tap off this list. */
-  onOffers?: () => void;
   qty: Record<string, number>;
   onOpenSheet: (id: string) => void;
   onOpenGallery?: (id: string) => void;
@@ -102,16 +99,6 @@ export function CatalogScreen({
           <h1 className="truncate text-base font-semibold leading-tight">{heading}</h1>
           <p className="truncate text-xs text-foreground-secondary">{subtitle}</p>
         </div>
-        {onOffers && (
-          <button
-            onClick={onOffers}
-            className="grid h-9 w-9 place-items-center rounded-md bg-primary-soft text-primary active:scale-[0.98]"
-            aria-label="Offers and schemes"
-            title="Offers & Schemes"
-          >
-            <BadgePercent size={18} />
-          </button>
-        )}
         <button onClick={onSearch} className="grid h-9 w-9 place-items-center rounded-md bg-muted text-foreground active:scale-[0.98]" aria-label="Search">
           <Search size={18} />
         </button>
@@ -192,7 +179,6 @@ export function CatalogScreen({
       <DiscountsSheet
         open={!!discountsProductId}
         productId={discountsProductId}
-        qty={qty}
         onClose={() => setDiscountsProductId(null)}
       />
     </div>

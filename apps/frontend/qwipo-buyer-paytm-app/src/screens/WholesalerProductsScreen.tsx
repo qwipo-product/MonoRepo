@@ -169,7 +169,6 @@ export function WholesalerProductsScreen({
       <DiscountsSheet
         open={!!discountsProductId}
         productId={discountsProductId}
-        qty={{ ...qty }}
         onClose={() => setDiscountsProductId(null)}
       />
 
