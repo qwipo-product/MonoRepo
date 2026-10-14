@@ -1,8 +1,11 @@
 # Buyer/Paytm
 
 This browser prototype contains buyer and salesperson flows in Qwipo and Paytm shells.
-The flows include sign-in, KYC, distributor registration, catalog, cart, checkout, orders, and account screens.
+The flows include sign-in, catalog, cart, checkout, orders, and account screens.
 The application uses local fixtures without a backend server.
+After OTP verification, both shells open Home.
+The prototype does not include onboarding, KYC, or distributor registration screens.
+Buyers can select a saved delivery address. Address creation is not available.
 
 ## Run the application
 
@@ -44,7 +47,7 @@ These paths are relative to this application folder.
 | `src/review/DeviceSwitcher.tsx` | Review device and orientation selection |
 | `src/shells/ShellChrome.tsx` | Qwipo and Paytm frame controls |
 | `src/data/cart.ts`, `src/data/products.ts`, `src/data/orders.ts` | Cart construction, product fixtures, and order fixtures |
-| `src/data/dmsPartners.ts`, `src/data/tcpl.ts` | Distributor registration and TCPL demonstration data |
+| `src/data/addresses.ts`, `src/data/tcpl.ts` | Saved delivery addresses and TCPL offer demonstration data |
 | `src/main.tsx` | Root providers, stylesheet import, and version display |
 | `src/index.css` | Shared CSS imports, Tailwind source entries, and named Paytm colors |
 | `public/` | Product artwork and application assets |
@@ -63,8 +66,23 @@ http://localhost:5175/?screen=empty:cart&shell=buyer
 ```
 
 Use a registered screen ID from `src/review/screenIndex.ts`.
+The sidebar numbers follow the current screen order. They change when screens are removed.
+Retired account links use these empty-state replacements:
+
+| Previous screen ID | Replacement screen ID |
+| --- | --- |
+| `sub:payment` | `empty:sub:payment` |
+| `sub:payment-orders` | `empty:sub:payment-orders` |
+| `sub:payment-gateways` | `empty:sub:payment-gateways` |
+| `sub:credit` | `empty:sub:credit` |
+
+`resolveScreenId` in `src/review/screenIndex.ts` applies the replacements to navigation and review URLs.
+Other retired or unknown screen links open Home.
 Empty entries use `empty:<id>` and resolve through `baseScreenOf` in `src/App.tsx`.
 Examine the actual screen's empty-state support before adding another review entry.
+
+Cart and order screens show purchased SKU lines. Offers do not add free reward rows.
+The Discounts sheet shows quantity price slabs. It does not list other offers.
 
 ## Shared packages
 

@@ -1,5 +1,8 @@
 # P2P Search — Distributor Registration (Buyer App)
 
+Status: Historical requirements. The Buyer prototype no longer includes this flow.
+Do not restore the registration card or screens unless the user requests them.
+
 Feature **21492 · Buyer App Changes** · Iteration `Qwipo B2B\Product Enhancement Backlog`
 
 Reference flow: **Tata Consumer Products (TCPL)**.

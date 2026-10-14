@@ -91,7 +91,7 @@ Where practical, use a target size of at least 44 CSS pixels for mobile web cont
 8. Use [verify](../../../.claude/skills/verify/SKILL.md).
 
 Compare the result with the reference. Keep accessibility support.
-Do not record simulated KYC or payment behavior as a live integration.
+Do not record simulated payment behavior as a live integration.
 
 ## Shell behavior
 

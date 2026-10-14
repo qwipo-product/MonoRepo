@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Buyer and salesperson mockup with Qwipo and Paytm shells, catalog, cart, orders, KYC and account flows.",
+  "description": "Buyer and salesperson mockup with Qwipo and Paytm shells, catalog, cart, orders and account flows.",
   "scripts": {
     "dev": "vite --port 5175",
     "build": "vite build",

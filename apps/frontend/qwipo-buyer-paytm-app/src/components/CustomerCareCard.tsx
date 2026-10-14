@@ -6,7 +6,7 @@ import { CUSTOMER_CARE } from '../data/support';
    beside it. A number you ring is a call to make, not a detail to read.
 
    Shared so Contact Us and Manual Review show the same thing — a retailer
-   stuck mid-KYC should see support exactly as they'd find it in the account. */
+   looking for help should see the same support details across screens. */
 export function CustomerCareCard({ className }: { className?: string }) {
   return (
     <div className={cn('rounded-lg border border-border bg-card p-4 text-left shadow-sm', className)}>
