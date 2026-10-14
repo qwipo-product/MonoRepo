@@ -1,33 +1,54 @@
 ---
 name: share-component
-description: Scoped skill — promote a component, helper or pattern from one app into the shared packages, and document it in the consuming app. Invoked by build-screen; use directly for "use this in the other app too", "make it shared", "add it to the kit", "add a component example".
+description: Extend an existing shared component or move a reusable component into the appropriate design kit.
 ---
 
-# Sharing a component
+# Change a shared component
 
-Only when a **second app** actually needs it. Until then it lives in the
-app it was built for — a screen used by one mockup is not shared code, and
-an abstraction for a use that may never come is the one thing this repo
-doesn't do.
+Use the [repository instructions](../../../CLAUDE.md).
 
-1. **Confirm the second consumer exists** — name the app and the screen. If
-   it doesn't, stop and leave the component where it is.
-2. **Pick the package by kit.** Mobile primitives → `packages/ui`; mobile
-   product components composed of them (ProductCard, PriceLabel) →
-   `packages/components`; web primitives and patterns → `packages/web-ui`.
-   A component can't be in both kits — if both need it, it's two
-   components.
-3. **Raw TypeScript, no build step.** Add the file under the package's
-   `src/`, export it from `src/index.ts`. Every running app hot-reloads it.
-   Adding a build step to a package breaks hot reload for everyone.
-4. **No tokens in the package.** The component uses `bg-primary` /
-   `text-foreground` and nothing else decides the colour.
-5. **Repoint every consumer** to the package import and delete the
-   app-local copy. Two copies is the bug this step exists to prevent.
-6. **Show it in the consuming app.** Document desktop components in Seller
-   Store’s design handbook and mobile components in their package README.
-   Verify real screen usage in both themes.
-7. **Every consuming app needs the `@source` line** for that package in its
-   `index.css`, or the component renders unstyled with no error.
+## Select the location
 
-Done: `verify` for every app touched.
+| Component | Location |
+| --- | --- |
+| Mobile primitive | `packages/ui/src/` |
+| Buyer product component | `packages/components/src/` |
+| Desktop primitive or pattern | `packages/web-ui/src/components/` |
+| Application-specific component | The owning application |
+
+A second application is not necessary for an extension to an existing shared primitive.
+A reusable pattern can serve several screens in one application.
+Until shared ownership has a clear benefit, keep a new application-specific component local.
+Do not add an abstraction solely for a possible future consumer.
+
+Use the matching public entry point:
+
+| Package | Export file |
+| --- | --- |
+| Mobile primitives | `packages/ui/src/index.ts` |
+| Buyer product components | `packages/components/src/index.ts` |
+| Desktop components | `packages/web-ui/src/index.ts` |
+
+In the desktop package, keep the public names `LabeledField` and `DataGrid` for the existing colliding source exports.
+Use the [desktop export map](../../../packages/web-ui/README.md#export-names) before adding an export.
+Update examples in `apps/frontend/seller-store/src/app/pages/design-system.tsx` for desktop component changes.
+
+## Change the component
+
+1. Find current consumers and the required interface.
+2. Unless the request changes existing behavior, keep that behavior.
+3. Use tokens from the selected design kit.
+4. Export the public interface from the package entry point.
+5. Update affected consumers.
+6. After all consumers use the replacement, remove the obsolete local copy.
+7. Update the component documentation and applicable handbook example.
+8. Use [verify](../verify/SKILL.md) for all affected consumers.
+
+Unless a different build arrangement is necessary for the task, keep the existing direct TypeScript exports.
+For a new build step, use a working watch process. Set the correct cache dependencies.
+
+Examine each consumer's Tailwind source entries.
+For Buyer, examine `apps/frontend/qwipo-buyer-paytm-app/src/index.css`.
+For Seller, examine `apps/frontend/seller-store/src/index.css`.
+Point each `@source` entry at the package's actual source directory, not its `node_modules` link.
+Examine keyboard access and both themes.
