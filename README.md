@@ -1,429 +1,188 @@
 # mockups-lab
 
-Where we build and keep **frontend mockups** — mobile apps, web apps, websites.
-Clickable, real-looking prototypes we can put in front of people before anyone
-commits engineering time.
+This repository contains two frontend prototypes for product review.
+Buyer/Paytm demonstrates mobile buyer and salesperson flows.
+Seller Store demonstrates distributor and administrator flows.
+Both applications use local demonstration data.
 
-Nothing here ships to customers. Optimise for speed of iteration, not for
-correctness.
+Keep the demonstrated behavior correct.
+Record simulated results and incomplete integrations.
 
----
+## Start
 
-## Start here (5 minutes, once)
-
-You need [Nix](https://nixos.org/download) and [direnv](https://direnv.net).
-If you have them already, skip to step 2.
+1. Open a terminal in the repository root.
+2. Read `packageManager` in `package.json`.
+3. Examine the installed Bun version with `bun --version`.
+4. Use the specified version, currently `1.3.13`.
+5. Install the locked dependencies.
 
 ```bash
-# 1. one-time, per machine
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-brew install direnv && echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc && exec zsh
-
-# 2. one-time, per clone
-cd mockups-lab
-direnv allow        # pulls the exact Bun version this repo expects
-bun install         # ~15s
-
-# 3. every day
-bun dev             # everything comes up
+bun install --frozen-lockfile
 ```
 
-You never install Node, Bun or anything else by hand. `direnv allow` puts the
-right toolchain on your `PATH` when you `cd` in and takes it away when you
-leave — so this repo can't break your other repos, and they can't break this
-one.
+Nix and direnv are optional tools for the development environment.
+If you use them, examine `.envrc` and `flake.nix` before `direnv allow`.
+After activation, examine the actual Bun version.
+After a Nix update, compare the installed Bun version with `package.json`.
 
-> No Nix? `bun install && bun dev` works too, as long as your Bun is ≥ 1.3.
-> You just lose the guarantee that your version matches everyone else's.
+Use one of these commands:
 
----
-
-## The commands you'll actually use
-
-| Command | What it does |
+| Command | Result |
 | --- | --- |
-| `bun run ls` | Lists every mockup, its URL, and what it is |
-| `bun dev` | Runs Buyer/Paytm on 5175 and Seller Store on 5174 |
-| `bun dev --filter=@mockups/seller-store` | Runs just one |
-| `bun run new <name>` | Scaffolds a brand-new mockup, wired up and ready |
-| `bun run check` | Lint + typecheck + build — run before you push |
-| `bun run deploy:add <app>` | Generates a mockup's Dockerfile + Azure pipelines |
-| `bun run build` | Production build of every app |
+| `bun run ls` | List application names, descriptions, and configured ports. |
+| `bun dev` | Start both applications. |
+| `bun dev --filter=@mockups/qwipo-buyer-paytm-app` | Start Buyer/Paytm. |
+| `bun dev --filter=@mockups/seller-store` | Start Seller Store. |
+| `bun run check --continue --ui=stream` | Run lint, type checks, and builds. |
+| `bun run build` | Build both applications. |
 
-Dev servers listen on your LAN, so Vite prints a **Network:** URL alongside the
-local one. Open that on your phone — for a mobile mockup, that's the only
-review that counts.
+Examine the actual URL in the server output.
+Vite can select another port when the configured port is occupied.
+The development configuration also exposes a Network URL.
+Use that URL only on a permitted network.
 
----
+## Applications
 
-## Layout
-
-```
-apps/frontend/
-  qwipo-buyer-paytm-app/  Buyer + salesperson app (Qwipo & Paytm shells) → :5175
-  seller-store/           Distributor + super-admin console             → :5174
-packages/
-  design-tokens/          Mobile token values and Tailwind theme
-  ui/                     Mobile UI primitives and theme provider
-  components/             Buyer product components
-  web-tokens/             Desktop token values and Tailwind theme
-  web-ui/                 Desktop UI primitives and design-system spec
-  types/                  Shared buyer order status
-  version-badge/          Deployed version display
-  tsconfig/               TypeScript presets
-  eslint-config/          ESLint presets
-scripts/                  App scaffolding, deployment generation, app listing
-azure-cicd/templates/      Shared build and release pipeline templates
-```
-
-This branch contains only these two apps. `bun dev` starts both; no backend
-or separate component-catalog server is required. Retired apps remain in Git
-history. Removing their local files does not delete existing Azure pipelines,
-hosted sites, DNS records or manifests in the separate k8s repository.
-
-### Two design systems, on purpose
-
-A phone mockup and a desktop admin console are not the same product wearing
-different colours, so they don't share one kit:
-
-| | Mobile | Web / admin |
-| --- | --- | --- |
-| Primitives | `@mockups/ui` | `@mockups/web-ui` |
-| Tokens | `@mockups/design-tokens` (`theme.css`, imported whole) | `@mockups/web-tokens` (`theme.css`, imported whole) |
-| Controls | 44px tap targets | 36px |
-| Radii | 12px cards | 8px cards, 2px table pills |
-| Review surface | Buyer app review sidebar | Seller Store Design System persona (`/#/design`) |
-
-`bun run new <name> --web` wires the web set; without `--web` you get the
-mobile set. **Never import both token layers into one app** — whichever CSS
-import comes last wins every shared custom property.
-
-Brand colour is not duplicated between them: `web-tokens` re-exports
-`colorLight` / `colorDark` from `design-tokens`, so the blue and the status
-quads have one definition, not two that happen to agree today.
-
-Apps live under `apps/frontend/`; shared packages remain under `packages/`.
-
-### The Seller Store
-
-The biggest app here — 51 pages across 59 routes, ported in from the
-standalone Seller Store repo and rebuilt on `@mockups/web-ui` +
-`@mockups/web-tokens`.
-
-```bash
-bun dev --filter=@mockups/seller-store
-```
-
-It opens on a login with five demo personas. **OTP is `1234` for all of them.**
-
-| Persona | Mobile | Lands on |
-| --- | --- | --- |
-| Seller | `9900000002` | Seller dashboard |
-| Seller (Empty) | `8888888888` | Inception-day empty states |
-| Super Admin | `9900000001` | `/admin` |
-| Super Admin (Empty) | `9999999999` | Admin empty states |
-| Design System | `7777777777` | `/design` |
-
-The "Empty" personas clear mock master data and activate supported empty
-states, including the SKU list. Some dashboard totals still use seeded seller
-data; this is an existing prototype limitation.
-
-Two things about its shape that look wrong until you know why: source sits
-under `src/app/` with assets under `src/imports/`, mirroring the original
-repo's depth so ~40 relative asset paths survived the port untouched; and it
-keeps its own persona-driven `root-layout.tsx` rather than using `AppShell`,
-which doesn't model admin/seller/empty-mode sidebars. New web mockups should
-use `AppShell`.
-
-Its pages use raw Tailwind utilities (`bg-white`, `text-gray-900`) rather than
-semantic tokens, and go dark-aware anyway because `web-tokens/theme.css`
-carries a `.dark` rebinding layer for exactly those classes. That layer is why
-40k lines didn't need rewriting.
-
-`/#/design` is the in-app desktop component handbook. Keep it aligned with
-`packages/web-ui/DESIGN-SYSTEM.md` when shared components change.
-
-### Adding a mockup
-
-```bash
-bun run new distributor-portal        # phone frame
-bun run new ops-console --web         # full-width web frame
-```
-
-It picks a free port, links the shared packages, and prints the URL. There is
-no central registry to update.
-
-### Shared packages have no build step
-
-They export raw TypeScript. Edit `packages/ui/src/button.tsx` and every running
-app hot-reloads immediately — no rebuild, no watch process, no stale `dist/`.
-
-One consequence worth knowing: **Tailwind doesn't scan `node_modules`**, so an
-app that uses `@mockups/ui` needs this line in its `src/index.css` (the
-generator adds it for you):
-
-```css
-@source "../../../../packages/ui/src";
-```
-
-Miss it and the shared components render unstyled.
-
-### Design tokens never live in a `ui` package
-
-Components in `packages/ui` and `packages/web-ui` use classes like
-`bg-primary` and `text-foreground`. What those *mean* is decided in the token
-package, not the component. Which package depends on the kit:
-
-- **Mobile** — `@mockups/design-tokens/theme.css`, imported whole.
-- **Web** — `@mockups/web-tokens/theme.css`, imported whole.
-
-Either way the app has no `@theme` block of its own. One design language,
-shared the way the fixtures and the primitives are: change a token in the
-package and every mockup moves. Chart and map colours in JS read the same
-values from the package's TS export (`colorLight.brand.primary`), not a hex.
-A mockup imitating another brand's shell (the Paytm frame) names those
-colours once in its own CSS and uses the name.
-
-Never hard-code a hex in a component, and never move tokens into a `ui`
-package. `/design-language` audits all of this.
-
----
-
-## Mock data
-
-Both apps use local demo fixtures. Buyer data lives in
-`apps/frontend/qwipo-buyer-paytm-app/src/data/`; Seller Store uses the stores
-and data modules in `apps/frontend/seller-store/src/app/lib/`. No mock API
-server is needed. Extend the existing app data rather than duplicating it.
-
----
-
-## Conventions
-
-- **Versions live in one place.** The `catalog` in the root `package.json`
-  pins every dependency exactly. Packages say `"react": "catalog:"`. Upgrading
-  React is a one-line diff, not fifteen.
-- **Lockfiles are committed** — `bun.lock` and `flake.lock`. CI runs
-  `bun install --frozen-lockfile`, which fails on drift rather than silently
-  resolving something new.
-- **Types are loose on purpose.** `strict` is off. A mockup shouldn't stall
-  because a fixture is missing an optional field.
-- **Lint is quiet on purpose.** It catches genuine breakage, not style. If it
-  ever nags you about something that doesn't matter, turn the rule off in
-  `packages/eslint-config` — that's the intended response.
-
----
-
-## Deploying a mockup
-
-Most mockups never need this — `bun dev` and the Network URL cover the usual
-"show it to someone" case. Deploy when a mockup needs to live somewhere for a
-while (a client demo, a round of user testing, a link in a doc).
-
-The wiring follows `seller-platform`'s shape: thin pipeline YAMLs in the app
-folder that `extends:` a template. The templates are this repo's own, in
-`azure-cicd/templates/`, rather than the shared ones in the **`Qwipo B2B/k8s`**
-repo — they are those plus the semver-tag versioning model `buyer-web-mini`
-uses (see "Versions, tags and the badge" below). The pipelines live in Azure
-DevOps under the **`Mockups Lab`** folder, named for humans rather than
-following the `docker-cd-*` / `argocd-*` convention the service repos use.
-
-| App folder | Service name | Demo host | Build pipeline | Deploy pipeline |
-| --- | --- | --- | --- | --- |
-| `seller-store` | `mockups-seller-store` | mockups-seller-store.dev.bms.qwipo.com | Seller Store - Build | Seller Store - Deploy |
-| `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
-
-Service names are `mockups-<what-it-is>`. The prefix is there so these images
-and ArgoCD apps can't be confused with real services in the shared registry, and
-that is all it's for — no `qwipo-` on top of it (the registry is already the
-Qwipo registry and the domain already says it) and no `-app` suffix, which
-distinguishes nothing. The demo URL falls straight out of the name:
-`https://<service>.dev.bms.qwipo.com`.
-
-The **build pipeline's display name is load-bearing** — each release YAML binds
-to it via `resources.pipelines.source`. Rename one, change the other in the same
-commit.
-
-Build → push to DOCR → deploy rewrites the image digest at
-`bms-chart/<env>/<service>.yaml` in the k8s repo → ArgoCD syncs.
-
-### Push a branch, get a deploy
-
-You should never have to open a pipeline to ship a mockup. Builds auto-trigger
-on four branches, and the branch you pushed decides where it lands:
-
-| Branch | Environment | URL |
-| --- | --- | --- |
-| `dev` | dev | `mockups-<app>.dev.bms.qwipo.com` |
-| `testing` | testing | `mockups-<app>.test.bms.qwipo.com` |
-| `staging` | staging | `mockups-<app>.staging.bms.qwipo.com` |
-| `main` | production | `mockups-<app>.bms.qwipo.com` |
-
-Anything else — a feature branch — doesn't trigger at all.
-
-**Production waits for a human.** It carries an Azure DevOps approval check, so
-a merge to `main` queues the deploy and holds until one of the approvers okays
-it. dev, testing and staging go straight through.
-
-The `environment` parameter on a manual run overrides the mapping; leaving it
-on `auto` is what applies the branch rule. Use that to push a `dev` branch to
-staging for a demo without merging anything.
-
-Two consequences worth knowing. `packages/**` is in every path filter, so one
-commit to a shared package rebuilds **every** mockup — correct, since a token
-change really does change all of them. And because `main` now reaches
-production, a new mockup needs its manifest in all four `bms-chart/<env>/`
-folders before anyone merges; the release exits 1 on a missing one.
-
-> **The buyer app was renamed** — `mockups-qwipo-buyer-paytm-app` is now
-> `mockups-buyer-app`, which moves the image and the ArgoCD app and nothing
-> else: the demo URL was already `mockups-buyer-app.dev.bms.qwipo.com` and the
-> pipelines were already **Buyer App - Build** / **Buyer App - Deploy**, so the
-> live link keeps working and neither pipeline is renamed. `SERVICE_NAME` still
-> reaches the deploy through the build's artefact, not through the release
-> YAML, so it needs a fresh **Buyer App - Build** run before any deploy can
-> bind; deploying against the old artefact still carries the old name. The k8s
-> manifest also has to be renamed to `bms-chart/<env>/mockups-buyer-app.yaml`
-> and the old `mockups-qwipo-buyer-paytm-app.yaml` removed — leave both and
-> ArgoCD keeps both apps alive.
-
-### Versions, tags and the badge
-
-Every mockup shows the build it is running as a small pill in the bottom-right
-corner (bottom-left on the two Storybooks, where the addons toggle lives).
-Hover it for the commit. What it says depends on where the build came from:
-
-| Built from | Badge | Image tags | Git tag |
+| Application | Development URL | Preview port | Documentation |
 | --- | --- | --- | --- |
-| `main` | `v1.2.3` | `1.2.3`, `<sha>` | `<app>-v1.2.3` |
-| `dev` / `testing` / `staging` | `dev-8abf53d` | `<sha>`, `dev`, `dev-<sha>` | none |
-| `bun dev`, a plain local build | `local` | — | — |
+| Buyer/Paytm | `http://localhost:5175` | 6175 | [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md) |
+| Seller Store | `http://localhost:5174` | 6174 | [Seller README](apps/frontend/seller-store/README.md) |
 
-**`main` builds are releases.** The build pipeline reads the latest
-`<app>-v*` tag (`seller-store-v*`, `buyer-app-v*`), bumps it — patch
-by default; run the build by hand and pick `bump: minor` or `major` for a
-bigger step — and pushes the new annotated tag *before* building the image, so
-a version number is reserved atomically even when two main builds race. The
-first release of an app is `1.0.0`. Branch builds push no tag.
+Before a preview command, build the application.
+They serve build output with Vite's preview server.
+A preview server is a local review tool, not the hosted production server.
 
-**The version is baked into the bundle.** The pipeline passes the image's own
-tag to `docker build` as `APP_VERSION`, the Dockerfile exports it as
-`VITE_APP_VERSION`, Vite inlines it, and `@mockups/version-badge` renders it.
-Nothing is injected at container start, so the badge can only ever name the
-image serving the page. `docker inspect` shows the same value as an OCI label.
+Retired applications remain in Git history.
+Their local removal does not delete hosted resources, Azure pipelines, DNS records, or external GitOps manifests.
 
-**To deploy or roll back a release**, run the app's Deploy pipeline by hand and
-pick an `<app>-v*` tag in the run dialog's branch/tag selector. Nothing is
-rebuilt — the pipeline checks the image exists in the registry and deploys it
-as-is. A tag defaults to production; pick another `environment` to put a
-release on staging.
+## Repository layout
 
-Tag prefixes are literals in the generated YAMLs, derived once from the service
-name. If a service is ever renamed, pass `--tag-prefix <old>` to
-`bun run deploy:add` so the lineage doesn't fork.
+| Location | Purpose |
+| --- | --- |
+| `apps/frontend/` | Application workspaces |
+| `packages/design-tokens/` | Mobile token values and CSS theme |
+| `packages/ui/` | Mobile UI primitives |
+| `packages/components/` | Buyer product components |
+| `packages/web-tokens/` | Desktop token values and CSS theme |
+| `packages/web-ui/` | Desktop components and design reference |
+| `packages/types/` | Shared order status |
+| `packages/version-badge/` | Build version display |
+| `packages/tsconfig/` | TypeScript configuration |
+| `packages/eslint-config/` | Lint configuration |
+| `scripts/` | Application and deployment generators |
+| `azure-cicd/templates/` | Shared pipeline templates |
+| `.claude/skills/` | Task procedures |
 
-**One-time permission.** Pushing the tag runs as the project Build Service
-identity, which needs *Contribute* and *Create tag* on this repo (Project
-settings → Repositories → mockups-lab → Security → "Qwipo B2B Build Service").
-Until that is granted, every `main` build fails at "push semver git tag" with
-a 403 — before anything reaches the registry. Branch builds are unaffected.
+Use these references before implementation:
 
-Most mockups aren't on `main` yet, so they get their first semver the day they
-are merged there. Until then their demo URLs show `dev-<sha>`, which is the
-honest answer.
+| Task | Detailed reference |
+| --- | --- |
+| Find shared configuration and public package exports | [Repository source map](CLAUDE.md#applications-and-packages) |
+| Register or change a Buyer screen | [Buyer source map](apps/frontend/qwipo-buyer-paytm-app/README.md#source-map) |
+| Match a Buyer visual reference | [Buyer build notes](apps/frontend/qwipo-buyer-paytm-app/BUILD-NOTES.md) |
+| Change Seller routes, personas, or data | [Seller source map](apps/frontend/seller-store/README.md#source-layout) |
+| Select a desktop component or page pattern | [Desktop design reference](packages/web-ui/DESIGN-SYSTEM.md) |
+| Find mobile product components | [Buyer component source map](packages/components/README.md) |
+| Find pipeline files and diagnose deployment behavior | [Deployment procedure](.claude/skills/deploy-mockup/SKILL.md#deployment-file-map) |
 
-### To put a new mockup on this path
+## Work rules
 
-```bash
-bun run deploy:add seller-store
-```
+Read [CLAUDE.md](CLAUDE.md) for the complete repository instructions.
+Agents also use [AGENTS.md](AGENTS.md) as an entry point.
 
-That writes all four files into `apps/frontend/<app>/` — `Dockerfile`,
-`nginx.conf`, `docker-build.yml`, `azure-release.yaml` — and derives the two
-things people kept getting wrong when they hand-copied them. The build output
-directory is Vite’s `dist/`, and the Azure pipeline display name comes from
-the service name, so the release YAML’s `source:` cannot
-drift from the build pipeline it binds to.
+Without the user's explicit commit command, do not commit changes.
+Without the user's explicit push command, do not push changes.
+Permission to edit files does not give permission to commit or push them.
+Do not merge, deploy, or delete remote branches without authorization.
 
-Override either when the derived value isn't the one you want, and pass
-`--force` to overwrite a fileset that already exists:
+Use an applicable existing task branch.
+For a new branch, use the name from the user or `feature/<app>-<change>`.
+The `dev` branch conflicts with branch names that start with `dev/`.
+Use [start-work](.claude/skills/start-work/SKILL.md) for the branch procedure.
 
-```bash
-bun run deploy:add qwipo-buyer-paytm-app --service mockups-buyer-app --label "Buyer App"
-bun run deploy:add seller-store --force
-```
+## Design kits
 
-Both apps build to `dist/`, which is declared in `turbo.json` so cached
-builds restore it. The root `.dockerignore` excludes local build output.
-Docker must copy the app’s built `dist/` from the builder stage.
+| Purpose | Mobile | Desktop |
+| --- | --- | --- |
+| Application | Buyer/Paytm | Seller Store |
+| Primitives | `@mockups/ui` | `@mockups/web-ui` |
+| CSS tokens | `@mockups/design-tokens/theme.css` | `@mockups/web-tokens/theme.css` |
+| Review location | Buyer review sidebar | Seller Design System persona |
 
-Three prerequisites it can't satisfy from inside this repo. It prints all three
-when it finishes:
+Import one CSS token layer in each application.
+Keep the Tailwind `@source` entries for shared component code.
+Use semantic classes for new screen code.
+Keep external brand colors in a named application block.
 
-1. **The GitOps manifest**, at `bms-chart/<env>/<service>.yaml` in the **k8s**
-   repo. Copy `bms-chart/dev/seller-portal.yaml` — it's the closest reference
-   (nginx SPA on port 80) — and set the ingress host to
-   `<service>.dev.bms.qwipo.com`, which is the rule that owns the demo URL. The
-   `dev` ApplicationSet is a git-file generator over `bms-chart/dev/*.yaml`, so
-   the file's *existence* is what creates the ArgoCD app
-   `dev-<service>-argo-app`. Nobody has to register it. Keep the
-   `version: "..."` line — the release pipeline `sed`s it.
-2. **Registering both YAMLs** in Azure DevOps under the `Mockups Lab` folder:
+The desktop TypeScript module re-exports some mobile token values.
+The desktop CSS still contains separate literal values.
+When a shared color changes, update all applicable representations.
+Examine intentional differences before synchronization.
 
-   ```bash
-   az pipelines create --org https://dev.azure.com/xavica --project "Qwipo B2B" \
-     --name "<Label> - Build" --folder-path "Mockups Lab" \
-     --repository mockups-lab --repository-type tfsgit --branch dev \
-     --yml-path apps/frontend/<app>/docker-build.yml --skip-first-run true
-   ```
+Shared component packages export TypeScript source directly.
+The consuming application compiles that source.
+If an existing primitive supports the requested behavior, use or extend that primitive.
+A second application is not necessary for an extension to an existing primitive.
 
-   Then the same for `- Deploy` with `azure-release.yaml`. Use the `<Label>` the
-   generator printed — that exact string is already sitting in the release
-   YAML's `source:`.
+## Dependencies and checks
 
-   **The branch matters.** `az` resolves `--yml-path` against that branch in the
-   remote, so pointing at one where the file doesn't exist registers a pipeline
-   that looks fine and fails the first time anyone runs it. Check that the selected remote branch contains the app’s pipeline files. The
-   generator prints whichever branch you're on, and `--branch` overrides it.
+Use the root catalog for new dependency versions.
+Declare a direct dependency in each workspace that imports it.
+Use [add-dependency](.claude/skills/add-dependency/SKILL.md) for changes.
 
-   This has already bitten once: the first two pipelines stayed bound to
-   `feature/mobile-prototype` long after that branch was deleted, so both were
-   silently broken — a pipeline pointed at a dead branch looks perfectly healthy
-   in the UI until someone runs it.
-3. **The tag-push permission**, once per repo rather than per app — see
-   "Versions, tags and the badge" above. Already done if any mockup has cut a
-   release.
+Keep `bun.lock` and `flake.lock` under version control.
+Do not delete a lockfile merely to suppress an installation error.
+A lockfile-only update can be valid. Examine its cause and resolved versions.
 
-### No runtime config
+The current TypeScript configuration is permissive.
+Do not disable shared checks merely because they record an error.
+If an exception is necessary, record its reason and limits.
+Add applicable regression checks for important changed behavior.
 
-There is no `entrypoint.sh` and no `public/configs/config.*.json`, on purpose.
-These are mockups: both bundle their local fixtures at build time and
-talks to no backend, so there is no API base URL, no feature flag, nothing that
-differs between dev and production. The image is a pure static artefact — nginx
-plus a directory of files, correct in every environment. The deployed version
-is no exception: it is inlined at build time, not injected at start.
+Use [verify](.claude/skills/verify/SKILL.md) before completion.
+A successful build does not prove type safety or correct behavior.
+The current Docker build omits lint and type checks.
+For automatic enforcement in Azure, add those checks to a validation job within an authorized task.
 
-That's a deliberate simplification of the pattern `seller-platform` uses. A
-config-swapping entrypoint with nothing to swap isn't neutral: it `exit 1`s the
-container on a `NODE_ENV` it doesn't recognise, a live failure mode bought for
-zero benefit. If a mockup ever genuinely does need a backend, add the entrypoint
-back to that one app and say why in its Dockerfile.
+## Deployment
 
----
+Use [deploy-mockup](.claude/skills/deploy-mockup/SKILL.md) for preparation, identities, prerequisites, versions, and recovery.
+Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 
-## Working with Claude here
+| Application | Service | Build pipeline | Release pipeline |
+| --- | --- | --- | --- |
+| Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
+| Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
 
-Most code in this repo gets written by Claude. `CLAUDE.md` tells it the things
-it can't infer — which shared package to reach for, where tokens live, what
-"done" means for a mockup. **Keep it current.** When you find yourself
-correcting Claude on the same thing twice, that correction belongs in
-`CLAUDE.md`, and the next person gets it for free.
+The dev host has the form `https://<service>.dev.bms.qwipo.com`.
+These names show the repository configuration. They do not prove live service availability.
 
-Every request goes through one of the skills in `.claude/skills/` — `CLAUDE.md`
-routes it, and each skill says what it needs from you and what it hands back.
-You can also call one directly: `/brief` before a new idea, `/new-mockup`,
-`/import-mockup` for code from another repo, `/build-screen`, `/start-work` and
-`/land-work` for branches and merges (`/review` tidies a branch before it
-lands), `/git-doctor` when git surprises you,
-`/share-mockup`, `/deploy-mockup`, `/verify`, `/handoff` when engineering takes
-over. Nothing is done until `verify` has run.
+| Branch | Current automatic behavior |
+| --- | --- |
+| `feature/*` | Upload a static preview when the path filters match. |
+| `dev` | Build an image and trigger the dev release pipeline. |
+| `testing` | Build an image and trigger the testing release pipeline. |
+| `staging` | Build an image and trigger the staging release pipeline. |
+| `main` | Create a release version and trigger the production release pipeline. |
+| Other names, including `dev-cleanup` | No automatic trigger in the current filters. |
+
+The files also contain the unusable `dev/*` pattern while `dev` exists.
+Examine live Azure policies and environment approvals before an approved release.
+The repository cannot prove that a production approval control exists.
+Do not do a production release without that verified control.
+
+Preview URLs use a branch slug and commit identifier below `/builds/`.
+The current retention policy keeps five builds per branch, plus `latest/`.
+Use [share-mockup](.claude/skills/share-mockup/SKILL.md) for link preparation and verification.
+
+## Create or import an application
+
+Without a user instruction to create another application, do not create one.
+Use [new-mockup](.claude/skills/new-mockup/SKILL.md) or [import-mockup](.claude/skills/import-mockup/SKILL.md).
+Keep local work separate from publication actions.
+
+## Engineering handoff
+
+Use [handoff](.claude/skills/handoff/SKILL.md) for an approved product flow.
+Separate confirmed requirements from fixtures, proposed APIs, and unresolved decisions.
+Do not use a prototype's simulated response as an established production contract.
