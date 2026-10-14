@@ -1,36 +1,60 @@
 ---
 name: add-dependency
-description: Scoped skill — an app needs a package that isn't installed. Resolves through the root catalog only. Invoked by build-screen and import-mockup; use directly for "I need library X", "add recharts", an import that won't resolve.
+description: Add or update a dependency through the root catalog. Examine its effect on all consumers.
 ---
 
-# Adding a dependency
+# Change a dependency
 
-Every version in this repo is pinned once, in the `catalog` in the root
-`package.json`. Apps write `"react": "catalog:"`. Upgrading React is a
-one-line diff, not fifteen.
+Use the [repository instructions](../../../CLAUDE.md).
 
-1. **Does the kit already cover it?** Charts (`recharts`, wrapped by
-   `web-ui`'s `chart`), maps (`leaflet`), forms (`react-hook-form`),
-   carousels (`embla`), date pickers (`react-day-picker`), OTP inputs,
-   toasts (`sonner`), animation (`motion`) are all here. Name what covers
-   it and stop.
-2. **In the catalog?** Add `"<pkg>": "catalog:"` to the app's
-   `package.json`, `bun install`, done.
-3. **Not in the catalog:** add it to the root `catalog` with an **exact
-   version** (no `^`, no `~`; current stable, not a beta), then reference
-   `catalog:` from the app. Never write a bare version in an app manifest —
-   `html-to-image` in the buyer app is the one that slipped through and the
-   reason this check exists.
-4. `bun install`. The lockfile updates and is committed with the change —
-   next to the `package.json` that caused it. That is the only lockfile
-   diff a branch should carry; a lockfile diff with no manifest diff is an
-   untracked folder under `apps/` being installed as a workspace (`verify`,
-   step 4). Never delete or regenerate `bun.lock` to get past an install
-   error — if it fails, a manifest is wrong; fix that. (An install that
-   *drops* a workspace which isn't on disk is the lockfile being corrected,
-   not regenerated — `git-doctor`.)
-5. If the package ships CSS (`leaflet/dist/leaflet.css`), import it in the
-   app's `index.css` **after** the token import.
+The catalog is `workspaces.catalog` in the root `package.json`.
+Application manifests are under `apps/frontend/<app>/package.json`.
+Shared package manifests are under `packages/<package>/package.json`.
 
-Bumping a version already in the catalog moves every app at once and is
-platform work — say so and stop.
+Before adding a dependency, examine these existing options:
+
+| Need | Existing package or implementation |
+| --- | --- |
+| Desktop charts | `recharts` and `packages/web-ui/src/components/chart.tsx` |
+| Searchable selection | `cmdk`, `command.tsx`, and `popover.tsx` in `packages/web-ui/src/components/` |
+| Forms and date selection | `react-hook-form`, `react-day-picker`, and the desktop form/calendar components |
+| Maps | `leaflet`, `react-leaflet`, and existing Seller map consumers |
+| Carousels, notifications, and motion | `embla-carousel-react`, `sonner`, and `motion` |
+
+For an existing catalog dependency, use a workspace declaration such as:
+
+```json
+{
+  "dependencies": {
+    "react": "catalog:"
+  }
+}
+```
+
+Use `workspace:*` for an internal package such as `@mockups/ui`.
+Do not copy a source application's version ranges into the destination manifest.
+
+1. Find if an existing package already supplies the required function.
+2. Examine the root dependency catalog.
+3. If the dependency exists, use `catalog:` in the application's manifest.
+4. Otherwise, select a compatible stable version from the package's official documentation.
+5. Add that exact version to the root catalog.
+6. Add the dependency to each workspace that imports it directly.
+7. Run `bun install` with the repository's Bun version.
+8. Examine the manifest and lockfile differences.
+9. Use [verify](../verify/SKILL.md) for the affected consumers.
+
+For a catalog upgrade, find all consumers before the change.
+Keep the upgrade in the requested scope.
+Examine compatibility with the installed toolchain before selection of the latest version.
+
+A lockfile-only update can be intentional, including a corrected resolution or format migration.
+Record its cause. Examine the resolved dependency changes.
+An install error can result from network access, credentials, tool versions, or dependency declarations.
+Read the error before a correction.
+Do not delete the lockfile merely to get a successful install.
+
+If the dependency supplies CSS, examine its import order against the token layer.
+For example, Seller imports `leaflet/dist/leaflet.css` after its shared theme in `apps/frontend/seller-store/src/index.css`.
+Examine `bun.lock` together with the changed manifests and the workspace globs in the root `package.json`.
+Until the user tells you to commit, keep changes uncommitted.

@@ -156,7 +156,7 @@ const files: Record<string, string> = {
 
   'eslint.config.js': `import { react } from '@mockups/eslint-config/react';\n\nexport default react;\n`,
 
-  'vite.config.ts': `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n  // Relative asset URLs: preview builds are served from /builds/<branch>/<sha>/.\n  // Safe because the app routes on the URL hash, so the document path never changes.\n  base: "./",\n  server: {\n    port: Number(process.env.PORT) || ${port},\n    host: true,\n  },\n  preview: { host: true, allowedHosts: true },\n});\n`,
+  'vite.config.ts': `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport tailwindcss from '@tailwindcss/vite';\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n  // Relative asset URLs: preview builds are served from /builds/<branch>/<sha>/.\n  // Relative asset URLs keep assets below the preview prefix.\n  base: "./",\n  server: {\n    port: Number(process.env.PORT) || ${port},\n    host: true,\n  },\n  preview: { host: true, allowedHosts: true },\n});\n`,
 
   'index.html': `<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${title} — mockup</title>\n  </head>\n  <body>\n    <div id="root"></div>\n    <script type="module" src="/src/main.tsx"></script>\n  </body>\n</html>\n`,
 
@@ -179,17 +179,19 @@ for (const [rel, contents] of Object.entries(files)) {
   await writeFile(path, contents);
 }
 
-console.log(`\n✓ Created apps/frontend/${name}  (dev port ${port})\n`);
+console.log(`\nFiles created in apps/frontend/${name}  (dev port ${port})\n`);
 
 // Link the new workspace so `bun dev` works immediately.
-console.log('  Linking workspace…');
+console.log('  Installing workspace dependencies...');
 await $`bun install`.cwd(ROOT).quiet();
 
 console.log(`
-  Next:
+  Dependencies installed.
+
+  Start the application:
     bun dev --filter=@mockups/${name}     →  http://localhost:${port}
 
-  Then point Claude at apps/frontend/${name}/src and describe the screens
-  you want. Read CLAUDE.md first if you haven't — it tells Claude which
-  shared package to reach for instead of reinventing one.
+  Before a screen change, read CLAUDE.md.
+  Give the agent the required screens for apps/frontend/${name}/src.
+  Use the applicable shared components.
 `);

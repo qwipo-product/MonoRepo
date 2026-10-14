@@ -1,161 +1,99 @@
 ---
 name: import-mockup
-description: Migration pathway — bring an existing app's code in from another local repo (a standalone mockup, a Figma Make / Lovable / v0 export, an older Qwipo prototype) and rebuild it on this repo's shared kit. Use for "port X into here", "migrate the app from <path>", "bring in the seller store", "we have this in another repo".
+description: Import an authorized application from a local source. Adapt its code to the repository. Keep the required behavior.
 ---
 
-# Importing a mockup from another repo
+# Import an application
 
-Two apps here arrived this way and left two lessons. `seller-store` came in
-as 51 pages in one move, kept its directory depth so forty relative asset
-paths survived, and had its own copies of shadcn components deleted in
-favour of `@mockups/web-ui`. `qwipo-buyer-paytm-app` is being rebuilt screen
-by screen against screenshots, with the old code as the functional reference
-— its `BUILD-NOTES.md` is the procedure. Which of the two you are doing is
-the first decision.
+Use the [repository instructions](../../../CLAUDE.md).
+Get the source path and requested flows from the user or existing task context.
+Use [brief](../brief/SKILL.md) only for missing decisions.
 
-Precondition: a brief (`brief`), plus the source path on disk.
+## Examine the source
 
-## 1. Survey the source before moving anything
+1. Read the source manifest and related documentation.
+2. Find its framework, dependencies, routes, assets, and tests.
+3. Find backend calls and simulated behavior.
+4. Select the target design kit from the intended user and device.
+5. Decide which source code can transfer. Find the code that must be replaced.
 
-Read, don't assume:
+Keep the source outside this repository's workspace directories during inspection.
+An extra package manifest inside a workspace directory can change dependency resolution.
 
-```bash
-cat <src>/package.json                                     # stack, deps, scripts
-find <src>/src -type f | sed 's|.*\.||' | sort | uniq -c   # what's in it
-grep -rn "fetch(\|axios\|createClient" <src>/src | head    # backend calls
-grep -rln "tailwind" <src>/*.config.* <src>/package.json   # Tailwind, and which major
-ls <src>/src/components/ui 2>/dev/null                     # its own shadcn copy?
-grep -rn "from '@/" <src>/src | wc -l                      # path-alias imports
-grep -rn '\.\./.*\.\(png\|svg\|jpg\)' <src>/src | wc -l    # relative asset paths
-```
+Inspect `package.json`, `src/`, `public/`, and the source's route and style configuration.
+Search for `fetch`, `axios`, and client creation calls before selecting a simulation strategy.
+Search for `@/` imports and relative image imports before changing directory depth.
+The active workspace globs are `apps/frontend/*` and `packages/*` in the root `package.json`.
+Do not stage a raw export under those directories during inspection.
 
-Then answer, in one line each:
+## Prepare the target
 
-- **Kit.** Phone in a WebView → mobile (`@mockups/ui` + `design-tokens`).
-  Laptop console → web (`@mockups/web-ui` + `web-tokens`). The source's own
-  styling doesn't decide this; the user in the brief does.
-- **Move or rebuild.** *Move* when the source is React + Tailwind and the
-  screens are already right — you are re-homing code. *Rebuild* when the
-  source is another stack (Angular, Next, React Native, plain HTML), a
-  Tailwind v3 export that fights v4, or the screens must match new
-  screenshots — the old code becomes the reference, not the input.
-- **Backend.** Anything the source fetches becomes the app’s fixture modules or a
-  local store. If it can't be faked, it isn't a mockup and doesn't belong
-  here.
-- **Slice.** All of it, or the flows in the brief? The brief's flows first;
-  the rest can follow on later branches.
+Use an applicable task branch.
+For an explicitly requested new application, use [new-mockup](../new-mockup/SKILL.md).
+Unless a configuration change is necessary, keep the existing target configuration.
 
-## 2. Scaffold the target; never copy the source's config
+For a new target, keep the generated `package.json`, `tsconfig.json`, `vite.config.ts`, and `eslint.config.js`.
+Keep the generated `src/main.tsx` and `src/index.css` as the integration starting point.
+Do not replace the repository's toolchain with the export's configuration.
+If the agreed behavior needs source configuration, adapt the relevant parts.
 
-Invoke `start-work` (`<name>/import`). Then:
+Seller preserves `src/app/` beside `src/imports/` for asset imports such as `../../imports/categories/<file>.png`.
+Before flattening that layout, examine every affected import.
+For a Buyer screen rebuild, use [BUILD-NOTES.md](../../../apps/frontend/qwipo-buyer-paytm-app/BUILD-NOTES.md) and the supplied visual references.
 
-```bash
-bun run new <name> [--web]
-```
+Do not copy the source Git directory, credentials, environment files, dependency installation, or generated build output.
+Examine useful tests and documentation before adaptation. Do not discard them solely because they came from another repository.
 
-The generator's `package.json`, `tsconfig.json`, `vite.config.ts`,
-`eslint.config.js`, `index.css` and `main.tsx` are the ones you keep. The
-source's versions carry its toolchain — a different Tailwind major, its own
-strictness, a `@/` alias this repo doesn't use — and importing them is how a
-port spends a day on config instead of screens.
+## Transfer the required behavior
 
-## 3. Move the source in
+1. If relative imports depend on directory depth, keep that depth.
+2. Copy only the required source files and assets.
+3. Replace duplicate primitives with the applicable shared components.
+4. Reconcile dependencies with [add-dependency](../add-dependency/SKILL.md).
+5. Adapt source aliases and framework-specific code to the target configuration.
+6. If the agreed result is a local prototype, replace production calls with explicit fixtures.
+7. Keep useful validation and error states.
 
-- **Keep directory depth if assets use relative paths.** That is why
-  `seller-store` has `src/app/` and `src/imports/` — flattening would have
-  meant rewriting forty `../../imports/…` paths. Mirror the source's depth
-  under `src/` and leave the paths alone.
-- **Static assets** the source served from `public/` go to this app's
-  `public/`, referenced by `/path`.
-- **Don't bring:** `.git`, lockfiles, `node_modules`, CI files, Dockerfile,
-  `.env*`, test config, the source README. The deploy fileset is generated
-  here (`deploy-mockup`); the README is rewritten from the brief.
-- **Don't park the export inside the repo first.** A raw export copied
-  under `apps/frontend/` ahead of the scaffold has its own `package.json`,
-  and the workspace glob makes it a workspace on the next `bun install` —
-  its `latest` ranges and its toolchain (Next.js, say) go into `bun.lock`
-  whether or not the folder is ever committed. Keep the source where it is
-  (the other clone, `~/Downloads/…`) and move files into the scaffold from
-  there.
-- **Path alias.** No app here uses `@/`. Rewrite `@/x` imports to relative
-  paths (`sed` over `src/`) rather than adding an alias to one app.
+Do not silently replace a required real integration with simulated behavior.
+Record that scope difference before dependent work.
 
-## 4. Reconcile dependencies through the catalog
+The retained applications do not configure an `@/` alias.
+Adapt imported `@/` paths to the target's existing relative-import convention.
+Use `src/app/lib/*-data.ts` and existing stores for Seller fixtures.
+Use `src/data/` for Buyer fixtures.
+For a type-only import, use `import type` instead of disabling `verbatimModuleSyntax` after a `TS1484` error.
 
-For every dependency the source needs, in this order:
+## Adapt styles and routes
 
-1. **Already in the kit?** `cn`, `Button`, `Dialog`, `EmptyState`,
-   `ErrorState`, `ThemeToggle`, `CopyOnHover`, `StatusBadge`, toasts,
-   tables — delete the source's copy and import from `@mockups/web-ui` or
-   `@mockups/ui`. The seller-store port arrived with four duplicates of
-   things the package already had; duplicates are what the shared package
-   exists to prevent.
-2. **In the root `catalog`?** Write `"<pkg>": "catalog:"` in the app's
-   `package.json`.
-3. **Neither** → `add-dependency`. `html-to-image` in the buyer app is the
-   bare version that slipped through; don't add another.
+Import the selected shared token layer.
+Keep the Tailwind source entries for every shared component package in use.
+For Buyer, scan `packages/ui/src` and `packages/components/src` from `src/index.css`.
+For Seller, scan `packages/web-ui/src` from `src/index.css`.
+Use the exact relative entries in the applicable application README.
 
-Then `bun install`. Never delete or regenerate `bun.lock` to make an install
-pass — if it fails, a `package.json` is wrong.
+Adapt old `@tailwind` directives to the target's existing `@import "tailwindcss"` setup.
+If the source has `tailwind.config.js` or `globals.css`, inspect their tokens and overrides before transferring styles.
+Move necessary shared values into the selected token package instead of copying those files over the target setup.
+The desktop theme already imports `tw-animate-css`.
+Before adding another animation stylesheet, examine that theme.
 
-## 5. Styling: one token layer, the kit's
+Put shared token additions in the token package.
+For external brand colors, use one named application block as described in [design-language](../design-language/SKILL.md).
 
-- The source's `tailwind.config.js` / `globals.css` are not imported. The
-  generated `index.css` already has the `@source` line and the token import;
-  add a second `@source` only for a second shared package the app uses
-  (`packages/components/src`, say).
-- Tailwind v3 → v4 differences that show up in exports: `@tailwind base;`
-  becomes `@import "tailwindcss"`; `tailwind.config.js` theme extensions
-  become the `@theme` block (mobile) or already exist in `web-tokens` (web);
-  `tailwindcss-animate` is replaced by what `web-tokens/theme.css` bundles.
-- Raw utility classes (`bg-white`, `text-gray-900`) may stay on a web import
-  — `web-tokens/theme.css` carries a `.dark` rebinding layer for them, which
-  is why 40k lines of seller-store didn't need rewriting. Don't "fix" them
-  to semantic tokens unless you're doing it wholesale.
-- A colour that is genuinely brand-external (Paytm's `#00BAF2`) is named
-  once in the app's `index.css` and used by name. Everything else becomes a
-  token via `theme`.
-- Once the port compiles, invoke `design-language` on the app. An import is
-  where copied palettes, chart hex and `bg-gray-50` arrive in bulk.
+Use imported asset modules or preview-compatible relative URLs for public assets.
+Do not introduce root-relative asset strings such as `/images/item.png` into prefix-hosted previews.
+Keep `base: './'` for the existing preview deployment.
+Use hash routes or the existing Buyer query navigation.
+After a routing change, examine the actual preview prefix.
 
-## 6. Fake the backend
+## Examine the import
 
-Replace each `fetch`/client call with data from the app’s fixture modules or a
-small local store (`seller-store` uses subscribe/notify stores in
-`src/app/lib/*-data.ts`). Loading, empty and error stay demoable without a
-server: a `setTimeout` for loading, an empty array for empty, a thrown error
-for error. Fixtures missing an entity → `mock-data`.
+1. Correct compiler errors from their reported cause.
+2. Keep `import type` for TypeScript types.
+3. Use [design-language](../design-language/SKILL.md) for changed styles.
+4. Use [verify](../verify/SKILL.md).
+5. Compare each imported flow with its approved reference.
+6. Record any remaining difference in the application README.
 
-## 7. Types: fix from the compiler, not by hand
-
-`verbatimModuleSyntax` is on, so a type imported as a value is a hard error
-(`TS1484`), and ports arrive with dozens. Run typecheck once, then fix every
-line the compiler names to `import type { … }` or `import { x, type Foo }`.
-`strict` is off, so almost everything else passes; a genuine error is
-usually a fixture missing a field, and the fixture is what to fix.
-
-## 8. Wire the app's identity
-
-- `package.json` `description`; app `README.md` from the brief with the
-  demo logins (personas, OTPs) and the "what looks odd and why" notes — the
-  seller-store README is the model.
-- `<VersionBadge />` mounted once in `main.tsx` (the generator did this;
-  make sure your `main.tsx` rewrite kept it).
-- A row in the `CLAUDE.md` apps table and the README layout block.
-
-## 9. Parity, screen by screen
-
-Invoke `verify`. Then walk every imported screen against the source (or the
-screenshots) in the browser — light and dark, and on a phone via the Network
-URL for a mobile app — and keep a status table in the app README like the
-buyer app's ("Catalog ✅ · Home, Cart, Orders ⬜"). A port isn't done when it
-compiles; it's done when someone can click the brief's flows.
-
-Land with `land-work`. Deploying is separate (`deploy-mockup`).
-
-## Report
-
-Product terms: "The seller store is in as `seller-store` — 51 pages, five
-personas, OTP 1234 — on the web kit. Orders and Reports match the original;
-the map dialog is stubbed. Verified light and dark." Say what isn't at
-parity yet.
+Record verified flows and unresolved differences.
+Do not automatically commit, push, merge, or deploy the import.
