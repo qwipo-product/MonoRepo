@@ -1,96 +1,118 @@
-# @mockups/seller-store
+# Seller Store
 
-The Qwipo **Seller Store** — the distributor console plus the Qwipo super-admin
-portal. 51 pages across 59 routes; the largest mockup in this repo.
+Seller Store is a browser prototype for distributors and Qwipo administrators.
+It uses `@mockups/web-ui` and `@mockups/web-tokens`.
+Its routes use the URL hash.
 
-Ported in from the standalone Seller Store repo and rebuilt on
-`@mockups/web-ui` + `@mockups/web-tokens`, so it now shares one design system
-with every other web mockup instead of carrying its own copy.
+## Run the application
 
-## Run it
+From the repository root, run:
 
 ```bash
 bun dev --filter=@mockups/seller-store
 ```
 
-http://localhost:5174
+The configured URL is `http://localhost:5174`.
+Examine the actual URL in the server output.
+The build preview uses port `6174`.
 
-## Demo personas
+## Demonstration accounts
 
-It opens on a login. **OTP is `1234` for every persona** — the login card lists
-them, and tapping one autofills the number.
+Select a persona on the login screen.
+Use the demonstration OTP `1234` for each persona.
+These accounts simulate authentication.
 
-| Persona | Mobile | Lands on |
+| Persona | Mobile number | Destination |
 | --- | --- | --- |
 | Seller | `9900000002` | Seller dashboard |
-| Seller (Empty) | `8888888888` | Inception-day empty states |
-| Super Admin | `9900000001` | `/admin` |
+| Seller (Empty) | `8888888888` | Supported empty states |
+| Super Admin | `9900000001` | `/#/admin` |
 | Super Admin (Empty) | `9999999999` | Admin empty states |
-| Design System | `7777777777` | `/design` |
+| Design System | `7777777777` | `/#/design` |
 
-The **Empty** personas clear mock master data and activate supported empty
-states, including the SKU list. Some dashboard totals still use seeded seller
-data; this is an existing prototype limitation. Every new list screen should
-support empty mode.
+The empty personas clear mock master data and activate supported empty states.
+Some dashboard totals still use seeded seller data.
+Do not use the empty dashboard as a complete empty-state reference.
+After a data change, examine the two normal and empty modes.
 
-## What's in it
+## Flows
 
-**Seller side** — Dashboard, My SKU (+ SKU detail, add-SKU wizard with manual /
-brand-sync / central-catalog paths, price list), Customers, Offers & Schemes
-(+ create scheme), Orders (+ order detail, map view), Connectors, KYC,
-Reports (6), Settings (6), Support.
+The seller flows include the dashboard, SKU management, customers, offers, orders, connectors, KYC, reports, settings, and support.
+The administrator flows include requests, active sellers, users, companies, categories, and connectors.
+The application also contains error and loading examples.
 
-**Admin side** — Dashboard, New requests, Active sellers (+ seller detail),
-Add user, Companies, Categories, Connectors.
+## Source layout
 
-Plus error-screen and loading-screen galleries, surfaced in the empty-mode
-sidebars.
+| Location | Purpose |
+| --- | --- |
+| `src/app/components/` | Application-specific components |
+| `src/app/lib/` | Fixtures, stores, validation, and simulated authentication |
+| `src/app/pages/` | Application screens |
+| `src/app/routes.tsx` | Route definitions |
+| `src/imports/` | Application assets |
+| `src/index.css` | Styles and shared theme imports |
 
-## Structure — two things that look odd
+These paths are relative to this application folder.
+Use the following files for changes to shared application behavior:
 
+| File | Responsibility |
+| --- | --- |
+| `src/main.tsx` | `ThemeProvider`, `AuthProvider`, `RouterProvider`, `Toaster`, and `VersionBadge` |
+| `src/app/components/root-layout.tsx` | Persona-specific navigation, header, drawer, and seller layout |
+| `src/app/components/protected-route.tsx` | Route access for seller, administrator, and designer roles |
+| `src/app/lib/admin-navigation.ts` | Administrator navigation entries and page titles |
+| `src/app/lib/auth-credentials.ts` | Demonstration identities and OTP validation |
+| `src/app/lib/auth-context.tsx` | Session state and application of the selected data mode |
+| `src/app/lib/data-mode.ts` | `demo` and `empty` modes, including `isEmptyMode()` |
+| `src/app/lib/mock-store.ts` | Persisted seller requests, users, permissions, KYC, and connector state |
+| `src/app/lib/admin-catalog.ts` | Administrator company and category data |
+| `src/app/lib/orders-data.ts`, `src/app/lib/sku-catalog.ts` | Order fixtures and SKU data |
+| `src/app/pages/design-system.tsx` | Component handbook rendered at `/#/design` |
+| `src/app/pages/demos/error-screens.tsx`, `src/app/pages/demos/loading-screens.tsx` | Review examples for error and loading states |
+
+The current customer route is `/#/customers`, implemented by `src/app/pages/customers/list.tsx` and `detail.tsx`.
+The comparison flow at `/#/customers-demo` uses `legacy-list.tsx` and `legacy-detail.tsx` in that directory.
+Before changing a customer flow, confirm which route the request concerns.
+Unless their removal is part of the task, keep legacy route aliases.
+
+For a new route, update `src/app/routes.tsx` and the applicable navigation definition.
+Keep the `ProtectedRoute` role and the parent layout correct.
+Use `src/app/lib/*-data.ts` and existing store functions before creating another fixture source.
+
+When directory depth changes, keep relative asset imports valid.
+For example, assets under `src/imports/categories/` use relative imports such as `../../imports/categories/<file>.png`.
+The application uses its own persona-based `root-layout.tsx`.
+Do not replace that layout with the generic `AppShell` without preserving its behavior.
+
+## Design and themes
+
+Existing pages use raw Tailwind palette utilities.
+The desktop theme contains compatibility rules for those utilities in dark mode.
+Until no consumer uses those rules, keep them.
+Use semantic classes for new screen code.
+
+Keep these entries in `src/index.css`:
+
+```css
+@import "tailwindcss";
+@source "../../../../packages/web-ui/src";
+@import "../../../../packages/web-tokens/theme.css";
+@import "leaflet/dist/leaflet.css";
 ```
-src/
-  app/
-    components/   app-specific only (root-layout, combobox wrappers, filter drawers)
-    lib/          mock data stores, validation, auth
-    pages/        51 screens
-    routes.tsx    59 routes
-  imports/        Qwipo logos + 37 category images
-  main.tsx
-  index.css
-```
 
-**Why `src/app/` and `src/imports/`.** That mirrors the original repo's
-directory depth exactly, which is what let ~40 relative asset paths
-(`../../imports/categories/*.png`) survive the port untouched. Flattening it
-would mean rewriting all of them for no gain.
+Leaflet supplies styles for the orders map dialog.
+The `next-themes` provider in `src/main.tsx` uses `attribute="class"` and the `qwipo.theme` storage key.
+Keep the `.dark` class behavior consistent with `packages/web-tokens/theme.css` at the repository root.
 
-**Why it has its own `root-layout.tsx`** instead of `AppShell` from
-`@mockups/web-ui`. Its sidebar is persona-driven — admin vs seller, with extra
-demo entries in empty mode — which the generic shell doesn't model. New web
-mockups should use `AppShell`; this one has earned its exception.
+The Design System persona opens the component handbook at `/#/design`.
+Keep its examples consistent with the [design reference](../../../packages/web-ui/DESIGN-SYSTEM.md).
+Examine shared component changes in light and dark themes.
 
-## Dark mode
+## Change the application
 
-These pages are written with raw Tailwind utilities (`bg-white`,
-`text-gray-900`), not semantic tokens. They go dark-aware anyway because
-`@mockups/web-tokens/theme.css` carries a `.dark` rebinding layer for exactly
-those classes.
-
-That layer is load-bearing here — it's the reason ~40,000 lines didn't need
-rewriting. New screens should still prefer semantic classes (`bg-card`,
-`text-foreground`).
-
-## Design handbook
-
-The Design System persona opens `/#/design`, the in-app desktop component
-handbook. Keep its examples aligned with `packages/web-ui/DESIGN-SYSTEM.md`
-and check shared component changes in both light and dark themes.
-
-## Notes for whoever works here next
-
-- The app's UI imports all come from `@mockups/web-ui`. Don't add a local copy
-  of a component the package already has.
-- `verbatimModuleSyntax` is on: types need `import type`.
-- Mock data lives in `src/app/lib/*-data.ts` and is mutated through small
-  subscribe/notify stores. Extend those rather than inventing new fixtures.
+1. Read the [repository instructions](../../../CLAUDE.md).
+2. Use the applicable shared component.
+3. Where possible, extend existing fixtures and stores.
+4. Use `import type` for TypeScript types.
+5. Examine changed routes, validation, and state transitions.
+6. Use [verify](../../../.claude/skills/verify/SKILL.md).

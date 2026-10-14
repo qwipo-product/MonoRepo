@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Desktop/admin design tokens with the web (Tailwind theme.css) binding. Colour is re-exported from @mockups/design-tokens so the mobile and web layers cannot drift. Ships raw TypeScript — no build step.",
+  "description": "Desktop design tokens and CSS theme. TypeScript color exports use the shared mobile source. Maintain desktop CSS values separately.",
   "exports": {
     ".": "./src/index.ts",
     "./theme.css": "./theme.css"
