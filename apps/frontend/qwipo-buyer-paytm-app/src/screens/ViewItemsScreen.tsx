@@ -11,9 +11,7 @@ const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
 /* Cart · View Items — the per-seller line list reached from a Cart Summary
    card's "View items". Edit quantities or remove lines; tapping a line opens
    the selling-units sheet (screen 20). Local item state keeps the mock
-   interactive without touching the Shop add-to-cart flow.
-
-   Lines the offer added for free are read-only — see `remove`. */
+   interactive without touching the Shop add-to-cart flow. */
 export function ViewItemsScreen({
   seller,
   onBack,
@@ -28,8 +26,8 @@ export function ViewItemsScreen({
   const [rawItems, setItems] = useState(seller.items);
   // The buyer's own removals (via `remove` below) live only in this local
   // state — but if the underlying cart changes seller.items while this
-  // screen stays mounted (e.g. a scheme's free line appears because a
-  // quantity changed elsewhere), pick that up too, instead of showing a
+  // screen stays mounted (e.g. a quantity changes elsewhere), pick that
+  // up too, instead of showing a
   // stale snapshot from whenever the screen first opened.
   useEffect(() => setItems(seller.items), [seller.items]);
   // Totals derive from this too, so the empty demo zeroes them out as well.
@@ -37,7 +35,7 @@ export function ViewItemsScreen({
 
   const subtotal = items.reduce((s, i) => s + i.lineTotal, 0);
   const savings = items.reduce(
-    (s, i) => s + (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)),
+    (s, i) => s + Math.max(0, (i.product.mrp - i.product.price) * i.quantity),
     0
   );
   const met = subtotal >= seller.mov;
@@ -57,17 +55,8 @@ export function ViewItemsScreen({
     net: moved.reduce((n, i) => n + (i.lineDelta ?? 0), 0),
   };
 
-  /* A free line belongs to the paid line that earned it — the buyer never put
-     it there, so they can't take it away either. Removing the paid units takes
-     the offer's free units with them. */
   const remove = (index: number) =>
-    setItems((list) => {
-      const target = list[index];
-      if (!target || target.free) return list;
-      return list.filter(
-        (it, i) => i !== index && !(it.free && it.product.id === target.product.id)
-      );
-    });
+    setItems((list) => list.filter((_, i) => i !== index));
 
   return (
     <div className="flex h-full flex-col">
@@ -140,114 +129,57 @@ export function ViewItemsScreen({
               key={`${item.product.id}-${idx}`}
               className="relative flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
             >
-              {/* a free line has no controls at all — it isn't the buyer's to
-                  change, so there is nothing here to tap */}
-              {!item.free && (
-                <button
-                  onClick={() => remove(idx)}
-                  aria-label={`Remove ${item.product.shortName}`}
-                  className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-muted text-foreground-secondary active:scale-[0.98]"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-
-              {item.free ? (
-                <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
-                  <ProductImage image={item.product.image} alt={item.product.name} />
-                  <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
-                    Free
-                  </span>
-                </div>
-              ) : (
+              <button
+                onClick={() => remove(idx)}
+                aria-label={`Remove ${item.product.shortName}`}
+                className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-muted text-foreground-secondary active:scale-[0.98]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onItemTap(item.product.id)}
+                aria-label={`Edit ${item.product.shortName}`}
+                className="grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl active:scale-[0.98]"
+              >
+                <ProductImage image={item.product.image} alt={item.product.name} />
+              </button>
+              <div className="min-w-0 flex-1">
                 <button
                   onClick={() => onItemTap(item.product.id)}
-                  aria-label={`Edit ${item.product.shortName}`}
-                  className="relative grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-border bg-card text-2xl active:scale-[0.98]"
+                  className="block truncate pr-6 text-left text-sm font-medium text-foreground"
                 >
-                  <ProductImage image={item.product.image} alt={item.product.name} />
+                  {item.product.shortName}
                 </button>
-              )}
-
-              <div className="min-w-0 flex-1">
-                {item.free ? (
-                  <div className="truncate text-sm font-medium text-foreground">
-                    {item.product.shortName}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => onItemTap(item.product.id)}
-                    className="block truncate pr-6 text-left text-sm font-medium text-foreground"
-                  >
-                    {item.product.shortName}
-                  </button>
-                )}
                 <div className="mt-1 flex items-center gap-2">
-                  {item.free ? (
-                    <span className="text-xs font-semibold text-success-foreground">Free item</span>
-                  ) : (
-                    <>
-                      {item.product.mrp > item.product.price && (
-                        <span className="text-xs text-foreground-secondary">
-                          MRP{' '}
-                          <span className="tabular-nums line-through">
-                            {formatInr(item.product.mrp)}
-                          </span>
-                        </span>
-                      )}
-                      <span className="text-sm font-semibold tabular-nums text-foreground">
-                        {formatInr(item.product.price)}
-                      </span>
-                    </>
+                  {item.product.mrp > item.product.price && (
+                    <span className="text-xs text-foreground-secondary">
+                      MRP <span className="tabular-nums line-through">{formatInr(item.product.mrp)}</span>
+                    </span>
                   )}
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatInr(item.product.price)}
+                  </span>
                 </div>
-                {/* what this line's unit price did since it was added */}
                 <PriceChangeTag
                   className="mt-1"
                   priceWhenAdded={item.priceWhenAdded}
                   delta={item.priceDelta}
                 />
-                {/* a Slab/Combo scheme that's live on this line — the ₹
-                    amount, not just the % label, so it's the same thing the
-                    total actually reflects */}
                 {item.offerTags?.map((t) => (
                   <div key={t.label} className="mt-1 text-xs font-medium text-success-foreground">
                     {t.label} · −{formatInr(t.amount)}
                   </div>
                 ))}
-                {/* A paid line carries its count in the control itself, so the
-                    separate Qty badge would say it twice. A free line has no
-                    control — the buyer didn't put it there — so it keeps the
-                    badge as the only place its count appears.
-
-                    Beside the control sits what the line is actually worth:
-                    the unit price above answers "what does one cost", and
-                    this answers "what am I spending on this product" — the
-                    figure the seller's total is built from. */}
                 <div className="mt-1.5 flex items-center justify-between gap-2">
-                  {item.free ? (
-                    <>
-                      <span className="inline-flex items-center rounded-md bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
-                        Qty ×{item.quantity}
-                      </span>
-                      <span className="text-right text-xs text-foreground-secondary">
-                        Added by the offer
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm text-foreground">
-                        Total:{' '}
-                        <span className="font-bold tabular-nums">{formatInr(item.lineTotal)}</span>
-                      </span>
-                      <QtyPill
-                        qty={item.quantity}
-                        onEdit={() => onItemTap(item.product.id)}
-                        label={item.product.shortName}
-                        className="h-9"
-                      />
-                    </>
-                  )}
+                  <span className="text-sm text-foreground">
+                    Total: <span className="font-bold tabular-nums">{formatInr(item.lineTotal)}</span>
+                  </span>
+                  <QtyPill
+                    qty={item.quantity}
+                    onEdit={() => onItemTap(item.product.id)}
+                    label={item.product.shortName}
+                    className="h-9"
+                  />
                 </div>
               </div>
             </div>

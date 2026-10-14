@@ -635,7 +635,6 @@ export default function App() {
               go('view-items');
             }}
             onAddMore={() => go('listing')}
-            onOpenCoupons={() => go('coupons')}
             /* Which sheet depends on the catalogue the line came from — a
                wholesale line is priced by vendor, so it opens the vendor
                sheet rather than the distributor one. */

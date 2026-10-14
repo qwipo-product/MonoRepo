@@ -46,7 +46,7 @@ export function CouponsScreen({
   /** Units of a product in the cart, ignoring lines the seller gave free. */
   const qtyOf = (productId: string) =>
     cart.sellers.reduce(
-      (n, s) => n + s.items.filter((i) => i.product.id === productId && !i.free).reduce((a, i) => a + i.quantity, 0),
+      (n, s) => n + s.items.filter((i) => i.product.id === productId).reduce((a, i) => a + i.quantity, 0),
       0
     );
 

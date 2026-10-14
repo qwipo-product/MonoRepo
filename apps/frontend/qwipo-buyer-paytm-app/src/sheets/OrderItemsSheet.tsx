@@ -49,32 +49,22 @@ export function OrderItemsSheet({
 }
 
 function ItemRow({ item }: { item: CartItem }) {
-  const { product, quantity, lineTotal, free } = item;
+  const { product, quantity, lineTotal } = item;
   return (
     <div className="flex gap-3 rounded-lg border border-border p-3">
       <div className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
         <ProductImage image={product.image} alt={product.name} />
-        {free && (
-          <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
-            Free
-          </span>
-        )}
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-foreground">{product.shortName}</div>
 
-        {free ? (
-          <div className="mt-1 text-xs font-semibold text-success-foreground">Free item</div>
-        ) : (
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-xs tabular-nums text-foreground-secondary">
-              MRP{' '}
-              <span className="line-through">{formatInr(product.mrp)}</span>
-            </span>
-            <span className="text-sm font-semibold tabular-nums text-foreground">{formatInr(product.price)}</span>
-          </div>
-        )}
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-xs tabular-nums text-foreground-secondary">
+            MRP <span className="line-through">{formatInr(product.mrp)}</span>
+          </span>
+          <span className="text-sm font-semibold tabular-nums text-foreground">{formatInr(product.price)}</span>
+        </div>
 
         <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
           <span className="inline-flex items-center rounded-md bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">

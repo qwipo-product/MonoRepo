@@ -6,8 +6,8 @@ import { OFFERS } from './coupons';
 /* Cart Summary reads the SAME quantities the buyer picked on the Product List /
    Reorder / Wholesaler List screens — `buildCart()` takes them as arguments
    instead of a fixed seed, so adding something there shows up here too. The
-   cart opens empty (App.tsx's `qty` starts at `{}`) — everything in it is
-   something the buyer actually added.
+   initial quantities come from `INITIAL_QTY`. The cart contains purchased
+   units only. Offers do not add free reward lines.
 
    Each seller resolves to one of three retailer-facing states:
      • free  — at/above the free-delivery threshold  → ELIGIBLE · FREE DELIVERY
@@ -131,7 +131,6 @@ export interface CartItem {
   product: Product;
   quantity: number;
   lineTotal: number;
-  free: boolean;
   /** Unit price when the item was added — absent when it hasn't moved. */
   priceWhenAdded?: number;
   /** Per-unit delta: + dearer, − cheaper. 0/undefined when unchanged. */
@@ -252,7 +251,6 @@ export function buildCart(
       product,
       quantity,
       lineTotal,
-      free: false,
       ...freight,
       priceWhenAdded: was,
       priceDelta,
@@ -262,14 +260,6 @@ export function buildCart(
     arr.push(item);
     bySeller.set(product.seller, arr);
     itemByProductId.set(product.id, item);
-  };
-
-  const addFreeItem = (product: Product, quantity: number) => {
-    if (quantity <= 0) return;
-    const item: CartItem = { product, quantity, lineTotal: 0, free: true };
-    const arr = bySeller.get(product.seller) ?? [];
-    arr.push(item);
-    bySeller.set(product.seller, arr);
   };
 
   for (const [productId, quantity] of Object.entries(qty)) {
@@ -314,26 +304,6 @@ export function buildCart(
     ];
   }
 
-  // Promo free units — one per automatic Offer whose `needs` the cart actually
-  // meets, so "Applied automatically" on the Offers page always matches a real
-  // ₹0 line here, for BOTH the schemes and their free goods.
-  for (const offer of OFFERS) {
-    if (!offer.automatic || !offer.reward) continue;
-    const short = (offer.needs ?? []).some((n) => (allQty[n.productId] ?? 0) < n.qty);
-    if (short) continue;
-    const rewardId = offer.reward.productId;
-    const product = PRODUCTS.find((p) => p.id === rewardId);
-    if (product) {
-      addFreeItem(product, offer.reward.qty);
-      continue;
-    }
-    // wholesale reward — priced at the vendor the buyer picked for that SKU
-    const wp = WHOLESALER_PRODUCTS.find((w) => w.id === rewardId);
-    if (!wp) continue;
-    const v = wp.vendors.find((x) => x.id === (wholesaleVendor[rewardId] ?? cheapestVendorId(wp))) ?? wp.vendors[0];
-    addFreeItem(wholesaleAsProduct(wp, v), offer.reward.qty);
-  }
-
   const sellers: CartSeller[] = [];
   for (const [name, items] of bySeller) {
     const type = items[0].product.source;
@@ -346,7 +316,7 @@ export function buildCart(
     const savings = items.reduce(
       (s, i) =>
         s +
-        (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)) +
+        Math.max(0, (i.product.mrp - i.product.price) * i.quantity) +
         (i.offerTags?.reduce((a, t) => a + t.amount, 0) ?? 0),
       0
     );
