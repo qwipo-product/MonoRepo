@@ -1,61 +1,47 @@
 ---
 name: handoff
-description: Handoff pathway — a mockup or flow is approved and engineering will build the real thing. Produces a spec derived from the mockup, in product terms, that the development team can build from. Use for "it's approved, hand it to engineering", "write the spec", "document this for the dev team".
+description: Prepare an engineering specification from approved prototype flows. Separate confirmed requirements from simulated behavior.
 ---
 
-# Handing off to engineering
+# Prepare an engineering handoff
 
-A mockup is the clearest spec there is, until someone has to build it
-without the person who made it in the room. The handoff captures what the
-screens already say and what they can't.
+Use the [repository instructions](../../../CLAUDE.md).
+A handoff request authorizes preparation of the specification.
+Without the user's instruction to send a message, do not send it to another person.
 
-Derive everything possible from the repo — never ask for what is readable:
+## Establish the evidence
 
-- the flows and screens, from the app's README and its router or nav;
-- the states each screen has (empty, loading, error, edges), from the code;
-- the data each screen reads, from its existing fixture and state modules — that is the API the real thing needs;
-- the demo URL and logins, from the README's deploy table.
+1. Find the approved flows and available approval evidence.
+2. Read the related stories, application README, navigation, and fixtures.
+3. Find simulated outcomes and missing states.
+4. Find any available API documentation.
+5. Ask only for decisions that the available evidence cannot resolve.
 
-Ask at most three questions, only the non-derivable:
+A working screen is not proof of approval.
+Do not record fixture fields as a confirmed production API.
+Without authorization for a product change, keep existing business rules.
 
-1. What's in scope for this build — all of the mockup, or the flows that
-   were approved?
-2. What in the mockup is fake in a way engineering must know (a hard-coded
-   outcome, a timer standing in for an approval, a persona that doesn't
-   exist)?
-3. Who on the development team receives it, and where (a ticket, a doc, a
-   channel)?
+## Write the specification
 
-Write `docs/handoffs/<app>-<flow>.md`:
+If a repository document is applicable, use `docs/handoffs/<app>-<flow>.md`.
+Include these sections:
 
-```md
-# Handoff: <App> — <flow>
-date: <YYYY-MM-DD>
-mockup: apps/frontend/<app> · <demo URL> · <logins>
-approved by: <who, when>
+| Section | Content |
+| --- | --- |
+| Scope | Approved flows, exclusions, owner, and source references |
+| Screens | User actions, displayed information, and navigation |
+| States | Normal, empty, loading, error, and exceptional behavior |
+| Simulated behavior | Hard-coded results, timers, fixtures, and missing integrations |
+| Data requirements | Proposed entities and fields for engineering review |
+| Confirmed contracts | Verified API references and versions, when available |
+| Open decisions | Authorization, validation, errors, timing, and ownership gaps |
+| Acceptance criteria | Observable results for each required flow |
 
-## Flows in scope
-- <sentence> — screens: <list>
+Identify unverified API details as proposals.
+Record the source and date for confirmed contracts.
+Use product terms. Include the necessary integration boundaries.
+Do not invent endpoints, payload fields, or service-level commitments.
 
-## Screens
-### <Screen>
-- shows: …
-- states: empty / loading / error / <edge>
-- reads: <fixture → the entities the real API must return>
-- writes: <what the user's action changes>
-- fake here: <what the mockup hard-codes>
-
-## Out of scope
-- …
-
-## Open questions for engineering
-- …
-```
-
-Product terms throughout — a reader from engineering should be able to
-open the mockup beside this file and see every line on a screen. No
-component names, no hooks, no suggestions about their architecture.
-
-Close with where it went and who owns the next step. The mockup stays where
-it is; if it's deployed, the URL in the handoff must keep working until
-engineering is done — don't `retire-mockup` it yet.
+Examine each requirement against its evidence before delivery.
+Record the document location and the owner of each unresolved decision.
+Until the engineering team no longer uses demonstration links, keep them.
