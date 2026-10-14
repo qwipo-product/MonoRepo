@@ -40,7 +40,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'storefront', label: 'Authorised Distributor Storefront' },
       { id: 'listing', label: 'Product List' },
-      { id: 'offer-skus', label: 'Offers & Schemes (SKUs)' },
       { id: 'distributor-units', label: 'Distributor Selling Units' },
       { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
       { id: 'wholesaler-units', label: 'Wholesaler Selling Units' },

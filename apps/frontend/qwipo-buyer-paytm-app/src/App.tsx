@@ -58,7 +58,6 @@ import { LoadingScreen } from './screens/LoadingScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
-import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -76,7 +75,7 @@ import {
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp',
-  'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
+  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
   'distributors-list',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
@@ -142,7 +141,7 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'checkout' || id === 'coupons' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
   if (id === 'order-details') return 'my-orders';
-  if (id === 'offer-skus' || id === 'storefront') return 'listing';
+  if (id === 'storefront') return 'listing';
   return 'home';
 }
 
@@ -612,19 +611,6 @@ export default function App() {
             applied={listApplied}
             onBack={goBack}
             onSearch={() => go('global-search')}
-            qty={qty}
-            onOpenSheet={setSheetId}
-            onOpenGallery={setGalleryId}
-            onGoToCart={() => go('cart')}
-            cartCount={cartCount}
-            cartTotal={cartTotal}
-            cartFreight={CART.freightTotal}
-          />
-        );
-      case 'offer-skus':
-        return (
-          <OffersSchemesSkusScreen
-            onBack={goBack}
             qty={qty}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
