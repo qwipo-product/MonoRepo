@@ -65,22 +65,35 @@ For an unmatched request, use the specified scope. Do not add a screen change wi
 | --- | --- | --- | --- |
 | `qwipo-buyer-paytm-app` | 5175 | 6175 | Mobile |
 | `seller-store` | 5174 | 6174 | Desktop |
+| `rirn` | 5173 | 6173 | Desktop |
+| `rirn-retailer` | 5176 | 6176 | Mobile |
+| `qwipo-analytics` | 5177 | 6177 | Mobile kit in a desktop layout |
+| `storybook` | 6006 | — | Mobile component catalog |
+| `storybook-web` | 6007 | — | Desktop component catalog |
+| `mock-api` | 8787 | — | Bun HTTP service |
 
-Only these two applications remain in this branch.
-Both applications use local demonstration data.
-No backend server is necessary.
+The frontend applications use local demonstration data.
+Mock API is optional. It serves shared fixtures over HTTP.
+Buyer and Seller Store do not require it.
+Use each application's README for its routes and demonstration inputs.
 
 | Purpose | Location |
 | --- | --- |
 | Mobile tokens | `packages/design-tokens` |
 | Mobile primitives | `packages/ui` |
-| Buyer product components | `packages/components` |
+| Buyer product and analytics chart components | `packages/components` |
 | Desktop tokens | `packages/web-tokens` |
 | Desktop primitives and handbook | `packages/web-ui` |
-| Shared order status | `packages/types` |
+| Shared domain types | `packages/types` |
+| Shared demonstration fixtures | `packages/mock-data` |
+| Translation provider and dictionaries | `packages/i18n` |
 | Version display | `packages/version-badge` |
 | Buyer fixtures | `apps/frontend/qwipo-buyer-paytm-app/src/data` |
 | Seller fixtures and stores | `apps/frontend/seller-store/src/app/lib` |
+| Analytics fixtures | `apps/frontend/qwipo-analytics/src/data` |
+| RIRN company session and fixtures | `apps/frontend/rirn/src/lib` |
+| RIRN retailer session and fixtures | `apps/frontend/rirn-retailer/src/lib` |
+| Mock API routes and collection map | `apps/backend/mock-api/src` |
 
 ### Read the implementation references
 
@@ -97,6 +110,8 @@ Before a desktop component change, read the [design reference](packages/web-ui/D
 | Mobile TypeScript token values | `@mockups/design-tokens`: `packages/design-tokens/src/tokens.ts` |
 | Desktop TypeScript token values and chart palette | `@mockups/web-tokens`: `packages/web-tokens/src/tokens.ts` |
 | Shared `OrderStatus` type | `@mockups/types`: `packages/types/src/index.ts` |
+| Shared product, order, address, and seller fixtures | `@mockups/mock-data`: `packages/mock-data/src/index.ts` |
+| Translation provider and hooks | `@mockups/i18n`: `packages/i18n/src/index.tsx` |
 | `VersionBadge`, `APP_VERSION`, and `APP_COMMIT` | `@mockups/version-badge`: `packages/version-badge/src/index.ts` |
 
 Import components through their public package exports.
@@ -116,6 +131,7 @@ Before a shared configuration change, examine its consumers and the authorized s
 | `turbo.json` | Task dependencies, cache outputs, and build environment variables |
 | `packages/tsconfig/base.json` | Shared TypeScript options |
 | `packages/tsconfig/react-app.json`, `packages/tsconfig/react-library.json` | Application and package TypeScript presets |
+| `packages/tsconfig/bun-app.json` | Bun service TypeScript preset |
 | `packages/eslint-config/base.js`, `packages/eslint-config/react.js` | Shared lint presets |
 | `.claude/launch.json` | Local application launch commands and ports |
 | `scripts/new-mockup.ts`, `scripts/list-apps.ts` | Application generation and workspace listing |
@@ -138,7 +154,7 @@ If the task needs these documents, create them at those locations.
 - Use complete Tailwind class names. Do not construct class names from fragments.
 - If existing components and fixtures satisfy the request, use them.
 - Keep changes to shared configuration in the approved scope.
-- Tell the user the effect of a shared change on both applications.
+- Tell the user the effect of a shared change on the affected applications.
 
 Use Bun for workspace commands. Do not introduce an npm or Yarn lockfile.
 The dependency catalog is `workspaces.catalog` in the root `package.json`.

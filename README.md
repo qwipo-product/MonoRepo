@@ -1,9 +1,11 @@
 # mockups-lab
 
-This repository contains two frontend prototypes for product review.
+This repository contains frontend prototypes, component catalogs, and an optional mock API for product review.
 Buyer/Paytm demonstrates mobile buyer and salesperson flows.
 Seller Store demonstrates distributor and administrator flows.
-Both applications use local demonstration data.
+RIRN demonstrates company and retailer identity flows.
+Qwipo Analytics demonstrates dashboards and reports.
+The applications use demonstration data. Mock API serves shared fixtures over HTTP.
 
 Keep the demonstrated behavior correct.
 Record simulated results and incomplete integrations.
@@ -30,11 +32,11 @@ Use one of these commands:
 | Command | Result |
 | --- | --- |
 | `bun run ls` | List application names, descriptions, and configured ports. |
-| `bun dev` | Start both applications. |
+| `bun dev` | Start all application development servers. |
 | `bun dev --filter=@mockups/qwipo-buyer-paytm-app` | Start Buyer/Paytm. |
 | `bun dev --filter=@mockups/seller-store` | Start Seller Store. |
 | `bun run check --continue --ui=stream` | Run lint, type checks, and builds. |
-| `bun run build` | Build both applications. |
+| `bun run build` | Build all applications and component catalogs. |
 
 Examine the actual URL in the server output.
 Vite can select another port when the configured port is occupied.
@@ -47,25 +49,36 @@ Use that URL only on a permitted network.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `http://localhost:5175` | 6175 | [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md) |
 | Seller Store | `http://localhost:5174` | 6174 | [Seller README](apps/frontend/seller-store/README.md) |
+| RIRN Console | `http://localhost:5173` | 6173 | [RIRN README](apps/frontend/rirn/README.md) |
+| RIRN Retailer | `http://localhost:5176` | 6176 | [Retailer README](apps/frontend/rirn-retailer/README.md) |
+| Qwipo Analytics | `http://localhost:5177` | 6177 | [Analytics README](apps/frontend/qwipo-analytics/README.md) |
+| Mobile Storybook | `http://localhost:6006` | — | [Mobile catalog README](apps/frontend/storybook/README.md) |
+| Desktop Storybook | `http://localhost:6007` | — | [Desktop catalog README](apps/frontend/storybook-web/README.md) |
+| Mock API | `http://localhost:8787` | — | [API README](apps/backend/mock-api/README.md) |
 
 Before a preview command, build the application.
-They serve build output with Vite's preview server.
+The five Vite applications have preview commands.
+The Storybook catalogs build to `storybook-static/`.
+Mock API runs as a Bun service. It has no Vite preview command.
 A preview server is a local review tool, not the hosted production server.
 
-Retired applications remain in Git history.
-Their local removal does not delete hosted resources, Azure pipelines, DNS records, or external GitOps manifests.
+Start one workspace with `bun dev --filter=@mockups/<name>`.
+Buyer and Seller Store do not require Mock API.
 
 ## Repository layout
 
 | Location | Purpose |
 | --- | --- |
 | `apps/frontend/` | Application workspaces |
+| `apps/backend/` | Mock API workspace |
 | `packages/design-tokens/` | Mobile token values and CSS theme |
 | `packages/ui/` | Mobile UI primitives |
-| `packages/components/` | Buyer product components |
+| `packages/components/` | Buyer product and analytics chart components |
 | `packages/web-tokens/` | Desktop token values and CSS theme |
 | `packages/web-ui/` | Desktop components and design reference |
-| `packages/types/` | Shared order status |
+| `packages/types/` | Shared domain types |
+| `packages/mock-data/` | Shared demonstration fixtures |
+| `packages/i18n/` | Translation provider and dictionaries |
 | `packages/version-badge/` | Build version display |
 | `packages/tsconfig/` | TypeScript configuration |
 | `packages/eslint-config/` | Lint configuration |
@@ -104,10 +117,13 @@ Use [start-work](.claude/skills/start-work/SKILL.md) for the branch procedure.
 
 | Purpose | Mobile | Desktop |
 | --- | --- | --- |
-| Application | Buyer/Paytm | Seller Store |
+| Application | Buyer/Paytm, RIRN Retailer | Seller Store, RIRN Console |
 | Primitives | `@mockups/ui` | `@mockups/web-ui` |
 | CSS tokens | `@mockups/design-tokens/theme.css` | `@mockups/web-tokens/theme.css` |
-| Review location | Buyer review sidebar | Seller Design System persona |
+| Review location | Mobile Storybook and Buyer sidebar | Desktop Storybook and Seller Design System persona |
+
+Qwipo Analytics uses the mobile kit in a desktop layout.
+Keep that existing exception unless the user requests a design-kit migration.
 
 Import one CSS token layer in each application.
 Keep the Tailwind `@source` entries for shared component code.
@@ -153,6 +169,11 @@ Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
 | Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
+| RIRN Console | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
+| RIRN Retailer | `mockups-rirn-retailer` | RIRN Retailer - Build | RIRN Retailer - Deploy |
+| Qwipo Analytics | `mockups-analytics` | Analytics - Build | Analytics - Deploy |
+| Mobile Storybook | `mockups-storybook` | Storybook - Build | Storybook - Deploy |
+| Desktop Storybook | `mockups-storybook-web` | Storybook Web - Build | Storybook Web - Deploy |
 
 The dev host has the form `https://<service>.dev.bms.qwipo.com`.
 These names show the repository configuration. They do not prove live service availability.

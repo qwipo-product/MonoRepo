@@ -23,7 +23,7 @@
  * run manually on a tag — an existing release image, which is also how a
  * mockup is rolled back.
  *
-  * Pushes to dev/* and feature/* are PREVIEW builds: the same Dockerfile is
+ * Pushes to dev/* and feature/* are PREVIEW builds: the same Dockerfile is
  * built to its builder stage, the output directory is uploaded to the
  * DigitalOcean Space qwipo-mockups, and the nginx.conf written here proxies
  * that bucket under /builds/ on the mockup.s host. No image, no deploy.
@@ -39,8 +39,8 @@
  *
  * ── Why there is no runtime config here ─────────────────────────────────────
  *
- * These are mockups. Every one of them bundles local demo fixtures at build
- * time and talks to nothing — no API base URL, no feature flags, nothing that
+ * These are mockups. The frontend applications bundle demonstration fixtures at build
+ * time and do not call a backend — no API base URL, no feature flags, nothing that
  * differs between dev and production. So the image is a pure static artefact:
  * nginx and a directory of files, no entrypoint, no configs/config.*.json.
  *
@@ -52,8 +52,8 @@
  *
  * ── What is derived rather than left to whoever copies files ────────────────
  *
- *   - build output dir  — Vite apps emit dist/. An empty or wrong directory
- *                         leaves nginx serving 404s.
+ *   - build output dir  — Vite uses dist/; Storybook uses storybook-static/.
+ *                         Read the build script before copying artifacts.
  *   - service name      — `mockups-<what-it-is>`. No `qwipo-` prefix: the
  *                         registry is already the Qwipo registry and the
  *                         domain already says it.
@@ -107,8 +107,10 @@ if (!existsSync(join(dir, 'package.json'))) {
 const pkg = await Bun.file(join(dir, 'package.json')).json();
 const pkgName: string = pkg.name;
 
-// Both retained apps use the standard Vite build output.
-const outDir = 'dist';
+// Read the output directory so Storybook and Vite use the correct build artifacts.
+const buildScript: string = pkg.scripts?.build ?? '';
+const outDir = buildScript.match(/-o\s+(\S+)/)?.[1] ?? 'dist';
+const isCatalog = buildScript.includes('storybook build');
 
 // Does this app route on real URLs? The SPA fallback goes into nginx.conf
 // either way — it is the correct default — but whether it is load-bearing
@@ -133,7 +135,7 @@ const label =
   service
     .replace(/^mockups-/, '')
     .split('-')
-    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .map((w) => w === 'rirn' ? 'RIRN' : w[0].toUpperCase() + w.slice(1))
     .join(' ');
 
 // Git tag prefix: `seller-store-v1.2.3`. The `mockups-` is dropped because
@@ -155,7 +157,7 @@ const branch = flag('branch') ?? (await $`git rev-parse --abbrev-ref HEAD`.cwd(R
 
 const host = `${service}.dev.bms.qwipo.com`;
 const appPath = `apps/frontend/${app}`;
-const what = 'Vite/React SPA';
+const what = isCatalog ? 'static Storybook catalog' : 'Vite/React SPA';
 
 // Short name for the k8s Deployment/Service objects. Everything in the dev
 // namespace shares bms-resources, so this only has to be unique there — the
@@ -247,7 +249,7 @@ LABEL org.opencontainers.image.version="\${APP_VERSION}" \\
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY \${APP_PATH}/nginx.conf /etc/nginx/conf.d/mockup.conf
 
-# This Vite app builds to ${outDir}/.
+# This app builds to ${outDir}/, as declared by its build script.
 # Point this at the wrong directory and nginx serves an empty root: no error
 # at build time, just a 404 page at runtime.
 COPY --from=builder /workspace/\${APP_PATH}/${outDir}/ /usr/share/nginx/html/
@@ -339,7 +341,9 @@ server {
     }
 
 ${
-  routes
+  isCatalog
+    ? `    # Storybook loads stories through iframe.html, a file in the build output.`
+    : routes
       ? `    # SPA fallback. This app routes on the URL hash (#/orders/123) — it must,
     # for preview builds — so nothing depends on this today. Kept because it is
     # the right default: a stray real path lands on the app instead of a 404.`

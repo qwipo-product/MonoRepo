@@ -20,6 +20,66 @@
         "--filter=@mockups/seller-store"
       ],
       "port": 5174
+    },
+    {
+      "name": "rirn",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/rirn"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "rirn-retailer",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/rirn-retailer"
+      ],
+      "port": 5176
+    },
+    {
+      "name": "qwipo-analytics",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/qwipo-analytics"
+      ],
+      "port": 5177
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/storybook"
+      ],
+      "port": 6006
+    },
+    {
+      "name": "storybook-web",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/storybook-web"
+      ],
+      "port": 6007
+    },
+    {
+      "name": "mock-api",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/mock-api"
+      ],
+      "port": 8787
     }
   ]
 }

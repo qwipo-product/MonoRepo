@@ -1,0 +1,385 @@
+// Sales deep page, plus the drilled state reached from the Overview attention
+// item "91 open orders past 4 days". A drill is a filter, not a page: the same
+// screen with drill chips in the scope bar and panels reshaped to the subset.
+// Records never appear here — the last card hands the filters to a report.
+import { useState } from 'react';
+import { Button, cn } from '@mockups/ui';
+import { ScopeBar } from '../components/ScopeBar';
+import { TrendChart } from '../components/TrendChart';
+import { Columns, HBars } from '@mockups/components';
+import { Panel, KpiCard } from '../components/dashboard';
+import { stageBg, toneBg, openBg, ageBg } from '../components/chartClasses';
+import { dailyValue, dailyPrev, dailyDelivered } from '../data/overview';
+import {
+  salesKpis, monthly, cancelReasons,
+  deliverySpeed, orderSizeBands, returnRemarks,
+  drillKpis, drillStages, drillDistributors, overdueDaily, overduePrev, type BarRow,
+} from '../data/sales';
+
+const toHBars = (rows: BarRow[]) => rows.map((r) => ({ label: r.label, n: r.n, value: r.value, barClass: toneBg[r.tone] }));
+import { RecordsDrawer } from '../components/RecordsDrawer';
+import { Handoff } from '../components/Handoff';
+import type { Stage } from '../data/orderRows';
+import type { Page } from '../nav';
+
+const openStages: Stage[] = ['created', 'accepted'];
+
+/** Drill-through per KPI. null = no record list yet (outlet-grain KPIs). */
+type QuickFilter = { label: string; statuses?: Stage[]; count: number | string };
+type Drill = { title: string; total: string; statuses?: Stage[]; date?: string; distributors?: string[]; sort?: boolean; quickFilters?: QuickFilter[] };
+
+const statusQuick: QuickFilter[] = [
+  { label: 'All', count: '1,142' },
+  { label: 'Order placed', statuses: openStages, count: 392 },
+  { label: 'Delivered', statuses: ['delivered'], count: 454 },
+  { label: 'Cancelled', statuses: ['cancelled'], count: 284 },
+  { label: 'Returned', statuses: ['returned'], count: 12 },
+];
+const salesDrills: (Drill | null)[] = [
+  { title: 'Orders', total: '1,142 orders · ₹38.6L', quickFilters: statusQuick },
+  { title: 'Order value', total: '1,142 orders · ₹38.6L', sort: true },
+  { title: 'Avg order value', total: '1,142 orders · ₹3,380 avg', sort: true },
+  { title: 'Delivered orders', total: '454 orders · ₹15.0L', statuses: ['delivered'] },
+  { title: 'Cancelled orders', total: '284 orders · ₹10.5L', statuses: ['cancelled'] },
+  null, // Repeat-order rate — outlet records come with the Customers page
+];
+
+export default function Sales({ go, drilled }: { go: (p: Page) => void; drilled?: boolean }) {
+  return drilled ? <DrilledSales go={go} /> : <FullSales go={go} />;
+}
+
+/* ---------------------------------- full page ---------------------------------- */
+
+function FullSales({ go }: { go: (p: Page) => void }) {
+  const [metric, setMetric] = useState('value');
+  const [grain, setGrain] = useState('daily');
+  const [drill, setDrill] = useState<Drill | null>(null);
+  return (
+    <div className="flex flex-col gap-5">
+      <ScopeBar />
+      {drill && <RecordsDrawer {...drill} sortByValue={drill.sort} onClose={() => setDrill(null)} go={go} />}
+
+
+      <section>
+        <div className="grid grid-cols-6 gap-3">
+          {salesKpis.map((k, i) => (
+            <KpiCard key={k.label} {...k} onOpen={salesDrills[i] ? () => setDrill(salesDrills[i]) : undefined} />
+          ))}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Panel className="col-span-12" title="Orders and value over time" subtitle="Delivered value shaded"
+          right={
+            <div className="flex flex-wrap justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+              <Pills value={metric} onChange={setMetric} options={[
+                { value: 'value', label: 'Value' }, { value: 'orders', label: 'Orders' }, { value: 'vs', label: 'Vs delivered' },
+              ]} />
+              <Pills value={grain} onChange={setGrain} options={[
+                { value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' },
+              ]} />
+            </div>
+          }>
+          <TrendChart
+            current={dailyValue} previous={dailyPrev} delivered={dailyDelivered}
+            onPoint={(i) => setDrill({ title: `Orders · ${i + 1} Aug`, total: `₹${dailyValue[i]}L placed · ₹${dailyDelivered[i]}L delivered`, date: `${i + 1} Aug` })}
+          />
+          <Legend items={[
+            { bg: 'bg-primary', label: 'Order value · ₹38.6L' },
+            { bg: 'bg-success', label: 'Delivered value · ₹15.0L' },
+            { bg: 'bg-border-strong', label: '1 – 22 Jul · ₹34.7L' },
+          ]} />
+        </Panel>
+
+        <Panel className="col-span-12" title="Month-wise sales" subtitle="Delivered value inside each bar">
+          {/* Month click = drill-through drawer, same approach as the Overview. */}
+          <MonthBars onMonth={(m) => {
+            const mo = monthly.find((x) => x.label === m)!;
+            setDrill({
+              title: `Orders · ${m.replace('*', '')} 2026`,
+              total: `₹${mo.value}L placed · ₹${mo.delivered}L delivered`,
+              quickFilters: statusQuick,
+            });
+          }} />
+          <Legend items={[
+            { bg: openBg, label: 'Order value' },
+            { bg: 'bg-success', label: 'Delivered value' },
+            { bg: 'bg-warning', label: 'Returned' },
+            { bg: '', label: '* Aug = 22 days' },
+          ]} />
+        </Panel>
+
+        <Panel className="col-span-4" title="Days to deliver" subtitle="454 delivered · avg 1.6 days">
+          <Columns
+            height={110}
+            items={deliverySpeed.map((b, i) => ({ label: b.label, n: b.n, bg: ageBg[i] }))}
+            onBar={(l) => {
+              const b = deliverySpeed.find((x) => x.label === l)!;
+              setDrill({ title: `Delivered · ${l}`, total: `${b.n} orders`, statuses: ['delivered'] });
+            }}
+          />
+        </Panel>
+
+        <Panel className="col-span-4" title="Order size" subtitle="1,142 orders · ₹3,380 avg">
+          <Columns
+            height={110}
+            items={orderSizeBands.map((b) => ({ label: b.label, n: b.n, bg: 'bg-chart-blue' }))}
+            onBar={(l) => {
+              const b = orderSizeBands.find((x) => x.label === l)!;
+              setDrill({ title: `Orders · ${l}`, total: `${b.n} orders`, sort: true });
+            }}
+          />
+        </Panel>
+
+        <Panel className="col-span-4" title="Returns" subtitle="12 orders · ₹0.4L · 2.6% of delivered">
+          <HBars
+            rows={toHBars(returnRemarks)}
+            onRow={(label) => {
+              const r = returnRemarks.find((x) => x.label === label)!;
+              setDrill({ title: `Returned · ${label}`, total: `${r.n} orders · ${r.value}`, statuses: ['returned'] });
+            }}
+          />
+        </Panel>
+
+        <Panel className="col-span-5" title="Cancellation reasons" subtitle="284 orders · ₹10.5L">
+          <HBars
+            rows={toHBars(cancelReasons)}
+            onRow={(label) => {
+              const r = cancelReasons.find((x) => x.label === label)!;
+              setDrill({ title: `Cancelled · ${label}`, total: `${r.n} orders · ${r.value}`, statuses: ['cancelled'] });
+            }}
+          />
+        </Panel>
+
+        <Handoff
+          className="col-span-7"
+          go={go}
+          report="order-register"
+          title="Need the orders themselves?"
+          body="Runs the Order Register report with this scope · lands in Run history."
+          cta="Run Order Register with this scope"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------- drilled state --------------------------------- */
+
+function DrilledSales({ go }: { go: (p: Page) => void }) {
+  const [drill, setDrill] = useState<Drill | null>(null);
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="type-caption flex items-center gap-1.5 text-foreground-secondary">
+        Overview › Attention › <b className="text-foreground">Open orders past 4 days</b>
+        <Button variant="ghost" size="sm" className="ml-2 text-link" onClick={() => go('overview')}>← Back to Overview</Button>
+      </div>
+      {drill && <RecordsDrawer {...drill} onClose={() => setDrill(null)} go={go} />}
+
+      <ScopeBar
+        chips={[
+          { label: 'Drill · Status', value: 'Order placed', drill: true },
+          { label: 'Drill · Age', value: 'D4+ overdue', drill: true },
+        ]}
+        line={<>Drilled from Overview · same scope and period · <b className="text-foreground">91 orders</b> match · the two drill chips can be removed one at a time</>}
+        action="Clear drill"
+        onAction={() => go('sales')}
+      />
+
+      <section>
+        <div className="grid grid-cols-6 gap-3">
+          {drillKpis.map((k, i) => (
+            <KpiCard key={k.label} {...k} onOpen={i < 3 ? () => setDrill({
+              title: i === 0 ? 'The 91 overdue orders' : i === 1 ? 'The 91 · by value' : 'The 91 · by value',
+              total: '91 orders · ₹3.1L', statuses: openStages, sort: i > 0,
+            }) : undefined} />
+          ))}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Panel className="col-span-5" title="The 91 by stage">
+          <Columns
+            height={150}
+            items={drillStages.map((s) => ({ label: s.label, n: s.n, bg: s.key === 'accepted' ? 'bg-error' : stageBg[s.key] }))}
+            onBar={(l) => {
+              const s = drillStages.find((x) => x.label === l)!;
+              setDrill({ title: `The 91 · ${s.label}`, total: `${s.n} orders`, statuses: [s.key as Stage] });
+            }}
+          />
+          <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">88 of 91 are already Accepted</b> — waiting on distributors.</p>
+        </Panel>
+
+        <Panel className="col-span-7" title="The 91 by distributor" onOpen={() => go('distributors')}>
+          <HBars
+            rows={toHBars(drillDistributors)}
+            wideLabel
+            onRow={(label) => {
+              const name = label.split(' · ')[0];
+              if (name.includes('others')) return;
+              const d = drillDistributors.find((x) => x.label === label)!;
+              setDrill({ title: `The 91 · ${name}`, total: `${d.n} orders · ${d.value}`, statuses: openStages, distributors: [name] });
+            }}
+          />
+          <p className="type-caption mt-3 text-foreground-secondary"><b className="text-foreground">58 of 91 sit with two Hyderabad distributors.</b></p>
+        </Panel>
+
+        <Panel className="col-span-12" title="Overdue count by day">
+          <OverdueChart />
+          <Legend items={[
+            { bg: 'bg-error', label: 'Overdue open orders · today 91' },
+            { bg: 'bg-border-strong', label: '1 – 22 Jul · ended at 77' },
+          ]} />
+        </Panel>
+
+        <Handoff
+          className="col-span-12"
+          go={go}
+          report="open-ageing"
+          title="Need the 91 orders themselves?"
+          body="Runs Open Order Ageing with these drill filters · lands in Run history."
+          cta="Run Open Order Ageing with this drill"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------- pieces ---------------------------------- */
+
+/** Compact pill toggle for panel headers — same chip language as the drawers. */
+function Pills({ options, value, onChange }: {
+  options: { value: string; label: string }[]; value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-0.5 rounded-full bg-background-sunken p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'type-caption whitespace-nowrap rounded-full px-2.5 py-1',
+            o.value === value ? 'bg-card font-medium shadow-sm' : 'text-foreground-secondary hover:text-foreground',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Legend({ items }: { items: { bg: string; label: React.ReactNode }[] }) {
+  return (
+    <div className="type-caption mt-3 flex flex-wrap gap-x-4 gap-y-1 text-foreground-secondary">
+      {items.map((it, i) => (
+        <span key={i} className="flex items-center gap-1.5">
+          {it.bg && <i className={cn('h-2.5 w-2.5 rounded-sm', it.bg)} />}
+          {it.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Month columns with the delivered slice inside each bar. Hover = tooltip. */
+function MonthBars({ onMonth }: { onMonth?: (label: string) => void }) {
+  const max = Math.max(...monthly.map((m) => m.value));
+  const [hover, setHover] = useState<number | null>(null);
+  return (
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max(((hover + 0.5) / monthly.length) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{monthly[hover].label.replace('*', '')} 2026{monthly[hover].label.includes('*') ? ' · 22 days' : ''}</div>
+          <div className="type-caption mt-0.5 grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-0.5 whitespace-nowrap text-foreground-secondary">
+            <i className="h-2 w-2 rounded-full bg-chart-blue-soft" /><span>Order value <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].value}L</b></span>
+            <i className="h-2 w-2 rounded-full bg-success" /><span>Delivered <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].delivered}L</b> · {((monthly[hover].delivered / monthly[hover].value) * 100).toFixed(0)}%</span>
+            <i className="h-2 w-2 rounded-full bg-warning" /><span>Returned <b className="ml-1 text-foreground tabular-nums">₹{monthly[hover].returned}L</b></span>
+          </div>
+        </div>
+      )}
+    <div className="flex items-end justify-around gap-6 px-4" style={{ height: 210 }}>
+      {monthly.map((m) => (
+        <div
+          key={m.label}
+          className={cn('flex h-full w-full max-w-[110px] flex-col items-center justify-end gap-1', onMonth && 'cursor-pointer rounded-md hover:bg-muted')}
+          onClick={onMonth && (() => onMonth(m.label))}
+          onMouseEnter={() => setHover(monthly.indexOf(m))}
+          onMouseLeave={() => setHover(null)}
+        >
+          <b className="type-price-sm">₹{m.value}L</b>
+          <div className="relative w-full" style={{ height: `${(m.value / max) * 82}%` }}>
+            <div className={cn('absolute inset-0 rounded-t-sm', openBg)} />
+            <div className="absolute inset-x-0 bottom-0 grid place-items-center bg-success" style={{ height: `${(m.delivered / m.value) * 100}%` }}>
+              <span className="type-caption font-medium text-primary-foreground">₹{m.delivered}L</span>
+            </div>
+            <div className="absolute inset-x-0 bg-warning" style={{ bottom: `${(m.delivered / m.value) * 100}%`, height: `${Math.max((m.returned / m.value) * 100, 1.5)}%` }} />
+          </div>
+          <small className="type-caption text-foreground-secondary">{m.label}</small>
+        </div>
+      ))}
+    </div>
+    </div>
+  );
+}
+
+/** Overdue open orders per day: 53 → 91 over August, previous month dashed. */
+function OverdueChart() {
+  const x = (i: number) => 50 + (i * 920) / (overdueDaily.length - 1);
+  const y = (n: number) => 170 - (n - 30) * 2;
+  const line = (vals: number[]) => vals.map((n, i) => `${x(i).toFixed(1)},${y(n)}`).join(' ');
+  const last = overdueDaily.length - 1;
+  const [hover, setHover] = useState<number | null>(null);
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 1000;
+    setHover(Math.max(0, Math.min(last, Math.round(((px - 50) / 920) * last))));
+  };
+  return (
+    <div className="relative">
+      {hover !== null && (
+        <div
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 shadow-md"
+          style={{ left: `${Math.min(Math.max((x(hover) / 1000) * 100, 12), 88)}%` }}
+        >
+          <div className="type-label whitespace-nowrap">{hover + 1} Aug 2026</div>
+          <div className="type-caption mt-0.5 whitespace-nowrap text-foreground-secondary">
+            Overdue <b className="text-error-foreground tabular-nums">{overdueDaily[hover]}</b> · {hover + 1} Jul <b className="text-foreground tabular-nums">{overduePrev[hover]}</b>
+          </div>
+        </div>
+      )}
+    <svg viewBox="0 0 1000 200" className="block w-full" role="img" aria-label="Overdue open orders per day, rising from 53 to 91 over August; previous month dashed."
+      onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+      {[60, 90].map((v) => (
+        <g key={v}>
+          <line x1={50} y1={y(v)} x2={970} y2={y(v)} className="stroke-border" />
+          <text x={18} y={y(v) + 4} className="fill-foreground-secondary text-[10px]">{v}</text>
+        </g>
+      ))}
+      <line x1={50} y1={170} x2={970} y2={170} className="stroke-border" />
+      <polyline points={line(overduePrev)} className="fill-none stroke-border-strong" strokeWidth={1.6} strokeDasharray="4 3" />
+      <polyline points={line(overdueDaily)} className="fill-none stroke-error" strokeWidth={2.2} />
+      <circle cx={x(0)} cy={y(overdueDaily[0])} r={3} className="fill-error" />
+      <text x={x(0) + 6} y={y(overdueDaily[0]) + 16} className="fill-foreground-secondary text-[10px]">{overdueDaily[0]}</text>
+      <circle cx={x(last)} cy={y(overdueDaily[last])} r={3.5} className="fill-error" />
+      <text x={x(last) - 12} y={y(overdueDaily[last]) - 8} textAnchor="end" className="fill-foreground text-[10px] font-medium">{overdueDaily[last]}</text>
+      {[0, 10, 21].map((i) => (
+        <text key={i} x={x(i)} y={188} textAnchor={i === 0 ? 'start' : i === 21 ? 'end' : 'middle'} className="fill-foreground-secondary text-[10px]">
+          {i + 1} Aug
+        </text>
+      ))}
+      {hover !== null && (
+        <g className="pointer-events-none">
+          <line x1={x(hover)} y1={30} x2={x(hover)} y2={170} className="stroke-border-strong" strokeDasharray="3 3" />
+          <circle cx={x(hover)} cy={y(overdueDaily[hover])} r={4} className="fill-error stroke-card" strokeWidth={2} />
+          <circle cx={x(hover)} cy={y(overduePrev[hover])} r={3.5} className="fill-border-strong stroke-card" strokeWidth={2} />
+        </g>
+      )}
+    </svg>
+    </div>
+  );
+}

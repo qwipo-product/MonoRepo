@@ -6,7 +6,8 @@
   "license": "UNLICENSED",
   "description": "The deployed-version pill every mockup shows in a corner, and the APP_VERSION constant behind it. Belongs to neither design kit. Raw TypeScript, no build step.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./storybook": "./src/storybook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

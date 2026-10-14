@@ -23,7 +23,7 @@ An extra package manifest inside a workspace directory can change dependency res
 Inspect `package.json`, `src/`, `public/`, and the source's route and style configuration.
 Search for `fetch`, `axios`, and client creation calls before selecting a simulation strategy.
 Search for `@/` imports and relative image imports before changing directory depth.
-The active workspace globs are `apps/frontend/*` and `packages/*` in the root `package.json`.
+The workspace globs are `apps/frontend/*`, `apps/backend/*`, and `packages/*` in the root `package.json`.
 Do not stage a raw export under those directories during inspection.
 
 ## Prepare the target

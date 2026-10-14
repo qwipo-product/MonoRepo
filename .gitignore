@@ -5,6 +5,8 @@ node_modules/
 dist/
 build/
 out/
+# Generated Storybook builds.
+storybook-static/
 
 # tool caches
 .turbo/

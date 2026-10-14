@@ -15,6 +15,11 @@ A command to push can cause automatic deployment. Tell the user that effect befo
 | --- | --- | --- | --- |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | `Buyer App` | `buyer-app` |
 | `seller-store` | `mockups-seller-store` | `Seller Store` | `seller-store` |
+| `rirn` | `mockups-rirn-company` | `RIRN Company` | `rirn-company` |
+| `rirn-retailer` | `mockups-rirn-retailer` | `RIRN Retailer` | `rirn-retailer` |
+| `qwipo-analytics` | `mockups-analytics` | `Analytics` | `analytics` |
+| `storybook` | `mockups-storybook` | `Storybook` | `storybook` |
+| `storybook-web` | `mockups-storybook-web` | `Storybook Web` | `storybook-web` |
 
 Read the existing Dockerfile, nginx configuration, and pipeline files before regeneration.
 The release pipeline refers to the build pipeline by its exact display name.
@@ -30,7 +35,7 @@ Unless the table names an external repository, these paths are relative to the r
 | `scripts/add-deploy.ts` | Generator, identity options, proposed GitOps manifest, and proposed registration commands |
 | `apps/frontend/<app>/package.json` | Application build command |
 | `apps/frontend/<app>/vite.config.ts` | Relative asset base and development configuration |
-| `apps/frontend/<app>/Dockerfile` | Workspace build context, version arguments, and copied `dist/` output |
+| `apps/frontend/<app>/Dockerfile` | Workspace build context, version arguments, and copied `dist/` or `storybook-static/` output |
 | `apps/frontend/<app>/nginx.conf` | Static hosting, SPA fallback, and `/builds/` proxy |
 | `apps/frontend/<app>/docker-build.yml` | Build triggers, path filters, service name, tag prefix, and template parameters |
 | `apps/frontend/<app>/azure-release.yaml` | Build-pipeline reference, environment mapping, and release parameters |
@@ -42,12 +47,13 @@ Unless the table names an external repository, these paths are relative to the r
 
 Use the workspace root as the Docker build context.
 The build needs root `bun.lock`, workspace manifests, and shared `packages/` source.
-Keep the Docker output directory, template `out_dir`, and Turbo `dist/**` cache outputs consistent.
+Keep the Docker output directory, template `out_dir`, and Turbo `dist/**` or `storybook-static/**` cache outputs consistent.
 
 The build YAML extends `/azure-cicd/templates/mockup-docker-template.yaml`.
 The release YAML extends `/azure-cicd/templates/mockup-release-template.yaml`.
 Keep `resources.pipelines.source` equal to the registered build pipeline's display name.
-The current names are `Buyer App - Build` and `Seller Store - Build`.
+Use the pipeline label in the identity table followed by ` - Build`.
+For example, RIRN Console uses `RIRN Company - Build`.
 
 ## Generate files safely
 
@@ -96,7 +102,7 @@ Local file comparisons can continue without a change to the external manifest.
 
 1. Use [verify](../verify/SKILL.md).
 2. If Docker is available, examine the Docker build from the repository root.
-3. Make sure that nginx serves the application's `dist/` output.
+3. Make sure that nginx serves the application's build output directory.
 4. Examine the version display and applicable deep links.
 5. Examine preview assets below the actual URL prefix.
 
@@ -104,11 +110,13 @@ The Docker builder uses a frozen dependency installation and an application buil
 It currently omits lint and type checks.
 Before you record server-side quality enforcement, make sure that the applicable validation job exists and operates correctly.
 
-Both applications currently use static bundles with local fixtures.
+The frontend applications use static bundles with local fixtures.
+Storybook builds to `storybook-static/`. Vite builds to `dist/`.
+Mock API is a Bun service. Use its Dockerfile instead of the frontend deployment generator.
 Do not add runtime configuration without a defined requirement.
 Before you remove an entrypoint or configuration file, examine its consumers.
 For imported applications, examine any `entrypoint.sh` or `public/configs/` references before adopting runtime configuration.
-The retained applications do not need configuration swapping for their bundled fixtures.
+The static frontend applications do not need configuration swapping for their bundled fixtures.
 
 ## Examine branch behavior
 
@@ -200,7 +208,8 @@ If that build fails, the tag can exist without an image.
 Tag-creation permission is necessary for the build identity.
 Do not grant force-push permission to resolve a tag-creation failure.
 
-The current release tag prefixes are `buyer-app-v*` and `seller-store-v*`.
+Use the tag prefix in the identity table followed by `-v*`.
+For example, Analytics uses `analytics-v*`.
 Main image versions use the semantic version without the Git tag prefix.
 Branch builds use a branch-and-commit identifier such as `dev-<sha>`.
 The build publishes `build_vars.env` with `SERVICE_NAME` and `IMAGE_GIT_DIGEST` for the release pipeline.
@@ -216,6 +225,7 @@ APP_VERSION / APP_COMMIT build arguments
   -> Vite bundle
   -> packages/version-badge/src/version.ts
   -> VersionBadge in the application's src/main.tsx
+     or the Storybook manager version badge
 ```
 
 

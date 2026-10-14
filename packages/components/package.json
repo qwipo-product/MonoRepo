@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Buyer product components composed from @mockups/ui primitives and @mockups/types. Ships raw TypeScript without a build step.",
+  "description": "Buyer product and analytics chart components composed from @mockups/ui primitives and @mockups/types. Ships raw TypeScript without a build step.",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.tsx"

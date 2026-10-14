@@ -16,8 +16,8 @@
       // variable it does not know about never reaches `vite build` — and a
       // different value must be a cache miss, since the version is inlined.
       "env": ["VITE_APP_VERSION", "VITE_APP_COMMIT"],
-      // Restore both frontend builds from the Turbo cache.
-      "outputs": ["dist/**"]
+      // Cache Vite, Bun service, and Storybook build outputs.
+      "outputs": ["dist/**", "storybook-static/**"]
     },
     // `tsc --noEmit` produces nothing on disk — the cached artefact is the
     // pass/fail itself, so `outputs` is empty on purpose.

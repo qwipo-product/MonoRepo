@@ -10,6 +10,7 @@
 
 # Build outputs / caches — regenerated inside the builder.
 **/dist
+**/storybook-static
 **/build
 **/out
 **/.turbo

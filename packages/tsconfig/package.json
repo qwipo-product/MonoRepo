@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "TypeScript presets: base, react-app and react-library.",
-  "//": "Config-only package \u2014 no exports map, so TypeScript can resolve `extends` by plain file path."
+  "description": "TypeScript presets: base, react-app, react-library and bun-app.",
+  "//": "Config-only package — no exports map, so TypeScript can resolve `extends` by plain file path."
 }

@@ -1,0 +1,40 @@
+{
+  "name": "@mockups/storybook",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Mobile Storybook for @mockups/design-tokens, @mockups/ui primitives, and @mockups/components. Development port 6006.",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "dev": "storybook dev -p 6006 --no-open",
+    "build": "storybook build -o storybook-static",
+    "build-storybook": "storybook build -o storybook-static",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf storybook-static .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@mockups/components": "workspace:*",
+    "@mockups/design-tokens": "workspace:*",
+    "@mockups/types": "workspace:*",
+    "@mockups/ui": "workspace:*",
+    "@mockups/version-badge": "workspace:*",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/tsconfig": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/addon-themes": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "storybook": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}
