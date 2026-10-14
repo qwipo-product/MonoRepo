@@ -28,9 +28,10 @@ them, and tapping one autofills the number.
 | Super Admin (Empty) | `9999999999` | Admin empty states |
 | Design System | `7777777777` | `/design` |
 
-The **Empty** personas wipe the mock master data on login so every screen
-renders its empty state. That's how to demo day-one onboarding without
-deleting anything — and it's why every new list screen needs an empty state.
+The **Empty** personas clear mock master data and activate supported empty
+states, including the SKU list. Some dashboard totals still use seeded seller
+data; this is an existing prototype limitation. Every new list screen should
+support empty mode.
 
 ## What's in it
 
@@ -80,12 +81,11 @@ That layer is load-bearing here — it's the reason ~40,000 lines didn't need
 rewriting. New screens should still prefer semantic classes (`bg-card`,
 `text-foreground`).
 
-## `/design` is a duplicate
+## Design handbook
 
-The Design System persona lands on a 4,600-line in-app handbook inherited from
-the original repo. It now duplicates `@mockups/storybook-web` (:6007) and will
-drift. Prefer Storybook; expect this page to be retired rather than kept in
-sync.
+The Design System persona opens `/#/design`, the in-app desktop component
+handbook. Keep its examples aligned with `packages/web-ui/DESIGN-SYSTEM.md`
+and check shared component changes in both light and dark themes.
 
 ## Notes for whoever works here next
 

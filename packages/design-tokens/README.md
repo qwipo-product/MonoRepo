@@ -1,21 +1,15 @@
 # @mockups/design-tokens
 
 The **single, platform-neutral source of truth** for the Qwipo design system.
-Every mockup — the Paytm-mini web app, the React Native app, and both
-Storybooks — reads its colors, type, spacing, radius, elevation, and motion
-from here. No component defines a raw hex or an arbitrary size; it references a
+The Buyer/Paytm app and desktop token layer read their colors, type, spacing,
+radius, elevation and motion from here. No component defines a raw hex or an arbitrary size; it references a
 token.
-
-Derived from the running Qwipo app's actual UI, with the drift corrected
-(one brand blue, status colors as `{solid, fg, bg, border}` quads, one radius
-scale, etc.). See `docs/DESIGN-SYSTEM-ANALYSIS.md` for the reasoning.
 
 ## What's here
 
 ```
 src/tokens.ts   canonical values — primitives + semantic light/dark. Framework-neutral.
-src/theme.ts    React Native binding — resolved lightTheme / darkTheme objects.
-src/index.ts    public entry (re-exports the above).
+src/index.ts    public entry (re-exports token values).
 theme.css       Web / Paytm-WebView binding — Tailwind v4 @theme, light + `.dark`.
 ```
 
@@ -35,21 +29,9 @@ Then use token-bound utilities: `bg-card`, `text-foreground`,
 border-success-border`, `rounded-lg`, and the `.type-*` role classes
 (`.type-h2`, `.type-price`, …).
 
-**React Native** (`@mockups/ui-native`, `apps/native/qwipo-native`):
-
-```tsx
-import { themes, type Theme } from '@mockups/design-tokens';
-
-const t: Theme = themes[isDark ? 'dark' : 'light'];
-<View style={{ backgroundColor: t.color.surface.card, padding: t.space[4],
-               borderRadius: t.radius.lg }}>
-  <Text style={t.typography.h2}>…</Text>
-</View>
-```
-
 ## Dark mode — the contract (this is the fix)
 
-Dark mode is a **`.dark` class** on `<html>` (web) / a theme name (native).
+Dark mode is a **`.dark` class** on `<html>`.
 The old app set a `data-theme` *attribute* that the CSS never read, so its
 toggle did nothing. The provider now owns the class:
 
@@ -64,5 +46,4 @@ dark ship together, never one without the other.
 
 `tokens.ts` and `theme.css` are edited **together** (small set, low churn — the
 repo has no build step by design, so both are hand-maintained mirrors). Change
-the value in `tokens.ts`, mirror it in `theme.css`, done. `theme.ts` derives
-from `tokens.ts` automatically.
+the value in `tokens.ts`, mirror it in `theme.css`, done.

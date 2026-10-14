@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Platform-neutral design tokens (the single source of truth) with web (Tailwind theme.css) and React Native (theme.ts) bindings. Ships raw TypeScript — no build step.",
+  "description": "Shared design token values and the mobile Tailwind theme. Ships raw TypeScript and CSS without a build step.",
   "exports": {
     ".": "./src/index.ts",
     "./theme.css": "./theme.css"

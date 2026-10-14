@@ -13,7 +13,7 @@ the dev URL for the person demoing it that afternoon.
 ## Branch names
 
 `dev/<app>-<what-changes>`: `dev/buyer-app-cod-checkout`,
-`dev/seller-store-kyc-empty-state`, `dev/rirn-admin-scaffold`. Short, kebab-case,
+`dev/seller-store-kyc-empty-state`, `dev/buyer-app-cart-empty-state`. Short, kebab-case,
 saying what will be different when it lands.
 
 The `dev/` prefix is what gets the branch a preview link: every push to a

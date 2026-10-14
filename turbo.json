@@ -16,10 +16,8 @@
       // variable it does not know about never reaches `vite build` — and a
       // different value must be a cache miss, since the version is inlined.
       "env": ["VITE_APP_VERSION", "VITE_APP_COMMIT"],
-      // dist/** for the Vite apps, storybook-static/** for the two catalogs.
-      // Miss the second and a cache hit restores nothing, so the Docker build
-      // COPYs an empty directory and nginx serves a 404 page with no error.
-      "outputs": ["dist/**", "storybook-static/**"]
+      // Restore both frontend builds from the Turbo cache.
+      "outputs": ["dist/**"]
     },
     // `tsc --noEmit` produces nothing on disk — the cached artefact is the
     // pass/fail itself, so `outputs` is empty on purpose.

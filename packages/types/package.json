@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Framework-agnostic domain types shared by every mockup and by apps/backend/*.",
+  "description": "Shared order status type used by the buyer app and its product components.",
   "exports": {
     ".": "./src/index.ts"
   },

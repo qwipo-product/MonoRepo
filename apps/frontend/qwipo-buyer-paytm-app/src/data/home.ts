@@ -1,6 +1,5 @@
 // Home feed data — references the real assets copied into public/.
-// (A production build would read @mockups/mock-data; inlined here to keep v2
-// self-contained, matching screenshot 7.)
+// Demo fixtures are local to this app and match the home screen reference.
 
 export interface Distributor {
   id: string;

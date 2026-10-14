@@ -1,6 +1,6 @@
 ---
 name: share-component
-description: Scoped skill — promote a component, helper or pattern from one app into the shared packages, and give it a Storybook story. Invoked by build-screen; use directly for "use this in the other app too", "make it shared", "add it to the kit", "add a story".
+description: Scoped skill — promote a component, helper or pattern from one app into the shared packages, and document it in the consuming app. Invoked by build-screen; use directly for "use this in the other app too", "make it shared", "add it to the kit", "add a component example".
 ---
 
 # Sharing a component
@@ -24,13 +24,10 @@ doesn't do.
    `text-foreground` and nothing else decides the colour.
 5. **Repoint every consumer** to the package import and delete the
    app-local copy. Two copies is the bug this step exists to prevent.
-6. **A story in the matching catalog** — `apps/frontend/storybook/src/…`
-   for mobile, `storybook-web/src/…` for web — in the shape the
-   neighbouring `*.stories.tsx` files use (`Meta` + `StoryObj`, a
-   `docs.description` sentence saying when to use it). The catalog is the
-   design team's inventory; a component without a story is invisible to
-   them.
+6. **Show it in the consuming app.** Document desktop components in Seller
+   Store’s design handbook and mobile components in their package README.
+   Verify real screen usage in both themes.
 7. **Every consuming app needs the `@source` line** for that package in its
    `index.css`, or the component renders unstyled with no error.
 
-Done: `verify` for every app touched, plus the catalog.
+Done: `verify` for every app touched.

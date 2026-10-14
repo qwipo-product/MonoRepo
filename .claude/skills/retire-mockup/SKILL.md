@@ -15,10 +15,8 @@ keeps it and the tree doesn't.
   `git log --oneline -5 -- apps/frontend/<app>` for recent activity. If
   someone else touched it this month, ask them, not the requester.
 - Stale leftovers — folders with no `package.json`, only an orphaned
-  `node_modules` or `dist` (`qwipo-app`, `qwipo-app-v2`, `qwipo-buyer-app`
-  today) — are already ignored by Bun and Turbo. They still need the same
-  confirmation: someone may be using the old code as a reference (the
-  buyer app's `BUILD-NOTES.md` points at `qwipo-app/`).
+  `node_modules` or `dist` — are ignored by Bun and Turbo. Check whether any
+  retained app references them before removal.
 - This is destructive: state what will be deleted and get a yes.
 
 ## 2. Remove it, on a branch

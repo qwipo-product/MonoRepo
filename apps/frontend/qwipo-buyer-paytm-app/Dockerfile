@@ -39,7 +39,7 @@ FROM oven/bun:${BUN_VERSION}-alpine AS builder
 
 WORKDIR /workspace
 
-# The root .dockerignore strips node_modules / dist / storybook-static /
+# The root .dockerignore strips node_modules / dist /
 # .turbo / .env* / .direnv.
 COPY . .
 

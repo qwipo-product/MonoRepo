@@ -43,18 +43,12 @@ one.
 | Command | What it does |
 | --- | --- |
 | `bun run ls` | Lists every mockup, its URL, and what it is |
-| `bun dev` | Runs everything at once |
+| `bun dev` | Runs Buyer/Paytm on 5175 and Seller Store on 5174 |
 | `bun dev --filter=@mockups/seller-store` | Runs just one |
 | `bun run new <name>` | Scaffolds a brand-new mockup, wired up and ready |
 | `bun run check` | Lint + typecheck + build — run before you push |
 | `bun run deploy:add <app>` | Generates a mockup's Dockerfile + Azure pipelines |
 | `bun run build` | Production build of every app |
-
-> **Heads up:** `bun run check` currently fails on one pre-existing issue in
-> `qwipo-buyer-paytm-app` — a stale `eslint-disable` for `jsx-a11y/no-autofocus`,
-> a plugin this repo doesn't install. Unrelated to anything else; scope your run
-> with `bunx turbo run lint typecheck build --filter=@mockups/<app>` until it's
-> resolved.
 
 Dev servers listen on your LAN, so Vite prints a **Network:** URL alongside the
 local one. Open that on your phone — for a mobile mockup, that's the only
@@ -65,32 +59,27 @@ review that counts.
 ## Layout
 
 ```
-apps/
-  frontend/
-    qwipo-buyer-paytm-app/  Buyer + salesperson app (Qwipo & Paytm shells)  →  :5175
-    seller-store/           Distributor + super-admin console               →  :5174
-    rirn/                   Retailer identity network — company console     →  :5173
-    rirn-retailer/          Retailer-facing RIRN pages (phone/WebView)      →  :5176
-    qwipo-analytics/        The analytics dashboard: DigiDukaan console, Reports, Buyer app analytics (desktop) →  :5177
-    storybook/              Catalog for the mobile kit                      →  :6006
-    storybook-web/          Catalog for the web kit                         →  :6007
-  backend/
-    mock-api/               Fake API over the fixtures                      →  :8787
-native/
-  qwipo-buyer-app/          React Native / Expo — outside the Bun workspace,
-                            has its own bun.lock and toolchain
+apps/frontend/
+  qwipo-buyer-paytm-app/  Buyer + salesperson app (Qwipo & Paytm shells) → :5175
+  seller-store/           Distributor + super-admin console             → :5174
 packages/
-  ui/                     Mobile-first primitives: buttons, cards, tabs, cn(), theme provider
-  design-tokens/          Mobile token layer — platform-neutral + theme.css + React Native theme.ts
-  web-ui/                 Desktop/admin primitives: shadcn + Radix, data tables, dialogs, AppShell
-  web-tokens/             Desktop token layer — theme.css for dense admin surfaces
-  components/             Cross-platform product components (ProductCard, StatusBadge…)
-  i18n/                   useI18n() + en / hi / te / ta dictionaries
-  types/                  Product, Order, Seller… the domain shapes
-  mock-data/              The fake catalogue every mockup shares
-  tsconfig/               TS presets — apps extend these
-  eslint-config/          Lint presets — apps extend these
+  design-tokens/          Mobile token values and Tailwind theme
+  ui/                     Mobile UI primitives and theme provider
+  components/             Buyer product components
+  web-tokens/             Desktop token values and Tailwind theme
+  web-ui/                 Desktop UI primitives and design-system spec
+  types/                  Shared buyer order status
+  version-badge/          Deployed version display
+  tsconfig/               TypeScript presets
+  eslint-config/          ESLint presets
+scripts/                  App scaffolding, deployment generation, app listing
+azure-cicd/templates/      Shared build and release pipeline templates
 ```
+
+This branch contains only these two apps. `bun dev` starts both; no backend
+or separate component-catalog server is required. Retired apps remain in Git
+history. Removing their local files does not delete existing Azure pipelines,
+hosted sites, DNS records or manifests in the separate k8s repository.
 
 ### Two design systems, on purpose
 
@@ -103,7 +92,7 @@ different colours, so they don't share one kit:
 | Tokens | `@mockups/design-tokens` (`theme.css`, imported whole) | `@mockups/web-tokens` (`theme.css`, imported whole) |
 | Controls | 44px tap targets | 36px |
 | Radii | 12px cards | 8px cards, 2px table pills |
-| Catalog | `bun dev --filter=@mockups/storybook` → :6006 | `bun dev --filter=@mockups/storybook-web` → :6007 |
+| Review surface | Buyer app review sidebar | Seller Store Design System persona (`/#/design`) |
 
 `bun run new <name> --web` wires the web set; without `--web` you get the
 mobile set. **Never import both token layers into one app** — whichever CSS
@@ -113,9 +102,7 @@ Brand colour is not duplicated between them: `web-tokens` re-exports
 `colorLight` / `colorDark` from `design-tokens`, so the blue and the status
 quads have one definition, not two that happen to agree today.
 
-Two levels under `apps/` (`frontend/`, `backend/`) is deliberate — it matches
-`seller-platform`, so the CI pipelines and Dockerfiles translate across repos
-without anyone re-learning the layout.
+Apps live under `apps/frontend/`; shared packages remain under `packages/`.
 
 ### The Seller Store
 
@@ -137,9 +124,9 @@ It opens on a login with five demo personas. **OTP is `1234` for all of them.**
 | Super Admin (Empty) | `9999999999` | Admin empty states |
 | Design System | `7777777777` | `/design` |
 
-The "Empty" personas wipe the mock master data on login so every screen shows
-its empty state — that's how you demo day-one onboarding without deleting
-anything.
+The "Empty" personas clear mock master data and activate supported empty
+states, including the SKU list. Some dashboard totals still use seeded seller
+data; this is an existing prototype limitation.
 
 Two things about its shape that look wrong until you know why: source sits
 under `src/app/` with assets under `src/imports/`, mirroring the original
@@ -153,9 +140,8 @@ semantic tokens, and go dark-aware anyway because `web-tokens/theme.css`
 carries a `.dark` rebinding layer for exactly those classes. That layer is why
 40k lines didn't need rewriting.
 
-`/design` is a 4,600-line in-app handbook inherited from the original repo. It
-duplicates `storybook-web` and will drift — prefer Storybook, and expect the
-page to be retired.
+`/#/design` is the in-app desktop component handbook. Keep it aligned with
+`packages/web-ui/DESIGN-SYSTEM.md` when shared components change.
 
 ### Adding a mockup
 
@@ -203,24 +189,12 @@ package. `/design-language` audits all of this.
 
 ---
 
-## The mock backend
+## Mock data
 
-`apps/backend/mock-api` serves `@mockups/mock-data` over HTTP, so a screen can
-`fetch()` instead of importing a fixture. Worth it as soon as you want to demo
-a loading spinner, an empty state, or an error path.
-
-```bash
-bun dev --filter=@mockups/mock-api
-
-curl localhost:8787                              # what's available
-curl 'localhost:8787/api/products?q=maggi&limit=5'
-curl 'localhost:8787/api/products?delay=1500'    # see your loading state
-curl 'localhost:8787/api/products?fail=500'      # see your error state
-```
-
-Writes are accepted and echoed back — enough for optimistic UI — but nothing
-persists. Every restart is the same known state, which is what you want for a
-demo you're about to give twice.
+Both apps use local demo fixtures. Buyer data lives in
+`apps/frontend/qwipo-buyer-paytm-app/src/data/`; Seller Store uses the stores
+and data modules in `apps/frontend/seller-store/src/app/lib/`. No mock API
+server is needed. Extend the existing app data rather than duplicating it.
 
 ---
 
@@ -257,19 +231,7 @@ following the `docker-cd-*` / `argocd-*` convention the service repos use.
 | App folder | Service name | Demo host | Build pipeline | Deploy pipeline |
 | --- | --- | --- | --- | --- |
 | `seller-store` | `mockups-seller-store` | mockups-seller-store.dev.bms.qwipo.com | Seller Store - Build | Seller Store - Deploy |
-| `rirn` | `mockups-rirn-company` | mockups-rirn-company.dev.bms.qwipo.com | RIRN Company - Build | RIRN Company - Deploy |
-| `rirn-retailer` | `mockups-rirn-retailer` | mockups-rirn-retailer.dev.bms.qwipo.com | RIRN Retailer - Build | RIRN Retailer - Deploy |
-| `storybook-web` | `mockups-storybook-web` | mockups-storybook-web.dev.bms.qwipo.com | Storybook Web - Build | Storybook Web - Deploy |
-| `storybook` | `mockups-storybook` | mockups-storybook.dev.bms.qwipo.com | Storybook - Build | Storybook - Deploy |
 | `qwipo-buyer-paytm-app` | `mockups-buyer-app` | mockups-buyer-app.dev.bms.qwipo.com | Buyer App - Build | Buyer App - Deploy |
-| `qwipo-analytics` | `mockups-analytics` | mockups-analytics.dev.bms.qwipo.com | Analytics - Build | Analytics - Deploy |
-
-`mock-api` is **not** on this path, deliberately. Nothing calls it — every
-mockup bundles `@mockups/mock-data` at build time — so it was never built and
-never deployed, and its pipelines and manifest have been removed. It still runs
-locally with `bun dev --filter=@mockups/mock-api`. If a mockup ever genuinely
-needs it, `bun run deploy:add` doesn't cover backends; copy the pattern by hand
-and give it a real reason.
 
 Service names are `mockups-<what-it-is>`. The prefix is there so these images
 and ArgoCD apps can't be confused with real services in the shared registry, and
@@ -277,12 +239,6 @@ that is all it's for — no `qwipo-` on top of it (the registry is already the
 Qwipo registry and the domain already says it) and no `-app` suffix, which
 distinguishes nothing. The demo URL falls straight out of the name:
 `https://<service>.dev.bms.qwipo.com`.
-
-Two hosts are reserved for mockups that don't exist yet —
-`mockups-rirn-distributor.dev.bms.qwipo.com` and
-`mockups-rirn-admin.dev.bms.qwipo.com`. There is nothing to build for either;
-they're DNS and manifest reservations in the k8s repo, held so the URL is ready
-when someone starts the app.
 
 The **build pipeline's display name is load-bearing** — each release YAML binds
 to it via `resources.pipelines.source`. Rename one, change the other in the same
@@ -344,7 +300,7 @@ Hover it for the commit. What it says depends on where the build came from:
 | `bun dev`, a plain local build | `local` | — | — |
 
 **`main` builds are releases.** The build pipeline reads the latest
-`<app>-v*` tag (`seller-store-v*`, `rirn-company-v*`, …), bumps it — patch
+`<app>-v*` tag (`seller-store-v*`, `buyer-app-v*`), bumps it — patch
 by default; run the build by hand and pick `bump: minor` or `major` for a
 bigger step — and pushes the new annotated tag *before* building the image, so
 a version number is reserved atomically even when two main builds race. The
@@ -385,24 +341,21 @@ bun run deploy:add seller-store
 That writes all four files into `apps/frontend/<app>/` — `Dockerfile`,
 `nginx.conf`, `docker-build.yml`, `azure-release.yaml` — and derives the two
 things people kept getting wrong when they hand-copied them. The build output
-directory comes from the app's own `build` script, and the Azure pipeline
-display name comes from the service name, so the release YAML's `source:` can't
+directory is Vite’s `dist/`, and the Azure pipeline display name comes from
+the service name, so the release YAML’s `source:` cannot
 drift from the build pipeline it binds to.
 
 Override either when the derived value isn't the one you want, and pass
 `--force` to overwrite a fileset that already exists:
 
 ```bash
-bun run deploy:add rirn --service mockups-rirn-company --label "RIRN Company"
-bun run deploy:add storybook --force
+bun run deploy:add qwipo-buyer-paytm-app --service mockups-buyer-app --label "Buyer App"
+bun run deploy:add seller-store --force
 ```
 
-Deriving the output directory matters because the two Storybook catalogs build
-to `storybook-static/`, not `dist/`. `turbo.json`'s `build.outputs` lists both,
-so a cache hit restores the right one, and the root `.dockerignore` strips both,
-so a stale local build can't be copied into an image. Point a Dockerfile at the
-wrong directory and nginx serves an empty root — a 404 page, with nothing
-failing at build time to tell you why.
+Both apps build to `dist/`, which is declared in `turbo.json` so cached
+builds restore it. The root `.dockerignore` excludes local build output.
+Docker must copy the app’s built `dist/` from the builder stage.
 
 Three prerequisites it can't satisfy from inside this repo. It prints all three
 when it finishes:
@@ -430,8 +383,7 @@ when it finishes:
 
    **The branch matters.** `az` resolves `--yml-path` against that branch in the
    remote, so pointing at one where the file doesn't exist registers a pipeline
-   that looks fine and fails the first time anyone runs it. All fourteen mockup
-   pipelines build from `dev`; `main` doesn't contain these apps at all. The
+   that looks fine and fails the first time anyone runs it. Check that the selected remote branch contains the app’s pipeline files. The
    generator prints whichever branch you're on, and `--branch` overrides it.
 
    This has already bitten once: the first two pipelines stayed bound to
@@ -445,7 +397,7 @@ when it finishes:
 ### No runtime config
 
 There is no `entrypoint.sh` and no `public/configs/config.*.json`, on purpose.
-These are mockups: every one bundles `@mockups/mock-data` at build time and
+These are mockups: both bundle their local fixtures at build time and
 talks to no backend, so there is no API base URL, no feature flag, nothing that
 differs between dev and production. The image is a pure static artefact — nginx
 plus a directory of files, correct in every environment. The deployed version

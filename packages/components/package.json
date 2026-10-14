@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Cross-platform product components composed from @mockups/ui primitives + @mockups/types (StatusBadge, ProductCard, …). Shared by every mockup. Ships raw TypeScript — no build step.",
+  "description": "Buyer product components composed from @mockups/ui primitives and @mockups/types. Ships raw TypeScript without a build step.",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.tsx"

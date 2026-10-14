@@ -1,4 +1,0 @@
-{
-  "extends": "@mockups/tsconfig/react-app.json",
-  "include": [".storybook", "src"]
-}

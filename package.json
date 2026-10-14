@@ -5,7 +5,7 @@
   "packageManager": "bun@1.3.13",
   "workspaces": {
     "packages": [
-      "apps/*/*",
+      "apps/frontend/*",
       "packages/*"
     ],
     "catalog": {
@@ -39,10 +39,8 @@
       "@tailwindcss/vite": "4.3.0",
       "@types/bun": "1.3.14",
       "@types/leaflet": "1.9.22",
-      "@types/node": "25.9.3",
       "@types/react": "19.2.16",
       "@types/react-dom": "19.2.3",
-      "@vercel/analytics": "2.0.1",
       "@vitejs/plugin-react": "6.0.2",
       "class-variance-authority": "0.7.1",
       "clsx": "2.1.1",
@@ -53,7 +51,6 @@
       "eslint-plugin-react-refresh": "0.5.3",
       "exceljs": "4.4.0",
       "globals": "17.6.0",
-      "hono": "4.13.1",
       "leaflet": "1.9.4",
       "input-otp": "1.4.2",
       "lucide-react": "1.17.0",

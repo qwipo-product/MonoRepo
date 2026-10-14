@@ -32,9 +32,8 @@ for "look at this now" and wrong for anything else.
 ## Demo logins
 
 Say them with the link, every time. `seller-store`: five personas, OTP
-`1234` (its README has the table). `rirn-retailer`: pre-filled shop, OTP
-`1234`. `rirn`: sign in as ITC, HUL or Britannia. Don't make the person
-guess.
+`1234` (its README has the table). For Buyer/Paytm, include the starting
+screen and selected shell. Do not make the reviewer guess.
 
 ## A link to a branch, right now
 
@@ -71,6 +70,6 @@ lists them. Check the badge in the corner says the build you expect
 ## Report
 
 Give the URL, the login, and how long it lives. "Open
-http://192.168.1.24:5176 on your phone — same Wi-Fi, OTP 1234 — it works
+http://192.168.1.24:5175 on your phone — same Wi-Fi, Buyer shell — it works
 while my dev server is up. For something that lasts, say the word and I'll
 put it on the deploy path."

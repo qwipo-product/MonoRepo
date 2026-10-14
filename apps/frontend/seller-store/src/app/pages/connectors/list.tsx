@@ -15,13 +15,6 @@ import {
   DialogFooter,
 } from "@mockups/web-ui";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@mockups/web-ui";
-import {
   Database,
   ShoppingBag,
   CheckCircle,

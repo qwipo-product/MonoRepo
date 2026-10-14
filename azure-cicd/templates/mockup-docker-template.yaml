@@ -110,7 +110,7 @@ parameters:
           - minor
           - major
     - name: out_dir
-      displayName: Build output directory inside the app (dist for Vite, storybook-static for Storybook) — preview builds copy this out
+      displayName: Build output directory inside the app (dist for Vite) — preview builds copy this out
       type: string
       default: dist
 
@@ -372,7 +372,7 @@ jobs:
                     docker rm -v "$CID" > /dev/null
 
                     if [ ! -f "$SITE/index.html" ]; then
-                      echo "##vso[task.logissue type=error]$APP_PATH/$OUT_DIR has no index.html — is out_dir right for this app? (dist for Vite, storybook-static for Storybook)"
+                      echo "##vso[task.logissue type=error]$APP_PATH/$OUT_DIR has no index.html — is out_dir right for this app? (dist for Vite)"
                       exit 1
                     fi
                     du -sh "$SITE"

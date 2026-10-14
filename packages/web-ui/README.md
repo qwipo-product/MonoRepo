@@ -4,7 +4,7 @@ The **desktop / admin** primitive set — shadcn components on Radix, plus the
 app shell and the Qwipo brand assets. The dense counterpart to
 `@mockups/ui`, which stays mobile-first and Radix-free.
 
-Extracted from the Seller Store app so that the Seller Store, RIRN, and every
+Extracted from the Seller Store app so that the Seller Store and any
 future web mockup share one kit instead of each forking it.
 
 ```
@@ -27,7 +27,7 @@ No build step — raw TypeScript, compiled by the consuming app's Vite.
 - **`DESIGN-SYSTEM.md`** — the written spec: principles, density rules, the
   mobile overlay, chart guidance, accessibility checklist.
 
-The browsable version is `apps/frontend/storybook-web` (`:6007`).
+The Seller Store Design System persona opens its component handbook at `/#/design`.
 
 ## Using it
 
@@ -100,6 +100,5 @@ Never hard-code a hex in a component, and never move tokens into this package.
 
 ## Adding a component
 
-Add the file to `src/components/`, export it from `src/index.ts`, add a story
-in `apps/frontend/storybook-web`, and check it in **both** themes. If it isn't
-in Storybook, nobody knows it exists.
+Add the file to `src/components/`, export it from `src/index.ts`, document it
+in the Seller Store design handbook, and check it in both themes.

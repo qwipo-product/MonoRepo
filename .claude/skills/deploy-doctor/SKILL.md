@@ -31,14 +31,9 @@ grep 'COPY --from=builder' apps/frontend/<app>/Dockerfile
 grep '"build"' apps/frontend/<app>/package.json
 ```
 
-The Vite apps build to `dist/`. **The two Storybook catalogs build to
-`storybook-static/`** (`storybook build -o storybook-static`). If those two
-lines disagree, that's the bug. Fix by regenerating — `bun run deploy:add
-<app> --force` — not by editing the Dockerfile, so the next app gets it too.
-
-Related: if `turbo.json`'s `build.outputs` is missing `storybook-static/**`, a
-Turbo cache hit restores nothing for the catalogs and the COPY finds an empty
-directory even when the path is right.
+The Vite apps build to `dist/`. Both the Dockerfile copy and Turbo’s
+`build.outputs` must match that directory. Regenerate deployment files with
+`bun run deploy:add <app> --force` if they disagree.
 
 **Next: the ingress host.** The demo URL is owned by the ingress rule in
 `bms-chart/<env>/<service>.yaml` in the `Qwipo B2B/k8s` repo, not by anything
@@ -55,9 +50,9 @@ built by interpolation — Tailwind only sees complete strings.
 
 ## "The home page works but deep links 404"
 
-The SPA fallback is missing from `nginx.conf`. `seller-store`, `rirn` and
-`storybook-web` route on real URLs, so `/orders/123` arrives at nginx as a path
-with no file behind it.
+Seller Store uses hash routes (`/#/orders/123`); Buyer uses screen state and
+query parameters. If real URL paths are introduced, nginx needs the SPA
+fallback below. Preview builds also require relative asset URLs.
 
 ```bash
 grep -A2 'location / {' apps/frontend/<app>/nginx.conf
@@ -99,7 +94,7 @@ and grep `dist/` for the string. A Dockerfile that predates versioning has no
 `ARG APP_VERSION` — regenerate with `bun run deploy:add <app> --force`.
 
 If the badge is missing entirely, the app never mounted `<VersionBadge />` in
-`main.tsx` (or `managerHead` in `.storybook/main.ts` for a catalog).
+`main.tsx`.
 
 ---
 
@@ -162,7 +157,7 @@ grep -E 'service_name|tag_prefix' apps/frontend/<app>/docker-build.yml apps/fron
 ## "The container crash-loops"
 
 Look for a leftover `entrypoint.sh`. The standard for these mockups is **no
-entrypoint and no `public/configs/`** — they bundle `@mockups/mock-data` at
+entrypoint and no `public/configs/`** — they bundle local demo fixtures at
 build time and talk to no backend, so one image is correct in every
 environment. The old config-swapping entrypoint `exit 1`s on an NODE_ENV it
 doesn't recognise, which is exactly this symptom.
@@ -182,9 +177,8 @@ The build context is the **workspace root**, and the root `.dockerignore`
 strips things the local build still sees. Check what the failing step needs
 against that file. Known traps:
 
-- `**/*.md` is stripped (root README excepted). Nothing imports Markdown into a
-  story today, but adding `.mdx`/`.md` docs to a Storybook catalog would break
-  the in-Docker build while the local one passes.
+- `**/*.md` is stripped (root README excepted). If a future app imports
+  Markdown at build time, explicitly include those files.
 - `.env*` is stripped deliberately — never bake environment files into an image.
 - `bun install --frozen-lockfile` fails rather than resolving a different tree.
   If it fails, `bun.lock` genuinely disagrees with the `package.json` files.

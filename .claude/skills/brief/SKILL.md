@@ -39,11 +39,11 @@ README, the fixtures).
    the edge that matters for this demo (MOV not met, KYC under review, out
    of stock). Every list screen gets an empty state regardless.
 5. **New or existing.** A new app, or screens inside `seller-store`,
-   `qwipo-buyer-paytm-app`, `rirn` or `rirn-retailer`? Screens that belong
+   or `qwipo-buyer-paytm-app`? Screens that belong
    to an existing product go in that app.
 6. **Source material.** Screenshots, a Figma export, a PRD, an old repo, a
    competitor? Paths on disk, not descriptions.
-7. **Data.** Does `@mockups/mock-data` already have what the screens need,
+7. **Data.** Do the app’s existing fixture modules already have what the screens need,
    or does the demo need something it doesn't (a new entity, Telugu names, a
    specific city)? Extending fixtures is `mock-data`'s job; know now.
 8. **Where it will live.** `bun dev` on a laptop, the Network URL on a
@@ -84,4 +84,4 @@ exists; show it and get a yes.
 - If the answers reveal it isn't a mockup at all (needs a real backend, real
   auth, real customers), say so: this repo bundles fake data and talks to
   nothing. The nearest thing that fits is the same screens over
-  `@mockups/mock-data`.
+  the app’s existing demo fixtures.

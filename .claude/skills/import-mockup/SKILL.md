@@ -39,7 +39,7 @@ Then answer, in one line each:
   source is another stack (Angular, Next, React Native, plain HTML), a
   Tailwind v3 export that fights v4, or the screens must match new
   screenshots — the old code becomes the reference, not the input.
-- **Backend.** Anything the source fetches becomes `@mockups/mock-data` or a
+- **Backend.** Anything the source fetches becomes the app’s fixture modules or a
   local store. If it can't be faked, it isn't a mockup and doesn't belong
   here.
 - **Slice.** All of it, or the flows in the brief? The brief's flows first;
@@ -120,7 +120,7 @@ pass — if it fails, a `package.json` is wrong.
 
 ## 6. Fake the backend
 
-Replace each `fetch`/client call with data from `@mockups/mock-data` or a
+Replace each `fetch`/client call with data from the app’s fixture modules or a
 small local store (`seller-store` uses subscribe/notify stores in
 `src/app/lib/*-data.ts`). Loading, empty and error stay demoable without a
 server: a `setTimeout` for loading, an empty array for empty, a thrown error

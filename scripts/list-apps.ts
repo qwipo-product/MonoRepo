@@ -19,16 +19,16 @@ type Pkg = {
 
 async function read(rel: string) {
   const pkg = (await Bun.file(join(ROOT, rel)).json()) as Pkg;
-  // Vite apps say `--port 5173`; Bun services say `PORT=8787`.
+  // Each frontend declares its Vite port in the dev script.
   const dev = pkg.scripts?.dev ?? '';
-  const port = dev.match(/--port\s+(\d+)/)?.[1] ?? dev.match(/\bPORT=(\d+)/)?.[1];
+  const port = dev.match(/--port\s+(\d+)/)?.[1];
   return { dir: rel.replace('/package.json', ''), pkg, port };
 }
 
 const apps = [];
 const packages = [];
 
-for await (const rel of new Glob('apps/*/*/package.json').scan(ROOT)) apps.push(await read(rel));
+for await (const rel of new Glob('apps/frontend/*/package.json').scan(ROOT)) apps.push(await read(rel));
 for await (const rel of new Glob('packages/*/package.json').scan(ROOT)) packages.push(await read(rel));
 
 apps.sort((a, b) => a.dir.localeCompare(b.dir));

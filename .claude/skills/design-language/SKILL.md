@@ -8,7 +8,7 @@ description: Scoped skill — audit and fix drift from the shared design languag
 There is one design language, and it lives in `packages/design-tokens`
 (brand, colour, type, radius, elevation), with `packages/web-tokens`
 layering desktop density on top. Every mockup reads from there, the same way
-every mockup reads products from `@mockups/mock-data` and buttons from
+each app reuses its existing product fixtures and buttons from
 `@mockups/ui`. An app that carries a colour of its own has forked the design
 language, and the fork shows the day two mockups are put side by side.
 

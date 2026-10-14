@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
-import { Separator } from "@mockups/web-ui";
 import { Progress } from "@mockups/web-ui";
 import { Switch } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
@@ -34,7 +33,6 @@ import {
   Pencil,
   Tag,
   FileText,
-  DollarSign,
   IndianRupee,
   Upload,
   X,
@@ -97,7 +95,7 @@ import { measureToKg, formatKgValue } from "../../lib/sku-import-template";
 // else we synthesize a minimal SKU object from the catalog so the
 // page renders the right SKU code, name, MRP and SP — which the
 // Price & Inventory tab and the offers warning both depend on.
-import { catalogSkus, findSku as findCatalogSku } from "../../lib/sku-catalog";
+import { findSku as findCatalogSku } from "../../lib/sku-catalog";
 
 // ONDC eB2B category taxonomy — shown as the Category ID dropdown options.
 const CATEGORY_OPTIONS = [

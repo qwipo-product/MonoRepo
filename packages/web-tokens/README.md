@@ -81,5 +81,5 @@ New screens should still prefer semantic classes (`bg-card`, `text-foreground`).
 
 `src/tokens.ts` and `theme.css` are hand-maintained mirrors — this repo has no
 build step by design. **Edit both in the same commit**, then update the
-matching section of `packages/web-ui/DESIGN-SYSTEM.md` and the Storybook
-story in `apps/frontend/storybook-web`.
+matching section of `packages/web-ui/DESIGN-SYSTEM.md` and the Seller Store
+design handbook.

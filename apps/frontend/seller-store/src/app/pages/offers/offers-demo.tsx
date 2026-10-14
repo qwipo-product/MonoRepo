@@ -4,7 +4,6 @@ import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
-import { Switch } from "@mockups/web-ui";
 import { Textarea } from "@mockups/web-ui";
 import {
   Select,

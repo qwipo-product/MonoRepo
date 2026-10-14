@@ -14,12 +14,9 @@ import {
   ShieldCheck,
   XCircle,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   Truck,
-  PauseCircle,
   TriangleAlert,
-  Layers,
   Hash,
 } from "lucide-react";
 import {

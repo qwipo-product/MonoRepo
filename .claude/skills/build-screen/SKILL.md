@@ -24,11 +24,9 @@ the first edit.
    that wipe the data so every screen's empty state is visible; the buyer
    app has `BUILD-NOTES.md` with its screenshot-matching rules and two
    shells (Buyer, Paytm).
-2. **Know the kit.** Mobile apps import from `@mockups/ui` and declare
-   tokens in their `index.css`; web apps import from `@mockups/web-ui` and
-   get tokens from `web-tokens/theme.css`. Never mix. The two catalogs
-   (`storybook` :6006, `storybook-web` :6007) show what each kit already
-   has — look before building a control.
+2. **Know the kit.** Buyer uses `@mockups/ui` and `design-tokens/theme.css`;
+   Seller Store uses `@mockups/web-ui` and `web-tokens/theme.css`. Review the
+   package exports and Seller Store design handbook before building a control.
 3. **Find where screens live in this app.** `src/screens/` in the mobile
    apps; `src/app/pages/` + `routes.tsx` in seller-store; `nav.ts` for the
    buyer app's navigator. Follow the app's shape, not a preferred one.
@@ -45,13 +43,9 @@ the first edit.
   `colorLight` in the token package. A brand-external colour (Paytm) is
   named once in the app's `index.css`. A new colour is a `theme` job;
   `design-language` is the audit.
-- **Data from `@mockups/mock-data`.** Products, sellers, orders, banners,
-  addresses, notifications already exist. Missing something → `mock-data`,
-  never an inline array of made-up rows that drifts from every other
-  screen.
-- **Strings through `useI18n()`** in the mobile apps that already use it
-  (`t('cart.title')`); add the key to `packages/i18n` in all four
-  languages, English as the fallback.
+- **Reuse app fixtures.** Buyer data is in `src/data/`; Seller Store data is
+  in `src/app/lib/`. Extend those modules through `mock-data` rather than
+  creating a second set of rows for the same entity.
 - **Every list screen gets an empty state**, and any screen that pretends
   to load gets a loading one. Check them under the Empty personas where the
   app has them.

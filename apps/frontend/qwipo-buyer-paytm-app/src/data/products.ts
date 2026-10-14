@@ -57,7 +57,7 @@ export const skuFor = (p: Product, variantId?: string): VariantSku => {
   return sku ?? { image: p.image, price: p.price, mrp: p.mrp, margin: p.margin };
 };
 
-// Inline mock data — a real build would pull these from @mockups/mock-data.
+// Local product fixtures for the buyer prototype.
 const BASE_PRODUCTS: Product[] = [
   {
     id: 'p1', name: 'Freedom Refined Sunflower Oil - 1 L Packet X 16 Nos', shortName: 'Freedom Refined Sunflower Oil',

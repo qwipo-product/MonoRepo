@@ -30,8 +30,7 @@ Rules:
    Components reference `bg-primary`; what that resolves to is decided
    outside them.
 4. **`tokens.ts` and `theme.css` are hand-maintained mirrors.** Change both
-   in the same commit, or the Storybook colour page and the running app
-   disagree.
+   in the same commit, or TypeScript consumers and the CSS theme disagree.
 5. **Dark mode is a `.dark` class on `<html>`**, owned by the app's theme
    provider. Every token has a dark value beside its light one; add both or
    the dark screen shows the light colour.
@@ -43,5 +42,4 @@ Drift — a colour that escaped into an app, a hex in a chart, a raw palette
 class — is `design-language`'s job; invoke it after any token change.
 
 Verify: toggle dark, check one screen in each affected app, and open the
-relevant Storybook foundations page (`Colors`, `Typography`) to confirm the
-catalog moved too.
+Seller Store design handbook when desktop foundations change.

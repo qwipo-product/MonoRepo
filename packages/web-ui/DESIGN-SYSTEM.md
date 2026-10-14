@@ -1,8 +1,8 @@
 # Qwipo Web Design System
 
-The written spec for the **desktop / admin** layer — dense list pages, data tables, dialogs, the app shell. The browsable version is `bun dev --filter=@mockups/storybook-web` (http://localhost:6007).
+The written spec for the **desktop / admin** layer — dense list pages, data tables, dialogs, the app shell. The browsable examples are in Seller Store’s Design System persona (`/#/design`).
 
-For **mobile** mockups this is the wrong document: use `@mockups/ui` and `@mockups/design-tokens`, catalogued in `@mockups/storybook` on :6006. The two are separate design languages — 44px tap targets and 12px radii there, 36px controls and 8px cards here. See CLAUDE.md, "Two design systems".
+For **mobile** mockups this is the wrong document: use `@mockups/ui` and `@mockups/design-tokens`, used by the Buyer/Paytm app on :5175. The two are separate design languages — 44px tap targets and 12px radii there, 36px controls and 8px cards here. See CLAUDE.md, "Two design systems".
 
 Consume the packages, don't copy them:
 
@@ -628,13 +628,13 @@ Paths are relative to the repo root.
 | App shell | `packages/web-ui/src/components/app-shell.tsx` |
 | Brand assets | `packages/web-ui/src/assets/` → `@mockups/web-ui/assets/*` |
 | Chart palette | `chartPalette` in `packages/web-tokens/src/tokens.ts` — one declaration |
-| Browsable catalog | `apps/frontend/storybook-web` (:6007) |
-| Mobile counterpart | `packages/ui`, `packages/design-tokens`, `apps/frontend/storybook` (:6006) |
+| Browsable catalog | Seller Store Design System persona (`/#/design`) |
+| Mobile counterpart | `packages/ui`, `packages/design-tokens`, Buyer/Paytm (:5175) |
 
 **Updating the design system**
 
 1. Change the token or component in `packages/web-tokens` / `packages/web-ui`.
 2. If it's a token, change **both** `theme.css` and `src/tokens.ts` — they must never disagree.
 3. Update the matching section of this file in the same commit.
-4. Add or update the story in `apps/frontend/storybook-web` so the change is visible without reading code.
+4. Add or update the example in Seller Store’s design handbook so the change is visible without reading code.
 5. Check it in **both** themes, then run `bun run check`.

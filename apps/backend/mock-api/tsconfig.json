@@ -1,4 +1,0 @@
-{
-  "extends": "@mockups/tsconfig/bun-app.json",
-  "include": ["src"]
-}

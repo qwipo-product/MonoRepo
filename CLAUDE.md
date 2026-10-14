@@ -83,26 +83,19 @@ bunx turbo run lint typecheck build --filter=@mockups/<app>   # the gate (verify
 
 ```
 apps/frontend/<mockup>/     one app per mockup
-apps/backend/<service>/     Bun services (currently just mock-api; not deployed)
 packages/<shared>/          shared code, raw TypeScript, no build step
-native/qwipo-buyer-app/     React Native / Expo — NOT in the Bun workspace
 docs/briefs/                one brief per new or imported mockup (brief)
 docs/handoffs/              specs handed to engineering (handoff)
 ```
 
 | App | Port | Kit | What it is |
 | --- | --- | --- | --- |
-| `qwipo-buyer-paytm-app` | 5175 | mobile | Buyer app in Qwipo and Paytm shells; being rebuilt screen by screen (`BUILD-NOTES.md`) |
+| `qwipo-buyer-paytm-app` | 5175 | mobile | Buyer app in Qwipo and Paytm shells; customer and salesperson flows (`BUILD-NOTES.md`) |
 | `seller-store` | 5174 | web | Distributor + super-admin console, 51 pages; five personas, OTP `1234` (its README) |
-| `rirn` | 5173 | web | Retailer identity network — company discovery console |
-| `rirn-retailer` | 5176 | **mobile** | Retailer-facing RIRN pages for a buyer-app WebView |
-| `qwipo-analytics` | 5177 | mobile kit, desktop layout | The sole analytics dashboard: DigiDukaan console, Reports framework and the Buyer app product-analytics boards; predates the web kit (its README) |
-| `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
-| `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
 
-`apps/frontend/qwipo-app`, `qwipo-app-v2` and `qwipo-buyer-app` are stale
-leftovers with no `package.json`. Turbo and Bun ignore them. Not apps;
-`retire-mockup` once someone confirms nothing is being salvaged.
+Only Buyer/Paytm and Seller Store are retained. `bun dev` starts these two
+apps. Retired apps can be recovered from Git history; there is no mock API
+or standalone native app in this branch.
 
 ### Two design systems
 
@@ -131,13 +124,13 @@ is why seller-store's 40k ported lines go dark without a rewrite.
 | ProductCard, PriceLabel, StatusBadge (mobile, product-level) | `@mockups/components` |
 | Tables, dialogs, sheets, combobox, charts, AppShell, StatusBadge, EmptyState, `cn()` (web) | `@mockups/web-ui` |
 | Token values in TS | `@mockups/design-tokens` (mobile), `@mockups/web-tokens` (web) |
-| Translated strings — `useI18n()` → `t('cart.title')`, en / hi / te / ta | `@mockups/i18n` |
-| Product, Order, Seller, Cart types | `@mockups/types` |
-| Products, sellers, orders, banners — extend, never invent | `@mockups/mock-data` |
+| Shared order status | `@mockups/types` |
+| Buyer demo data | `apps/frontend/qwipo-buyer-paytm-app/src/data/` |
+| Seller demo data and stores | `apps/frontend/seller-store/src/app/lib/` |
 | Deployed-version pill — mounted once in `main.tsx` | `@mockups/version-badge` |
 | TS / ESLint presets — apps just `extends` | `@mockups/tsconfig`, `@mockups/eslint-config` |
 
-Deep imports work where declared: `import { IMG } from '@mockups/mock-data/imageBank'`.
+Use the app’s existing data modules and public assets; do not introduce a backend for demo fixtures.
 
 ### Rules that bite if skipped
 

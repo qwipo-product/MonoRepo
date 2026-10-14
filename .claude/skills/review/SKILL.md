@@ -92,6 +92,6 @@ If a finding starts with "it would be cleaner to…", drop it.
 "Tidied `seller-store/offers-filter` before landing: moved the filter drawer
 into `components/`, removed a commented-out copy of the old list, pointed
 the chart palette at the shared tokens. One call for you: the branch also
-changes `packages/mock-data` — fine to land together, or split it if you
+changes the shared design tokens — fine to land together, or split it if you
 want the other mockups not to rebuild." A review with nothing to fix says
 so in one line.

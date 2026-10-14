@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
-import { Card, CardContent } from "@mockups/web-ui";
+import { Card } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
 import { MultiSelect } from "@mockups/web-ui";
-import { Textarea } from "@mockups/web-ui";
 import { Checkbox } from "@mockups/web-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@mockups/web-ui";
 import {
@@ -33,12 +32,8 @@ import {
   ShoppingCart,
   AlertCircle,
   PackageCheck,
-  ExternalLink,
-  Calendar,
   X,
   Filter,
-  ChevronRight,
-  ChevronLeft,
   Eye,
   Download,
   Clock,
@@ -73,7 +68,6 @@ import {
   subscribeToOrders,
   updateOrderStatuses,
   getDeliveryBucket,
-  deliveryLabelFor,
   getOrdersToday,
 } from "../../lib/orders-data";
 

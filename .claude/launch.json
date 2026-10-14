@@ -2,28 +2,24 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "buyer-app",
+      "name": "qwipo-buyer-paytm-app",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev", "--filter=@mockups/qwipo-buyer-paytm-app"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/qwipo-buyer-paytm-app"
+      ],
       "port": 5175
     },
     {
-      "name": "qwipo-analytics",
+      "name": "seller-store",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "--cwd", "apps/frontend/qwipo-analytics", "dev"],
-      "port": 5177
-    },
-    {
-      "name": "storybook-web",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook-web"],
-      "port": 6007
-    },
-    {
-      "name": "storybook",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev", "--filter=@mockups/storybook"],
-      "port": 6006
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/seller-store"
+      ],
+      "port": 5174
     }
   ]
 }

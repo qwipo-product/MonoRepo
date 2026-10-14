@@ -15,7 +15,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
  * which roughly triples lint time for very little signal on mock code.
  */
 export const base = defineConfig([
-  globalIgnores(['**/dist/**', '**/build/**', '**/storybook-static/**', '**/.turbo/**', '**/*.tsbuildinfo']),
+  globalIgnores(['**/dist/**', '**/build/**', '**/.turbo/**', '**/*.tsbuildinfo']),
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

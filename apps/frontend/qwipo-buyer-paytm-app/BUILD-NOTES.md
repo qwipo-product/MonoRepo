@@ -4,15 +4,12 @@ We are rebuilding the Qwipo buyer app screen-by-screen, **strictly matching the
 screenshots**, on the shared design system. Follow this every time.
 
 ## Source of truth
-- **Screenshots:** `/Users/apple/Qwipo/mockups-lab/screenshots/` — each numbered
-  file maps to a screen in the FlowIndex (`src/review/screenIndex.ts`). Build to
-  the screenshot; when a bottom-sheet/popup has its own reference (e.g.
-  `BusinessTypes_bottom_popup.png`, `kyc_section_2.png`) match that too.
-- **Assets:** copied from `qwipo-app/public/` into `qwipo-buyer-paytm-app/public/`
-  (brand SVGs, banners, category images, brand logos, illustrations). Reference
-  by `/path` (Vite serves `public/`). If a screen needs an asset, it's there.
-- **Original code:** `qwipo-app/src/**` is the functional reference — reproduce
-  its content/flow, re-skinned onto the design system.
+- **Current flows:** `src/App.tsx` and `src/review/screenIndex.ts` define the
+  working screens and navigation. Use these as the functional reference.
+- **Assets:** use the existing files in this app’s `public/` directory. Confirm
+  the asset exists and use a preview-compatible relative URL.
+- **Visual references:** use the screenshots supplied for the current task.
+  Historical implementations are available in Git history, not sibling apps.
 
 ## Design-system standards (non-negotiable)
 - **Tokens, never arbitrary values.** No `h-[52px]`, `rounded-[24px]`, off-scale

@@ -8,7 +8,7 @@
  *
  * Creates apps/frontend/<name>/ wired to every shared package, picks the next
  * free dev port, and prints the two commands you need next. Nothing else in
- * the repo has to be touched — Bun workspaces glob `apps/*`/`*` and Turbo
+ * the repo has to be touched — Bun workspaces glob `apps/frontend/*` and Turbo
  * discovers the new package on its next run.
  */
 
@@ -85,8 +85,6 @@ const shell = isWeb
  */
 const deps = isWeb
   ? {
-      '@mockups/mock-data': 'workspace:*',
-      '@mockups/types': 'workspace:*',
       '@mockups/version-badge': 'workspace:*',
       '@mockups/web-tokens': 'workspace:*',
       '@mockups/web-ui': 'workspace:*',
@@ -98,9 +96,6 @@ const deps = isWeb
     }
   : {
       '@mockups/design-tokens': 'workspace:*',
-      '@mockups/i18n': 'workspace:*',
-      '@mockups/mock-data': 'workspace:*',
-      '@mockups/types': 'workspace:*',
       '@mockups/ui': 'workspace:*',
       '@mockups/version-badge': 'workspace:*',
       'lucide-react': 'catalog:',
@@ -109,18 +104,18 @@ const deps = isWeb
     };
 
 // next-themes drives the `.dark` class the web token layer keys off; the
-// mobile kit has its own ThemeProvider + I18nProvider pair.
+// mobile kit has its own ThemeProvider.
 const mainTsx = isWeb
   ? `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from 'next-themes';\nimport { HashRouter } from 'react-router';\nimport { VersionBadge } from '@mockups/version-badge';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    {/* attribute="class" is the contract @mockups/web-tokens keys its dark\n        variant off — every dark rule is scoped under \`.dark\`. */}\n    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>\n      <HashRouter>\n        <App />\n      </HashRouter>\n      {/* Deployed version — outside the router so it is on every screen. */}\n      <VersionBadge />\n    </ThemeProvider>\n  </StrictMode>\n);\n`
-  : `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { I18nProvider } from '@mockups/i18n';\nimport { VersionBadge } from '@mockups/version-badge';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <I18nProvider>\n        <App />\n        {/* Deployed version — outside the phone frame, on every screen. */}\n        <VersionBadge />\n      </I18nProvider>\n    </ThemeProvider>\n  </StrictMode>\n);\n`;
+  : `import { StrictMode } from 'react';\nimport { createRoot } from 'react-dom/client';\nimport { ThemeProvider } from '@mockups/ui';\nimport { VersionBadge } from '@mockups/version-badge';\nimport './index.css';\nimport App from './App';\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ThemeProvider>\n      <App />\n      {/* Deployed version — outside the phone frame, on every screen. */}\n      <VersionBadge />\n    </ThemeProvider>\n  </StrictMode>\n);\n`;
 
 const indexCss = isWeb
   ? `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/web-ui renders\n   unstyled and nothing errors. */\n@source "../../../../packages/web-ui/src";\n\n/* Desktop/admin tokens: light + \`.dark\`, @theme, Radix animations, and the\n   dark-mode utility rebinding layer. This app needs no @theme block of its\n   own — change a token in packages/web-tokens, not here. */\n@import "../../../../packages/web-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`
   : `@import "tailwindcss";\n\n/* Tailwind never scans node_modules, and workspace packages are symlinked\n   there — so point it at the shared source or @mockups/ui renders unstyled. */\n@source "../../../../packages/ui/src";\n\n/* The mobile token layer: light + \`.dark\`, @theme, the .type-* role classes\n   and the sheet animations. One design language shared by every mockup —\n   this app defines no tokens of its own. Change a value in\n   packages/design-tokens (tokens.ts AND theme.css), not here. */\n@import "../../../../packages/design-tokens/theme.css";\n\nhtml,\nbody,\n#root {\n  height: 100%;\n}\n\nbody {\n  margin: 0;\n}\n`;
 
 const homeTsx = isWeb
-  ? `import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@mockups/web-ui';\n\nexport default function Home() {\n  return (\n    <div className="p-6 space-y-6">\n      <div>\n        <h1 className="text-2xl font-semibold">${title}</h1>\n        <p className="mt-1 text-sm text-muted-foreground">\n          Delete this screen and build the real thing. The desktop kit is already wired up.\n        </p>\n      </div>\n\n      <Card className="max-w-lg">\n        <CardHeader>\n          <CardTitle className="text-base font-semibold">The web kit is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-3">\n          <p className="text-sm">\n            Tables, dialogs, sheets, comboboxes, charts and AppShell all come from\n            @mockups/web-ui. Browse them in storybook-web.\n          </p>\n          <div className="flex items-center gap-2">\n            <StatusBadge tone="success">Verified</StatusBadge>\n            <StatusBadge tone="warning">Pending</StatusBadge>\n            <StatusBadge tone="danger">Rejected</StatusBadge>\n          </div>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`
-  : `import { Button, Card, CardContent, CardHeader, CardTitle } from '@mockups/ui';\nimport { products } from '@mockups/mock-data';\n\nexport default function Home() {\n  return (\n    <div className="p-4 space-y-4">\n      <h1 className="text-xl font-semibold">${title}</h1>\n      <p className="text-sm text-muted-foreground">\n        Delete this screen and build the real thing. The shared kit is already wired up.\n      </p>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>Mock data is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-2">\n          <p className="text-sm">{products.length} products available from @mockups/mock-data.</p>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
+  ? `import { Button, Card, CardContent, CardHeader, CardTitle, StatusBadge } from '@mockups/web-ui';\n\nexport default function Home() {\n  return (\n    <div className="p-6 space-y-6">\n      <div>\n        <h1 className="text-2xl font-semibold">${title}</h1>\n        <p className="mt-1 text-sm text-muted-foreground">\n          Delete this screen and build the real thing. The desktop kit is already wired up.\n        </p>\n      </div>\n\n      <Card className="max-w-lg">\n        <CardHeader>\n          <CardTitle className="text-base font-semibold">The web kit is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-3">\n          <p className="text-sm">\n            Tables, dialogs, sheets, comboboxes, charts and AppShell all come from\n            @mockups/web-ui. See its README and Seller Store’s design handbook.\n          </p>\n          <div className="flex items-center gap-2">\n            <StatusBadge tone="success">Verified</StatusBadge>\n            <StatusBadge tone="warning">Pending</StatusBadge>\n            <StatusBadge tone="danger">Rejected</StatusBadge>\n          </div>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`
+  : `import { Button, Card, CardContent, CardHeader, CardTitle } from '@mockups/ui';\n\nexport default function Home() {\n  return (\n    <div className="p-4 space-y-4">\n      <h1 className="text-xl font-semibold">${title}</h1>\n      <p className="text-sm text-muted-foreground">\n        Delete this screen and build the real thing. The shared kit is already wired up.\n      </p>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>The mobile kit is ready</CardTitle>\n        </CardHeader>\n        <CardContent className="space-y-2">\n          <p className="text-sm">Add screen fixtures in this app when they are needed.</p>\n          <Button onClick={() => alert('Wire me up')}>Do the thing</Button>\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n`;
 
 const files: Record<string, string> = {
   'package.json': `${JSON.stringify(

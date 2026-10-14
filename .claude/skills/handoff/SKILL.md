@@ -13,8 +13,7 @@ Derive everything possible from the repo — never ask for what is readable:
 
 - the flows and screens, from the app's README and its router or nav;
 - the states each screen has (empty, loading, error, edges), from the code;
-- the data each screen reads, from what it imports from
-  `@mockups/mock-data` — that is the API the real thing needs;
+- the data each screen reads, from its existing fixture and state modules — that is the API the real thing needs;
 - the demo URL and logins, from the README's deploy table.
 
 Ask at most three questions, only the non-derivable:

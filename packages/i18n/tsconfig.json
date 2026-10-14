@@ -1,4 +1,0 @@
-{
-  "extends": "@mockups/tsconfig/react-library.json",
-  "include": ["src"]
-}

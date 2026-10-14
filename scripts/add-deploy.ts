@@ -3,8 +3,8 @@
  * Put a mockup on the deploy path.
  *
  *   bun run deploy:add seller-store
- *   bun run deploy:add rirn --service mockups-rirn-company --label "RIRN Company"
- *   bun run deploy:add storybook --force        # overwrite an existing fileset
+ *   bun run deploy:add qwipo-buyer-paytm-app --service mockups-buyer-app --label "Buyer App"
+ *   bun run deploy:add seller-store --force        # overwrite an existing fileset
  *
  * Writes the standard four-file deploy set into apps/frontend/<app>/ and
  * prints the things this repo cannot do for itself: the GitOps manifest
@@ -39,7 +39,7 @@
  *
  * ── Why there is no runtime config here ─────────────────────────────────────
  *
- * These are mockups. Every one of them bundles @mockups/mock-data at build
+ * These are mockups. Every one of them bundles local demo fixtures at build
  * time and talks to nothing — no API base URL, no feature flags, nothing that
  * differs between dev and production. So the image is a pure static artefact:
  * nginx and a directory of files, no entrypoint, no configs/config.*.json.
@@ -52,11 +52,8 @@
  *
  * ── What is derived rather than left to whoever copies files ────────────────
  *
- *   - build output dir  — read out of the app's own `build` script, because
- *                         the Storybook catalogs emit storybook-static/ and
- *                         the Vite apps emit dist/. Copying the wrong one
- *                         yields an nginx serving an empty directory: no
- *                         error, just a 404 page.
+ *   - build output dir  — Vite apps emit dist/. An empty or wrong directory
+ *                         leaves nginx serving 404s.
  *   - service name      — `mockups-<what-it-is>`. No `qwipo-` prefix: the
  *                         registry is already the Qwipo registry and the
  *                         domain already says it.
@@ -110,15 +107,12 @@ if (!existsSync(join(dir, 'package.json'))) {
 const pkg = await Bun.file(join(dir, 'package.json')).json();
 const pkgName: string = pkg.name;
 
-// Storybook writes `-o storybook-static`; Vite writes dist/. Read it rather
-// than assume it — this is the single most common way to ship a broken image.
-const buildScript: string = pkg.scripts?.build ?? '';
-const outDir = buildScript.match(/-o\s+(\S+)/)?.[1] ?? 'dist';
-const isCatalog = buildScript.includes('storybook build');
+// Both retained apps use the standard Vite build output.
+const outDir = 'dist';
 
 // Does this app route on real URLs? The SPA fallback goes into nginx.conf
 // either way — it is the correct default — but whether it is load-bearing
-// decides whether someone can safely delete it later. rirn-retailer, for one,
+// decides whether someone can safely delete it later. The buyer app, for one,
 // switches screens on component state and has no router at all.
 const routes = Boolean(pkg.dependencies?.['react-router'] ?? pkg.dependencies?.['react-router-dom']);
 
@@ -139,7 +133,7 @@ const label =
   service
     .replace(/^mockups-/, '')
     .split('-')
-    .map((w) => (w === 'rirn' ? 'RIRN' : w[0].toUpperCase() + w.slice(1)))
+    .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(' ');
 
 // Git tag prefix: `seller-store-v1.2.3`. The `mockups-` is dropped because
@@ -161,7 +155,7 @@ const branch = flag('branch') ?? (await $`git rev-parse --abbrev-ref HEAD`.cwd(R
 
 const host = `${service}.dev.bms.qwipo.com`;
 const appPath = `apps/frontend/${app}`;
-const what = isCatalog ? 'static Storybook catalog' : 'Vite/React SPA';
+const what = 'Vite/React SPA';
 
 // Short name for the k8s Deployment/Service objects. Everything in the dev
 // namespace shares bms-resources, so this only has to be unique there — the
@@ -212,7 +206,7 @@ FROM oven/bun:\${BUN_VERSION}-alpine AS builder
 
 WORKDIR /workspace
 
-# The root .dockerignore strips node_modules / dist / storybook-static /
+# The root .dockerignore strips node_modules / dist /
 # .turbo / .env* / .direnv.
 COPY . .
 
@@ -251,7 +245,7 @@ LABEL org.opencontainers.image.version="\${APP_VERSION}" \\
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY \${APP_PATH}/nginx.conf /etc/nginx/conf.d/mockup.conf
 
-# This app builds to ${outDir}/ — read off its own \`build\` script, not assumed.
+# This Vite app builds to ${outDir}/.
 # Point this at the wrong directory and nginx serves an empty root: no error
 # at build time, just a 404 page at runtime.
 COPY --from=builder /workspace/\${APP_PATH}/${outDir}/ /usr/share/nginx/html/
@@ -297,11 +291,7 @@ server {
     # Content-hashed filenames — safe to cache forever. Un-hashed imagery under
     # public/ is fine here too; it is replaced by name when it changes.
     #
-    # json is deliberately NOT in this list.${
-      isCatalog
-        ? " Storybook's index.json and\n    # project.json are un-hashed and re-read on every load, so they must fall\n    # through to the uncached default below."
-        : ''
-    }
+    # JSON is deliberately not cached by the asset rule.
     location ~* \\.(?:js|css|woff2?|ttf|otf|eot|png|jpg|jpeg|gif|webp|svg|ico)$ {
         expires 1y;
         access_log off;
@@ -346,10 +336,7 @@ server {
     }
 
 ${
-  isCatalog
-    ? `    # Storybook serves each story through iframe.html, which is a real file on
-    # disk, so try_files finds it before the fallback ever runs.`
-    : routes
+  routes
       ? `    # SPA fallback. This app routes on the URL hash (#/orders/123) — it must,
     # for preview builds — so nothing depends on this today. Kept because it is
     # the right default: a stray real path lands on the app instead of a 404.`
