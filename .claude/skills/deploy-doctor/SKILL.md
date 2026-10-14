@@ -1,202 +1,145 @@
 ---
 name: deploy-doctor
-description: Diagnose a mockup deploy that isn't working — demo URL 404s or shows a blank/unstyled page, deep links break, the Azure release pipeline exits 1, a deploy runs but nothing changes, or the container crash-loops. Use when a mockups-*.dev.bms.qwipo.com URL misbehaves or an Azure build/release pipeline for this repo fails.
+description: Diagnose failed builds, previews, or deployments from logs and configuration. Keep deployment identities during repairs.
 ---
 
-# Diagnosing a mockup deploy
+# Diagnose a deployment problem
 
-Almost every failure here is silent — the build goes green and the breakage
-only shows up as a 404 in front of whoever the demo was for. Work the symptom
-down this list rather than guessing.
+Use the [repository instructions](../../../CLAUDE.md).
+Use [deploy-mockup](../deploy-mockup/SKILL.md) for identities and approved deployment operations.
+Do not run a pipeline or change a hosted resource solely to investigate a local instruction.
 
-**First, know which layer you're in.** There are four, and they fail
-differently:
+## Find the failure
 
-```
-app build (bun/turbo)  →  image (Docker)  →  GitOps manifest (k8s repo)  →  ArgoCD → ingress
-```
+1. Find the application, expected version, URL, and environment.
+2. Read the failed step or observed browser error.
+3. Compare the evidence with the current source and configuration.
+4. Select the failing layer from the table below.
 
-A green Azure build only proves the first two.
+| Layer | Evidence |
+| --- | --- |
+| Application | Compiler output, browser console, asset requests, and routes |
+| Container | Docker build output, image contents, and container logs |
+| Pipeline | Run status, parameters, permissions, and artifact version |
+| GitOps | Target manifest path and recorded image version |
+| Service | ArgoCD status, ingress host, and served version |
 
----
+A successful build does not prove that the service works.
+An exit code alone does not show the cause.
 
-## "The URL 404s / shows a blank page"
+## Examine the symptom
 
-**Most likely: the Dockerfile COPYs a directory that doesn't exist.** nginx
-starts fine on an empty root, so nothing errors — you just get 404 on
-everything.
+| Symptom | Checks |
+| --- | --- |
+| Build fails | Read the first related error. Examine dependency, toolchain, source, and registry evidence. |
+| Page returns 404 | Examine the requested path, ingress host, served files, and nginx rules. |
+| Page is blank | Examine browser errors and failed asset requests. |
+| Page has no styles | Examine Tailwind source entries, token imports, and complete class names. |
+| Preview fails | Examine the URL prefix, relative assets, navigation, proxy, and bucket access. |
+| Deep link fails | Examine the actual routing mode and server fallback. |
+| Badge shows `local` | Trace version build arguments, environment variables, Turbo inputs, and Vite output. |
+| Release exits with an error | Read the failed step before a manifest or permission change. |
+| Container restarts | Read its logs and entrypoint behavior before deletion of configuration files. |
+
+A Docker `COPY` from a missing build directory normally fails the image build.
+Do not use a missing build directory as the cause of a successful but empty image.
+Buyer uses screen state and query parameters.
+Seller Store uses hash routes.
+Before a server fallback change, examine the routing mode.
+
+### Read the local files for the failing layer
+
+Use the [deployment file map](../deploy-mockup/SKILL.md#deployment-file-map).
+Run these read-only commands from the repository root.
+Set `app` to `seller-store` or `qwipo-buyer-paytm-app` before the other commands.
 
 ```bash
-grep 'COPY --from=builder' apps/frontend/<app>/Dockerfile
-grep '"build"' apps/frontend/<app>/package.json
+app=qwipo-buyer-paytm-app
+rg -n '"build"' "apps/frontend/$app/package.json"
+rg -n 'COPY --from=builder|APP_VERSION|APP_COMMIT|VITE_APP_' "apps/frontend/$app/Dockerfile"
+rg -n 'try_files|location|proxy_pass' "apps/frontend/$app/nginx.conf"
+rg -n '@source|@import' "apps/frontend/$app/src/index.css"
+rg -n 'outputs|VITE_APP_' turbo.json
 ```
 
-The Vite apps build to `dist/`. Both the Dockerfile copy and Turbo’s
-`build.outputs` must match that directory. Regenerate deployment files with
-`bun run deploy:add <app> --force` if they disagree.
+Both retained Vite applications build to `dist/`.
+The nginx document root is `/usr/share/nginx/html`.
+For path-based SPA navigation, examine `try_files $uri $uri/ /index.html;` in the applicable nginx configuration.
+Seller's existing hash route, such as `/#/orders/<id>`, does not require the server to resolve the order path.
+Use an actual fixture ID for a browser test.
 
-**Next: the ingress host.** The demo URL is owned by the ingress rule in
-`bms-chart/<env>/<service>.yaml` in the `Qwipo B2B/k8s` repo, not by anything
-here. A typo there serves the wrong app or nothing.
+For unstyled shared components, examine the exact `@source` entries in the application README.
+Buyer scans `packages/ui/src` and `packages/components/src`.
+Seller scans `packages/web-ui/src`.
+For missing assets only under `/builds/`, examine Vite `base`, literal root-relative URLs, and the preview proxy.
 
-**Then: is the page actually blank, or unstyled?** An unstyled page is a
-different bug — Tailwind never scans `node_modules`, so an app using classes
-from a shared package needs an `@source` line in its `src/index.css` pointing
-at that package's `src` (`packages/ui/src` for mobile, `packages/web-ui/src`
-for web). Nothing errors; the component just renders naked. Same for a class
-built by interpolation — Tailwind only sees complete strings.
+## Examine version propagation
 
----
+The image build arguments supply the application version and commit.
+The Dockerfile exposes `VITE_APP_VERSION` and `VITE_APP_COMMIT` during the build.
+Turbo must include both variables in its build environment.
+Vite then places their values in the application bundle.
 
-## "The home page works but deep links 404"
+Examine each link in this sequence before a correction.
+A local build without those values correctly displays `local`.
 
-Seller Store uses hash routes (`/#/orders/123`); Buyer uses screen state and
-query parameters. If real URL paths are introduced, nginx needs the SPA
-fallback below. Preview builds also require relative asset URLs.
+Read `packages/version-badge/src/version.ts` and the application's `src/main.tsx`.
+The application entry must mount `VersionBadge`.
+The version module reads the Vite environment values.
+For a local diagnostic build, replace `<app>` with the selected application:
 
 ```bash
-grep -A2 'location / {' apps/frontend/<app>/nginx.conf
+VITE_APP_VERSION=9.9.9 bunx turbo run build --filter=@mockups/<app> --force
+rg -l '9\.9\.9' apps/frontend/<app>/dist
 ```
 
-It must contain `try_files $uri $uri/ /index.html;`.
+The test value is a diagnostic stamp, not a release version.
+The `--force` flag reruns the build instead of using a cached result.
+The affected source is `turbo.json` plus the application Dockerfile, not a runtime environment file in `public/`.
 
----
+## Examine release failures
 
-## "The release pipeline exits 1"
+A missing GitOps manifest is one possible cause.
+Missing variables, registry access, credentials, or service permissions can also cause failure.
+Do not remove a prerequisite check to bypass an error.
 
-The GitOps manifest doesn't exist: `bms-chart/<env>/<service>.yaml` in the
-`Qwipo B2B/k8s` repo. The release template checks for it and hard-fails.
+For a tag conflict, compare the remote tag and concurrent build runs.
+For a permission error, examine the build identity's tag-creation permission.
+Do not replace a published tag or force-push as a routine repair.
 
-This is a DevOps prerequisite, **not something to fix from this repo**. Don't
-edit the pipeline to skip the check. Say what's missing and where:
-copy `bms-chart/dev/seller-portal.yaml`, set the ingress host to
-`<service>.dev.bms.qwipo.com`, keep the `version: "..."` line (the release
-pipeline `sed`s it). The file's existence is what creates the ArgoCD app
-`<env>-<service>-argo-app` — one commit to the k8s repo, no ticket.
+| Failure evidence | Specific references |
+| --- | --- |
+| Missing target manifest | Release template `TARGET_PATH_PREFIX` and external `bms-chart/<env>/<service>.yaml` in `Qwipo B2B/k8s` |
+| Wrong build selected | `resources.pipelines.source` in the application `azure-release.yaml` and the registered Azure display name |
+| Service rename without updated deployment | Build parameters, `build_vars.env`, release parameters, and the new external manifest |
+| Main tag permission error | Build identity permissions for `mockups-lab`: `Contribute` and `Create tag` |
+| Version tag without an image | The corresponding build run, registry image, and tag-mode registry check |
 
----
+For a main tag failure, read the `push semver git tag` step in the build template.
+Distinguish a verified concurrent tag conflict from a permission or network failure.
+Do not treat every failed tag push as a version race.
 
-## "The badge in the corner says `local` on a deployed URL"
+### Compare local and container inputs
 
-The version never reached `vite build`. It travels build arg → Dockerfile
-`ENV VITE_APP_VERSION` → Turbo → Vite, and any link can drop it silently:
+Read the root `.dockerignore` and the application's Dockerfile.
+The context excludes `node_modules`, build output, environment files, and most Markdown files.
+Root `README.md` and `.env.example` files are explicit exceptions.
+If an application imports Markdown during its build, examine whether the necessary files reach the context.
+Do not include credential files to resolve a container build failure.
 
-```bash
-grep -A1 '"dependsOn": \["^build"\]' turbo.json          # must list VITE_APP_VERSION under env
-grep -n 'APP_VERSION' apps/frontend/<app>/Dockerfile        # ARG + ENV VITE_APP_VERSION
-grep -n 'build-arg' azure-cicd/templates/mockup-docker-template.yaml
-```
+For a frozen-install failure, compare `bun.lock`, root workspace globs, and all affected `package.json` files.
+Use the workspace inventory in [verify](../verify/SKILL.md#diagnose-an-installation-failure).
+Read the actual error before attributing it to manifest drift.
 
-Turbo runs tasks in strict env mode: an undeclared variable is not passed
-through, and the badge falls back to `local` with nothing failing. Reproduce
-locally with `VITE_APP_VERSION=9.9.9 bunx turbo run build --filter=@mockups/<app> --force`
-and grep `dist/` for the string. A Dockerfile that predates versioning has no
-`ARG APP_VERSION` — regenerate with `bun run deploy:add <app> --force`.
+For a restarting container, examine any `entrypoint.sh`, `public/configs/`, or `NODE_ENV` branching in the imported code.
+Confirm that the failing process uses that code before changing or removing it.
 
-If the badge is missing entirely, the app never mounted `<VersionBadge />` in
-`main.tsx`.
+## Repair the problem
 
----
+For generated-file repairs, use the temporary-copy procedure in [deploy-mockup](../deploy-mockup/SKILL.md).
+Keep the existing service name, pipeline label, and tag prefix.
+Do not use a generic forced regeneration for Buyer App.
+Examine local repairs before any approved remote action.
 
-## "The main build fails at 'push semver git tag'"
-
-Read the error line — the step tells the two causes apart:
-
-- **"already exists — a concurrent main build claimed …"**: two `main` builds
-  raced and this one lost. Nothing was pushed to the registry. Re-run; it
-  computes the next number.
-- **anything else (usually a 403)**: the project Build Service identity lacks
-  *Contribute* + *Create tag* on `mockups-lab`. One-time grant in Azure DevOps
-  → Project settings → Repositories → mockups-lab → Security. **Not fixable
-  from this repo** — say so; don't strip the tag step to get green.
-
-Branch builds never push a tag, so `dev`/`testing`/`staging` are unaffected.
-
----
-
-## "A tag deploy fails with 'not found in the registry'"
-
-The tag was pushed but the build behind it died afterwards (tag before image is
-deliberate — it reserves the number). That version has no image and never
-will; the next `main` build takes the next number. Deploy the previous tag
-instead, or fix the build and let `main` cut a fresh one. Never retag.
-
----
-
-## "The deploy ran green but the site didn't change"
-
-Two causes, both about binding.
-
-**1. The release is bound to the wrong build.**
-`resources.pipelines.source` in `azure-release.yaml` is the build pipeline's
-**display name in Azure DevOps**, not the service name. Nothing validates it —
-if someone renamed the build pipeline, the release silently keeps resolving an
-old one (or nothing).
-
-```bash
-grep -B2 -A2 'source:' apps/frontend/<app>/azure-release.yaml
-```
-
-Compare against the display name in the build YAML's header comment, and
-against what's actually registered in the `Mockups Lab` folder in Azure.
-
-**2. The service was renamed but not rebuilt.** SERVICE_NAME reaches the deploy
-through the **build's artefact**. Change `service_name_override` and the next
-deploy binds to nothing until a fresh *build* has run under the new name. A
-rename also needs a new `bms-chart/<env>/<new-service>.yaml`; the old manifest
-and its ArgoCD app linger until DevOps retires them.
-
-Check both YAMLs carry the same value:
-
-```bash
-grep -E 'service_name|tag_prefix' apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
-```
-
----
-
-## "The container crash-loops"
-
-Look for a leftover `entrypoint.sh`. The standard for these mockups is **no
-entrypoint and no `public/configs/`** — they bundle local demo fixtures at
-build time and talk to no backend, so one image is correct in every
-environment. The old config-swapping entrypoint `exit 1`s on an NODE_ENV it
-doesn't recognise, which is exactly this symptom.
-
-```bash
-ls apps/frontend/<app>/entrypoint.sh apps/frontend/<app>/public/configs 2>/dev/null
-```
-
-If either exists, either the app was never migrated or someone reintroduced it.
-Regenerate with `bun run deploy:add <app> --force` and delete both.
-
----
-
-## "It builds locally but fails inside Docker"
-
-The build context is the **workspace root**, and the root `.dockerignore`
-strips things the local build still sees. Check what the failing step needs
-against that file. Known traps:
-
-- `**/*.md` is stripped (root README excepted). If a future app imports
-  Markdown at build time, explicitly include those files.
-- `.env*` is stripped deliberately — never bake environment files into an image.
-- `bun install --frozen-lockfile` fails rather than resolving a different tree.
-  If it fails, `bun.lock` genuinely disagrees with the `package.json` files.
-  Two causes. A manifest edited without an install: install, commit the
-  lockfile with it. Or the lockfile names a workspace the repo doesn't have
-  — compare `grep -n '^    "apps/' bun.lock` with `ls -d apps/*/*` — because
-  someone installed with an untracked folder under `apps/` and committed
-  the lockfile; `bun install` on any checkout without that folder produces
-  the corrected lockfile, and that is what to commit. **Fix the cause —
-  never delete or regenerate `bun.lock` or `flake.lock` to dodge the
-  error.**
-
----
-
-## Reporting back
-
-Name the layer that broke and what it means for the demo, in product terms:
-"the seller store URL is 404ing because the image shipped an empty directory —
-regenerated and rebuilt, needs one more build run before it's live." Don't
-report a pipeline as fixed when the fix is a commit someone else has to make in
-the k8s repo.
+Record the observed cause, correction, verification, and unresolved external checks.
+Before you record recovery, get evidence that the failed layer operates correctly.

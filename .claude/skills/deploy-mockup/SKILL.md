@@ -1,239 +1,225 @@
 ---
 name: deploy-mockup
-description: Put a mockup in this repo onto a real demo URL — generate its Dockerfile/nginx/Azure pipeline set, name the service correctly, verify the image will actually serve, and hand off the two out-of-repo prerequisites. Use when asked to deploy, ship, host, "put it on a URL", set up CI/CD, or add pipelines for an app in apps/frontend.
+description: Prepare deployment files. Examine deployment prerequisites. Change hosted resources only within explicit authorization.
 ---
 
-# Deploying a mockup
+# Prepare a deployment
 
-Getting a mockup onto `https://mockups-<what-it-is>.dev.bms.qwipo.com`.
+Use the [repository instructions](../../../CLAUDE.md).
+Preparation does not authorize a commit, push, pipeline run, or hosted-resource change.
+A command to push can cause automatic deployment. Tell the user that effect before the approved push.
 
-The whole fileset is **generated, not hand-written**. Every time someone has
-copied these files by hand they have shipped at least one of the silent
-failures listed at the bottom — the kind that pass every check and produce a
-404 page in front of a client.
+## Keep the application identity
 
-Preconditions: the app builds (invoke `verify` first), and the generated
-files land like any other change — `start-work` for the branch, `land-work`
-to reach `dev`, which is the first branch a build fires from.
+| Application | Service | Pipeline label | Tag prefix |
+| --- | --- | --- | --- |
+| `qwipo-buyer-paytm-app` | `mockups-buyer-app` | `Buyer App` | `buyer-app` |
+| `seller-store` | `mockups-seller-store` | `Seller Store` | `seller-store` |
 
-## Step 0 — is it actually deployable?
+Read the existing Dockerfile, nginx configuration, and pipeline files before regeneration.
+The release pipeline refers to the build pipeline by its exact display name.
+Do not change service names, pipeline labels, or tag prefixes as an incidental repair.
 
-An app qualifies if `apps/frontend/<app>/package.json` exists and `build`
-works. Folders without a `package.json` are ignored by Turbo and Bun. Say so rather than scaffolding them a pipeline.
+## Deployment file map
 
-## Step 1 — name the service
+Replace `<app>` with the selected application folder name.
+Unless the table names an external repository, these paths are relative to the repository root.
 
-The convention is **`mockups-<what-it-is>`**.
-
-- `mockups-` prefix always, so a mockup image can never be mistaken for a real
-  service in the shared registry.
-- **No `qwipo-` prefix.** The registry is already the Qwipo registry and the
-  domain already says it.
-- **No `-app` suffix.** It says nothing.
-- The host is always `https://<service>.dev.bms.qwipo.com`. The service name
-  *is* the subdomain — pick it as the URL you want to send someone.
-
-Service names for the retained applications:
-
-| App folder | Service |
+| File or setting | Responsibility |
 | --- | --- |
-| `seller-store` | `mockups-seller-store` |
-| `qwipo-buyer-paytm-app` | `mockups-buyer-app` |
+| `scripts/add-deploy.ts` | Generator, identity options, proposed GitOps manifest, and proposed registration commands |
+| `apps/frontend/<app>/package.json` | Application build command |
+| `apps/frontend/<app>/vite.config.ts` | Relative asset base and development configuration |
+| `apps/frontend/<app>/Dockerfile` | Workspace build context, version arguments, and copied `dist/` output |
+| `apps/frontend/<app>/nginx.conf` | Static hosting, SPA fallback, and `/builds/` proxy |
+| `apps/frontend/<app>/docker-build.yml` | Build triggers, path filters, service name, tag prefix, and template parameters |
+| `apps/frontend/<app>/azure-release.yaml` | Build-pipeline reference, environment mapping, and release parameters |
+| `azure-cicd/templates/mockup-docker-template.yaml` | Version reservation, Docker build, preview upload, retention, and build artifact |
+| `azure-cicd/templates/mockup-release-template.yaml` | Artifact/tag selection, registry check, manifest update, and ArgoCD synchronization |
+| `turbo.json` | `tasks.build.env` and `tasks.build.outputs` |
+| `.dockerignore` | Exclusions from the workspace-root Docker context |
+| External `Qwipo B2B/k8s`: `bms-chart/<env>/<service>.yaml` | Target service manifest and image `version` |
 
-Pass the explicit service and label when regenerating Buyer App deployment
-files; its service name differs from the folder-derived default.
+Use the workspace root as the Docker build context.
+The build needs root `bun.lock`, workspace manifests, and shared `packages/` source.
+Keep the Docker output directory, template `out_dir`, and Turbo `dist/**` cache outputs consistent.
 
-## Step 2 — generate
+The build YAML extends `/azure-cicd/templates/mockup-docker-template.yaml`.
+The release YAML extends `/azure-cicd/templates/mockup-release-template.yaml`.
+Keep `resources.pipelines.source` equal to the registered build pipeline's display name.
+The current names are `Buyer App - Build` and `Seller Store - Build`.
+
+## Generate files safely
+
+The generator creates `Dockerfile`, `nginx.conf`, `docker-build.yml`, and `azure-release.yaml` in the application folder.
+It prints a proposed GitOps manifest and registration commands.
+It does not apply those remote changes.
+
+For a new application, replace `<app>` with its folder name:
 
 ```bash
 bun run deploy:add <app>
-bun run deploy:add qwipo-buyer-paytm-app --service mockups-buyer-app --label "Buyer App"
-bun run deploy:add <app> --force        # overwrite an existing fileset
 ```
 
-That writes exactly four files into the app folder:
+For existing files, first run regeneration in a separate temporary copy.
+The `--force` option overwrites existing files without preserving their custom values.
+If existing identity values differ from the generator defaults, supply those values.
+For Buyer App, use:
 
-| File | What it is |
+```bash
+bun run deploy:add qwipo-buyer-paytm-app --service mockups-buyer-app --label "Buyer App" --tag-prefix buyer-app --force
+```
+
+For Seller Store, use:
+
+```bash
+bun run deploy:add seller-store --service mockups-seller-store --label "Seller Store" --force
+```
+
+This command keeps the default `seller-store` tag prefix.
+Do not add `--tag-prefix seller-store` to this command.
+The current argument parser cannot distinguish that flag value from the application name.
+
+Compare all generated files with the originals.
+Apply only the necessary corrections to the working repository.
+Keep custom configuration that the application still uses.
+
+The printed manifest contains Kubernetes short names.
+The four local deployment files do not record those names.
+For an existing deployment, get the current short names from its GitOps manifest or another authoritative record.
+If a verified short name differs from the default, supply it with `--short`.
+
+Without that record, keep the printed manifest as a proposal. Do not apply it to the existing deployment.
+Local file comparisons can continue without a change to the external manifest.
+
+## Examine local behavior
+
+1. Use [verify](../verify/SKILL.md).
+2. If Docker is available, examine the Docker build from the repository root.
+3. Make sure that nginx serves the application's `dist/` output.
+4. Examine the version display and applicable deep links.
+5. Examine preview assets below the actual URL prefix.
+
+The Docker builder uses a frozen dependency installation and an application build.
+It currently omits lint and type checks.
+Before you record server-side quality enforcement, make sure that the applicable validation job exists and operates correctly.
+
+Both applications currently use static bundles with local fixtures.
+Do not add runtime configuration without a defined requirement.
+Before you remove an entrypoint or configuration file, examine its consumers.
+For imported applications, examine any `entrypoint.sh` or `public/configs/` references before adopting runtime configuration.
+The retained applications do not need configuration swapping for their bundled fixtures.
+
+## Examine branch behavior
+
+| Source | Current pipeline behavior |
 | --- | --- |
-| `Dockerfile` | two-stage: bun-alpine builds, nginx-alpine serves |
-| `nginx.conf` | port 80, SPA fallback, cache headers |
-| `docker-build.yml` | thin: `extends:` `/azure-cicd/templates/mockup-docker-template.yaml` — version, build, tag, push |
-| `azure-release.yaml` | thin: `extends:` `/azure-cicd/templates/mockup-release-template.yaml` — rewrite the GitOps digest, sync |
+| `feature/*` | Build and upload static previews when the path filters match. |
+| `dev` | Build an image for the dev deployment. |
+| `testing` | Build an image for the testing deployment. |
+| `staging` | Build an image for the staging deployment. |
+| `main` | Reserve a release tag and build a versioned image. |
+| Other names, including `dev-cleanup` | No automatic trigger in the current branch filters. |
 
-The two YAMLs carry only what differs per app — service name, tag prefix,
-Dockerfile path, the branch → environment mapping. Everything else, including
-the semver-tag versioning model, lives in the two repo-local templates. Change
-behaviour there, not in six copies.
+The files also contain `dev/*`, but that prefix conflicts with the existing `dev` branch.
+If the user does not supply a branch name, use `feature/*` for a new preview branch.
+Do not change an existing branch name without authorization.
+Before you predict a pipeline run, examine its branch and path filters.
 
-**Four files, not five.** There is no `entrypoint.sh` and no
-`public/configs/config.*.json`. These are mockups: every one bundles
-local demo fixtures at build time and talks to no backend, so nothing differs
-between dev and production and one image is correct everywhere. A
-config-swapping entrypoint with nothing to swap is not neutral — it `exit 1`s
-the container on an NODE_ENV it doesn't recognise, a live failure mode bought
-for zero benefit.
+A manual release can select an environment that differs from the branch mapping.
+Examine the requested environment and exact artifact before an approved release.
 
-If a mockup genuinely grows a backend, add the entrypoint back **to that one
-app** and write in its Dockerfile why it has one. Don't reintroduce it as the
-default.
+## Examine previews
 
-**Don't hand-edit the generated files.** Change `scripts/add-deploy.ts` and
-regenerate with `--force`, so app number seven gets the fix too.
+Keep Vite `base: './'` for prefix-hosted previews.
+Use Seller Store's hash routes or Buyer's existing query navigation.
+Use imported assets or relative public-asset URLs.
+A literal `/images/item.png` starts at the host root and can fail under a preview prefix.
 
-## Step 3 — verify before you claim it works
+The template uploads previews to the `qwipo-mockups` Space.
+The application nginx configuration serves them below `/builds/`.
+The current retention setting keeps five builds per branch, plus `latest/`.
+An older commit URL can disappear after later uploads.
 
-`bun run check` does not catch a broken image. Run these:
+The build template uses `IS_PREVIEW`, `out_dir`, and `PREVIEW_KEEP` for preview behavior.
+Uploads use `<service>/<branch-slug>/<sha>/` and `<service>/<branch-slug>/latest/` in the `qwipo-mockups` Space.
+The nginx `location ^~ /builds/` block maps the hosted preview URL to that storage prefix.
+Use the URL printed by the actual build rather than deriving a slug from an unverified branch name.
 
-```bash
-# 1. the app builds
-bunx turbo run build --filter=@mockups/<app>
+For a working preview, the deployed dev host must have the proxy configuration.
+The preview also uses the `mockups-spaces` variable group and valid bucket permissions.
+Before you give a preview URL as a working link, examine those resources.
 
-# 2. the Dockerfile COPYs the directory the build actually produced
-grep 'COPY --from=builder' apps/frontend/<app>/Dockerfile
-ls apps/frontend/<app>/dist/index.html
+## Examine external controls
 
-# 3. the two YAMLs agree with each other
-grep -E 'service_name|tag_prefix' apps/frontend/<app>/docker-build.yml apps/frontend/<app>/azure-release.yaml
-grep -A1 'pipeline: buildPipeline' apps/frontend/<app>/azure-release.yaml
+Before an approved deployment, make sure that these conditions apply:
 
-# 4. the version badge is mounted, and the stamp reaches the bundle
-grep VersionBadge apps/frontend/<app>/src/main.tsx
-VITE_APP_VERSION=9.9.9 VITE_APP_COMMIT=abc1234 bunx turbo run build --filter=@mockups/<app> --force
-grep -l '9.9.9' apps/frontend/<app>/dist/assets/*.js
-```
+1. The selected remote branch contains the referenced pipeline files.
+2. Azure registers the correct build and release pipelines.
+3. The release pipeline refers to the correct build pipeline.
+4. The target GitOps manifest exists in the separate `Qwipo B2B/k8s` repository.
+5. The manifest uses the correct service, host, and image version.
+6. The required variable groups and service permissions exist.
+7. The production environment has the required approval check.
+8. The source branch has the required review and validation policies.
 
-Check 4 is what the Docker build does with real values (`--build-arg
-APP_VERSION`). If the string is missing, `turbo.json` has lost the
-`build.env` declaration or the app skipped the badge — either way the deployed
-page would say `local` with nothing failing.
+These controls exist outside this repository.
+Their descriptions do not prove their current configuration.
+For production, an established approval control is necessary.
+If that control is absent or unverified, stop.
+Do not bypass a failed approval or manifest check.
 
-Check 2 must find `dist/index.html`. Both apps use Vite’s standard `dist/`
-output. A Dockerfile copying the wrong directory leaves nginx serving 404s.
+For each target environment, confirm the exact external manifest path before an approved release.
+Buyer uses the service name `mockups-buyer-app`, not its longer application folder name.
+For example, its dev manifest is `bms-chart/dev/mockups-buyer-app.yaml`.
+The release template updates the manifest's quoted `version: "..."` value.
+It constructs the ArgoCD application name as `<env>-<service>-argo-app`.
+Confirm the external chart and application configuration instead of assuming those resources exist.
 
-If Docker is available, the real check is:
-
-```bash
-docker build -f apps/frontend/<app>/Dockerfile -t <service>:local .
-docker run --rm -p 8080:80 <service>:local
-```
-
-Build context is the **workspace root**, never the app folder — the Dockerfile
-`COPY . .`s and needs `bun.lock` plus the `packages/*` sources the app links
-via `workspace:*`.
-
-## Step 4 — hand off what this repo can't do
-
-Two prerequisites live outside this repo. **Say so plainly instead of editing
-pipelines to work around them.**
-
-**1. The GitOps manifest**, in the `Qwipo B2B/k8s` repo:
-`bms-chart/dev/<service>.yaml`. **`bun run deploy:add` prints this file ready
-to paste** — don't reverse-engineer the chart's value schema from a
-neighbouring service.
-
-Three things about it are worth knowing rather than copying blindly:
-
-- **The ingress rule key is the demo URL.** `templates/ingress.yaml` renders
-  `<key>.<baseDomain>`, and `dev/common.yaml` sets `baseDomain` to
-  `dev.bms.qwipo.com`. TLS is a wildcard (`*.dev.bms.qwipo.com`,
-  `wildcard-cert`), so a new subdomain needs no certificate work.
-- **Keep the `version: "..."` line, quoted.** The release template `sed`s that
-  exact line to stamp the image tag.
-- **The deployment short name must be unique in `bms-resources`** — every dev
-  manifest shares that namespace. The chart appends `-svc` and `-port`, and
-  Kubernetes rejects a port name over 15 characters, which is why these stay
-  short. Two manifests declaring the same name gives you two ArgoCD apps
-  fighting over one set of objects.
-
-The `dev` ApplicationSet is a git-file generator over `bms-chart/dev/*.yaml`,
-so the file's *existence* creates the ArgoCD app `dev-<service>-argo-app`.
-Nobody registers it, and there's no DevOps ticket — one commit to the k8s repo.
-**The release template exits 1 if this file is missing.**
-
-Check it renders the way ArgoCD will render it before handing it over:
+The generator assumes that external `bms-chart/templates/ingress.yaml` combines a rule key with `baseDomain`.
+Its dev example uses `bms-chart/dev/common.yaml` for shared values.
+Before applying a generated manifest, examine those files in the actual `Qwipo B2B/k8s` checkout.
+For a local render in that checkout, replace `<service>` with the verified service name:
 
 ```bash
-helm template bms-chart -f bms-chart/dev/common.yaml \
-  -f bms-chart/dev/<service>.yaml
+helm template bms-chart -f bms-chart/dev/common.yaml -f bms-chart/dev/<service>.yaml
 ```
 
-Expect the pods to `ImagePullBackOff` until the first build+release runs — the
-placeholder tag doesn't exist in the registry yet. That's normal, not a fault.
+Examine the rendered host, service, port, certificate reference, and image version.
+A local render does not confirm that a deployed ingress or certificate exists.
 
-**2. Azure pipeline registration** — `bun run deploy:add` prints both
-`az pipelines create` commands with the right flags. They go in the
-`Mockups Lab` folder.
+The generator prints Azure registration commands for the `Mockups Lab` folder in the `Qwipo B2B` project.
+Before approved registration, confirm `--branch`, `--yml-path`, repository, and pipeline display name.
+Use `--skip-first-run true` to avoid an unintended initial pipeline run during registration.
+Registration does not authorize a later pipeline run or deployment.
 
-**3. The tag-push permission** — once per repo, not per app. `main` builds
-push a `<prefix>-v<semver>` git tag as the project Build Service identity,
-which needs *Contribute* and *Create tag* on `mockups-lab` (Project settings →
-Repositories → Security). Already done if any mockup has cut a release. Until
-then the first `main` build fails at "push semver git tag" with a 403, before
-anything touches the registry; `dev`/`testing`/`staging` builds don't care.
+## Versions and recovery
 
-## Preview builds (dev/*, feature/*) — what the fileset also gives you
+A main build reserves `<tag-prefix>-v<version>` before the image build.
+If that build fails, the tag can exist without an image.
+Tag-creation permission is necessary for the build identity.
+Do not grant force-push permission to resolve a tag-creation failure.
 
-The same `docker-build.yml` handles personal branches differently: no image,
-no ArgoCD. `azure-cicd/templates/mockup-docker-template.yaml` builds the
-Dockerfile to its `builder` stage, copies the app's output directory out
-(`out_dir`, default `dist`) and `aws s3 sync`s it to the DigitalOcean Space `qwipo-mockups`
-under `<service>/<branch>/<sha>/` and `.../latest/`, prunes the branch to its newest five builds
-(`PREVIEW_KEEP` in the template), then rewrites two plain HTML index pages. The `nginx.conf` the generator writes carries a
-`location ^~ /builds/` block that proxies that bucket prefix, so
-`https://<service>.dev.bms.qwipo.com/builds/<branch>/<sha>/` serves the build
-as soon as the upload ends — provided the image with that nginx.conf has been
-deployed to dev once. Credentials: variable group `mockups-spaces`
-(bucket, region, endpoint, and the `mockups-ci` key scoped to that bucket);
-it is authorized for every pipeline.
+The current release tag prefixes are `buyer-app-v*` and `seller-store-v*`.
+Main image versions use the semantic version without the Git tag prefix.
+Branch builds use a branch-and-commit identifier such as `dev-<sha>`.
+The build publishes `build_vars.env` with `SERVICE_NAME` and `IMAGE_GIT_DIGEST` for the release pipeline.
+After a service-name change, an approved deployment needs a fresh build artifact with the new identity.
+Keep any former service's external retirement separate from the local rename.
 
-Two things the app must do, or its preview is blank: build with
-`base: "./"` and route on the URL hash. `bun run new` scaffolds both; an
-imported app needs them added (`import-mockup`). Root-relative `/images/x.png`
-strings in the source break too — write them `./images/x.png`.
+Version display follows this sequence:
 
-Adding a branch pattern is two edits: `IS_PREVIEW` in the template and the
-`trigger.branches` list in each app's `docker-build.yml` (plus the generator).
+```text
+APP_VERSION / APP_COMMIT build arguments
+  -> Dockerfile VITE_APP_VERSION / VITE_APP_COMMIT
+  -> turbo.json tasks.build.env
+  -> Vite bundle
+  -> packages/version-badge/src/version.ts
+  -> VersionBadge in the application's src/main.tsx
+```
 
-## Rules that cause silent failures
 
-- **The build pipeline's display name is load-bearing.** The release YAML binds
-  to it by name via `resources.pipelines.source`, and nothing validates the
-  string. Rename one, change the other in the same commit. The generator
-  derives both from the service name so they can't drift.
-- **Renaming a service needs a fresh build run.** SERVICE_NAME reaches the
-  deploy through the build's artefact, so a deploy run after a rename binds to
-  nothing until the build has run again under the new name. It also needs a new
-  `bms-chart/<env>/<new-service>.yaml`, and the old manifest and ArgoCD app
-  should be retired.
-- **`turbo.json` `build.outputs` must list `dist/**`.** Otherwise cached
-  builds may leave Docker without the frontend output.
-- **`.dockerignore` strips `**/*.md`** (except the root README). Include any
-  future Markdown build inputs explicitly.
-- **Builds are auto-triggered, and the branch decides the environment.** Push
-  to `dev`, `testing`, `staging` or `main` and that mockup rebuilds and
-  redeploys to dev / testing / staging / production respectively. The product
-  team drives this repo and should never have to open a pipeline to ship a
-  mockup, so don't reintroduce `trigger: none`.
-- **A manifest must exist in every env a branch can reach.** The release
-  template exits 1 on a missing `bms-chart/<env>/<service>.yaml`. Since `main`
-  now deploys to production, a new mockup needs its manifest in all four env
-  folders, not just `dev`, before anyone merges.
-- **`packages/**` is in every path filter**, so one commit to a shared package
-  rebuilds every mockup. That's correct — a token change does change all of
-  them — and it's part of why these builds are kept cheap.
-- **Versions are cut on `main` only.** `main` → next semver from the
-  `<prefix>-v*` tags, tag pushed before the image is built, image tagged
-  `<semver>`; other branches → `<branch>-<sha>`, no tag. The badge in the
-  page shows whichever it was, because the value is baked in at build time —
-  never injected at start. To deploy or roll back a release, run the Deploy
-  pipeline on the tag; it checks the image exists and deploys without
-  rebuilding.
-- **The tag prefix is a literal, derived once from the service name.** A
-  rename with a bare regenerate forks the lineage; pass `--tag-prefix <old>`.
-
-## Reporting back
-
-Product people read these summaries, not the diff. Say which mockup is going
-where — "the seller store will be at mockups-seller-store.dev.bms.qwipo.com" —
-and state clearly that it isn't live until someone adds the k8s manifest and
-runs the build. Don't imply a URL works when only the files exist.
+For an approved rollback, select an existing release tag with a verified image.
+Use the release pipeline's tag mode for the requested environment.
+Examine the resulting GitOps version, ArgoCD state, and served version.
+Do not record deployment success from a build result alone.
