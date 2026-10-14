@@ -1,29 +1,19 @@
 
-import { ChevronLeft, ChevronRight, Plus, MapPin, Truck, Clock } from 'lucide-react';
+import { ChevronLeft, MapPin, Truck, Clock } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { isDeliverable, type Address } from '../data/addresses';
 
-/* Account · Saved Addresses (from the Home "Deliver to" bar). A dashed
-   add-new tile over the saved list; the delivering address is outlined and
-   carries a green "Delivering here" pill.
-
-   "Add new address" opens the map rather than a blank form — same two-step
-   flow (pin → address details), so a saved address always has
-   coordinates behind it. The list and the selection both live in App, since
-   adding one leaves this screen. */
+/* Select an approved delivery address. Pending addresses remain unavailable. */
 export function SavedAddressesScreen({
   onBack,
   selectedId,
   onSelect,
   addresses,
-  onAddNew,
 }: {
   onBack: () => void;
   selectedId: string;
   onSelect: (id: string) => void;
   addresses: Address[];
-  /** Opens the location picker. */
-  onAddNew: () => void;
 }) {
   // Approved first, pending at the bottom. A pending address can't be selected
   // at all until ops verifies it — it sits in the list, disabled, so the buyer
@@ -52,21 +42,6 @@ export function SavedAddressesScreen({
       </header>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-4">
-        {/* Add new address */}
-        <button
-          onClick={onAddNew}
-          className="flex w-full items-center gap-3 rounded-lg border border-dashed border-primary bg-primary-soft px-4 py-3 text-left active:scale-[0.98]"
-        >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Plus size={18} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Add new address</span>
-            <span className="block text-xs text-foreground-secondary">Pick it on the map</span>
-          </span>
-          <ChevronRight size={18} className="shrink-0 text-foreground-secondary" />
-        </button>
-
         {ordered.map((a) => {
           const awaiting = !isDeliverable(a);
           const selected = !awaiting && a.id === selectedId;

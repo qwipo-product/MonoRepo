@@ -1,5 +1,5 @@
 import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
-import { Button, InlineMessage } from '@mockups/ui';
+import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
@@ -17,20 +17,12 @@ export function OrderSummaryScreen({
   onBack,
   onPlaceOrder,
   onViewItems,
-  kycPending = false,
-  kycUnderReview = false,
-  onCompleteKyc,
 }: {
   /** The live cart App.tsx built from the buyer's actual picked quantities. */
   cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onPlaceOrder: () => void;
   onViewItems: (sellerId: string) => void;
-  /** First order waits on account verification. */
-  kycPending?: boolean;
-  /** KYC is submitted and with our team (manual review) — nothing to do but wait. */
-  kycUnderReview?: boolean;
-  onCompleteKyc?: () => void;
 }) {
   const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
@@ -109,36 +101,13 @@ export function OrderSummaryScreen({
       </div>
 
       <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
-        {kycPending && kycUnderReview && (
-          <InlineMessage
-            className="mb-3"
-            variant="warning"
-            title="KYC Pending"
-            description="Your KYC is under review. You can place orders once it is approved."
-          />
-        )}
-        {kycPending && !kycUnderReview && (
-          <InlineMessage
-            className="mb-3"
-            variant="warning"
-            title="Complete KYC to place this order"
-            description="Your account needs to be verified before your first order."
-            action={
-              onCompleteKyc ? (
-                <Button size="sm" variant="soft" onClick={onCompleteKyc}>
-                  Complete KYC
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
             <div className="text-2xs uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
             <div className="text-xs font-medium text-primary">Cash on Delivery</div>
           </div>
-          <Button className="px-8" disabled={kycPending} onClick={onPlaceOrder}>
+          <Button className="px-8" onClick={onPlaceOrder}>
             Place order
           </Button>
         </div>
