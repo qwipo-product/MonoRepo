@@ -35,8 +35,8 @@ type Item = { icon: typeof Briefcase; label: string; to: ScreenId; badge?: numbe
 const ACCOUNT: Item[] = [
   { icon: Briefcase, label: 'My Orders', to: 'my-orders' },
   { icon: MapPin, label: 'Saved Addresses', to: 'sub:addresses' },
-  { icon: CreditCard, label: 'Payments', to: 'sub:payment' },
-  { icon: Users, label: 'Credit Partners', to: 'sub:credit' },
+  { icon: CreditCard, label: 'Payments', to: 'empty:sub:payment' },
+  { icon: Users, label: 'Credit Partners', to: 'empty:sub:credit' },
 ];
 
 const PREFERENCES: Item[] = [
