@@ -1,97 +1,62 @@
 ---
 name: review
-description: Sanity review before a branch lands on dev — a short, shallow pass that organises the code, not a critique. Invoked by land-work; use directly for "review this", "tidy before merging", "is this branch clean". Fixes the mechanical findings on the branch and lists the judgement calls.
+description: Examine a change for defects, regressions, and maintenance risks. Keep fixes within the requested scope.
 ---
 
-# Review — sanity, not depth
+# Examine changes
 
-One pass over the branch's diff, sized to the diff, before `land-work`
-merges it into `dev`. The point is that the next person — or the next
-session — finds things where they expect them. It is not a design review,
-not a performance review, and not an argument about types; this repo is
-loose on purpose.
+Use the [repository instructions](../../../CLAUDE.md).
+For a review-only request, record findings without changes.
+For a request that includes fixes, correct confirmed defects in that scope.
+Without the user's explicit commit command, do not commit code-review corrections.
 
-Scope is the diff and nothing else:
+## Establish the comparison
 
-```bash
-git fetch origin
-git diff --stat origin/dev...HEAD
-git diff origin/dev...HEAD -- . ':!bun.lock'
-git log --oneline origin/dev..HEAD
-```
+1. Find the requested branch, files, or change.
+2. Before you select a comparison base, examine local changes.
+3. Read the applicable application README and affected shared interfaces.
+4. Read the full changed behavior, including its callers.
 
-`bun.lock` is left out of the read, not out of the check. Before the pass:
+Examine the effects of the change regardless of its size.
 
-```bash
-git diff --stat origin/dev...HEAD -- bun.lock package.json '**/package.json'
-```
+## Examine the change
 
-If `bun.lock` moved, a `package.json` moved with it — an `add-dependency`,
-a scaffold, a retire. A lockfile diff on its own is a stop, not a tidy: it
-means `bun install` ran on a laptop with a folder under `apps/` or
-`packages/` that isn't in the commit, and the workspace glob wrote it into
-the lockfile. Find the folder (`git status --short` shows it as `??`), then
-either bring it in properly (`new-mockup` / `import-mockup`, its own
-branch) or move it out of the repo and `bun install` once — the lockfile
-drops it. An uncommitted Next.js export under `apps/frontend/` is how the
-cart commit of Sep 2026 broke every deploy's frozen install; this check is
-why.
+| Area | Examine |
+| --- | --- |
+| Behavior | Examine the requested flow and its failure states. |
+| Data | Examine calculations, validation, state changes, and fixture consistency. |
+| Dependencies | Examine manifest changes and resolved dependency changes. |
+| Shared code | Examine every affected application. |
+| Design | Use [design-language](../design-language/SKILL.md) for affected tokens and components. |
+| Accessibility | Examine labels, keyboard access, focus, contrast, and error associations. |
+| Tests | Examine regression protection for important changed behavior. |
+| Configuration | Examine build inputs, ports, asset paths, and deployment identities. |
+| Documentation | Examine commands, current facts, and authorization boundaries. |
 
-## Look for
+Evaluate `any`, logging, and performance in context.
+Record a concrete risk, rather than a stylistic preference.
+Do not ask for an unrelated architecture change.
 
-1. **Things in the wrong place.** Screens under `screens/` (or `pages/` +
-   `routes.tsx` in seller-store), reusable pieces under `components/`, data
-   and state under `lib/` or `data/`, assets under `public/` or `imports/`.
-   No new top-level folders the app didn't already have. No `_to_delete/`,
-   `old/`, `backup/`, `*.bak`, `Copy of …`, `Screen2`, `HomeNew`.
-2. **Dead code.** Commented-out blocks longer than a few lines, a screen no
-   route or nav entry reaches, an import the linter flagged unused, a
-   component nothing renders. Delete; git remembers.
-3. **Copy-paste.** The same JSX block in three screens → one component in
-   the app's `components/`. A fixture array inline in a screen →
-   `mock-data`. A component the package already has → the package's.
-4. **Design language.** Invoke `design-language` on the diff.
-5. **Leftovers.** Placeholder copy ("Delete this screen", "Do the thing",
-   lorem ipsum), `alert(…)` stand-ins, `debugger`, a `TODO` with no owner,
-   screenshots or large binaries under `src/`, a bare version in a
-   `package.json`, an `.env` file.
-6. **One thing per branch.** A `buyer-app/…` branch that also edits
-   seller-store, or a shared-package change that wasn't in the brief — ask
-   whether it belongs here or on its own branch. A shared-package edit
-   redeploys every mockup.
-7. **Files that grew into several things.** A 1,500-line screen that is a
-   screen plus three sheets plus a data store → split by what each piece
-   is. Only when it's obviously several things; a long screen is fine.
-8. **Naming follows the neighbours.** PascalCase components; file naming
-   matches the app (kebab-case in seller-store, PascalCase in the mobile
-   apps); names say what the thing is, not when it was made.
-9. **Commit messages** read in product terms (`start-work` rules). Don't
-   squash; do reword a `.` or `wip` if it's the only commit.
+### Inspect concrete integration files
 
-## Not looked for
+| Change | Files or references to examine |
+| --- | --- |
+| Buyer navigation | `src/review/screenIndex.ts`, `src/App.tsx`, and `src/nav.ts` in the Buyer application |
+| Seller navigation | `src/app/routes.tsx`, `src/app/components/root-layout.tsx`, and `src/app/lib/admin-navigation.ts` |
+| Shared component | Its implementation, the package's `src/index.ts`, and consumer `src/index.css` entries |
+| Dependency | Root and affected workspace `package.json` files, plus `bun.lock` |
+| New or removed application | Root workspace globs, `.claude/launch.json`, application tables, and deployment references |
+| Assets | Consumer imports and the owning application's `public/` or `src/imports/` directory |
 
-`any`, `console.log`, missing tests, strictness, memoisation, abstractions
-for a second use case, render performance, folder-architecture opinions.
-If a finding starts with "it would be cleaner to…", drop it.
+Use `git status --short --untracked-files=all` to include local work outside the tracked diff.
+Examine apparent leftovers such as `_to_delete/`, `old/`, `backup/`, `*.bak`, or duplicate screen implementations.
+Confirm ownership and consumers before deletion. A suspicious name alone does not prove that a file is obsolete.
+Do not retain a second component implementation merely because it has a different filename.
 
-## Do, then hand back
+## Examine results
 
-- A lone lockfile change (above) ends the pass until the folder is
-  accounted for; nothing else here matters while it's there.
-- Fix the mechanical findings (1, 2, 3, 5, 8) directly on the branch and
-  commit them as one `Tidy: <app> — <what>` commit.
-- List the judgement calls (4 when it needs a new token, 6, 7) for the user
-  in one short list, each with a one-line recommendation. Don't block on
-  them unless one changes what lands (a shared-package edit that should be
-  its own branch).
-- `verify` after tidying — moving a file can break an import.
-- Return to `land-work`.
-
-## Report
-
-"Tidied `seller-store/offers-filter` before landing: moved the filter drawer
-into `components/`, removed a commented-out copy of the old list, pointed
-the chart palette at the shared tokens. One call for you: the branch also
-changes the shared design tokens — fine to land together, or split it if you
-want the other mockups not to rebuild." A review with nothing to fix says
-so in one line.
+Use [verify](../verify/SKILL.md) for approved implementation changes.
+List findings in order of impact.
+For each finding, give the trigger, consequence, file location, and proposed correction.
+If you find no defect, give the checks and remaining limits.
+Do not imply that a review proves the absence of defects.

@@ -1,122 +1,84 @@
 ---
 name: land-work
-description: Merge pathway — land a branch on dev, resolve conflicts safely, and promote dev → testing → staging → main. Use for "merge this", "put it on dev", "promote to testing / staging / production", "I have conflicts", "release it".
+description: Prepare an integration or release. Merge or push only within the user's explicit authorization.
 ---
 
-# Landing work
+# Integrate changes
 
-This repo has no branch policies in Azure DevOps, so a merge is a push, not
-a pull request, and "safe" is a procedure rather than a button. Builds
-auto-trigger on the four branches and the branch decides the environment:
+Use the [repository instructions](../../../CLAUDE.md).
+A development task does not authorize a commit, merge, push, deployment, or branch deletion.
+Before a Git history change or remote operation, make sure that the user authorized the action and target.
+If existing authorization clearly includes that action, use it.
 
-| Branch | Becomes | Gate |
-| --- | --- | --- |
-| `dev` | `mockups-<app>.dev.bms.qwipo.com` | `verify` green on the branch |
-| `testing` | `mockups-<app>.test.bms.qwipo.com` | dev has been looked at |
-| `staging` | `mockups-<app>.staging.bms.qwipo.com` | a demo needs a stable URL |
-| `main` | production, `mockups-<app>.bms.qwipo.com` | someone approves the deploy in Azure |
+## Prepare the integration
 
-A push to any of them redeploys every app the commit touched, and a commit
-to `packages/**` touches all of them.
+1. Examine local changes and branch references.
+2. Make sure that the proposed source contains the intended work.
+3. Use [review](../review/SKILL.md).
+4. Use [verify](../verify/SKILL.md).
+5. Fetch the current target reference.
+6. Examine the final difference against that reference.
 
-## Landing a branch on dev
+If the work is uncommitted, record that condition.
+Wait for an explicit commit command before a commit.
+If a check fails, resolve the failure or record the blocked integration.
 
-1. `git status --short` clean — no `??` folder under `apps/` or `packages/`
-   either (`start-work`, step 1). Invoke `review` — the shallow tidy pass,
-   which runs `design-language` — then `verify`. A red gate ends the
-   conversation about merging until it's fixed.
-2. Bring `dev` into the branch first, so conflicts are resolved where only
-   this work is at risk:
-   ```bash
-   git fetch origin
-   git merge origin/dev
-   ```
-   Conflicts → the section below. Then `verify` again — a clean merge can
-   still break a screen.
-3. Land:
-   ```bash
-   git switch dev && git pull --ff-only origin dev
-   git merge --no-ff dev/<app>-<what>
-   git push origin dev
-   ```
-   `--no-ff` keeps one merge commit per piece of work, so a whole feature
-   can be reverted as one.
-4. Say what happens next: the build fires on its own, the dev URL updates
-   in a few minutes, and the badge in the corner will read `dev-<sha>`. If
-   the app isn't on the deploy path, nothing deploys — `deploy-mockup` is a
-   separate decision.
-5. Delete the branch (`git branch -d` locally, `git push origin --delete`
-   remotely) once it's on dev. Stale branches are how a prototype branch
-   ends up merged twice.
+## Select the integration method
 
-## Promoting
+If the project supports pull requests, use one for integration into shared branches.
+Examine the live Azure branch policies before an approved remote integration.
+For protected development and release branches, get an independent code review and successful validation.
+Do not use documentation alone as proof that these controls exist.
 
-Always a merge of the branch below into the branch above; never a
-cherry-pick, never a force push, never a commit made directly on
-`testing`, `staging` or `main`:
+The current build pipeline runs the application build only.
+Server-side enforcement of lint and type checks is not available without a separate validation step.
+Until that step exists, provide the local verification results and record the enforcement gap.
 
-```bash
-git switch testing 2>/dev/null || git switch -c testing origin/testing 2>/dev/null || git switch -c testing dev
-git pull --ff-only origin testing 2>/dev/null
-git merge --no-ff dev && git push -u origin testing
-```
+For an explicitly approved local merge, examine the source and target first.
+If the working tree is clean, use `git merge --no-commit --no-ff <source>`.
+This prepares a merge for inspection. The command does not create a commit.
+After the user's explicit commit command, complete the merge commit.
+Without the user's explicit push command, do not push.
 
-Same for `staging` ← `testing` and `main` ← `staging` (or `main` ← `dev`
-when the middle rungs aren't in use — say which). `testing` and `staging`
-may not exist on origin yet; the first promotion creates them, which is why
-the push carries `-u`.
+Do not delete local or remote task branches as an automatic completion step.
+A request to merge does not authorize branch deletion.
 
-Promotions carry no review of their own: everything on `testing`, `staging`
-and `main` went through `review` when it landed on `dev`, which is why
-nothing lands there any other way.
+## Resolve conflicts
 
-`main` cuts a semver tag per app and deploys production only after an
-approval in Azure — say so, and don't promise a production URL until
-someone has approved it. **Before a new app's first promotion to `main`**,
-its GitOps manifest must exist in all four `bms-chart/<env>/` folders, or
-the release exits 1 — `deploy-mockup` has the detail.
+1. Read the base and both changed versions.
+2. Establish the intended combined behavior.
+3. Resolve each conflict from that intent.
+4. Examine removed code as well as added code.
+5. After resolution, repeat the affected checks.
 
-## Conflicts
+Do not retain both entries automatically.
+A removed route or dependency can be an intentional change.
 
-A conflict is two honest answers to the same question. Read both sides;
-decide what the screen should show; never take one side wholesale without
-reading the other. The common ones here:
+For a lockfile conflict, resolve the dependency declarations first.
+Keep intentional dependency updates from both branches.
+Use the specified Bun version to produce a consistent lockfile.
+Examine the resolved versions before the frozen-install check.
+If a valid update disappears, restore its intended resolution before completion.
 
-| File | Resolution |
+| Conflict | Files to reconcile together |
 | --- | --- |
-| `bun.lock` | don't hand-merge it — take either side, then `bun install`, which rewrites it from every `package.json` on disk (so no `??` folder under `apps/` — it would be written in too). That is fixing the cause, not regenerating to dodge an install error |
-| root `package.json` `catalog` | keep both added lines, sorted |
-| an app `package.json` | keep both dependencies |
-| `routes.tsx`, `nav.ts`, a screen index | keep both routes / entries |
-| `mockData.ts`, `packages/types` | keep both fixtures; if both changed the same row, ask |
-| `CLAUDE.md`, `README.md`, an app README | keep both additions |
-| an `index.css` `@theme` block | both sides changed a token — a `theme` decision; ask |
-| the same screen edited two ways | open both, build the screen that does both things; if they contradict, ask — the one conflict you don't resolve alone |
+| Dependencies | Root `workspaces.catalog`, affected workspace `package.json` files, and `bun.lock` |
+| Buyer navigation | `src/review/screenIndex.ts`, `src/nav.ts`, and `src/App.tsx` in the Buyer application |
+| Seller navigation | `src/app/routes.tsx`, `src/app/components/root-layout.tsx`, and `src/app/lib/admin-navigation.ts` |
+| Shared design tokens | The affected package's `src/tokens.ts`, `theme.css`, and consumers |
+| Shared component exports | Implementation files and the package's `src/index.ts` |
 
-Procedure:
+For navigation conflicts, preserve the intended route and its data context instead of concatenating both lists.
+For token conflicts, use [theme](../theme/SKILL.md) to trace CSS and TypeScript values.
 
-```bash
-git status                       # lists "both modified"
-# edit each file: remove <<<<<<< ======= >>>>>>> and keep the right content
-git add <file>
-git merge --continue
-```
+## Prepare a promotion
 
-Then `verify`. If it has gone wrong, `git merge --abort` returns the branch
-to before the merge, nothing lost.
+The current branch mapping is `dev`, `testing`, `staging`, then `main`.
+Examine the exact source commit, target commit, release artifact, and requested environment.
+Run commands independently.
+If a fetch, switch, pull, merge, or validation fails, stop.
+Do not hide error output.
 
-## Never
-
-- `git push --force` to `dev`, `testing`, `staging` or `main`. Someone
-  else's clone is built on those commits.
-- Rebase a shared branch.
-- Merge a branch whose `verify` is red "to fix it on dev".
-- Land a branch that skipped `review`.
-- Merge a feature branch straight to `main` — it goes through `dev`.
-
-## Report
-
-"Landed `dev/buyer-app-cod-checkout` on dev (merge `abc1234`); the buyer app
-rebuilds and mockups-buyer-app.dev.bms.qwipo.com updates in a few minutes.
-Two conflicts in `mockData.ts`, kept both sets of orders." Name what's live
-where and what's waiting on whom.
+Use [deploy-mockup](../deploy-mockup/SKILL.md) for deployment checks.
+Before a production action, make sure that the live production approval control exists.
+Record the actual completion state. Preparation is not a completed merge or deployment.
