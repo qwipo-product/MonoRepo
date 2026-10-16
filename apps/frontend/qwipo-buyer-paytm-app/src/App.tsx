@@ -24,6 +24,8 @@ import { MyAccountScreen } from './screens/MyAccountScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import { BusinessDetailsScreen } from './screens/BusinessDetailsScreen';
 import { PaymentsScreen } from './screens/PaymentsScreen';
+import { WalletScreen } from './screens/WalletScreen';
+import { useWallet } from './data/cancellation';
 import { PaymentOrdersScreen } from './screens/PaymentOrdersScreen';
 import { PaymentGatewaysScreen } from './screens/PaymentGatewaysScreen';
 import { CreditPartnersScreen } from './screens/CreditPartnersScreen';
@@ -79,7 +81,7 @@ const BUILT = new Set<ScreenId>([
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
-  'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
+  'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details', 'sub:wallet',
   'app-update', 'app-update-required', 'promo-banners', 'loading',
   'login-error', 'otp-error', 'cart-price-changes',
   'empty:sub:payment', 'empty:sub:payment-orders', 'empty:sub:payment-gateways', 'empty:sub:credit',
@@ -201,6 +203,8 @@ export default function App() {
   const CART = useMemo(() => buildCart(qty, wholesaleQty, wholesaleVendor), [qty, wholesaleQty, wholesaleVendor]);
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
+  const wallet = useWallet();
+  const [feeCleared, setFeeCleared] = useState(0);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
   // Salesperson flow: phone entered at login (9000000001 → salesperson) + task context.
   const [loginPhone, setLoginPhone] = useState<string>('');
@@ -658,7 +662,10 @@ export default function App() {
           <OrderSummaryScreen
             cart={CART}
             onBack={goBack}
-            onPlaceOrder={() => go('order-confirmation')}
+            onPlaceOrder={() => {
+              setFeeCleared(wallet.collectFor(CART.sellers.map((s) => s.name), 'QWIP2402310'));
+              go('order-confirmation');
+            }}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
               setOrderItemsOpen(true);
@@ -666,7 +673,7 @@ export default function App() {
           />
         );
       case 'order-confirmation':
-        return <OrderConfirmationScreen onBackToHome={goBack} />;
+        return <OrderConfirmationScreen onBackToHome={goBack} feeCleared={feeCleared} />;
       case 'reorder':
         return (
           <ReorderScreen
@@ -691,6 +698,8 @@ export default function App() {
         return <NotificationsScreen onBack={goBack} />;
       case 'sub:business-details':
         return <BusinessDetailsScreen onBack={goBack} />;
+      case 'sub:wallet':
+        return <WalletScreen onBack={goBack} />;
       case 'sub:payment':
         return <PaymentsScreen onBack={goBack} />;
       case 'sub:payment-orders':

@@ -36,6 +36,10 @@ export interface Order {
   items: OrderItem[];
   /** Discount on the items total. Absent means no discount. */
   discount?: number;
+  /** Scheduled delivery date (ISO), drives the cancellation-fee cutoff. */
+  deliveryDate?: string;
+  /** The seller is late, so cancelling is never charged. */
+  sellerDelayed?: boolean;
 }
 
 /* One order per company, even when two of them came from one cart. o2 and o5
@@ -44,8 +48,8 @@ export interface Order {
    o4 has no discount row. */
 export const ORDERS: Order[] = [
   {
-    id: 'o1', orderId: 'QWIP2402204', seller: 'Nestlé India', distributor: 'Omkar Enterprise', itemCount: 3,
-    placedAt: '2026-06-16', total: 4200, deliveryFee: 200, status: 'placed', statusLabel: 'Order placed', eta: '2026-06-18',
+    id: 'o1', orderId: 'QWIP2402204', seller: 'Nestlé India', distributor: 'Omkar Enterprises', itemCount: 3,
+    placedAt: '2026-06-16', total: 4200, deliveryFee: 200, status: 'placed', statusLabel: 'Order placed', eta: '2026-06-18', deliveryDate: '2026-06-18',
     discount: 220,
     items: [
       { brand: 'Maggi', name: 'Maggi Family Pack × 8', qty: 8, pack: '280 g · 24 Pcs/Case', image: '🍜', price: 52, mrp: 60 },
@@ -55,7 +59,7 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o2', orderId: 'QWIP2401204', seller: 'ITC Limited', distributor: 'Sri Sai Krishna Traders', itemCount: 2,
-    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
+    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM', deliveryDate: '2026-06-16', sellerDelayed: true,
     items: [
       { brand: 'Aashirvaad', name: 'Aashirvaad Atta 10kg × 8', qty: 8, pack: '10 kg · 4 Pcs/Case', image: '🌾', price: 420, mrp: 465 },
       { brand: 'Aashirvaad', name: 'Aashirvaad Ghee 1L × 2', qty: 2, pack: '1 L · 12 Pcs/Case', image: '🧈', price: 620, mrp: 690 },
@@ -63,15 +67,15 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o5', orderId: 'QWIP2401205', seller: 'Adani Wilmar', distributor: 'Sri Sai Krishna Traders', itemCount: 1,
-    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
+    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM', deliveryDate: '2026-06-18',
     discount: 185,
     items: [
       { brand: 'Fortune', name: 'Fortune Besan × 50', qty: 50, pack: '500 g · 20 Pcs/Case', image: '🫘', price: 55, mrp: 62 },
     ],
   },
   {
-    id: 'o3', orderId: 'QWIP2400204', seller: 'Hindustan Unilever', distributor: 'Omkar Enterprise', itemCount: 3,
-    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: 'Tomorrow 8 PM',
+    id: 'o3', orderId: 'QWIP2400204', seller: 'Hindustan Unilever', distributor: 'Omkar Enterprises', itemCount: 3,
+    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: 'Today 8 PM', deliveryDate: '2026-06-17',
     discount: 310,
     items: [
       { brand: 'Red Label', name: 'Red Label Tea × 8', qty: 8, pack: '250 g · 40 Pcs/Case', image: '🍵', price: 135, mrp: 150 },

@@ -5,6 +5,7 @@ import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
 import { formatDay, formatEta, isEtaWindow } from '../date';
 import { useEmptyable } from '../review/demoState';
+import { cancellationPolicy, feeSellerOf, useWallet, type CancelPolicy } from '../data/cancellation';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
 
@@ -17,7 +18,7 @@ export function MyOrdersScreen({
   onOpenDetails: (orderId: string) => void;
   onStartShopping: () => void;
 }) {
-  const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
+  const { cancelled: cancelledFees, cancelOrder } = useWallet();
   const [tracking, setTracking] = useState<Order | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
 
@@ -25,13 +26,15 @@ export function MyOrdersScreen({
   const orders = useMemo(
     () =>
       source.map((o) =>
-        cancelledIds.has(o.id) ? { ...o, status: 'cancelled' as OrderStatus, statusLabel: 'Cancelled' } : o
+        o.id in cancelledFees ? { ...o, status: 'cancelled' as OrderStatus, statusLabel: 'Cancelled' } : o
       ),
-    [cancelledIds, source]
+    [cancelledFees, source]
   );
 
+  const policy = cancelTarget ? cancellationPolicy(cancelTarget) : null;
+
   const confirmCancel = () => {
-    if (cancelTarget) setCancelledIds((prev) => new Set(prev).add(cancelTarget.id));
+    if (cancelTarget && policy) cancelOrder(cancelTarget, policy.fee);
     setCancelTarget(null);
   };
 
@@ -109,7 +112,7 @@ export function MyOrdersScreen({
               Keep order
             </Button>
             <Button variant="destructive" fullWidth onClick={confirmCancel}>
-              Cancel order
+              {policy?.kind === 'fee' ? `Cancel · ₹${policy.fee} fee` : 'Cancel order'}
             </Button>
           </div>
         }
@@ -118,6 +121,7 @@ export function MyOrdersScreen({
           This will cancel your order from <span className="font-medium text-foreground">{cancelTarget?.seller}</span>.
           You can’t undo this.
         </p>
+        {cancelTarget && policy && <FeeNotice order={cancelTarget} policy={policy} />}
       </Sheet>
     </div>
   );
@@ -137,6 +141,19 @@ function OrderCard({
   const cancelled = order.status === 'cancelled';
   const delivered = order.status === 'delivered';
   const cancellable = CANCELLABLE.includes(order.status);
+  const { cancelled: cancelledFees } = useWallet();
+  const policy = cancellationPolicy(order);
+  const feeCharged = cancelledFees[order.id] ?? 0;
+
+  let hint: string | undefined;
+  if (cancelled) {
+    if (feeCharged > 0)
+      hint = `₹${feeCharged} cancellation fee added to your wallet. Collected on your next order with ${feeSellerOf(order)}`;
+  } else if (cancellable) {
+    if (policy.kind === 'seller_delay') hint = 'Delivery delayed by the seller. You can cancel without a fee';
+    else if (policy.kind === 'fee') hint = `Cancelling now adds a ₹${policy.fee} cancellation fee`;
+    else if (policy.freeUntil) hint = `Free cancellation until 11:59 PM on ${formatDay(policy.freeUntil)}`;
+  }
 
   return (
     <OrderListCard
@@ -166,8 +183,40 @@ function OrderCard({
           </div>
         )
       }
-      hint={cancellable && !cancelled ? `You can cancel this order before ${formatDay(order.eta)}` : undefined}
+      hint={hint}
     />
+  );
+}
+
+/* What cancelling costs, said before the retailer confirms. */
+function FeeNotice({ order, policy }: { order: Order; policy: CancelPolicy }) {
+  const seller = feeSellerOf(order);
+  if (policy.kind === 'fee')
+    return (
+      <div className="mt-3 rounded-md border border-warning-border bg-warning-subtle p-3 text-sm text-warning-foreground">
+        <div className="font-semibold">₹{policy.fee} cancellation fee applies</div>
+        <p className="mt-1 text-xs">
+          Free cancellation ended the night before delivery. The fee is added to your wallet and collected with your
+          next order from {seller}.
+        </p>
+      </div>
+    );
+  if (policy.kind === 'seller_delay')
+    return (
+      <div className="mt-3 rounded-md border border-success-border bg-success-subtle p-3 text-sm text-success-foreground">
+        <div className="font-semibold">No cancellation fee</div>
+        <p className="mt-1 text-xs">This delivery is running late because of the seller, so you won’t be charged.</p>
+      </div>
+    );
+  return (
+    <div className="mt-3 rounded-md border border-success-border bg-success-subtle p-3 text-sm text-success-foreground">
+      <div className="font-semibold">Free cancellation</div>
+      <p className="mt-1 text-xs">
+        {policy.freeUntil
+          ? `No fee if you cancel before 11:59 PM on ${formatDay(policy.freeUntil)}.`
+          : 'No fee for this cancellation.'}
+      </p>
+    </div>
   );
 }
 

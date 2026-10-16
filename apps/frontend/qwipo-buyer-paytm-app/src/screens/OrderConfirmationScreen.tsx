@@ -4,7 +4,14 @@ import { Button } from '@mockups/ui';
 /* Order Confirmation — success state after Place Order. Concentric success
    badge (light ring + filled circle + white check), confirmation copy, and the
    next actions. */
-export function OrderConfirmationScreen({ onBackToHome }: { onBackToHome: () => void }) {
+export function OrderConfirmationScreen({
+  onBackToHome,
+  feeCleared = 0,
+}: {
+  onBackToHome: () => void;
+  /** Cancellation fee collected with this order, if any. */
+  feeCleared?: number;
+}) {
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
@@ -47,6 +54,13 @@ export function OrderConfirmationScreen({ onBackToHome }: { onBackToHome: () => 
             Please keep the payment ready and hand it over to the seller at the time of delivery.
           </p>
         </div>
+
+        {feeCleared > 0 && (
+          <div className="mt-3 w-full rounded-lg border border-success-border bg-success-subtle p-3 text-left text-xs text-success-foreground">
+            <span className="font-semibold">₹{feeCleared} cancellation fee</span> was collected with this order. Your
+            wallet has no outstanding fees with these sellers.
+          </div>
+        )}
       </div>
 
       <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

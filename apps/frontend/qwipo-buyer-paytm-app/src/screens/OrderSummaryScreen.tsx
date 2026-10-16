@@ -1,9 +1,10 @@
-import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
+import { Banknote, ChevronLeft, MapPin, Wallet } from 'lucide-react';
 import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 import { isBeatDay } from '../data/delivery';
+import { useWallet } from '../data/cancellation';
 
 /* Order Summary — read-only review before Place Order. One bill card per
    seller (brand · item summary + chosen delivery window), then the overall
@@ -21,14 +22,20 @@ export function OrderSummaryScreen({
   /** The live cart App.tsx built from the buyer's actual picked quantities. */
   cart: ReturnType<typeof buildCart>;
   onBack: () => void;
-  onPlaceOrder: () => void;
+  /** Called with the cancellation fees collected along with this order. */
+  onPlaceOrder: (feesCollected: number) => void;
   onViewItems: (sellerId: string) => void;
 }) {
   const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
   const totalItems = sellers.reduce((n, s) => n + s.items.reduce((a, i) => a + i.quantity, 0), 0);
   const grandSavings = sellers.reduce((n, s) => n + s.savings, 0);
-  const toPay = grandTotal + deliveryFee;
+  // Late-cancellation fees still owed to the sellers in this cart ride along
+  // with the order and are cleared when it is placed.
+  const { outstandingFor } = useWallet();
+  const feeBySeller = sellers.map((s) => ({ name: s.name, fee: outstandingFor(s.name) })).filter((f) => f.fee > 0);
+  const cancellationFees = feeBySeller.reduce((n, f) => n + f.fee, 0);
+  const toPay = grandTotal + deliveryFee + cancellationFees;
   const address = ADDRESSES.find((a) => a.id === DEFAULT_ADDRESS_ID) ?? ADDRESSES[0];
 
   return (
@@ -56,11 +63,24 @@ export function OrderSummaryScreen({
           <BillRow label="Item total" value={formatInr(grandTotal)} />
           {grandSavings > 0 && <BillRow label="You save" value={`− ${formatInr(grandSavings)}`} good />}
           <BillRow label="Delivery fee" value={deliveryFee === 0 ? 'Free' : formatInr(deliveryFee)} />
+          {cancellationFees > 0 && <BillRow label="Pending cancellation fee" value={formatInr(cancellationFees)} />}
           <div className="mt-2 flex items-center justify-between border-t border-border pt-2.5">
             <span className="text-sm font-semibold text-foreground">To pay</span>
             <span className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</span>
           </div>
         </div>
+
+        {/* Outstanding cancellation fee: explains the extra line in the bill */}
+        {feeBySeller.length > 0 && (
+          <div className="rounded-lg border border-warning-border bg-warning-subtle p-4 text-warning-foreground shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Wallet className="h-4 w-4" /> Cancellation fee added
+            </h2>
+            <p className="mt-1 text-xs">
+              For {feeBySeller.map((f) => f.name).join(', ')}. Collected with this order.
+            </p>
+          </div>
+        )}
 
         {/* Payment mode — COD is the only mode, pre-selected and locked */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -107,7 +127,7 @@ export function OrderSummaryScreen({
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
             <div className="text-xs font-medium text-primary">Cash on Delivery</div>
           </div>
-          <Button className="px-8" onClick={onPlaceOrder}>
+          <Button className="px-8" onClick={() => onPlaceOrder(cancellationFees)}>
             Place order
           </Button>
         </div>
