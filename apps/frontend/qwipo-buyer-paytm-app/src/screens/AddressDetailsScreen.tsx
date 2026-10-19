@@ -48,6 +48,8 @@ export function AddressDetailsScreen({
       title: line1.trim(),
       locality: [line2.trim(), place.city, place.state].filter(Boolean).join(', '),
       pincode: place.pincode,
+      // Where it was pinned — decides the shop's beat area (delivery days).
+      placeId: place.id,
       // New addresses aren't live until ops verifies them.
       status: 'pending',
     });

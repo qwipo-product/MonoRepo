@@ -35,7 +35,7 @@ type Item = { icon: typeof Briefcase; label: string; to: ScreenId; badge?: numbe
 
 const ACCOUNT: Item[] = [
   { icon: Briefcase, label: 'My Orders', to: 'my-orders' },
-  { icon: CalendarDays, label: 'Delivery Schedule', to: 'delivery-schedule' },
+  { icon: CalendarDays, label: 'Beat Day Delivery Time Table', to: 'delivery-schedule' },
   { icon: MapPin, label: 'Saved Addresses', to: 'sub:addresses' },
   { icon: CreditCard, label: 'Payments', to: 'sub:payment' },
   { icon: Users, label: 'Credit Partners', to: 'sub:credit' },

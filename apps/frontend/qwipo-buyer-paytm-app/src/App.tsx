@@ -38,9 +38,9 @@ import { SwitchCustomerScreen } from './screens/salesperson/SwitchCustomerScreen
 import { CustomerListScreen } from './screens/salesperson/CustomerListScreen';
 import { CustomerDetailsScreen } from './screens/salesperson/CustomerDetailsScreen';
 import { SALESPERSON_PHONE, type SwitchCustomer } from './data/salesperson';
-import { DeliveryScheduleScreen, BeatSchedulePrompt } from './screens/DeliveryScheduleScreen';
+import { DeliveryScheduleScreen, BeatSchedulePrompt, NoBeatArea } from './screens/DeliveryScheduleScreen';
 import { CompanyScheduleScreen } from './screens/CompanyScheduleScreen';
-import { OWN_SHOP_ADDRESS, zoneForAddress, type Zone } from './data/beatSchedule';
+import { ZONES, zoneForLocation } from './data/beatSchedule';
 import { LanguageScreen } from './screens/LanguageScreen';
 import { ContactUsScreen } from './screens/ContactUsScreen';
 import { TermsScreen } from './screens/TermsScreen';
@@ -249,9 +249,18 @@ export default function App() {
   /* Salesperson: the customer they have switched into (Switch Customer). The
      Beat Schedule tab shows THAT shop's timetable, and changes with it. */
   const [actingFor, setActingFor] = useState<SwitchCustomer | null>(null);
-  /* Delivery / Beat Schedule -> company page: which company, for which area. */
-  const [scheduleCompany, setScheduleCompany] = useState('itc');
-  const [scheduleZone, setScheduleZone] = useState<Zone>(() => zoneForAddress(OWN_SHOP_ADDRESS));
+  /* The company page (reached from the screen list only now — the schedule
+     shows brands in place): which company. Its area is the buyer's. */
+  const [scheduleCompany] = useState('itc');
+  /* Where the buyer's shop is — the place its delivery address was pinned at,
+     else its pincode, else its locality — decides its beat area, and so the
+     time table they see. Outside every beat area: no time table yet. */
+  const deliveryAddress = addresses.find((a) => a.id === deliveryAddressId) ?? addresses[0];
+  const buyerZone = zoneForLocation({
+    placeId: deliveryAddress.placeId,
+    pincode: deliveryAddress.pincode,
+    text: `${deliveryAddress.title}, ${deliveryAddress.locality}`,
+  });
   // Persona: salesperson unlocks the beat-day features (Home task icon, My
   // Account section, sidebar group). Set by login 9000000001 or the switcher.
   const [role, setRole] = useState<Role>('customer');
@@ -996,40 +1005,32 @@ export default function App() {
             }}
           />
         );
-      case 'delivery-schedule': {
-        // The buyer's own shop decides the timetable.
-        const zone = zoneForAddress(OWN_SHOP_ADDRESS);
-        return (
-          <DeliveryScheduleScreen
-            title="Delivery Schedule"
-            zone={zone}
-            onBack={goBack}
-            onOpenCompany={(id) => {
-              setScheduleCompany(id);
-              setScheduleZone(zone);
-              go('company-schedule');
-            }}
-          />
+      case 'delivery-schedule':
+        // The buyer's shop location decides the timetable (no location shown
+        // here); picking another delivery address changes the week.
+        return buyerZone ? (
+          <DeliveryScheduleScreen key={buyerZone.id} title="Beat Day Delivery Time Table" zone={buyerZone} onBack={goBack} />
+        ) : (
+          <NoBeatArea title="Beat Day Delivery Time Table" onBack={goBack} />
         );
-      }
       case 'sp:beat-schedule': {
         if (!actingFor) return <BeatSchedulePrompt onSwitch={() => go('sp:switch-customer')} />;
-        const zone = zoneForAddress(actingFor.address);
+        // The switched-to shop's location decides its beat area.
+        const zone = zoneForLocation({ placeId: actingFor.placeId, text: actingFor.address });
+        const changeCustomer = () => go('sp:switch-customer');
+        if (!zone)
+          return (
+            <NoBeatArea
+              title="Beat Day Delivery Time Table"
+              place={{ name: actingFor.businessName, area: 'Not on a beat', onChange: changeCustomer }}
+            />
+          );
         return (
           <DeliveryScheduleScreen
             key={actingFor.id}
-            title="Beat Schedule"
+            title="Beat Day Delivery Time Table"
             zone={zone}
-            forShop={{
-              name: actingFor.businessName,
-              area: `${actingFor.address} · Beat area: ${zone.name}`,
-              onChange: () => go('sp:switch-customer'),
-            }}
-            onOpenCompany={(id) => {
-              setScheduleCompany(id);
-              setScheduleZone(zone);
-              go('company-schedule');
-            }}
+            place={{ name: actingFor.businessName, area: zone.name, onChange: changeCustomer }}
           />
         );
       }
@@ -1037,9 +1038,8 @@ export default function App() {
         return (
           <CompanyScheduleScreen
             companyId={scheduleCompany}
-            zone={scheduleZone}
+            zone={buyerZone ?? ZONES[0]}
             onBack={goBack}
-            onShop={(d) => go('storefront', { distributor: d })}
           />
         );
       case 'sp:customers':

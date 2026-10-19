@@ -7,6 +7,9 @@ export interface Address {
   title: string;
   locality: string;
   pincode: string;
+  /** The map place the address was pinned at (data/places.ts) — where the shop
+   *  is, which decides its beat area and so its delivery days. */
+  placeId?: string;
   /* Addresses the buyer adds don't deliver straight away — ops verifies the
      location serves a beat before it can be picked. Pending ones sit at the
      bottom of the list, disabled. */
@@ -24,6 +27,7 @@ export const ADDRESSES: Address[] = [
     title: 'Flat 502, Sigma Towers',
     locality: 'Gachibowli, Hyderabad, Telangana',
     pincode: '500032',
+    placeId: 'gachibowli',
     status: 'approved',
   },
   {
@@ -32,6 +36,7 @@ export const ADDRESSES: Address[] = [
     title: 'Plot 27, Industrial Estate',
     locality: 'Madhapur, Hyderabad, Telangana',
     pincode: '500081',
+    placeId: 'madhapur',
     status: 'approved',
   },
   {
@@ -40,6 +45,7 @@ export const ADDRESSES: Address[] = [
     title: 'Shop 14, Lit Box Complex',
     locality: 'Rai Durg, Hitech City, Hyderabad, Telangana',
     pincode: '500032',
+    placeId: 'rai-durg',
     status: 'approved',
   },
   {
@@ -48,6 +54,7 @@ export const ADDRESSES: Address[] = [
     title: 'Unit 9, Cyber Gateway',
     locality: 'Kondapur, Serilingampally, Hyderabad, Telangana',
     pincode: '500084',
+    placeId: 'kondapur',
     status: 'pending',
   },
 ];
