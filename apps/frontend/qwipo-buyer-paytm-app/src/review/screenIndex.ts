@@ -55,7 +55,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'cart-alerts', label: 'Cart · Alerts' },
       { id: 'order-summary', label: 'Order Summary' },
       { id: 'order-items', label: 'Order Summary · View Items' },
-      { id: 'coupons', label: 'Coupons / Offers' },
       { id: 'order-confirmation', label: 'Order Confirmation' },
     ],
   },

@@ -83,6 +83,7 @@ Examine the actual screen's empty-state support before adding another review ent
 
 Cart and order screens show purchased SKU lines. Offers do not add free reward rows.
 The Discounts sheet shows quantity price slabs. It does not list other offers.
+The Coupons / Offers screen is removed. Old `?screen=coupons` links open Home.
 
 ## Shared packages
 

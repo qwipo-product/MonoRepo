@@ -1,16 +1,5 @@
-// Offers & schemes for the Apply Coupon screen. Self-contained mock —
-// every card's state is DERIVED from the cart at render time, so the numbers
-// on screen ("add 30 more units") always agree with what's actually in it.
-//
-// Two kinds of offer, told apart by `automatic`:
-//   • schemes  — trade offers the seller runs (case bonus, freebie, combo).
-//     They apply themselves the moment the cart qualifies; the buyer never
-//     picks one. Until it qualifies, the card says what's missing and offers
-//     to add it.
-//   • coupons  — the buyer chooses to apply, and can only hold one at a time.
-
-import { PRODUCTS } from './products';
-import { WHOLESALER_PRODUCTS } from './wholesaler';
+// Offer fixtures used by product labels, scheme filters, and cart pricing.
+// Reward metadata identifies schemes; the cart does not add free SKU lines.
 
 /** One product requirement inside a scheme. */
 export interface OfferNeed {
@@ -21,57 +10,32 @@ export interface OfferNeed {
 
 export interface Offer {
   id: string;
-  /** Scheme name — rendered in quotes ahead of the benefit. Schemes only. */
+  /** Scheme name used in product labels. */
   label?: string;
   /** The benefit itself — the emphasised part of the headline. */
   benefit: string;
   /** What the benefit applies to — trails the benefit in the same sentence. */
   scope: string;
-  /** Schemes apply themselves; coupons wait for the buyer to tap Apply. */
+  /** Whether the scheme applies automatically when its requirements are met. */
   automatic: boolean;
   /** Scheme requirement — every line must be met. */
   needs?: OfferNeed[];
-  /** Coupon requirement — cart value (₹). */
-  minOrder?: number;
-  /** Free goods this scheme grants once `needs` are met — Cart Summary and
-   * View Items show this as an actual ₹0 line, so "Applied automatically"
-   * here always matches a real free item in the cart, not just a label.
-   * Percent-off schemes (Discount, Combo, Slab) have no reward — there's no
-   * free product to show a line for. */
+  /** Free-goods metadata for a scheme. The cart does not add reward SKU lines. */
   reward?: OfferNeed;
   /** Percentage this scheme takes off once `needs` are met — the Combo/Slab
    * counterpart to `reward`: cart.ts applies it to the first `needs` line's
    * total, so "15% Off" is money actually off the order, not just a label.
    * Mutually exclusive with `reward` — a scheme pays out one or the other. */
   discountPct?: number;
-  /** The code the seller publishes for this offer — shown as a badge the
-   * buyer can copy. Schemes carry one too; it's how the seller's own staff
-   * and the DMS refer to the offer. */
+  /** Published scheme code used to identify the fixture. */
   code: string;
-  /** Last day the offer runs — shown when the card is expanded. */
+  /** Last day recorded for the demonstration offer. */
   expires?: string;
-  /** Extra detail beyond the headline. Left unset on almost every offer:
-   * `offerDetails()` below writes them from the offer's own fields, so a
-   * detail can't drift out of step with the rule it describes. Set this only
-   * for something the shape of the offer doesn't already state. */
-  details?: string[];
 }
 
-/* Written against the demo cart: 12 × Freedom Oil, 8 × Aashirvaad Atta,
-   20 × Fortune Besan, 2 × Red Label Tea. That makes the oil, atta and combo
-   schemes live, and leaves the besan case bonus 30 units short — one card in
-   each state, without any of it being hard-coded. */
+/* Scheme requirements describe the demonstration products. Cart pricing
+   applies qualifying percentage discounts to purchased lines. */
 export const OFFERS: Offer[] = [
-  {
-    id: 'save5',
-    code: 'SAVE5',
-    expires: '15 Oct 2026',
-    label: '5% Off',
-    benefit: 'Get 5% off',
-    scope: 'on your order above ₹500 upto ₹100',
-    automatic: false,
-    minOrder: 500,
-  },
   {
     id: 'oil-case',
     code: 'OILBOGO10',
@@ -400,117 +364,10 @@ export const OFFERS: Offer[] = [
   },
 ];
 
-/** Every card is in exactly one of these. */
-export type OfferState =
-  /** Scheme, cart qualifies — nothing for the buyer to do. */
-  | 'auto'
-  /** Scheme, cart is short — show what's missing and offer to add it. */
-  | 'needs-items'
-  /** Coupon the buyer can take right now. */
-  | 'available'
-  /** Coupon the buyer has taken. */
-  | 'applied'
-  /** Coupon the cart doesn't reach yet. */
-  | 'locked';
-
-export interface ResolvedOffer {
-  offer: Offer;
-  state: OfferState;
-  /** "Add 30 more units of Fortune Besan" — set on `needs-items` / `locked`. */
-  requirement?: string;
-}
-
-/**
- * Which seller runs this offer, from the SKUs it needs.
- *
- * `undefined` means it isn't a seller's scheme at all — a whole-order coupon
- * is struck against the order, not against one seller's goods, so it belongs
- * to no chip on the Apply Coupon filter.
- */
-export function offerSeller(offer: Offer): string | undefined {
-  const first = offer.needs?.[0];
-  return first ? PRODUCTS.find((p) => p.id === first.productId)?.seller : undefined;
-}
-
-/**
- * The extra detail an offer card shows when expanded.
- *
- * Only what the offer actually carries: the SKUs and quantities it needs, the
- * free goods it grants, the percentage it takes off, the minimum order value.
- * These are the fields a seller fills in on the DMS, so an offer configured
- * with nothing beyond its headline returns an empty list and the card simply
- * has less to open — no boilerplate invented to fill the space.
- *
- * Derived rather than stored, so a detail can't contradict the rule it
- * describes. `offer.details` overrides, for a condition the offer's shape
- * doesn't already state.
- */
-export function offerDetails(offer: Offer): string[] {
-  if (offer.details) return offer.details;
-  const out: string[] = [];
-
-  for (const n of offer.needs ?? []) {
-    out.push(`Needs ${n.qty} ${n.qty === 1 ? 'unit' : 'units'} of ${shortName(n.productId)} in the cart.`);
-  }
-  if (offer.minOrder) {
-    out.push(`Minimum order value of \u20b9${offer.minOrder.toLocaleString('en-IN')}.`);
-  }
-  if (offer.reward) {
-    out.push(
-      `Free goods: ${offer.reward.qty} \u00d7 ${shortName(offer.reward.productId)}, added to the same seller's order at \u20b90.`
-    );
-  }
-  if (offer.discountPct) {
-    out.push(`${offer.discountPct}% comes off the qualifying line, not the whole order.`);
-  }
-  return out;
-}
-
-const shortName = (id: string) =>
-  PRODUCTS.find((p) => p.id === id)?.shortName ??
-  WHOLESALER_PRODUCTS.find((w) => w.id === id)?.name ??
-  'this product';
-
-/**
- * Work out what a card should show, given the cart.
- *
- * @param qtyOf      units of a product currently in the cart
- * @param cartValue  cart grand total, for coupon minimums
- * @param appliedId  the coupon the buyer has applied, if any
- */
-export function resolveOffer(
-  offer: Offer,
-  qtyOf: (productId: string) => number,
-  cartValue: number,
-  appliedId: string | null
-): ResolvedOffer {
-  if (offer.automatic) {
-    const short = (offer.needs ?? []).find((n) => qtyOf(n.productId) < n.qty);
-    if (!short) return { offer, state: 'auto' };
-    return {
-      offer,
-      state: 'needs-items',
-      requirement: `Add ${short.qty - qtyOf(short.productId)} more units of ${shortName(short.productId)}`,
-    };
-  }
-
-  if (appliedId === offer.id) return { offer, state: 'applied' };
-  const min = offer.minOrder ?? 0;
-  if (cartValue < min) {
-    return {
-      offer,
-      state: 'locked',
-      requirement: `Add ₹${(min - cartValue).toLocaleString('en-IN')} more to use this coupon`,
-    };
-  }
-  return { offer, state: 'available' };
-}
-
 /** Every scheme label live on this SKU (Bogo, Freebie, Case Bonus, Slab,
  * Combo — in the order data/coupons.ts defines them), deduped. Empty when
- * the SKU carries no offer. Derived from `OFFERS` at call time, so it can
- * never drift out of sync with what Apply Offer / the Discounts sheet
- * actually show for this product. */
+ * the SKU carries no offer. Product labels and scheme filters use the same
+ * `OFFERS` fixtures as cart pricing. */
 export function offerLabelsFor(productId: string): string[] {
   const labels = OFFERS.filter((o) => o.needs?.some((n) => n.productId === productId)).map(
     (o) => o.label ?? o.benefit
