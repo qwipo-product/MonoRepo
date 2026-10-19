@@ -57,3 +57,15 @@ export const dayLabel = (o: DeliveryOption): string => (o.beat ? `${o.day} (Beat
 /* Whether a display label names a beat day. The cart only has the labels, not
    the options behind them, and the suffix is this module's to know about. */
 export const isBeatDay = (label: string): boolean => label.endsWith(' (Beat Day)');
+
+/* What a beat day actually promises.
+
+   "Delivered within 24–48 hrs" beside a chosen Monday read as 24–48 hours
+   from now — a promise nobody made. The van is in the area on the beat day,
+   and the goods follow within a day or two of *that*. The number means
+   nothing without the thing it counts from, so the note names it.
+
+   It says "Beat Day" rather than repeating the day itself: the chosen day is
+   already on the control beside this line, and the fixed phrase matches the
+   label on the chip the buyer just picked. */
+export const BEAT_WINDOW_NOTE = 'Expected within 24–48 hrs of Beat Day';

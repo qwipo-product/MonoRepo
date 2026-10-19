@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronLeft, MapPin, Copy, Check } from 'lucide-react';
 import { ProductImage, StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
-import type { Order } from '../data/orders';
+import { deliveryDateLabel, type Order } from '../data/orders';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
-import { formatDay, formatEta, isEtaWindow } from '../date';
+import { formatDate } from '../date';
 
 /* Order Details — company + status, the order summary bill, the item list, and
    the delivery address. Read-only.
@@ -64,12 +64,8 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
         <Section title="Order Summary">
           <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
             <SumRow label="Order ID" value={<CopyValue value={order.orderId} />} />
-            <SumRow label="Order date" value={formatDay(order.placedAt)} />
-            <SumRow
-              label="Expected delivery"
-              value={formatEta(order.eta)}
-              note={isEtaWindow(order.eta) ? 'Delivered within 24–48 hrs' : undefined}
-            />
+            <SumRow label="Order date" value={formatDate(order.placedAt)} />
+            <SumRow label={deliveryDateLabel(order.status)} value={formatDate(order.eta)} />
             <SumRow label="Order status" value={order.statusLabel} />
             <SumRow label="Items total" value={formatInrExact(itemsTotal)} />
             {discount > 0 && (

@@ -32,6 +32,8 @@ export interface Order {
   deliveryFee: number;
   status: OrderStatus;
   statusLabel: string;
+  /** When delivery is expected, as a plain ISO date — for an order already
+   *  delivered, the day it arrived. Never a time: nobody commits to one. */
   eta: string;
   items: OrderItem[];
   /** Discount on the items total. Absent means no discount. */
@@ -55,7 +57,7 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o2', orderId: 'QWIP2401204', seller: 'ITC Limited', distributor: 'Sri Sai Krishna Traders', itemCount: 2,
-    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
+    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: '2026-06-06',
     items: [
       { brand: 'Aashirvaad', name: 'Aashirvaad Atta 10kg × 8', qty: 8, pack: '10 kg · 4 Pcs/Case', image: '🌾', price: 420, mrp: 465 },
       { brand: 'Aashirvaad', name: 'Aashirvaad Ghee 1L × 2', qty: 2, pack: '1 L · 12 Pcs/Case', image: '🧈', price: 620, mrp: 690 },
@@ -63,7 +65,7 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o5', orderId: 'QWIP2401205', seller: 'Adani Wilmar', distributor: 'Sri Sai Krishna Traders', itemCount: 1,
-    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
+    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: '2026-06-06',
     discount: 185,
     items: [
       { brand: 'Fortune', name: 'Fortune Besan × 50', qty: 50, pack: '500 g · 20 Pcs/Case', image: '🫘', price: 55, mrp: 62 },
@@ -71,7 +73,7 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o3', orderId: 'QWIP2400204', seller: 'Hindustan Unilever', distributor: 'Omkar Enterprise', itemCount: 3,
-    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: 'Tomorrow 8 PM',
+    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: '2026-06-04',
     discount: 310,
     items: [
       { brand: 'Red Label', name: 'Red Label Tea × 8', qty: 8, pack: '250 g · 40 Pcs/Case', image: '🍵', price: 135, mrp: 150 },
@@ -81,13 +83,21 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o4', orderId: 'QWIP2399204', seller: 'Karnataka Soaps & Detergents', itemCount: 2,
-    placedAt: '2026-05-28', total: 2260, deliveryFee: 200, status: 'delivered', statusLabel: 'Delivered', eta: 'Delivered 2026-05-30',
+    placedAt: '2026-05-28', total: 2260, deliveryFee: 200, status: 'delivered', statusLabel: 'Delivered', eta: '2026-05-30',
     items: [
       { brand: 'Mysore Sandal', name: 'Mysore Sandal Soap × 12', qty: 12, pack: '150 g · 72 Pcs/Case', image: '🧼', price: 42, mrp: 48 },
       { brand: 'Mysore Sandal', name: 'Mysore Talcum Powder × 6', qty: 6, pack: '100 g · 48 Pcs/Case', image: '🧴', price: 88, mrp: 98 },
     ],
   },
 ];
+
+/* What to call the delivery date, which depends on whether it has happened
+   yet. "Expected delivery" over a date the goods already arrived on is the
+   card describing the past as a plan; once an order is delivered the same
+   date is simply when it came. Both order screens ask here, so the card and
+   the detail page can't end up calling it different things. */
+export const deliveryDateLabel = (status: OrderStatus): string =>
+  status === 'delivered' ? 'Delivered on' : 'Expected delivery';
 
 /** Map a free-text status label to the canonical OrderStatus (for StatusBadge
  * + the shared Order Details, when an order comes from a leaner data source). */

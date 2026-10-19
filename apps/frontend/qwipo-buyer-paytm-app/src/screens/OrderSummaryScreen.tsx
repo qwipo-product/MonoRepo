@@ -3,7 +3,7 @@ import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
-import { isBeatDay } from '../data/delivery';
+import { BEAT_WINDOW_NOTE, isBeatDay } from '../data/delivery';
 
 /* Order Summary — read-only review before Place Order. One bill card per
    seller (brand · item summary + chosen delivery window), then the overall
@@ -157,7 +157,8 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
 
       {/* delivery window — a beat day is the day the van is in the area, not
           the hour the goods arrive, so it carries the window the seller works
-          to. Same words as the cart said, so nothing changes at checkout. */}
+          to, counted from that day. Same words as the cart said, so nothing
+          changes at checkout. */}
       <div className="mt-3 border-t border-border pt-2.5 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-foreground-secondary">Delivery by</span>
@@ -165,7 +166,7 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
         </div>
         {isBeatDay(seller.windows[0]) && (
           <div className="mt-0.5 text-right text-xs font-medium text-foreground-secondary">
-            Delivered within 24–48 hrs
+            {BEAT_WINDOW_NOTE}
           </div>
         )}
       </div>
