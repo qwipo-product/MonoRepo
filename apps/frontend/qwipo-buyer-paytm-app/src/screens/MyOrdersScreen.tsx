@@ -3,7 +3,7 @@ import { ChevronLeft, FileText, Check, Package } from 'lucide-react';
 import { Button, EmptyState, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
-import { formatDay, formatEta } from '../date';
+import { formatDate } from '../date';
 import { useEmptyable } from '../review/demoState';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
@@ -144,10 +144,10 @@ function OrderCard({
       orderId={order.orderId}
       status={order.status}
       statusLabel={order.statusLabel}
-      meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${formatDay(order.placedAt)}`}
+      meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${formatDate(order.placedAt)}`}
       total={order.total}
       rightLabel="Expected delivery"
-      rightValue={formatEta(order.eta)}
+      rightValue={formatDate(order.eta)}
       onOpenDetails={onOpen}
       actions={
         cancelled ? undefined : delivered ? (
@@ -165,7 +165,7 @@ function OrderCard({
           </div>
         )
       }
-      hint={cancellable && !cancelled ? `You can cancel this order before ${formatEta(order.eta)}` : undefined}
+      hint={cancellable && !cancelled ? `You can cancel this order before ${formatDate(order.eta)}` : undefined}
     />
   );
 }
