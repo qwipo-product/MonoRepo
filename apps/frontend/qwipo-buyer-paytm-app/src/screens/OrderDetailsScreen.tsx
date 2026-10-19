@@ -3,7 +3,7 @@ import { ChevronLeft, MapPin, Copy, Check } from 'lucide-react';
 import { ProductImage, StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
 import type { Order } from '../data/orders';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
-import { formatDay, formatEta, isEtaWindow } from '../date';
+import { formatDay, formatEta } from '../date';
 
 /* Order Details — company + status, the order summary bill, the item list, and
    the delivery address. Read-only.
@@ -68,7 +68,6 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
             <SumRow
               label="Expected delivery"
               value={formatEta(order.eta)}
-              note={isEtaWindow(order.eta) ? 'Delivered within 24–48 hrs' : undefined}
             />
             <SumRow label="Order status" value={order.statusLabel} />
             <SumRow label="Items total" value={formatInrExact(itemsTotal)} />

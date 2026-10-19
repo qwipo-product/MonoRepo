@@ -3,7 +3,7 @@ import { ChevronLeft, FileText, Check, Package } from 'lucide-react';
 import { Button, EmptyState, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '../components/OrderListCard';
 import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
-import { formatDay, formatEta, isEtaWindow } from '../date';
+import { formatDay, formatEta } from '../date';
 import { useEmptyable } from '../review/demoState';
 
 const CANCELLABLE: OrderStatus[] = ['placed', 'processing', 'in_transit'];
@@ -148,7 +148,6 @@ function OrderCard({
       total={order.total}
       rightLabel="Expected delivery"
       rightValue={formatEta(order.eta)}
-      rightNote={isEtaWindow(order.eta) ? 'Delivered within 24–48 hrs' : undefined}
       onOpenDetails={onOpen}
       actions={
         cancelled ? undefined : delivered ? (
@@ -166,7 +165,7 @@ function OrderCard({
           </div>
         )
       }
-      hint={cancellable && !cancelled ? `You can cancel this order before ${formatDay(order.eta)}` : undefined}
+      hint={cancellable && !cancelled ? `You can cancel this order before ${formatEta(order.eta)}` : undefined}
     />
   );
 }
