@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, FileText, Check, Package } from 'lucide-react';
 import { Button, EmptyState, Sheet, cn } from '@mockups/ui';
 import { OrderListCard } from '../components/OrderListCard';
-import { ORDERS, TRACKING_STEPS, completedSteps, type Order, type OrderStatus } from '../data/orders';
+import { ORDERS, TRACKING_STEPS, completedSteps, deliveryDateLabel, type Order, type OrderStatus } from '../data/orders';
 import { formatDate } from '../date';
 import { useEmptyable } from '../review/demoState';
 
@@ -146,7 +146,7 @@ function OrderCard({
       statusLabel={order.statusLabel}
       meta={`${order.itemCount} ${order.itemCount === 1 ? 'item' : 'items'} · Placed ${formatDate(order.placedAt)}`}
       total={order.total}
-      rightLabel="Expected delivery"
+      rightLabel={deliveryDateLabel(order.status)}
       rightValue={formatDate(order.eta)}
       onOpenDetails={onOpen}
       actions={

@@ -91,6 +91,14 @@ export const ORDERS: Order[] = [
   },
 ];
 
+/* What to call the delivery date, which depends on whether it has happened
+   yet. "Expected delivery" over a date the goods already arrived on is the
+   card describing the past as a plan; once an order is delivered the same
+   date is simply when it came. Both order screens ask here, so the card and
+   the detail page can't end up calling it different things. */
+export const deliveryDateLabel = (status: OrderStatus): string =>
+  status === 'delivered' ? 'Delivered on' : 'Expected delivery';
+
 /** Map a free-text status label to the canonical OrderStatus (for StatusBadge
  * + the shared Order Details, when an order comes from a leaner data source). */
 export function statusFromLabel(label: string): OrderStatus {
