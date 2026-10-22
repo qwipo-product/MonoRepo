@@ -111,7 +111,12 @@ export function MyAccountScreen({
         )}
 
         {salesperson && <MenuGroup title="Salesperson" items={SP_MENU} onNavigate={onNavigate} />}
-        <MenuGroup title="Account" items={ACCOUNT} onNavigate={onNavigate} />
+        {/* The salesperson has the time table as a bottom tab, so not here too. */}
+        <MenuGroup
+          title="Account"
+          items={salesperson ? ACCOUNT.filter((i) => i.to !== 'delivery-schedule') : ACCOUNT}
+          onNavigate={onNavigate}
+        />
         <MenuGroup title="Preferences" items={PREFERENCES} onNavigate={onNavigate} />
         <MenuGroup title="Support" items={SUPPORT} onNavigate={onNavigate} />
 
