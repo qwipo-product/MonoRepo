@@ -53,6 +53,8 @@ import { OtpScreen } from './screens/auth/OtpScreen';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
+import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
+import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
@@ -69,13 +71,14 @@ import {
   availabilityFor,
   DEFAULT_ADDRESS_ID,
 } from './data/addresses';
+import { DMS_COMPANIES, dmsCompanyById, type DmsStatus } from './data/dmsPartners';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list',
+  'distributors-list', 'dms-partners', 'dms-register',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
@@ -142,6 +145,8 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'checkout' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
   if (id === 'order-details') return 'my-orders';
+  if (id === 'dms-partners') return 'distributors-list';
+  if (id === 'dms-register') return 'dms-partners';
   if (id === 'storefront') return 'listing';
   return 'home';
 }
@@ -221,6 +226,10 @@ export default function App() {
      wholesaler tab. */
   const [homeTab, setHomeTab] = useState<'distributors' | 'wholesalers'>('distributors');
   const [browseTab, setBrowseTab] = useState<BrowseTab | undefined>(undefined);
+  // DMS registrations, keyed by company id. TCPL starts unregistered so the
+  // flow can be walked end to end from the list.
+  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({});
+  const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
@@ -533,10 +542,49 @@ export default function App() {
             sellers={DISTRIBUTORS}
             initialTab={browseTab}
             onTabChange={setBrowseTab}
+            promo={<DmsPromoCard onClick={() => go('dms-partners')} />}
             onBack={goBack}
             onNavigate={go}
           />
         );
+      case 'dms-partners':
+        return (
+          <DmsPartnersScreen
+            statuses={dmsStatus}
+            onBack={goBack}
+            onOpenCompany={(id) => {
+              setDmsCompanyId(id);
+              go('dms-register');
+            }}
+          />
+        );
+      case 'dms-register': {
+        // Every company registers the same way: straight with the company.
+        const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+        const name = company.shortName ?? company.company;
+        const target = {
+          name,
+          via: company.company,
+          emoji: company.emoji,
+          distributor: name,
+          idHint: company.idHint,
+          dmsIntegrated: company.dmsIntegrated,
+          rejectedReason: company.rejectedReason,
+        };
+        const targetId = company.id;
+        return (
+          <DmsRegisterScreen
+            key={targetId}
+            target={target}
+            status={dmsStatus[targetId] ?? 'none'}
+            onBack={goBack}
+            onComplete={(status) => {
+              setDmsStatus((s) => ({ ...s, [targetId]: status }));
+              go('dms-partners');
+            }}
+          />
+        );
+      }
       // One screen per level-1 group, each listing only its own categories.
       case 'wholesaler-groceries':
       case 'wholesaler-fmcg': {
