@@ -1,28 +1,60 @@
 import type { ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Lock, Clock, BadgeCheck, FileSearch, XCircle } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, Lock, Clock, BadgeCheck, FileSearch, XCircle } from 'lucide-react';
 import { DMS_COMPANIES, type DmsStatus } from '../data/dmsPartners';
 
+/* A form, ticked, with a finger on it. Drawn here rather than shipped as an
+   asset: it is one illustration used in one place, and inline it follows the
+   theme — the lines are the brand blue and the tick is knocked out in the
+   card's own colour, so it stays legible when the square goes dark. */
+function RegisterArt() {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" className="h-8 w-8 text-primary" aria-hidden="true">
+      {/* the form, with a line written on it */}
+      <rect x="2" y="4.5" width="19" height="12.5" rx="2.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M6 9.5h7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      {/* accepted */}
+      <circle cx="24" cy="8" r="6" fill="currentColor" />
+      <path
+        d="m21.4 8.2 1.9 1.9 3.3-3.6"
+        className="stroke-card"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* and a hand on it: one finger out of a closed fist, thumb to the side.
+          Drawn as overlapping solids rather than one path — they share a fill,
+          so they read as a single shape and each part stays tunable. */}
+      <g fill="currentColor">
+        <rect x="10.5" y="11.5" width="4.5" height="10" rx="2.25" />
+        <rect x="9" y="18" width="12.5" height="10" rx="4" />
+        <rect x="6.75" y="19.5" width="5" height="5" rx="2.5" />
+      </g>
+    </svg>
+  );
+}
+
 /** Entry banner pinned on Authorised Distributors — prompts the buyer into the
-    Register-to-Order flow for the gated catalogues. */
+    Register-to-Order flow for the gated catalogues.
+
+    Why it says so little: the tile is pinned above every tab of a browsing
+    screen, so it competes with the catalogue for attention all day. One line
+    naming the thing earns its place; the two-line explanation of gated
+    catalogues did not, and that reasoning is on the screen it opens. */
 export function DmsPromoCard({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg border border-primary/30 bg-primary-soft p-3 text-left shadow-sm active:scale-[0.99]"
+      className="flex w-full items-center gap-3 rounded-xl bg-primary-soft p-3 text-left active:scale-[0.99]"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-        <Lock className="h-5 w-5" />
+      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-card">
+        <RegisterArt />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-foreground">
-          Register to order from more distributors
-        </span>
-        <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">
-          Some companies sell only to registered shops — register once to unlock
-          their catalogues
-        </span>
+      <span className="min-w-0 flex-1 text-base font-semibold leading-snug text-foreground">
+        Register to Order from more Distributors
       </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-primary-soft-foreground" />
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+        <ArrowUpRight className="h-5 w-5" strokeWidth={2.5} />
+      </span>
     </button>
   );
 }
