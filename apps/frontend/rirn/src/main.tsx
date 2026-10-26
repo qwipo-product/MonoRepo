@@ -1,23 +1,15 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ThemeProvider } from 'next-themes';
-import { HashRouter } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import { VersionBadge } from '@mockups/version-badge';
 import './index.css';
 import App from './App';
 
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* attribute="class" is the contract @mockups/web-tokens keys its dark
-        variant off — every dark rule is scoped under `.dark`. */}
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      {/* Hash routing (#/mappings), not real paths: preview builds are served
-          from /builds/<branch>/<sha>/ on the host, where no path fallback exists. */}
-      <HashRouter>
-        <App />
-      </HashRouter>
-      {/* Deployed version — outside the router so it is on every screen. */}
-      <VersionBadge />
-    </ThemeProvider>
-  </StrictMode>
+    <RouterProvider router={router} />
+    <VersionBadge corner="bottom-left" />
+  </StrictMode>,
 );

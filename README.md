@@ -4,7 +4,8 @@ Mockups Lab is a shared workspace for Qwipo product prototypes and interface rev
 Use the applications to review user flows and designs before production implementation.
 Buyer/Paytm covers mobile buyer and salesperson flows.
 Seller Store covers distributor and administrator flows.
-RIRN Console and RIRN Retailer cover company and retailer identity flows.
+Qwipo-WebApp presents the DigiDukaan product website through the existing RIRN Company deployment.
+RIRN Retailer covers retailer identity flows.
 Qwipo Analytics provides dashboard and report prototypes.
 Mobile and desktop Storybook catalogs document the shared interface components.
 The applications use demonstration data. An optional Mock API serves shared fixtures over HTTP.
@@ -51,7 +52,7 @@ Use that URL only on a permitted network.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `http://localhost:5175` | 6175 | [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md) |
 | Seller Store | `http://localhost:5174` | 6174 | [Seller README](apps/frontend/seller-store/README.md) |
-| RIRN Console | `http://localhost:5173` | 6173 | [RIRN README](apps/frontend/rirn/README.md) |
+| Qwipo-WebApp (RIRN deployment) | `http://localhost:5173` | 6173 | [Website README](apps/frontend/rirn/README.md) |
 | RIRN Retailer | `http://localhost:5176` | 6176 | [Retailer README](apps/frontend/rirn-retailer/README.md) |
 | Qwipo Analytics | `http://localhost:5177` | 6177 | [Analytics README](apps/frontend/qwipo-analytics/README.md) |
 | Mobile Storybook | `http://localhost:6006` | — | [Mobile catalog README](apps/frontend/storybook/README.md) |
@@ -119,10 +120,14 @@ Use [start-work](.claude/skills/start-work/SKILL.md) for the branch procedure.
 
 | Purpose | Mobile | Desktop |
 | --- | --- | --- |
-| Application | Buyer/Paytm, RIRN Retailer | Seller Store, RIRN Console |
+| Application | Buyer/Paytm, RIRN Retailer | Seller Store |
 | Primitives | `@mockups/ui` | `@mockups/web-ui` |
 | CSS tokens | `@mockups/design-tokens/theme.css` | `@mockups/web-tokens/theme.css` |
 | Review location | Mobile Storybook and Buyer sidebar | Desktop Storybook and Seller Design System persona |
+
+Qwipo-WebApp preserves its imported website design, fonts, and motion in `apps/frontend/rirn`.
+Its Vite build uses relative assets and query navigation for static branch previews.
+The package name and deployment files remain unchanged.
 
 Qwipo Analytics uses the mobile kit in a desktop layout.
 Keep that existing exception unless the user requests a design-kit migration.
@@ -171,7 +176,7 @@ Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
 | Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
-| RIRN Console | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
+| Qwipo-WebApp | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
 | RIRN Retailer | `mockups-rirn-retailer` | RIRN Retailer - Build | RIRN Retailer - Deploy |
 | Qwipo Analytics | `mockups-analytics` | Analytics - Build | Analytics - Deploy |
 | Mobile Storybook | `mockups-storybook` | Storybook - Build | Storybook - Deploy |

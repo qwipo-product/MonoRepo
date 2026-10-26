@@ -53,7 +53,7 @@ The build YAML extends `/azure-cicd/templates/mockup-docker-template.yaml`.
 The release YAML extends `/azure-cicd/templates/mockup-release-template.yaml`.
 Keep `resources.pipelines.source` equal to the registered build pipeline's display name.
 Use the pipeline label in the identity table followed by ` - Build`.
-For example, RIRN Console uses `RIRN Company - Build`.
+For example, Qwipo-WebApp in `apps/frontend/rirn` uses `RIRN Company - Build`.
 
 ## Generate files safely
 

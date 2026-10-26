@@ -1,159 +1,110 @@
-# @mockups/rirn
+# Qwipo-WebApp — DigiDukaan by Qwipo
 
-**Retailer Identity & Relationship Network** — a trusted identity layer for
-B2B commerce.
+This application replaces the RIRN company discovery console. It presents the DigiDukaan product website for brands and distributors.
+The source is `/Users/4nshuman/Development/Qwipo-WebApp`. That source folder is unchanged.
 
-Built so far: the **company discovery console** — the vertical slice that
-demonstrates the whole thesis.
+The existing deployment identity is retained:
 
-```bash
+| Setting | Value |
+| --- | --- |
+| Application folder | `apps/frontend/rirn` |
+| Package | `@mockups/rirn` |
+| Development port | 5173 |
+| Preview port | 6173 |
+| Build output | `apps/frontend/rirn/dist` |
+| Container port | 80 |
+| Service | `mockups-rirn-company` |
+| Build pipeline | `RIRN Company - Build` |
+| Deploy pipeline | `RIRN Company - Deploy` |
+| Version tag prefix | `rirn-company` |
+| Configured development URL | `https://mockups-rirn-company.dev.bms.qwipo.com` |
+
+The configured URL is a deployment target. Local validation does not confirm a remote deployment.
+The former RIRN company console is available in Git history. The separate RIRN Retailer application remains unchanged.
+
+## Run and verify
+
+Use Bun 1.3.13. Run these commands from the repository root:
+
+```sh
+bun install --frozen-lockfile
 bun dev --filter=@mockups/rirn
 ```
 
-http://localhost:5173 · sign in as ITC, HUL or Britannia.
+Open `http://localhost:5173`. For a production preview:
 
-## The problem it mocks
-
-The same retailer has a different ID in every system — `ITC-RET-1234` at one
-company, `HUL-RET-7821` at another, `DIST-9281` at a distributor, plus one per
-buyer app. Nothing can assert those are the same legitimate business.
-
-The catch is that companies and distributors won't fix this by pooling their
-customer masters — they fear competitors harvesting retailer lists and buyer
-platforms approaching their retailers directly. So the product has to solve
-identity fragmentation **without** becoming the central customer database
-nobody will contribute to.
-
-The answer in the PRD is an *authorization-aware identity graph*: a network ID
-(`NRID-…`) that maps to each participant's existing IDs rather than replacing
-them, with four concepts kept deliberately separate —
-
-| Layer | Question | Owner |
-|---|---|---|
-| Identity | Who is this retailer? | Network / Retailer |
-| Relationship | Does a company/distributor link exist? | Company / Distributor |
-| Authorization | May this retailer transact? | Company / Distributor |
-| Commercial terms | What price, MOQ, credit? | Company / Distributor (never the network) |
-
-Knowing who a retailer is grants nothing. That separation is what makes the
-network safe to join.
-
-North star metric: verified retailer identities with **two or more** trusted
-participant relationships — a single-relationship retailer proves no network
-effect.
-
-## Intended information architecture
-
-Identity (retailers, mappings, resolution queue) · Participants (companies,
-distributors, buyer & seller apps) · Relationships · Authorization · Consent ·
-Audit · Settings.
-
-## What's built: the company console
-
-Search a locality or PIN code, see who's there, decide who to map. Shaped like
-a property search — search bar, map, result rail — because that pattern is
-well understood. **The disclosure runs the opposite way**, and that inversion
-is the point.
-
-### The contribution economy
-
-The retailer base is Qwipo's asset. A company that browses it and maps nothing
-is extracting value and returning none, so:
-
-- Unlocking a retailer **costs 1** from a daily allowance of **20**
-- A DMS-confirmed mapping **earns 5 back**
-
-Browse-only runs dry; contribute and you keep going. That's PRD §15
-anti-harvesting expressed as an economy rather than a wall, and the meter sits
-in the top bar precisely so it can be felt. Both numbers are in
-`src/lib/company-session.ts` and are the first thing to tune after a demo.
-
-### Three levels of disclosure
-
-| State | What's shown |
-|---|---|
-| **Locked** | Business name, category, locality, verification badge — plus the withheld fields, listed by name with their values obscured |
-| **Unlocked** | GSTIN, address, proprietor, and the signals below |
-| **Mapped** | Their DMS ID attached and confirmed |
-
-Clicking a pin opens a card on the map. Before an unlock it names the fields
-it is holding back — Address, GSTIN, Contact number — with the values blurred,
-so the withholding is legible rather than looking like missing data.
-
-Those blurred rows render a **decoy** string, never the real value. A CSS blur
-is a visual effect, not a security boundary; blurring the true address would
-still ship it in the DOM for anyone who opened devtools, quietly undoing the
-model this mockup exists to argue for. Contact number has no real value to
-leak — it isn't on the `Retailer` type at all.
-
-The unlocked view **leads on what a company can't get from its own DMS** —
-duplicate detection ("this matches your record RET-8891"), verification
-provenance, distributor coverage, purchase band. Contact detail is almost an
-afterthought, deliberately: if an unlock only returned an address, the company
-would feel taxed rather than served, and the trade would collapse.
-
-**Phone number is never shown, at any state.** §15.4 marks it "Controlled"
-even for companies. It isn't even on the `Retailer` type.
-
-### Approximate location until you earn precision
-
-§16 puts approximate location at Level 1 (public) and the exact address at
-Level 2 (consent). So an unmapped retailer renders as a **soft dashed disc,
-offset up to ~400m from its true position** — you can see that a pocket of
-Kondapur has fourteen kirana stores, but you can't drive to one. Map it and the
-pin snaps to the real coordinates and turns blue.
-
-The offset is deterministic per NRID. A fuzz that reshuffled every render would
-look broken *and* average out to the true position for anyone patient enough to
-watch.
-
-### No total count
-
-The rail says "Showing 12", never "158 results". §32: exposing a total for a
-searchable query hands over an enumeration oracle — you can binary-search the
-base without ever unlocking anything.
-
-Search matches locality, PIN code or city, but **not business name**. Name
-search would turn the base into a lookup service for a list you already have,
-which is the harvesting path the design is trying to close.
-
-### DMS verification
-
-Nothing commits on the company's say-so — the ID round-trips to their DMS
-first. `src/lib/dms.ts` fakes that, deterministically so demos can be
-rehearsed:
-
-| Input | Outcome |
-|---|---|
-| `RET-1000`–`RET-8999` | Confirmed, mapping commits, +5 unlocks |
-| `RET-9000`+ | Not found in your DMS |
-| An ID already mapped | Already bound, names the NRID holding it |
-| `RET-4242`, `RET-5150` | GSTIN mismatch — refuses, suggests a dispute |
-| Anything else | Bad format |
-
-The GSTIN-mismatch branch is the interesting one: the ID is real, the retailer
-is real, and they still shouldn't be linked without a human looking.
-
-## Layout
-
-```
-src/lib/retailer-base.ts     the Qwipo-seeded base — 48 Hyderabad retailers
-src/lib/company-session.ts   quota, unlocks, mappings (the economy)
-src/lib/dms.ts               fake DMS round-trip incl. failure branches
-src/components/retailer-map.tsx           leaflet + the fuzzing rule
-src/components/retailer-detail-sheet.tsx  locked / unlocked / mapped
-src/pages/discover.tsx       map + rail
+```sh
+bun run build --filter=@mockups/rirn
+bun run --cwd apps/frontend/rirn preview
 ```
 
-## Not built yet
+Open `http://localhost:6173`. Run the application checks with:
 
-Distributor console, buyer-app retailer self-service, and the Qwipo Admin
-screens (companies grid, retailer base map, identity-resolution queue, abuse
-panel). Each is a variation on the same shell — `AppShell` from
-`@mockups/web-ui` takes a `NavItem[]`, where `disabled` greys out screens that
-don't exist yet.
+```sh
+bun run check --filter=@mockups/rirn... --continue --ui=stream
+```
 
-Browse the available components at `bun dev --filter=@mockups/storybook-web`
-(:6007) before writing your own.
+## Routes and interactions
 
-The source PRD lives outside this repo at `/Users/apple/Qwipo/rirn/RIRN PRD.pdf`.
+| URL suffix | Content |
+| --- | --- |
+| `/` | Product landing page |
+| `/?page=how-it-works` | Order journey, delivery options, FAQs, and contact |
+| `/?page=unknown` | Page-not-found view |
+| `/#product`, `/#network`, `/#qwipo`, `/#contact` | Landing-page sections |
+
+The route table describes the suffix below the current application base. A preview can use `/builds/<branch>/<commit>/?page=how-it-works`.
+Query navigation keeps the document path unchanged. Section anchors use the URL hash. Relative image URLs and Vite's `base: './'` keep assets inside the preview prefix.
+Do not replace these links with host-root paths such as `/how-it-works` or `/images/file.webp`.
+
+The site includes the brand/distributor audience switch, six app screenshots, the animated device gallery, order journey tabs, delivery-mode control, FAQs, and mobile navigation.
+Motion starts enabled on a fresh visit. The Pause motion control keeps its selection during navigation. Native page transitions run in browsers that support them; navigation also works without that API.
+Contact opens an email draft addressed to the supplied public Qwipo address. There is no submission backend and no message is sent by the website.
+
+## Framework adaptation
+
+The original site uses Next.js. This copy uses the existing React/Vite build so its Dockerfile, nginx configuration, Azure pipelines, and preview upload steps can remain unchanged.
+The application is rendered in the browser. It does not run a Next.js server.
+
+- `next/link` and `next/navigation` are replaced by React Router query navigation.
+- The existing responsive AVIF/WebP images and embedded previews remain in use. The two small brand marks use normal image elements.
+- Local WOFF2 fonts are loaded through CSS and preloaded from `index.html`.
+- React Router coordinates native page transitions. GSAP and Lenis preserve the imported page motion.
+- `public/opengraph-image.png` is a static rendering of the supplied social-card design. Its arrow uses an SVG path to avoid a remote emoji fetch during generation.
+- `index.html` and `public/robots.txt` keep this mockup out of search indexes. No production domain or sitemap is asserted.
+- Local review controls are enabled during development. Production builds omit those controls and their accessibility inspection library.
+- The shared version badge displays the version and commit supplied by the existing pipeline.
+
+## Source map
+
+| Path | Responsibility |
+| --- | --- |
+| `src/pages/Home.tsx` | Product landing page |
+| `src/pages/HowItWorks.tsx`, `src/pages/NotFound.tsx` | Product journey and unknown-page view |
+| `src/App.tsx`, `src/lib/navigation.ts`, `src/components/SiteLink.tsx` | Page selection, navigation, and focus |
+| `src/data/site.ts` | Approved narrative, FAQs, and contact destinations |
+| `src/data/image-assets.json`, `public/images/` | Responsive imagery and embedded previews |
+| `src/data/app-screens.ts` | Screenshot labels and descriptions |
+| `src/index.css`, `src/fonts/`, `licenses/` | Imported website design, fonts, and font licenses |
+| `src/components/Motion.tsx`, `src/lib/motion-context.ts`, `src/lib/use-page-motion.ts` | Motion preference, scrolling, and animation cleanup |
+| `src/components/ProductDevice.tsx`, `src/components/OrbitProductDevice.tsx` | Interactive app-screen galleries |
+| `src/components/OrderJourney.tsx`, `src/components/Logistics.tsx` | Journey tabs and delivery modes |
+| `src/components/ReviewTools.tsx` | Development-only page inspection |
+| `docs/source/` | Original design decisions and image provenance; historical Next.js commands refer to the source project |
+
+Preserve the imported website design. Do not add a shared theme provider that changes its colors or font layout.
+Use the root catalog for dependencies. Existing applications retain their React and tooling versions.
+To regenerate responsive images, use the original source project's `scripts/prepare-images.mjs` with its source captures. Copy the resulting assets and manifest here, and retain the `./images/` URL prefix.
+
+## Existing deployment behavior
+
+`Dockerfile`, `nginx.conf`, `docker-build.yml`, `azure-release.yaml`, and the shared pipeline templates retain their existing behavior.
+The build still runs `@mockups/rirn` and copies `dist/` into nginx.
+
+- `feature/*` branches upload static previews when the path filters match.
+- `dev` builds the image for the development deployment.
+- `testing`, `staging`, and `main` follow the existing environment mappings.
+
+After an authorized merge and push to a deployment branch, this website replaces the company console in that branch's environment. The pipeline names continue to say RIRN Company.
+Do not rename the package, service, folder, or pipeline as an incidental cleanup.
+No commit, push, pipeline run, or remote deployment is part of local preparation.
