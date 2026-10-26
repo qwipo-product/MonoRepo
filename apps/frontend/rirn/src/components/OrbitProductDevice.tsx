@@ -1,4 +1,3 @@
-"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
@@ -6,7 +5,7 @@ import { useMotion } from "../lib/motion-context";
 import { appScreens, type AppScreen } from "../data/app-screens";
 import { ProgressiveImage, type ImageAsset } from "./ProgressiveImage";
 
-const screens: AppScreen[] = ["distributor", "catalogue", "cart", "tracking"];
+const screens: AppScreen[] = ["marketplace", "search"];
 const TRANSITION_DURATION = 1.15;
 const BASE_AUTOPLAY_DELAY = 5;
 const AUTOPLAY_FREQUENCY_MULTIPLIER = 1.15;

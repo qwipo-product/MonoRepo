@@ -1,27 +1,11 @@
 export const appScreens = {
-  home: {
+  marketplace: {
     name: "Discover",
-    alt: "DigiDukaan mockup home with distributor and product discovery",
+    alt: "DigiDukaan app home showing authorised distributors, wholesalers and product offers; illustrative prices and margins",
   },
-  distributor: {
-    name: "Connect",
-    alt: "Authorised distributor storefront with delivery conditions and categories",
-  },
-  catalogue: {
-    name: "Choose",
-    alt: "DigiDukaan product list with pack sizes, schemes and seller information",
-  },
-  cart: {
-    name: "Order",
-    alt: "Cart grouped by seller with delivery options and order requirements",
-  },
-  orders: {
-    name: "Follow",
-    alt: "My Orders screen showing order and fulfillment status",
-  },
-  tracking: {
-    name: "Track",
-    alt: "Order tracking from placed through packed and out for delivery",
+  search: {
+    name: "Compare",
+    alt: "DigiDukaan search results showing distributor and wholesaler offers, pack sizes and illustrative prices and margins",
   },
 };
 export type AppScreen = keyof typeof appScreens;

@@ -19,7 +19,7 @@ export default function App() {
     const samePage = previousPath.current === pathname;
     previousPath.current = pathname;
     document.title = pathname === '/'
-      ? 'DigiDukaan by Qwipo | Beyond the beat'
+      ? 'DigiDukaan 2.0 by Qwipo | Beyond the beat'
       : `${pathname === '/how-it-works' ? 'How it works' : 'Page not found'} | DigiDukaan by Qwipo`;
     // Same-page clicks already scroll through MotionProvider. Back/Forward
     // and cross-page links still need their destination restored here.

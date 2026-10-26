@@ -1,0 +1,1742 @@
+[
+  {
+    "location": "site.name",
+    "text": "DigiDukaan",
+    "evidence": "W1 public listing; link destination",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.company",
+    "text": "Qwipo",
+    "evidence": "W1 public listing; link destination",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.email",
+    "text": "info@qwipo.com",
+    "evidence": "W1 public listing; link destination",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.companyUrl",
+    "text": "https://qwipo.com",
+    "evidence": "W1 public listing; link destination",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.appUrl",
+    "text": "https://play.google.com/store/apps/details?id=com.qwipo.b2b",
+    "evidence": "W1 public listing; link destination",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.description",
+    "text": "DigiDukaan 2.0 by Qwipo connects kiranas with authorised distributors and wholesalers on ONDC, with dark-store consolidation and 3PL delivery within 24 hours.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.navigation.0.label",
+    "text": "The product",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.navigation.0.href",
+    "text": "/#product",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.navigation.1.label",
+    "text": "The network",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.navigation.1.href",
+    "text": "/#network",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.navigation.2.label",
+    "text": "Why Qwipo",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.navigation.2.href",
+    "text": "/#qwipo",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.hero.eyebrow",
+    "text": "FOR BRANDS. FOR DISTRIBUTORS. FOR EVERYDAY BUSINESS.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.lines.0",
+    "text": "Beyond",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.lines.1",
+    "text": "the beat.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.description",
+    "text": "Reach kiranas beyond the sales visit. DigiDukaan 2.0 brings authorised sellers together on ONDC, with dark stores and 3PL delivery within 24 hours.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.primary",
+    "text": "Let’s talk business",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.secondary",
+    "text": "See how it works",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.hero.footnote",
+    "text": "Order 24/7. Reach further. Deliver through DigiDukaan 2.0.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.opportunity.label",
+    "text": "01 / THE OPPORTUNITY",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.opportunity.heading.0",
+    "text": "Your relationships.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.opportunity.heading.1",
+    "text": "A wider reach.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.opportunity.intro",
+    "text": "Reach the small stores in interior lanes that regular beat plans miss. Give kiranas a direct way to order from authorised distributors and wholesalers.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.opportunity.caption",
+    "text": "Local stores. Strong relationships. A digital way forward.",
+    "evidence": "Supplied visual evidence / illustrative disclosure",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.id",
+    "text": "brands",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.audiences.0.label",
+    "text": "For brands",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.title",
+    "text": "See demand beyond the beat.",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.text",
+    "text": "Make your range and launches visible to more kiranas, with outlet-level data on what they order and how often.",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.items.0",
+    "text": "Show your range and company schemes",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.items.1",
+    "text": "Reach outlets outside regular beat coverage",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.items.2",
+    "text": "Understand demand at outlet level",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.0.cta",
+    "text": "Discuss your brand",
+    "evidence": "S8 2–3, 7–8, 15",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.id",
+    "text": "distributors",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.audiences.1.label",
+    "text": "For distributors",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.title",
+    "text": "More ways to take the next order.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.text",
+    "text": "Take digital orders from existing and new kiranas. In DigiDukaan 2.0, 3PL partners collect from seller godowns and deliver through nearby dark stores.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.items.0",
+    "text": "Receive orders digitally",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.items.1",
+    "text": "Reach kiranas beyond your regular beat",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.items.2",
+    "text": "Connect supply to dark-store delivery",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.audiences.1.cta",
+    "text": "Discuss your distribution business",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.label",
+    "text": "02 / MEET DIGIDUKAAN 2.0",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.heading.0",
+    "text": "Familiar brands.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.heading.1",
+    "text": "A new way",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.heading.2",
+    "text": "to order.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.intro",
+    "text": "One app for authorised distributors and wholesalers serving a kirana’s area. Explore the range, compare seller offers and order whenever stock is needed.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.caption",
+    "text": "App screens from the DigiDukaan 2.0 presentation, shown for illustration. Products, prices, margins and offers may change; available sellers depend on location.",
+    "evidence": "Supplied visual evidence / illustrative disclosure",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.0.number",
+    "text": "01",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.product.features.0.title",
+    "text": "A multi-brand catalogue",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.0.text",
+    "text": "Explore products, pack sizes and company schemes from authorised distributors and wholesalers.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.1.number",
+    "text": "02",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.product.features.1.title",
+    "text": "Orders from ₹500",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.1.text",
+    "text": "Place orders any day, at distributor prices with company schemes. The 2.0 journey uses cash on delivery.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.2.number",
+    "text": "03",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.product.features.2.title",
+    "text": "Delivery within 24 hours",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.product.features.2.text",
+    "text": "3PL partners pick up from sellers, consolidate orders at DigiDukaan dark stores and deliver to the kirana.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.label",
+    "text": "03 / A NETWORK IN MOTION",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.heading.0",
+    "text": "From discovery.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.heading.1",
+    "text": "To the shop door.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.intro",
+    "text": "Find an authorised seller. Order any day. Follow the goods through a DigiDukaan dark store to the kirana.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.0.number",
+    "text": "01",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.journey.steps.0.name",
+    "text": "Discover",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.0.text",
+    "text": "Find products and authorised distributors or wholesalers serving your area.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.0.tag",
+    "text": "AT THE RETAILER",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.1.number",
+    "text": "02",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.journey.steps.1.name",
+    "text": "Order",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.1.text",
+    "text": "Order anytime from ₹500, with company schemes, your shop’s map pin and phone number.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.1.tag",
+    "text": "WITH YOUR SELLER",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.2.number",
+    "text": "03",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.journey.steps.2.name",
+    "text": "Consolidate",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.2.text",
+    "text": "3PL partners collect from seller godowns. Orders come together at a DigiDukaan dark store.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.2.tag",
+    "text": "VIA 3PL PICKUP",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.3.number",
+    "text": "04",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "site.journey.steps.3.name",
+    "text": "Deliver",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.3.text",
+    "text": "3PL partners deliver from the dark store to the kirana within 24 hours, with cash on delivery.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.steps.3.tag",
+    "text": "3PL LAST MILE",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.journey.note",
+    "text": "The 2.0 model combines ordering any day with dark-store consolidation and dedicated 3PL delivery, reaching beyond scheduled beat routes.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.label",
+    "text": "04 / THE QWIPO CONNECTION",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.heading.0",
+    "text": "Good technology.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.heading.1",
+    "text": "Grounded in",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.heading.2",
+    "text": "real business.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.text",
+    "text": "Qwipo brings retailer ordering and distribution technology to the ONDC ecosystem. DigiDukaan 2.0 connects authorised supply with kiranas, supported by dark stores and 3PL partners.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.0.title",
+    "text": "Connect the systems",
+    "evidence": "S5 1–3",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.0.label",
+    "text": "DMS CONNECTIVITY",
+    "evidence": "S5 1–3",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.0.text",
+    "text": "Connect catalogue, prices, stock and schemes with distributor systems, and pass orders back. Integration scope is agreed with each partner.",
+    "evidence": "S5 1–3",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.1.title",
+    "text": "Keep fulfillment moving",
+    "evidence": "S1 5–6; S3 2, 12",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.1.label",
+    "text": "LOGISTICS TECH",
+    "evidence": "S1 5–6; S3 2, 12",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.qwipo.capabilities.1.text",
+    "text": "Bring route planning, load consolidation and delivery visibility into the operation. Logistics Tech can also support a separate logistics engagement.",
+    "evidence": "S1 5–6; S3 2, 12",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.label",
+    "text": "YOUR NETWORK. OUR NEXT CONVERSATION.",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.heading.0",
+    "text": "Let’s move",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.heading.1",
+    "text": "business",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.heading.2",
+    "text": "forward.",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.text",
+    "text": "Bring your authorised seller network onto DigiDukaan 2.0. Let’s discuss the kiranas you want to reach and delivery coverage in your markets.",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.roles.0",
+    "text": "A brand",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.roles.1",
+    "text": "A distributor or wholesaler",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.roles.2",
+    "text": "An ecosystem partner",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.button",
+    "text": "Open email enquiry",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.contact.note",
+    "text": "Opens your email app with a draft. Nothing is sent until you send it.",
+    "evidence": "S8 15; implementation (email draft)",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.eyebrow",
+    "text": "THE DIGIDUKAAN 2.0 JOURNEY",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.heading",
+    "text": "A new route for the next order.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.intro",
+    "text": "A kirana orders from an authorised seller. 3PL partners pick up the goods, bring orders together at a DigiDukaan dark store and deliver to the shop within 24 hours.",
+    "evidence": "S8 4, 6, 13–15; headings/labels are editorial",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.0.question",
+    "text": "What is 3PL, and when does it enter the journey?",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.0.answer",
+    "text": "3PL means third-party logistics. In DigiDukaan 2.0, these partners handle two legs: pickup from distributor and wholesaler godowns to a DigiDukaan dark store, then last-mile delivery from that store to the kirana. They are part of the core delivery model, rather than only overflow capacity.",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.1.question",
+    "text": "Who sells the goods, and who delivers them?",
+    "evidence": "S8 4, 13",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.1.answer",
+    "text": "Authorised distributors and wholesalers remain the sellers. In the 2.0 model, 3PL partners collect from their godowns and deliver through DigiDukaan dark stores. The seller and the delivery partner have different roles.",
+    "evidence": "S8 4, 13",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.2.question",
+    "text": "How does 2.0 change beat-day delivery?",
+    "evidence": "S8 11, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.2.answer",
+    "text": "A beat is a scheduled sales or delivery route. The earlier model relied on distributor delivery. DigiDukaan 2.0 supports ordering 24/7, with dark-store consolidation and dedicated 3PL delivery within 24 hours. Talk to the team about 2.0 coverage in your markets.",
+    "evidence": "S8 11, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.3.question",
+    "text": "What is the minimum order, and how is it paid?",
+    "evidence": "S8 6, 9; credit not promised",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.3.answer",
+    "text": "The DigiDukaan 2.0 journey has a ₹500 minimum order and cash on delivery. The retailer pays when the goods reach the shop. Distributor credit and fintech lending are not included in the 2.0 journey shown here.",
+    "evidence": "S8 6, 9; credit not promised",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.4.question",
+    "text": "What happens at a dark store?",
+    "evidence": "S8 13 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.4.answer",
+    "text": "A dark store is a local fulfilment hub. Orders collected from distributor and wholesaler godowns are aggregated there, close to kirana clusters, before 3PL partners take them on the last mile. It is an operational stop between the seller and the shop.",
+    "evidence": "S8 13 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.5.question",
+    "text": "Can DigiDukaan connect to a DMS?",
+    "evidence": "S5 1–3; per-partner scope",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.5.answer",
+    "text": "Qwipo’s DMS connector is designed to read master products, prices, stock and schemes, and push orders back. The DMS remains the source of truth for its master data. Supported interfaces and implementation scope need to be agreed for each system.",
+    "evidence": "S5 1–3; per-partner scope",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.6.question",
+    "text": "Is the catalogue the same everywhere?",
+    "evidence": "S8 4, 6; illustration notice",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "site.details.faqs.6.answer",
+    "text": "No. The app shows authorised distributors and wholesalers serving the kirana’s area. The available range and company schemes depend on those sellers. Screens on this website are illustrations, not live stock, prices or guaranteed margins.",
+    "evidence": "S8 4, 6; illustration notice",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.title",
+    "text": "Discover",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.icon",
+    "text": "search",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.0.screen",
+    "text": "marketplace",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.0.actor",
+    "text": "AT THE RETAILER",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.heading",
+    "text": "Start with what the shelf needs.",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.text",
+    "text": "Search products and see authorised distributors and wholesalers serving the kirana’s area.",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.points.0",
+    "text": "Find sellers in your area",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.points.1",
+    "text": "Explore products & schemes",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.points.2",
+    "text": "Choose an authorised seller",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.0.detail",
+    "text": "The store’s location determines the sellers available. Complete any seller registration required before ordering; the app supports ordering from newly approved distributors. The screens here are illustrative, not live stock or price quotations.",
+    "evidence": "S8 6; W1 registration/approval",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.title",
+    "text": "Order",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.icon",
+    "text": "cart",
+    "evidence": "S8 6, 13–14",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.1.screen",
+    "text": "search",
+    "evidence": "S8 6, 13–14",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.1.actor",
+    "text": "AT THE KIRANA",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.heading",
+    "text": "Order when the shop needs it.",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.text",
+    "text": "Choose from the seller’s range at distributor prices, with company schemes. Place orders any day, from ₹500.",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.points.0",
+    "text": "Order 24/7",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.points.1",
+    "text": "₹500 minimum order",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.points.2",
+    "text": "Include the shop’s map pin & phone",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.1.detail",
+    "text": "Each order carries the shop’s map pin and phone number so the delivery partner can find it, including in interior lanes. The 2.0 journey uses cash on delivery. The app image shows product selection; it is not a checkout or a live price quotation.",
+    "evidence": "S8 6, 13–14",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.title",
+    "text": "Pickup",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.icon",
+    "text": "truck",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.2.actor",
+    "text": "FROM SELLER GODOWNS",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.heading",
+    "text": "The first leg starts with the seller.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.text",
+    "text": "3PL partners collect goods from distributor and wholesaler godowns and bring them to a DigiDukaan dark store.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.points.0",
+    "text": "Distributor & wholesaler godowns",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.points.1",
+    "text": "Pickup by a 3PL partner",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.points.2",
+    "text": "Transfer to the dark store",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.2.detail",
+    "text": "3PL means third-party logistics. The seller supplies the goods; the logistics partner moves them. Pickup is the first physical leg of the 2.0 model, before consolidation and last-mile delivery.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.title",
+    "text": "Consolidate",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.icon",
+    "text": "layers",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.3.actor",
+    "text": "AT THE DIGIDUKAAN DARK STORE",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.heading",
+    "text": "Orders come together, closer to the shop.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.text",
+    "text": "Goods collected from sellers are aggregated at a DigiDukaan dark store near kirana clusters, ready for the last mile.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.points.0",
+    "text": "Receive goods from sellers",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.points.1",
+    "text": "Aggregate orders at the dark store",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.points.2",
+    "text": "Hand over for last-mile delivery",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.3.detail",
+    "text": "A dark store is a local fulfilment hub. It is the intermediate stop in the 2.0 delivery route: seller godown → 3PL pickup → dark store → 3PL last mile → kirana. It does not replace the authorised seller.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.title",
+    "text": "Deliver",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.icon",
+    "text": "truck",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Navigation / display identifier"
+  },
+  {
+    "location": "chapters.4.actor",
+    "text": "FROM DARK STORE TO SHOP COUNTER",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.heading",
+    "text": "The last mile. Within 24 hours.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.text",
+    "text": "Dedicated 3PL partners deliver from the dark store to the kirana. The retailer receives the goods and pays cash on delivery.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.points.0",
+    "text": "3PL last-mile delivery",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.points.1",
+    "text": "Use the shop’s map pin & phone",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.points.2",
+    "text": "Receive goods & pay cash",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "chapters.4.detail",
+    "text": "DigiDukaan 2.0’s delivery commitment is within 24 hours. The dedicated 3PL fleet connects the dark store to interior-lane outlets without waiting for the distributor’s regular beat. Discuss 2.0 coverage for your markets with the team.",
+    "evidence": "S8 6, 13–14 + notes",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "appScreens.marketplace.name",
+    "text": "Discover",
+    "evidence": "S8 slide 1 image5 and slides 1/6 image4; illustration",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "appScreens.marketplace.alt",
+    "text": "DigiDukaan app home showing authorised distributors, wholesalers and product offers; illustrative prices and margins",
+    "evidence": "S8 slide 1 image5 and slides 1/6 image4; illustration",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "appScreens.search.name",
+    "text": "Compare",
+    "evidence": "S8 slide 1 image5 and slides 1/6 image4; illustration",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "appScreens.search.alt",
+    "text": "DigiDukaan search results showing distributor and wholesaler offers, pack sizes and illustrative prices and margins",
+    "evidence": "S8 slide 1 image5 and slides 1/6 image4; illustration",
+    "type": "Reviewed copy"
+  },
+  {
+    "location": "src/app/page.tsx:22",
+    "text": "ONDC DIGIDUKAAN 2.0",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:27",
+    "text": "Beyond",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:29",
+    "text": "the beat",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:53",
+    "text": "SCROLL TO CONNECT",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:82",
+    "text": "A retailer using a phone at the counter of a stocked neighbourhood store",
+    "type": "Accessible or input label",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:86",
+    "text": "EVERYDAY",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:88",
+    "text": "POSSIBILITY.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:105",
+    "text": "A SMALL SCREEN. A BIGGER CONNECTION.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:113",
+    "text": "Discover.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:114",
+    "text": "Order.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:115",
+    "text": "Repeat.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:122",
+    "text": "DIGIDUKAAN, BY QWIPO",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:150",
+    "text": "Explore the retailer app",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:215",
+    "text": "Beyond the beat.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:223",
+    "text": "Follow the full journey",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:240",
+    "text": "Qwipo",
+    "type": "Accessible or input label",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:266",
+    "text": "A delivery team member handling stock beside a loaded distribution truck",
+    "type": "Accessible or input label",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:270",
+    "text": "ON THE GROUND.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/page.tsx:271",
+    "text": "CONNECTED BY QWIPO.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:10",
+    "text": "How it works",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:11",
+    "text": "Follow DigiDukaan 2.0 from authorised sellers through 3PL pickup, dark-store consolidation and delivery to kiranas within 24 hours, with cash on delivery.",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:15",
+    "text": "A new route for the next order | DigiDukaan",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:16",
+    "text": "Discover, order, collect, consolidate and deliver. Explore the DigiDukaan 2.0 dark-store and 3PL journey.",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:31",
+    "text": "Follow an order",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:40",
+    "text": "The order journey",
+    "type": "Accessible or input label",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:43",
+    "text": "FIVE STEPS. ONE CONNECTED JOURNEY.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:45",
+    "text": "Explore one step at a time. Open the detail only when you want more.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:53",
+    "text": "A FEW GOOD QUESTIONS",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:58",
+    "text": "Built around",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/how-it-works/page.tsx:59",
+    "text": "the real world.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/layout.tsx:14",
+    "text": "DigiDukaan 2.0 by Qwipo | Beyond the beat",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/layout.tsx:20",
+    "text": "DigiDukaan 2.0 by Qwipo | Beyond the beat",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/layout.tsx:28",
+    "text": "DigiDukaan by Qwipo",
+    "type": "Structured UI copy",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/layout.tsx:50",
+    "text": "Skip to content",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/opengraph-image.tsx:30",
+    "text": "DigiDukaan 2.0",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/opengraph-image.tsx:31",
+    "text": "BY QWIPO",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/opengraph-image.tsx:43",
+    "text": "Beyond",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/opengraph-image.tsx:44",
+    "text": "the beat.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/opengraph-image.tsx:47",
+    "text": "Authorised sellers. Dark stores. 3PL delivery.",
+    "type": "Static UI text",
+    "evidence": "S8 4, 6, 13–15 or editorial/navigation text"
+  },
+  {
+    "location": "src/app/not-found.tsx:4",
+    "text": "Page not found",
+    "type": "Structured UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:5",
+    "text": "This route ends here. Return to DigiDukaan by Qwipo to find the right connection.",
+    "type": "Structured UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:12",
+    "text": "404 / A SMALL DETOUR",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:17",
+    "text": "This route",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:18",
+    "text": "ends here.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:20",
+    "text": "Let’s get you back to the right connection.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/app/not-found.tsx:21",
+    "text": "Back to DigiDukaan",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Logistics.tsx:51",
+    "text": "DIGIDUKAAN 2.0 / THE PHYSICAL JOURNEY",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:53",
+    "text": "Two legs.",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:55",
+    "text": "One connected delivery.",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:58",
+    "text": "3PL means third-party logistics. These partners collect from sellers, bring orders together at DigiDukaan dark stores, and deliver to kiranas within 24 hours. The dark store connects the two delivery legs.",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:68",
+    "text": "Explore the two delivery legs",
+    "type": "Accessible or input label",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:75",
+    "text": "1 / 3PL pickup",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:82",
+    "text": "2 / 3PL last mile",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:89",
+    "text": "Seller godowns to 3PL pickup to DigiDukaan dark store to 3PL last-mile delivery to kirana",
+    "type": "Accessible or input label",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:144",
+    "text": "3PL pickup",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:147",
+    "text": "3PL last mile",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:150",
+    "text": "Seller godowns",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:153",
+    "text": "Dark store",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:156",
+    "text": "Kirana",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:177",
+    "text": "Then, from dark store to kirana.",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:178",
+    "text": "First, from sellers to the dark store.",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:181",
+    "text": "After consolidation, dedicated 3PL partners deliver to the shop using its map pin and phone number. The retailer pays cash on delivery.",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:182",
+    "text": "3PL partners pick up from distributor and wholesaler godowns. Orders are aggregated at a DigiDukaan dark store near kirana clusters.",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:189",
+    "text": "Pick up",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:190",
+    "text": "3PL collects from seller godowns",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:195",
+    "text": "Orders aggregated at the dark store",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:200",
+    "text": "3PL last mile to the kirana",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:204",
+    "text": "Pay cash",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:205",
+    "text": "Retailer pays on delivery",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/Logistics.tsx:216",
+    "text": "Sellers supply the goods. 3PL partners move them. DigiDukaan 2.0 connects the journey through dark stores.",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13–14; sequential legs"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:24",
+    "text": "Search products and see authorised distributors and wholesalers serving the kirana’s area.",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:39",
+    "text": "Choose from the seller’s range at distributor prices, with company schemes. Place orders any day, from ₹500.",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:54",
+    "text": "3PL partners collect goods from distributor and wholesaler godowns and bring them to a DigiDukaan dark store.",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:69",
+    "text": "Goods collected from sellers are aggregated at a DigiDukaan dark store near kirana clusters, ready for the last mile.",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:84",
+    "text": "Dedicated 3PL partners deliver from the dark store to the kirana. The retailer receives the goods and pays cash on delivery.",
+    "type": "Structured UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:102",
+    "text": "Follow an order",
+    "type": "Accessible or input label",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:163",
+    "text": "SELLER → DARK STORE",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:165",
+    "text": "ORDERS AGGREGATED",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:166",
+    "text": "DARK STORE → KIRANA",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:172",
+    "text": "App screen · Illustrative products & prices",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:173",
+    "text": "DigiDukaan 2.0 · Delivery flow illustrated",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:190",
+    "text": "A little more detail",
+    "type": "Static UI text",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/OrderJourney.tsx:203",
+    "text": "Back to discovery",
+    "type": "Conditional UI copy",
+    "evidence": "S8 6, 13; stage controls and illustration labels"
+  },
+  {
+    "location": "src/components/Contact.tsx:37",
+    "text": "Every good partnership starts with a hello.",
+    "type": "Static UI text",
+    "evidence": "Implementation: mailto draft only; W1 address"
+  },
+  {
+    "location": "src/components/Contact.tsx:40",
+    "text": "I’m here as",
+    "type": "Static UI text",
+    "evidence": "Implementation: mailto draft only; W1 address"
+  },
+  {
+    "location": "src/components/Contact.tsx:58",
+    "text": "Company",
+    "type": "Static UI text",
+    "evidence": "Implementation: mailto draft only; W1 address"
+  },
+  {
+    "location": "src/components/Contact.tsx:58",
+    "text": "(optional)",
+    "type": "Static UI text",
+    "evidence": "Implementation: mailto draft only; W1 address"
+  },
+  {
+    "location": "src/components/Contact.tsx:66",
+    "text": "Your company name…",
+    "type": "Accessible or input label",
+    "evidence": "Implementation: mailto draft only; W1 address"
+  },
+  {
+    "location": "src/components/Header.tsx:30",
+    "text": "DigiDukaan by Qwipo home",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:41",
+    "text": "DigiDukaan",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:41",
+    "text": "BY QWIPO",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:44",
+    "text": "Main navigation",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:52",
+    "text": "Let’s talk",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:62",
+    "text": "Close",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:62",
+    "text": "Menu",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:68",
+    "text": "Mobile navigation",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:87",
+    "text": "How it works",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Header.tsx:91",
+    "text": "Let’s talk",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:9",
+    "text": "Everyday commerce.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:11",
+    "text": "Extraordinary possibility.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:15",
+    "text": "Meet Qwipo",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:19",
+    "text": "Get the app",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:23",
+    "text": "How it works",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:27",
+    "text": "Back to top",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:32",
+    "text": "DigiDukaan",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:35",
+    "text": "© 2026 Qwipo. All rights reserved.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:36",
+    "text": "Built for the business of everyday.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Footer.tsx:37",
+    "text": "QWIPO · ONDC ECOSYSTEM",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/RouteArtwork.tsx:99",
+    "text": "Your network. Connected.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/RouteArtwork.tsx:106",
+    "text": "THE NEXT ORDER",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/RouteArtwork.tsx:108",
+    "text": "Starts with a connection.",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/RouteArtwork.tsx:112",
+    "text": "01 / DISCOVER",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/RouteArtwork.tsx:115",
+    "text": "02 / ORDER",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Audience.tsx:14",
+    "text": "Choose your business type",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/OrbitProductDevice.tsx:238",
+    "text": "Explore the app",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/OrbitProductDevice.tsx:242",
+    "text": "Product screens",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/ProductDevice.tsx:201",
+    "text": "DigiDukaan",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/ProductDevice.tsx:210",
+    "text": "Explore the app",
+    "type": "Static UI text",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/ProductDevice.tsx:214",
+    "text": "Product screens",
+    "type": "Accessible or input label",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Motion.tsx:109",
+    "text": "Pause motion",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Motion.tsx:109",
+    "text": "Enable motion",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Motion.tsx:122",
+    "text": "Pause motion",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Motion.tsx:122",
+    "text": "Enable motion",
+    "type": "Conditional UI copy",
+    "evidence": "UI behavior, supplied visual, or editorial branding; no additional operational promise"
+  },
+  {
+    "location": "src/components/Contact.tsx:11",
+    "text": "Hello Qwipo team, I would like to discuss DigiDukaan 2.0 for our business. Business type / Company / Location / markets / seller network and delivery coverage / name",
+    "type": "Email draft template; user fields substituted",
+    "evidence": "S8 4, 13, 15; W1 address; opens a draft only"
+  },
+  {
+    "location": "Vite adaptation: index.html and src/App.tsx",
+    "text": "DigiDukaan 2.0 by Qwipo | Beyond the beat; description includes authorised distributors and wholesalers, ONDC, dark-store consolidation and 3PL delivery within 24 hours",
+    "type": "Browser and social metadata",
+    "evidence": "S8 4, 6, 13–15; matches Next.js metadata"
+  }
+]
