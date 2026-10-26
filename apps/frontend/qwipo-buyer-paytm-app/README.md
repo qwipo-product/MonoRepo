@@ -4,7 +4,11 @@ This browser prototype contains buyer and salesperson flows in Qwipo and Paytm s
 The flows include sign-in, catalog, cart, checkout, orders, and account screens.
 The application uses local fixtures without a backend server.
 After OTP verification, both shells open Home.
-The prototype does not include onboarding, KYC, or distributor registration screens.
+The prototype does not include onboarding or KYC screens.
+Authorised Distributors opens **Register to Order** for companies that sell only to registered shops.
+TCPL registers with the Qwipo KYC and a consent tick.
+HUL opens the **Register with HUL** pop-up: Customer ID (free text) or the shop's registered mobile number (pre-filled, locked in phase 1).
+Registration requests are simulated. Nothing is sent to TCPL or HUL.
 Buyers can select a saved delivery address. Address creation is not available.
 
 ## Run the application

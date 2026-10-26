@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, SearchX } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
@@ -32,6 +32,7 @@ export function SellerBrowseScreen({
   productListId = 'listing',
   initialTab,
   onTabChange,
+  promo,
   onBack,
   onNavigate,
 }: {
@@ -48,6 +49,8 @@ export function SellerBrowseScreen({
   /** Reports the tab the buyer switched to, so Back can return them to it —
    *  the screen's own tab state is invisible to the navigator otherwise. */
   onTabChange?: (t: BrowseTab) => void;
+  /** Optional card pinned above the list on every tab (Register to Order entry). */
+  promo?: ReactNode;
   onBack: () => void;
   onNavigate: Navigate;
 }) {
@@ -109,6 +112,7 @@ export function SellerBrowseScreen({
       {/* Keyed by tab: the panel animates in on a switch, and the list
           starts at the top rather than at the last tab's scroll offset. */}
       <div key={tab} className="no-scrollbar animate-screen flex-1 overflow-y-auto bg-background-subtle p-4">
+        {promo && <div className="mb-4">{promo}</div>}
         {active.length === 0 ? (
           <EmptyState
             icon={<SearchX strokeWidth={1.75} />}

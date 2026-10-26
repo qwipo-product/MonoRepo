@@ -29,6 +29,9 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'home', label: 'Home Page' },
       { id: 'distributors-list', label: 'Distributors' },
+      { id: 'dms-partners', label: 'Distributors · Register to Order' },
+      { id: 'dms-link', label: 'Distributors · Register with HUL' },
+      { id: 'dms-register', label: 'Distributors · Registration' },
       { id: 'wholesaler-categories', label: 'Wholesalers' },
       { id: 'wholesaler-groceries', label: 'Wholesalers \u00b7 Groceries' },
       { id: 'wholesaler-fmcg', label: 'Wholesalers \u00b7 FMCG' },

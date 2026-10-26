@@ -60,6 +60,10 @@ import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
 import { DeliveryScheduleScreen } from './screens/DeliveryScheduleScreen';
 import { CompanyDistributorsScreen } from './screens/CompanyDistributorsScreen';
+import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
+import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
+import { DmsLinkSheet } from './sheets/DmsLinkSheet';
+import { DMS_COMPANIES, dmsCompanyById, type DmsLinkRequest, type DmsStatus } from './data/dmsPartners';
 import { SCHEDULE_COMPANIES, scheduleCompanyById, type Weekday } from './data/deliverySchedule';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
@@ -79,7 +83,7 @@ const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list',
+  'distributors-list', 'dms-partners', 'dms-link', 'dms-register',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
@@ -149,6 +153,8 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'order-details') return 'my-orders';
   if (id === 'storefront') return 'listing';
   if (id === 'sub:delivery-company') return 'sub:delivery-schedule';
+  if (id === 'dms-partners') return 'distributors-list';
+  if (id === 'dms-register') return 'dms-partners';
   return 'home';
 }
 
@@ -168,6 +174,7 @@ function readInitialScreen(): ScreenId {
   if (s === 'app-update' || s === 'app-update-required') return 'home'; // = update sheet over Home
   if (s === 'promo-banners') return 'home'; // = the promo banner sheet over Home
   if (s === 'order-items') return 'order-summary'; // = the items sheet over Order Summary
+  if (s === 'dms-link') return 'dms-partners'; // = the Register with HUL pop-up over Register to Order
   return s;
 }
 
@@ -241,6 +248,15 @@ export default function App() {
      distributors lands on the same day. */
   const [scheduleDay, setScheduleDay] = useState<Weekday | null>(null);
   const [scheduleCompanyId, setScheduleCompanyId] = useState<string>(SCHEDULE_COMPANIES[0].id);
+  /* Register to Order, keyed by company id. Every company starts unregistered
+     so the flow can be walked. `dmsLinks` is what the shop last sent a company
+     that takes existing customers (HUL) — its customer ID or mobile number —
+     which the status pages quote and Try Again starts from. */
+  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({});
+  const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
+  const [dmsLinks, setDmsLinks] = useState<Record<string, DmsLinkRequest>>({});
+  // The company whose Register pop-up is open, if any.
+  const [dmsLinkId, setDmsLinkId] = useState<string | null>(null);
 
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
      to the screen they actually came from rather than to a target each screen
@@ -264,6 +280,7 @@ export default function App() {
     }
     if (s === 'promo-banners') setPromoOpen(true);
     if (s === 'order-items') setOrderItemsOpen(true);
+    if (s === 'dms-link') setDmsLinkId(DMS_COMPANIES.find((c) => c.linksExisting)?.id ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -382,6 +399,13 @@ export default function App() {
     setOrderItemsOpen(false);
     setUpdateOpen(false);
     setPromoOpen(false);
+    setDmsLinkId(null);
+    if (id === 'dms-link') {
+      // Not a page — the Register with HUL pop-up over Register to Order.
+      setScreen('dms-partners');
+      setDmsLinkId(DMS_COMPANIES.find((c) => c.linksExisting)?.id ?? null);
+      return;
+    }
     if (id === 'promo-banners') {
       // Not a page — the full-screen promo sheet over Home.
       setScreen('home');
@@ -459,6 +483,7 @@ export default function App() {
     setAlertsOpen(false);
     setOrderItemsOpen(false);
     setUpdateOpen(false);
+    setDmsLinkId(null);
     setListApplied(prev.applied);
     setListBackTab(prev.listTab);
     setBrowseTab(prev.browseTab);
@@ -572,10 +597,45 @@ export default function App() {
             sellers={DISTRIBUTORS}
             initialTab={browseTab}
             onTabChange={setBrowseTab}
+            promo={<DmsPromoCard onClick={() => go('dms-partners')} />}
             onBack={goBack}
             onNavigate={go}
           />
         );
+      case 'dms-partners':
+        return (
+          <DmsPartnersScreen
+            statuses={dmsStatus}
+            onBack={goBack}
+            onOpenCompany={(id) => {
+              // HUL takes existing customers only: its first tap is the
+              // pop-up over this list, not a page of its own.
+              if (dmsCompanyById(id)?.linksExisting && (dmsStatus[id] ?? 'none') === 'none') {
+                setDmsLinkId(id);
+              } else {
+                setDmsCompanyId(id);
+                go('dms-register');
+              }
+            }}
+          />
+        );
+      case 'dms-register': {
+        const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
+        return (
+          <DmsRegisterScreen
+            key={company.id}
+            company={company}
+            status={dmsStatus[company.id] ?? 'none'}
+            link={dmsLinks[company.id]}
+            onBack={goBack}
+            onComplete={(status) => {
+              setDmsStatus((s) => ({ ...s, [company.id]: status }));
+              go('dms-partners');
+            }}
+            onRelink={() => setDmsLinkId(company.id)}
+          />
+        );
+      }
       // One screen per level-1 group, each listing only its own categories.
       case 'wholesaler-groceries':
       case 'wholesaler-fmcg': {
@@ -984,6 +1044,22 @@ export default function App() {
             seller={viewSeller}
             onClose={() => setOrderItemsOpen(false)}
           />
+
+          {(() => {
+            const company = dmsLinkId ? dmsCompanyById(dmsLinkId) : undefined;
+            return company ? (
+              <DmsLinkSheet
+                key={company.id}
+                company={company}
+                initial={dmsLinks[company.id]}
+                onSend={(request) => {
+                  setDmsLinks((l) => ({ ...l, [company.id]: request }));
+                  setDmsStatus((s) => ({ ...s, [company.id]: 'pending' }));
+                }}
+                onClose={() => setDmsLinkId(null)}
+              />
+            ) : null;
+          })()}
         </div>
         </div>
       </main>

@@ -1,7 +1,7 @@
 # P2P Search — Distributor Registration (Buyer App)
 
-Status: Historical requirements. The Buyer prototype no longer includes this flow.
-Do not restore the registration card or screens unless the user requests them.
+Status: Historical requirements. The Buyer prototype restored the Register to Order card, list and TCPL form on 26 Oct 2026.
+HUL there follows the HUL P2P stories (21543–21546, 21741) instead: a Customer ID or Mobile number pop-up, not 21495's choice page.
 
 Feature **21492 · Buyer App Changes** · Iteration `Qwipo B2B\Product Enhancement Backlog`
 
