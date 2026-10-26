@@ -1,3 +1,4 @@
+"use client";
 import { useId, useState } from "react";
 import { site } from "../data/site";
 import { Arrow } from "./Arrow";
@@ -6,7 +7,7 @@ export function Contact() {
   const id = useId();
   const [role, setRole] = useState(site.contact.roles[0]);
   const [company, setCompany] = useState("");
-  const message = `Hello Qwipo team,\n\nI would like to discuss DigiDukaan 2.0 for our business.\n\nBusiness type: ${role}\nCompany: ${company.trim() || "[Your company]"}\nLocation / markets: [Your markets]\nWhat we would like to explore: [Tell us about your seller network and delivery coverage]\n\nBest regards,\n[Your name]`;
+  const message = `Hello Qwipo team,\n\nI would like to discuss DigiDukaan for our business.\n\nBusiness type: ${role}\nCompany: ${company.trim() || "[Your company]"}\nLocation / markets: [Your markets]\nWhat we would like to explore: [Tell us about your distribution network]\n\nBest regards,\n[Your name]`;
   const href = `mailto:${site.email}?subject=${encodeURIComponent(`DigiDukaan partnership enquiry${company.trim() ? `: ${company.trim()}` : ""}`)}&body=${encodeURIComponent(message)}`;
   return (
     <section

@@ -37,20 +37,28 @@ export function NetworkScene({ stage }: { stage: number }) {
           />
         </>
       )}
-      {stage === 4 && (
+      {stage === 1 && (
         <>
-          <path className="scene-soft" d="M21 51h92v69H21z" />
-          <path className="scene-paper" d="m14 51 53-29 53 29zM35 65h54v55H35z" />
-          <path d="M35 77h54m-54 12h54m-54 12h54" />
-          <path className="scene-accent" d="M76 82h56v37H76z" />
-          <path className="scene-paper" d="M132 92h17l15 16v11h-32z" />
-          <path d="M139 99h8l9 10h-17M84 94h23m-23 9h14" />
-          <circle className="scene-paper" cx="91" cy="120" r="8" />
-          <circle className="scene-paper" cx="148" cy="120" r="8" />
-          <path className="scene-detail" d="M125 36h30m-30 9h19" />
+          <path className="scene-soft" d="M26 52h112v73H26z" />
+          <path
+            className="scene-paper"
+            d="M23 51 34 27h96l11 24v9a12 12 0 0 1-24 0 12 12 0 0 1-24 0 12 12 0 0 1-24 0 12 12 0 0 1-24 0 11 11 0 0 1-22 0z"
+          />
+          <path
+            className="scene-accent"
+            d="m57 27-12 24v9a12 12 0 0 0 24 0v-9l4-24m24 0-4 24v9a12 12 0 0 0 24 0v-9l-12-24"
+          />
+          <path d="M23 51h118M43 84h26v24H43zM83 125V84h29v41m-9-23v7" />
+          <path className="scene-paper" d="M118 91h43v33h-43z" />
+          <path className="scene-accent" d="M129 91h21v33h-21z" />
+          <path d="m131 107 6 6 12-13" />
+          <path
+            className="scene-detail"
+            d="M39 17h23m7 0h13M150 38v15m-7-7h14"
+          />
         </>
       )}
-      {stage === 1 && (
+      {stage === 2 && (
         <>
           <path
             className="scene-soft"
@@ -66,22 +74,6 @@ export function NetworkScene({ stage }: { stage: number }) {
           <path className="scene-accent" d="m110 73 36 17v16l-11 5V95L99 79z" />
           <path d="m92 82 36 17 29-15m-29 15v29M102 105l13 6" />
           <path className="scene-detail" d="M120 32h29m-29 10h18m17 14h9" />
-        </>
-      )}
-      {stage === 2 && (
-        <>
-          <path className="scene-soft" d="M25 52h132v73H25z" />
-          <path
-            className="scene-paper"
-            d="m18 52 73-35 73 35zM41 67h48v58H41zM103 67h38v22h-38z"
-          />
-          <path d="M41 79h48m-48 12h48m-48 12h48m-48 12h48M98 102h48" />
-          <path
-            className="scene-accent"
-            d="M101 109h22v16h-22zm24-14h24v30h-24z"
-          />
-          <path d="M112 109v7m25-21v7M79 36h24" />
-          <path className="scene-detail" d="M9 66v18m-4-9h8m149 21h8" />
         </>
       )}
       {stage === 3 && (

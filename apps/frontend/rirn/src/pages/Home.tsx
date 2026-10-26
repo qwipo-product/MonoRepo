@@ -18,7 +18,9 @@ export default function Home() {
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-overline">
           <span className="eyebrow">{site.hero.eyebrow}</span>
-          <span className="hero-edition">ONDC DIGIDUKAAN 2.0</span>
+          <span className="hero-edition">
+            DIGITAL ORDERING / HUMAN CONNECTIONS
+          </span>
         </div>
         <div className="hero-content">
           <div className="hero-copy">
@@ -109,8 +111,8 @@ export default function Home() {
             <span className="product-orbit orbit-one" aria-hidden="true" />
             <span className="product-orbit orbit-two" aria-hidden="true" />
             <p className="product-stage-word">
-              <span>Discover.</span>
               <span>Order.</span>
+              <span>Connect.</span>
               <span>Repeat.</span>
             </p>
             <div className="product-phone">
@@ -211,7 +213,7 @@ export default function Home() {
         </div>
         <div className="journey-bottom">
           <p>
-            <strong>Beyond the beat.</strong> {site.journey.note}
+            <strong>Built around the beat.</strong> {site.journey.note}
           </p>
           <Link href="/how-it-works" className="text-link journey-cta">
             <span

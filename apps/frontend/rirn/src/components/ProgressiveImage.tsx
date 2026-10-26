@@ -1,4 +1,5 @@
-// Pre-encoded files avoid on-demand conversion; previews need no request.
+"use client";
+
 import {
   type CSSProperties,
   useCallback,
@@ -29,18 +30,10 @@ export function ProgressiveImage({
   onReady?: (asset: ImageAsset) => void;
 }) {
   const image = assets[asset];
-  const svg = "svg" in image ? image.svg : undefined;
   const root = useRef<HTMLSpanElement>(null);
   const full = useRef<HTMLImageElement>(null);
   const [started, setStarted] = useState(priority || load === true);
   const [state, setState] = useState<"preview" | "ready" | "error">("preview");
-  const [rasterOnly, setRasterOnly] = useState(false);
-  const fail = useCallback(() => {
-    // Keep the embedded preview visible if an SVG cannot render. The existing
-    // responsive AVIF/WebP set is a separate, bounded fallback request.
-    if (svg && !rasterOnly) setRasterOnly(true);
-    else setState("error");
-  }, [svg, rasterOnly]);
 
   // Remember a request when its carousel slide moves out of view. Changing
   // slides must not cancel the download or replace an already decoded image.
@@ -70,10 +63,10 @@ export function ProgressiveImage({
         setState("ready");
         onReady?.(asset);
       } catch {
-        if (full.current === element) fail();
+        if (full.current === element) setState("error");
       }
     },
-    [asset, onReady, fail],
+    [asset, onReady],
   );
 
   useEffect(() => {
@@ -112,9 +105,6 @@ export function ProgressiveImage({
       />
       {started && (
         <picture className="image-full">
-          {svg && !rasterOnly && (
-            <source type="image/svg+xml" srcSet={svg} />
-          )}
           <source type="image/avif" srcSet={srcSet("avif")} sizes={sizes} />
           <img
             ref={full}
@@ -128,7 +118,7 @@ export function ProgressiveImage({
             loading="eager"
             fetchPriority={priority ? "high" : "auto"}
             onLoad={(event) => void reveal(event.currentTarget)}
-            onError={fail}
+            onError={() => setState("error")}
           />
         </picture>
       )}

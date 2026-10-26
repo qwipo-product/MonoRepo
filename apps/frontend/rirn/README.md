@@ -57,7 +57,7 @@ The route table describes the suffix below the current application base. A previ
 Query navigation keeps the document path unchanged. Section anchors use the URL hash. Relative image URLs and Vite's `base: './'` keep assets inside the preview prefix.
 Do not replace these links with host-root paths such as `/how-it-works` or `/images/file.webp`.
 
-The site includes the brand/distributor audience switch, six hosted buyer-app screens, the animated device gallery, order journey tabs, two-leg logistics control, FAQs, and mobile navigation.
+The site includes the brand/distributor audience switch, six app screenshots, the animated device gallery, order journey tabs, delivery-mode control, FAQs, and mobile navigation.
 Motion starts enabled on a fresh visit. The Pause motion control keeps its selection during navigation. Native page transitions run in browsers that support them; navigation also works without that API.
 Contact opens an email draft addressed to the supplied public Qwipo address. There is no submission backend and no message is sent by the website.
 
@@ -67,7 +67,7 @@ The original site uses Next.js. This copy uses the existing React/Vite build so 
 The application is rendered in the browser. It does not run a Next.js server.
 
 - `next/link` and `next/navigation` are replaced by React Router query navigation.
-- Phone screens use self-contained SVGs, embedded previews and responsive AVIF/WebP fallbacks. The two small brand marks use normal image elements.
+- The existing responsive AVIF/WebP images and embedded previews remain in use. The two small brand marks use normal image elements.
 - Local WOFF2 fonts are loaded through CSS and preloaded from `index.html`.
 - React Router coordinates native page transitions. GSAP and Lenis preserve the imported page motion.
 - `public/opengraph-image.png` is a static rendering of the supplied social-card design. Its arrow uses an SVG path to avoid a remote emoji fetch during generation.
@@ -115,9 +115,3 @@ No commit, push, pipeline run, or remote deployment is part of local preparation
 The website now uses warm apricot (`#F2CEAE`) in place of fluorescent lime. The semantic `--accent` token covers controls, route markers, logistics capacity highlights, enquiry emphasis and shimmer. Selected phone controls have a dark violet border. The favicon and static sharing image match the new accent. Motion timings, original product screenshots and deployment configuration are unchanged.
 
 The source site's desktop/mobile visual review found no reported axe violations; measured accent contrast is 10.33:1 against violet ink, 4.59:1 against the violet field and 12.13:1 against dark plum. Some automated SVG/decorative checks remain incomplete. Independent colour review: 8/10, with no colour blockers. Repository validation uses the scoped lint/typecheck/build command above.
-
-## DigiDukaan 2.0 content correction
-
-The current narrative follows the supplied ONDC DigiDukaan 2.0 deck. See [the fact check](docs/source/16-content-fact-check.md) and [copy inventory](docs/source/evidence/website-content-inventory.md). The detailed route is Discover → Order → Pickup → Consolidate → Deliver. Authorised distributors and wholesalers supply the goods; 3PL partners collect from godowns and deliver through DigiDukaan dark stores. The deck specifies a ₹500 minimum, cash on delivery and delivery within 24 hours. Geographic coverage and detailed SLA/minimum calculation rules are not asserted.
-
-The six phone screens now come solely from the hosted Qwipo buyer app, per the user’s subsequent instruction. SVG exports keep text/icons scalable and embed the site’s photos; tiny previews render immediately with AVIF/WebP fallbacks for SVG failures. Screenshot seller terms and delivery examples are illustrative. See [the source/loading record](docs/source/17-hosted-buyer-screens.md) and [capture provenance](docs/source/hosted-screen-provenance.json).

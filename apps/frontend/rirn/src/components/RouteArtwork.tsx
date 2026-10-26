@@ -89,7 +89,7 @@ export function RouteArtwork() {
       </svg>
       <div className="hero-phone" data-hero-phone>
         <ProductDevice
-          screens={["home", "catalogue", "orders", "tracking"]}
+          screens={["home", "catalogue", "tracking"]}
           priority
           cycleTransition="spin"
         />
@@ -112,7 +112,7 @@ export function RouteArtwork() {
         01 / DISCOVER
       </span>
       <span className="art-coordinate coordinate-two" aria-hidden="true">
-        02 / ORDER
+        02 / CONNECT
       </span>
     </div>
   );

@@ -34,7 +34,7 @@ export function Footer() {
       <div className="footer-bottom">
         <span>© 2026 Qwipo. All rights reserved.</span>
         <span>Built for the business of everyday.</span>
-        <span>QWIPO · ONDC ECOSYSTEM</span>
+        <span>A QWIPO PRODUCT</span>
       </div>
     </footer>
   );

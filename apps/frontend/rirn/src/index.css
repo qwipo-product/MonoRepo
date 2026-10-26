@@ -2337,7 +2337,7 @@ section[id] {
     max-width: 160px;
   }
   .journey-steps h3 {
-    font-size: clamp(22px, 6.8vw, 32px);
+    font-size: clamp(25px, 7.8vw, 38px);
     margin: 0;
     gap: 7px;
   }
@@ -3548,17 +3548,6 @@ html[data-motion="reduced"]::view-transition-group(*) {
   height: 100%;
 }
 
-/* Preserve the complete source screen; never crop away seller labels or terms. */
-.device-screen .progressive-image {
-  width: 100%;
-  height: 100%;
-}
-.device-screen .image-preview,
-.device-screen .image-full img {
-  object-fit: contain;
-  object-position: center;
-}
-
 @container (max-width: 280px) {
   .product-device--orbit {
     --orbit-phone-width: 190px;
@@ -3570,6 +3559,10 @@ html[data-motion="reduced"]::view-transition-group(*) {
   .device-controls button {
     font-size: 12px;
   }
+}
+
+.page-content {
+  view-transition-name: page;
 }
 
 @media (min-width: 641px) and (max-width: 1000px) {
@@ -3609,47 +3602,4 @@ html[data-motion="reduced"]::view-transition-group(*) {
   }
 }
 
-.journey .eyebrow {
-  font-size: 12px;
-  color: var(--ink);
-}
-
-/* Operations are illustrated as physical handoffs, not retailer app screens. */
-.story-operation-art {
-  width: min(100%, 360px);
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 28px;
-  animation: chapter-in 0.4s var(--ease) both;
-}
-.story-operation-art .network-scene {
-  width: 100%;
-  height: auto;
-}
-.story-operation-art > span {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-align: center;
-  padding: 10px 16px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 30px;
-}
-.logistics-map--sequential {
-  margin-top: 24px;
-}
-.logistics-map--sequential text {
-  font-size: 17px;
-}
-@media (max-width: 700px) {
-  .logistics-map--sequential text {
-    font-size: 23px;
-  }
-  .story-operation-art {
-    width: min(85%, 290px);
-  }
-}
-
-.page-content { view-transition-name: page; }
+.journey .eyebrow { font-size: 12px; color: var(--ink); }

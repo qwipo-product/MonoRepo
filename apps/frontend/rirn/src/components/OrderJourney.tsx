@@ -1,14 +1,13 @@
+"use client";
 import { useId, useRef, useState } from "react";
 import { ProductDevice } from "./ProductDevice";
 import type { AppScreen } from "../data/app-screens";
 import { JourneyIcon, type JourneyIconName } from "./JourneyIcon";
-import { NetworkScene } from "./NetworkScene";
 
 const chapters: {
   title: string;
   icon: JourneyIconName;
-  screen?: AppScreen;
-  scene?: number;
+  screen: AppScreen;
   actor: string;
   heading: string;
   text: string;
@@ -21,74 +20,66 @@ const chapters: {
     screen: "home",
     actor: "AT THE RETAILER",
     heading: "Start with what the shelf needs.",
-    text: "Search products and see authorised distributors and wholesalers serving the kirana’s area.",
+    text: "Find a product or brand, then explore the distributors serving your store.",
+    points: ["Search products", "Find local sellers", "Explore the range"],
+    detail:
+      "Product discovery begins with the store’s location. The range shown depends on participating distributors and their service area. The screens here are product mockups, not live stock or price quotations.",
+  },
+  {
+    title: "Connect",
+    icon: "store",
+    screen: "distributor",
+    actor: "WITH THE DISTRIBUTOR",
+    heading: "A digital connection. A familiar partner.",
+    text: "Choose a distributor and establish the authorised retailer relationship before ordering from their catalogue.",
     points: [
-      "Find sellers in your area",
-      "Explore products & schemes",
-      "Choose an authorised seller",
+      "Check serviceability",
+      "Confirm the relationship",
+      "See delivery conditions",
     ],
     detail:
-      "The store’s location determines the sellers available. Complete any seller registration required before ordering; the app supports ordering from newly approved distributors. The screens here are illustrative, not live stock or price quotations.",
+      "An existing relationship can be recognised; a new connection may need the distributor’s approval. The distributor continues to serve the retailer. DigiDukaan adds an ordering channel to that relationship.",
   },
   {
     title: "Order",
     icon: "cart",
     screen: "cart",
-    actor: "AT THE KIRANA",
-    heading: "Order when the shop needs it.",
-    text: "Choose from the seller’s range at distributor prices, with company schemes. Place orders any day, from ₹500.",
+    actor: "BACK AT THE STORE",
+    heading: "The right packs. The right delivery option.",
+    text: "Choose quantities and schemes, review the seller-wise cart, then place the order for the distributor to accept.",
     points: [
-      "Order 24/7",
-      "₹500 minimum order",
-      "Include the shop’s map pin & phone",
+      "Choose packs & schemes",
+      "Review order requirements",
+      "Select an available delivery",
     ],
     detail:
-      "Each order carries the shop’s map pin and phone number so the delivery partner can find it, including in interior lanes. The 2.0 journey uses cash on delivery. The cart screen is captured from the buyer-app website; the seller terms shown are illustrative mockup examples.",
+      "The regular beat is the scheduled delivery route. An off-beat option needs approval and may have a different minimum order value or weight. Cash and credit remain subject to the distributor’s terms. These mockup amounts are illustrative.",
   },
   {
-    title: "Pickup",
-    icon: "truck",
-    scene: 4,
-    actor: "FROM SELLER GODOWNS",
-    heading: "The first leg starts with the seller.",
-    text: "3PL partners collect goods from distributor and wholesaler godowns and bring them to a DigiDukaan dark store.",
+    title: "Dispatch",
+    icon: "box",
+    screen: "orders",
+    actor: "AT DISTRIBUTOR OPERATIONS",
+    heading: "From accepted order to planned trip.",
+    text: "The distributor reviews and prepares the order. Qwipo’s logistics tools help group loads and plan the delivery route.",
     points: [
-      "Distributor & wholesaler godowns",
-      "Pickup by a 3PL partner",
-      "Transfer to the dark store",
+      "Accept & prepare",
+      "Group orders by route",
+      "Allocate vehicle capacity",
     ],
     detail:
-      "3PL means third-party logistics. The seller supplies the goods; the logistics partner moves them. Pickup is the first physical leg of the 2.0 model, before consolidation and last-mile delivery.",
-  },
-  {
-    title: "Consolidate",
-    icon: "layers",
-    scene: 2,
-    actor: "AT THE DIGIDUKAAN DARK STORE",
-    heading: "Orders come together, closer to the shop.",
-    text: "Goods collected from sellers are aggregated at a DigiDukaan dark store near kirana clusters, ready for the last mile.",
-    points: [
-      "Receive goods from sellers",
-      "Aggregate orders at the dark store",
-      "Hand over for last-mile delivery",
-    ],
-    detail:
-      "A dark store is a local fulfilment hub. It is the intermediate stop in the 2.0 delivery route: seller godown → 3PL pickup → dark store → 3PL last mile → kirana. It does not replace the authorised seller.",
+      "Where agreed, the DMS connector passes orders into the distributor’s system and reads its catalogue, stock, prices and schemes. Logistics Tech can plan the distributor’s own fleet and use approved 3PL capacity for overflow, subject to the engagement.",
   },
   {
     title: "Deliver",
     icon: "truck",
-    scene: 3,
-    actor: "FROM DARK STORE TO SHOP COUNTER",
-    heading: "The last mile. Within 24 hours.",
-    text: "Dedicated 3PL partners deliver from the dark store to the kirana. The retailer receives the goods and pays cash on delivery.",
-    points: [
-      "3PL last-mile delivery",
-      "Use the shop’s map pin & phone",
-      "Receive goods & pay cash",
-    ],
+    screen: "tracking",
+    actor: "ON THE ROAD",
+    heading: "One order. A clear route to the shop.",
+    text: "The allocated fleet or 3PL partner carries the goods to the retailer, with delivery progress and confirmation handled through the agreed workflow.",
+    points: ["Dispatch & track", "Deliver to the retailer", "Confirm delivery"],
     detail:
-      "DigiDukaan 2.0’s delivery commitment is within 24 hours. The dedicated 3PL fleet connects the dark store to interior-lane outlets without waiting for the distributor’s regular beat. Discuss 2.0 coverage for your markets with the team.",
+      "3PL means third-party logistics: an external delivery partner providing transport capacity. The distributor is still the seller. Tracking and proof-of-delivery methods depend on the implemented logistics scope; next-day delivery is not a universal promise.",
   },
 ];
 
@@ -149,29 +140,11 @@ export function OrderJourney() {
           <span className="story-visual-icon" aria-hidden="true">
             <JourneyIcon name={chapter.icon} />
           </span>
-          {chapter.screen ? (
-            <ProductDevice
-              key={chapter.screen}
-              screens={[chapter.screen]}
-              active={0}
-            />
-          ) : (
-            <div className="story-operation-art" key={chapter.title}>
-              <NetworkScene stage={chapter.scene!} />
-              <span>
-                {chapter.title === "Pickup"
-                  ? "SELLER → DARK STORE"
-                  : chapter.title === "Consolidate"
-                    ? "ORDERS AGGREGATED"
-                    : "DARK STORE → KIRANA"}
-              </span>
-            </div>
-          )}
-          <p className="mockup-caption">
-            {chapter.screen
-              ? "App screen · Illustrative products & prices"
-              : "DigiDukaan 2.0 · Delivery flow illustrated"}
-          </p>
+          <ProductDevice
+            screens={chapters.map((step) => step.screen)}
+            active={active}
+          />
+          <p className="mockup-caption">Product mockup · Illustrative data</p>
         </div>
         <div className="story-copy" key={active}>
           <span className="eyebrow">{chapter.actor}</span>
