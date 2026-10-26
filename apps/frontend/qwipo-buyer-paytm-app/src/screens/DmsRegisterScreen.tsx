@@ -21,8 +21,9 @@ import {
 
    A company that takes existing customers only (HUL) never opens on this
    screen: its Register pop-up sits over the Register to Order list. It comes
-   here once a request is in, for the status pages, which then say what was
-   sent — the customer ID or the mobile number. */
+   here once a request is in, for the pending and registered pages, which then
+   say what was sent — the customer ID or the mobile number. A rejection opens
+   the pop-up again instead, as Rejected by distributor with Retry. */
 
 // Same shop profile shown in Account · Business Details — the pre-fill source.
 const KYC_ROWS: [string, string][] = [
@@ -43,7 +44,6 @@ export function DmsRegisterScreen({
   link,
   onBack,
   onComplete,
-  onRelink,
 }: {
   company: DmsCompany;
   /** The company's current registration status — drives the status views. */
@@ -53,8 +53,6 @@ export function DmsRegisterScreen({
   onBack: () => void;
   /** Called from the end states — sets the company's status and returns to the list. */
   onComplete: (status: DmsStatus) => void;
-  /** Reopens the company's Register pop-up (a rejected `linksExisting` request). */
-  onRelink: () => void;
 }) {
   const [step, setStep] = useState<Step>(status === 'none' ? 'form' : 'status');
   const [consent, setConsent] = useState(false);
@@ -117,27 +115,18 @@ export function DmsRegisterScreen({
                 <XCircle className="h-5 w-5 shrink-0" /> Registration rejected
               </div>
               <p className="mt-2 text-xs leading-relaxed text-error-foreground">
-                {company.linksExisting && link
-                  ? `${name} could not find your shop with the ${describeLink(link)}.`
-                  : `${name} could not verify your shop details.`}
+                {name} could not verify your shop details.
               </p>
             </div>
             <p className="rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-foreground-secondary shadow-sm">
-              {company.linksExisting
-                ? `Check the details and try again — you can use your ${name} customer ID or your mobile number.`
-                : `Update the flagged details and re-apply — or contact ${name} if you believe this was a mistake.`}
+              Update the flagged details and re-apply — or contact {name} if you believe this was a
+              mistake.
             </p>
           </div>
           <div className="border-t border-border px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            {company.linksExisting ? (
-              <Button size="lg" className="w-full" onClick={onRelink}>
-                Try Again
-              </Button>
-            ) : (
-              <Button size="lg" className="w-full" onClick={() => setStep('form')}>
-                Re-apply with Updated Details
-              </Button>
-            )}
+            <Button size="lg" className="w-full" onClick={() => setStep('form')}>
+              Re-apply with Updated Details
+            </Button>
           </div>
         </div>
       );

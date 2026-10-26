@@ -27,8 +27,16 @@ export function DmsPromoCard({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Registration status pill — shared by the list cards and the detail pages. */
-export function DmsStatusPill({ status }: { status: DmsStatus }) {
+/** Registration status pill — shared by the list cards and the detail pages.
+    A company that takes existing customers (HUL) calls a rejection Failed, as
+    the native app does. */
+export function DmsStatusPill({
+  status,
+  rejectedLabel = 'Rejected',
+}: {
+  status: DmsStatus;
+  rejectedLabel?: string;
+}) {
   if (status === 'pending')
     return (
       <span className="flex shrink-0 items-center gap-1 rounded-full border border-warning-border bg-warning-subtle px-2.5 py-1 text-xs font-medium text-warning-foreground">
@@ -44,7 +52,7 @@ export function DmsStatusPill({ status }: { status: DmsStatus }) {
   if (status === 'rejected')
     return (
       <span className="flex shrink-0 items-center gap-1 rounded-full border border-error-border bg-error-subtle px-2.5 py-1 text-xs font-medium text-error-foreground">
-        <XCircle className="h-3.5 w-3.5" /> Rejected
+        <XCircle className="h-3.5 w-3.5" /> {rejectedLabel}
       </span>
     );
   if (status === 'registered')
@@ -65,6 +73,7 @@ function PartnerCard({
   title,
   meta,
   status,
+  rejectedLabel,
   chips,
   onClick,
 }: {
@@ -72,6 +81,7 @@ function PartnerCard({
   title: string;
   meta: ReactNode;
   status: DmsStatus;
+  rejectedLabel?: string;
   chips: string[];
   onClick: () => void;
 }) {
@@ -88,7 +98,7 @@ function PartnerCard({
           <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
           <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">{meta}</span>
         </span>
-        <DmsStatusPill status={status} />
+        <DmsStatusPill status={status} rejectedLabel={rejectedLabel} />
         <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
       </span>
       <span className="flex flex-wrap gap-1.5 border-t border-border px-3 py-2.5">
@@ -104,7 +114,8 @@ function PartnerCard({
 
 /* Register to Order — the list of gated companies. Tapping one opens its own
    registration: TCPL's form, or for HUL the Register with HUL pop-up over this
-   list. App decides which; this screen only reports the tap. */
+   list (the Rejected pop-up once HUL has failed it). App decides which; this
+   screen only reports the tap. */
 export function DmsPartnersScreen({
   statuses,
   onBack,
@@ -143,6 +154,7 @@ export function DmsPartnersScreen({
             title={c.company}
             meta={<>{c.method} · {c.products} products</>}
             status={statuses[c.id] ?? 'none'}
+            rejectedLabel={c.linksExisting ? 'Failed' : undefined}
             chips={c.brands}
             onClick={() => onOpenCompany(c.id)}
           />

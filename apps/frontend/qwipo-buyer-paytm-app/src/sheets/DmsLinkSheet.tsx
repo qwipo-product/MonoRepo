@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Lock } from 'lucide-react';
+import { Clock, Lock, XCircle } from 'lucide-react';
 import { Button, Input, Sheet, cardVariants, cn } from '@mockups/ui';
 import { Field } from '../components/formbits';
 import {
@@ -24,22 +24,32 @@ const OPTIONS: { by: DmsLinkRequest['by']; label: string; hint: (name: string) =
    phase 2.
 
    Continue sends the request — `onSend` puts the company at Pending behind
-   the sheet — and the sheet turns into the Request sent confirmation. Opened
-   again from a rejected request, it starts on what was sent last. */
+   the sheet — and the sheet turns into the Request sent confirmation.
+
+   Opened from a Failed card (story 21545) it is the Rejected by distributor
+   pop-up: the message quotes what was sent last, and Retry sends again with no
+   limit. Retry is by customer ID only — the Mobile number option is greyed
+   out, since the shop's Qwipo number can't be changed in phase 1 — so it opens
+   on Customer ID, holding the ID that failed. No reason is shown — the company
+   sends none in phase 1. */
 export function DmsLinkSheet({
   company,
   initial,
+  rejected = false,
   onSend,
   onClose,
 }: {
   company: DmsCompany;
   /** The last request, to correct and resend. */
   initial?: DmsLinkRequest;
+  /** The company rejected `initial`: open as the Rejected pop-up with Retry. */
+  rejected?: boolean;
   onSend: (request: DmsLinkRequest) => void;
   onClose: () => void;
 }) {
   const name = dmsShortName(company);
-  const [by, setBy] = useState<DmsLinkRequest['by']>(initial?.by ?? 'customerId');
+  const failed = rejected && initial ? initial : null;
+  const [by, setBy] = useState<DmsLinkRequest['by']>(failed ? 'customerId' : (initial?.by ?? 'customerId'));
   const [customerId, setCustomerId] = useState(initial?.by === 'customerId' ? initial.value : '');
   const [sent, setSent] = useState<DmsLinkRequest | null>(null);
 
@@ -82,9 +92,12 @@ export function DmsLinkSheet({
     <Sheet
       open
       onClose={onClose}
-      title={`Register with ${name}`}
+      title={failed ? 'Rejected by distributor' : `Register with ${name}`}
       subtitle={company.company}
-      icon={<span className="text-lg">{company.emoji}</span>}
+      icon={
+        failed ? <XCircle className="h-5 w-5" /> : <span className="text-lg">{company.emoji}</span>
+      }
+      iconClassName={failed ? 'bg-error-subtle text-error-foreground' : undefined}
       footer={
         <Button
           size="lg"
@@ -96,28 +109,44 @@ export function DmsLinkSheet({
             setSent(request);
           }}
         >
-          Continue
+          {failed ? 'Retry' : 'Continue'}
         </Button>
       }
     >
-      <p className="text-sm leading-relaxed text-foreground-secondary">
-        This brand requires registration before you can place orders from {name}. You can enter
-        your {name} Customer ID or the mobile number registered with {name}.
-      </p>
+      {failed ? (
+        <div className="flex gap-2.5 rounded-lg border border-error-border bg-error-subtle p-3">
+          <XCircle aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-error-foreground" />
+          <p className="text-sm leading-relaxed text-error-foreground">
+            Your onboarding request with the distributor has been rejected. Please review the
+            entered {failed.by === 'customerId' ? 'customer ID' : 'mobile number'} ‘
+            {failed.by === 'customerId' ? failed.value : formatMobile(failed.value)}’ and re-submit
+            the correct customer ID to proceed with purchasing products from this seller.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm leading-relaxed text-foreground-secondary">
+          This brand requires registration before you can place orders from {name}. You can enter
+          your {name} Customer ID or the mobile number registered with {name}.
+        </p>
+      )}
 
       <fieldset className="mt-4">
         <legend className="mb-2 text-sm font-medium text-foreground">Register using</legend>
         <div className="grid grid-cols-2 gap-2">
           {OPTIONS.map((o) => {
             const selected = by === o.by;
+            // Retry is by customer ID only.
+            const off = !!failed && o.by === 'mobile';
             return (
               // `relative` keeps the sr-only radio inside this label, so
               // focusing it never scrolls the sheet (see DmsRegisterScreen).
               <label
                 key={o.by}
                 className={cn(
-                  'relative flex cursor-pointer items-start gap-2 p-3',
-                  cardVariants({ variant: selected ? 'highlighted' : 'interactive' })
+                  'relative flex items-start gap-2 p-3',
+                  off
+                    ? cn(cardVariants({ variant: 'flat' }), 'cursor-not-allowed bg-input opacity-60')
+                    : cn(cardVariants({ variant: selected ? 'highlighted' : 'interactive' }), 'cursor-pointer')
                 )}
               >
                 <input
@@ -125,6 +154,7 @@ export function DmsLinkSheet({
                   name="dms-link-by"
                   value={o.by}
                   checked={selected}
+                  disabled={off}
                   onChange={() => setBy(o.by)}
                   className="peer sr-only"
                 />
@@ -138,9 +168,16 @@ export function DmsLinkSheet({
                   {selected && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-foreground">{o.label}</span>
+                  <span
+                    className={cn(
+                      'block text-sm font-semibold',
+                      off ? 'text-foreground-secondary' : 'text-foreground'
+                    )}
+                  >
+                    {o.label}
+                  </span>
                   <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">
-                    {o.hint(name)}
+                    {off ? 'Not available on retry' : o.hint(name)}
                   </span>
                 </span>
               </label>

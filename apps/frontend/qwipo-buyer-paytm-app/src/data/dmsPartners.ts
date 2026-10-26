@@ -13,9 +13,11 @@
 //   pop-up: the shop picks Customer ID or Mobile number, and Continue sends that
 //   to the company to find the shop in its own records. Phase 1 sends the
 //   mobile number registered on Qwipo; typing another number comes later.
+//   The company answers found (registered) or not found (rejected, shown as
+//   Failed, with Retry — story 21545).
 
 // none → pending (request sent) → review (verifying) → registered
-// or rejected (re-apply allowed).
+// or rejected (re-apply allowed; Retry for a `linksExisting` company).
 export type DmsStatus = 'none' | 'pending' | 'review' | 'registered' | 'rejected';
 
 /** A company with a gated catalogue, registered with directly. */
@@ -37,6 +39,9 @@ export interface DmsCompany {
   /** The company registers its existing customers only, found by their
    *  customer ID or the mobile number it has for the shop. */
   linksExisting?: boolean;
+  /** Demo only: the customer IDs a `linksExisting` company finds in its own
+   *  records. Any other ID comes back rejected. */
+  knownCustomerIds?: string[];
 }
 
 /* TCPL and HUL — one of each way of registering. The other four — PepsiCo,
@@ -63,6 +68,7 @@ export const DMS_COMPANIES: DmsCompany[] = [
     method: 'Existing customers',
     idHint: 'e.g. HUL12345',
     linksExisting: true,
+    knownCustomerIds: ['HUL12345'],
   },
 ];
 
@@ -87,3 +93,18 @@ export interface DmsLinkRequest {
 /** The request in a sentence: "customer ID HUL12345" / "mobile number +91 …". */
 export const describeLink = (r: DmsLinkRequest) =>
   r.by === 'customerId' ? `customer ID ${r.value}` : `mobile number ${formatMobile(r.value)}`;
+
+/* The company's simulated reply to a link request. It finds the shop by the
+   mobile number on Qwipo or by a known customer ID, and rejects any other ID —
+   so a mistyped ID walks into Failed and Retry. Nothing is sent anywhere. */
+export const replyTo = (c: DmsCompany, r: DmsLinkRequest): DmsStatus =>
+  r.by === 'mobile' ||
+  (c.knownCustomerIds ?? []).some((id) => id.toLowerCase() === r.value.toLowerCase())
+    ? 'registered'
+    : 'rejected';
+
+/** How long the simulated reply takes once the shop is back on Register to Order. */
+export const DMS_REPLY_MS = 3000;
+
+/** The review gallery's failed request: a customer ID one digit short. */
+export const DEMO_FAILED_LINK: DmsLinkRequest = { by: 'customerId', value: 'HUL1234' };

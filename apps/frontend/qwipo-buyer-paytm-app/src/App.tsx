@@ -63,7 +63,15 @@ import { CompanyDistributorsScreen } from './screens/CompanyDistributorsScreen';
 import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
 import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
 import { DmsLinkSheet } from './sheets/DmsLinkSheet';
-import { DMS_COMPANIES, dmsCompanyById, type DmsLinkRequest, type DmsStatus } from './data/dmsPartners';
+import {
+  DEMO_FAILED_LINK,
+  DMS_COMPANIES,
+  DMS_REPLY_MS,
+  dmsCompanyById,
+  replyTo,
+  type DmsLinkRequest,
+  type DmsStatus,
+} from './data/dmsPartners';
 import { SCHEDULE_COMPANIES, scheduleCompanyById, type Weekday } from './data/deliverySchedule';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
@@ -83,7 +91,7 @@ const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
   'splash', 'login', 'otp',
   'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'dms-partners', 'dms-link', 'dms-register',
+  'distributors-list', 'dms-partners', 'dms-link', 'dms-failed', 'dms-register',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
   'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
@@ -117,6 +125,9 @@ const baseScreenOf = (id: ScreenId): ScreenId => {
 for (const id of [...BUILT]) {
   if (!isEmptyScreen(id)) BUILT.add(EMPTY_PREFIX + id);
 }
+
+// The company that registers existing customers by Customer ID or mobile (HUL).
+const LINKS_EXISTING_ID = DMS_COMPANIES.find((c) => c.linksExisting)?.id ?? null;
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
 const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'sub:help', 'profile', 'storefront']);
@@ -175,6 +186,7 @@ function readInitialScreen(): ScreenId {
   if (s === 'promo-banners') return 'home'; // = the promo banner sheet over Home
   if (s === 'order-items') return 'order-summary'; // = the items sheet over Order Summary
   if (s === 'dms-link') return 'dms-partners'; // = the Register with HUL pop-up over Register to Order
+  if (s === 'dms-failed') return 'dms-partners'; // = the Rejected by distributor pop-up over it
   return s;
 }
 
@@ -258,6 +270,34 @@ export default function App() {
   // The company whose Register pop-up is open, if any.
   const [dmsLinkId, setDmsLinkId] = useState<string | null>(null);
 
+  /** Review gallery: HUL has just failed a customer ID — open its Rejected pop-up. */
+  const openFailedDemo = () => {
+    if (!LINKS_EXISTING_ID) return;
+    setDmsLinks((l) => ({ ...l, [LINKS_EXISTING_ID]: DEMO_FAILED_LINK }));
+    setDmsStatus((s) => ({ ...s, [LINKS_EXISTING_ID]: 'rejected' }));
+    setDmsLinkId(LINKS_EXISTING_ID);
+  };
+
+  /* The company's reply to a Customer ID / mobile request, simulated. It lands
+     a few seconds after the shop is back on Register to Order with the pop-up
+     closed, so the card is seen turning from Pending to Failed (an unknown ID)
+     or Registered. Leaving the list, or sending again, restarts the wait. */
+  useEffect(() => {
+    if (baseScreenOf(screen) !== 'dms-partners' || dmsLinkId) return;
+    const waiting = DMS_COMPANIES.filter(
+      (c) => c.linksExisting && dmsStatus[c.id] === 'pending' && dmsLinks[c.id]
+    );
+    if (waiting.length === 0) return;
+    const t = window.setTimeout(() => {
+      setDmsStatus((s) => {
+        const next = { ...s };
+        for (const c of waiting) next[c.id] = replyTo(c, dmsLinks[c.id]);
+        return next;
+      });
+    }, DMS_REPLY_MS);
+    return () => window.clearTimeout(t);
+  }, [screen, dmsLinkId, dmsStatus, dmsLinks]);
+
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
      to the screen they actually came from rather than to a target each screen
      guessed for itself: the cart opened from a product list goes back to that
@@ -280,7 +320,8 @@ export default function App() {
     }
     if (s === 'promo-banners') setPromoOpen(true);
     if (s === 'order-items') setOrderItemsOpen(true);
-    if (s === 'dms-link') setDmsLinkId(DMS_COMPANIES.find((c) => c.linksExisting)?.id ?? null);
+    if (s === 'dms-link') setDmsLinkId(LINKS_EXISTING_ID);
+    if (s === 'dms-failed') openFailedDemo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -403,7 +444,13 @@ export default function App() {
     if (id === 'dms-link') {
       // Not a page — the Register with HUL pop-up over Register to Order.
       setScreen('dms-partners');
-      setDmsLinkId(DMS_COMPANIES.find((c) => c.linksExisting)?.id ?? null);
+      setDmsLinkId(LINKS_EXISTING_ID);
+      return;
+    }
+    if (id === 'dms-failed') {
+      // Not a page — HUL already failed a request: its Rejected pop-up.
+      setScreen('dms-partners');
+      openFailedDemo();
       return;
     }
     if (id === 'promo-banners') {
@@ -609,8 +656,10 @@ export default function App() {
             onBack={goBack}
             onOpenCompany={(id) => {
               // HUL takes existing customers only: its first tap is the
-              // pop-up over this list, not a page of its own.
-              if (dmsCompanyById(id)?.linksExisting && (dmsStatus[id] ?? 'none') === 'none') {
+              // pop-up over this list, not a page of its own — and so is a
+              // tap on Failed, which reopens it as Rejected with Retry.
+              const status = dmsStatus[id] ?? 'none';
+              if (dmsCompanyById(id)?.linksExisting && (status === 'none' || status === 'rejected')) {
                 setDmsLinkId(id);
               } else {
                 setDmsCompanyId(id);
@@ -632,7 +681,6 @@ export default function App() {
               setDmsStatus((s) => ({ ...s, [company.id]: status }));
               go('dms-partners');
             }}
-            onRelink={() => setDmsLinkId(company.id)}
           />
         );
       }
@@ -1052,6 +1100,7 @@ export default function App() {
                 key={company.id}
                 company={company}
                 initial={dmsLinks[company.id]}
+                rejected={dmsStatus[company.id] === 'rejected'}
                 onSend={(request) => {
                   setDmsLinks((l) => ({ ...l, [company.id]: request }));
                   setDmsStatus((s) => ({ ...s, [company.id]: 'pending' }));

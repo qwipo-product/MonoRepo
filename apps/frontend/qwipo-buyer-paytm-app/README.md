@@ -9,6 +9,9 @@ Authorised Distributors opens **Register to Order** for companies that sell only
 TCPL registers with the Qwipo KYC and a consent tick.
 HUL opens the **Register with HUL** pop-up: Customer ID (free text) or the shop's registered mobile number (pre-filled, locked in phase 1).
 Registration requests are simulated. Nothing is sent to TCPL or HUL.
+HUL replies 3 seconds after the buyer is back on Register to Order: the mobile number or customer ID `HUL12345` registers, and any other ID shows **Failed**.
+Tapping Failed opens **Rejected by distributor** with the failed customer ID pre-filled and **Retry**.
+Retry is by customer ID only. The Mobile number option is greyed out there.
 Buyers can select a saved delivery address. Address creation is not available.
 
 ## Run the application
