@@ -1,5 +1,4 @@
 import { Bell, User, MapPin, ChevronDown, Search, ClipboardList } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import type { ScreenId } from '../review/screenIndex';
@@ -46,10 +45,7 @@ export function HomeScreen({
   onOpenWholesaleSheet,
   sheetOpen = false,
   salesperson = false,
-  notice,
 }: {
-  /** Account-level message above the banners (e.g. KYC Pending). */
-  notice?: ReactNode;
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
   /* Which side the buyer is shopping. App.tsx holds it rather than this
@@ -95,9 +91,9 @@ export function HomeScreen({
       {/* sticky header */}
       <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
-          <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6 shrink-0 dark:hidden" />
-          <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
-          <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="mx-auto h-5 shrink-0" />
+          <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="h-6 shrink-0 dark:hidden" />
+          <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
+          <img src="./brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="mx-auto h-5 shrink-0" />
           <div className="flex items-center gap-2">
             {salesperson && (
               <button
@@ -161,14 +157,14 @@ export function HomeScreen({
           <TabButton
             active={effectiveTab === 'distributors'}
             disabled={!distAvailable}
-            img="/home-category-cards/distributors.png"
+            img="./home-category-cards/distributors.png"
             label="Authorized Distributors"
             onClick={() => onTabChange('distributors')}
           />
           <TabButton
             active={effectiveTab === 'wholesalers'}
             disabled={!wholeAvailable}
-            img="/home-category-cards/wholesalers.png"
+            img="./home-category-cards/wholesalers.png"
             label="Wholesalers"
             onClick={() => onTabChange('wholesalers')}
           />
@@ -176,7 +172,6 @@ export function HomeScreen({
       </div>
 
       <div className="mt-4 space-y-6">
-        {notice && <div className="px-4">{notice}</div>}
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
         {/* Keyed by tab, so switching sides animates in rather than
@@ -272,7 +267,7 @@ export function HomeScreen({
                 className="block overflow-hidden rounded-lg shadow-sm active:scale-[0.99]"
               >
                 <img
-                  src="/app-banners/itc-shop-from-itc.jpg"
+                  src="./app-banners/itc-shop-from-itc.jpg"
                   alt="Shop from ITC"
                   className="block w-full"
                 />
@@ -366,7 +361,7 @@ export function HomeScreen({
         </div>
       </div>
 
-      <img src="/home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />
+      <img src="./home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />
     </div>
   );
 }

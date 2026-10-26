@@ -34,8 +34,6 @@ import {
   Database,
   FileEdit,
   Infinity as InfinityIcon,
-  AlertCircle,
-  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PriceListFilterDrawer } from "../../components/filter-drawers/price-list-filter-drawer";

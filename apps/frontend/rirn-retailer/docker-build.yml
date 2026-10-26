@@ -18,6 +18,9 @@
 #     main       → next semver from the `rirn-retailer-v*` git tags; the tag
 #                  `rirn-retailer-v<semver>` is pushed, the image is <semver>
 #     other      → <branch>-<sha>, no git tag
+#     dev/*, feature/* → PREVIEW: no image, the built site is uploaded to the
+#                  qwipo-mockups Space and served at
+#                  https://mockups-rirn-retailer.dev.bms.qwipo.com/builds/<branch>/<sha>/
 #
 # `bump` only matters on main. An auto-triggered run always takes patch; run
 # the pipeline by hand and pick minor/major for a bigger step.
@@ -37,6 +40,8 @@ trigger:
             - dev
             - testing
             - staging
+            - dev/*
+            - feature/*
     paths:
         include:
             - 'apps/frontend/rirn-retailer/**'

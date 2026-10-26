@@ -427,7 +427,6 @@ export function GlobalSearchScreen({
       <DiscountsSheet
         open={!!discountsProductId}
         productId={discountsProductId}
-        qty={{ ...qty, ...wholesaleQty }}
         onClose={() => setDiscountsProductId(null)}
       />
     </div>

@@ -5,7 +5,6 @@ import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Package,
-  Warehouse,
   Tag,
   ShoppingCart,
   Users,
@@ -17,14 +16,11 @@ import {
   User,
   LogOut,
   HelpCircle,
-  Search,
   X,
   Truck,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@mockups/web-ui";
-import { Badge } from "@mockups/web-ui";
-import { Input } from "@mockups/web-ui";
 import {
   DropdownMenu,
   DropdownMenuContent,

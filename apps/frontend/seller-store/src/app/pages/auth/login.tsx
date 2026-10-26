@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-context";
 import { validateCredentials } from "../../lib/auth-credentials";
 import qwipoLogo from "../../../imports/Qwipo_Secondary_Logo_for_Light_BG@4x-8.png";
-import qwipoIcon from "../../../imports/Qwipo_Icon_Logo_for_Light_BG@4x-8.png";
 
 export function Login() {
   const navigate = useNavigate();

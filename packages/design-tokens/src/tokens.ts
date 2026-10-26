@@ -2,9 +2,8 @@
  * @mockups/design-tokens — the single, platform-neutral source of truth.
  *
  * Nothing here imports React, Tailwind, or React Native. These are raw values.
- * Two bindings consume them:
- *   • Web / Paytm WebView  → ../theme.css   (Tailwind v4 @theme, light + `.dark`)
- *   • React Native         → ./theme.ts     (resolved light / dark objects)
+ * The mobile CSS binding lives in ../theme.css; web-tokens reuses the
+ * shared brand values for the desktop theme.
  *
  * Derived from the running Qwipo app's actual UI + the reconciled semantic
  * scale. When you change a value here, mirror it in ../theme.css (small set,

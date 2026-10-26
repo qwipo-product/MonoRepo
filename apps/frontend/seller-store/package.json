@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Qwipo Seller Store mockup — the distributor + super-admin console, ported onto @mockups/web-ui.",
+  "description": "Qwipo Seller Store mockup \u2014 the distributor + super-admin console, ported onto @mockups/web-ui.",
   "scripts": {
     "dev": "vite --port 5174",
     "build": "vite build",
@@ -14,21 +14,21 @@
     "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
   },
   "dependencies": {
-    "@mockups/mock-data": "workspace:*",
-    "@mockups/types": "workspace:*",
     "@mockups/version-badge": "workspace:*",
     "@mockups/web-tokens": "workspace:*",
     "@mockups/web-ui": "workspace:*",
     "exceljs": "catalog:",
     "leaflet": "catalog:",
     "lucide-react": "catalog:",
+    "motion": "catalog:",
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-leaflet": "catalog:",
     "react-leaflet-cluster": "catalog:",
     "react-router": "catalog:",
-    "recharts": "catalog:"
+    "recharts": "catalog:",
+    "sonner": "catalog:"
   },
   "devDependencies": {
     "@mockups/eslint-config": "workspace:*",

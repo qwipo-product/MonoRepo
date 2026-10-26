@@ -14,9 +14,9 @@ import { CarouselDots } from '../components/CarouselDots';
    crop it. The close ✕ and the dots sit on the picture instead. */
 
 const BANNERS = [
-  { src: '/promo-banners/colgate-onboarding.webp', alt: 'Colgate is now on Qwipo' },
-  { src: '/promo-banners/itc-on-qwipo.webp', alt: 'ITC is now available on Qwipo' },
-  { src: '/promo-banners/emami-on-qwipo.webp', alt: 'Emami is now available on Qwipo' },
+  { src: './promo-banners/colgate-onboarding.webp', alt: 'Colgate is now on Qwipo' },
+  { src: './promo-banners/itc-on-qwipo.webp', alt: 'ITC is now available on Qwipo' },
+  { src: './promo-banners/emami-on-qwipo.webp', alt: 'Emami is now available on Qwipo' },
 ];
 
 /** Long enough to read a banner, short enough that all three get seen. */

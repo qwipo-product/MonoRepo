@@ -44,4 +44,3 @@ export function downloadCsv(file: string, header: string[], rows: (string | numb
   a.href = url; a.download = file; a.click();
   URL.revokeObjectURL(url);
 }
-

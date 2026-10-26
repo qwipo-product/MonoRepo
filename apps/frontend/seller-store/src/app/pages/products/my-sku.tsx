@@ -7,14 +7,6 @@ import { Badge } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
 import { MultiSelect } from "@mockups/web-ui";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@mockups/web-ui";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,23 +22,17 @@ import {
 import {
   Search,
   Eye,
-  Pencil,
   MoreVertical,
   Filter,
   X,
   Database,
   CheckCircle2,
-  AlertCircle,
   Plus,
   Upload,
-  Download,
-  FileSpreadsheet,
-  FileCheck,
-  FileWarning,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
-import { Layers, PackageSearch } from "lucide-react";
+import { PackageSearch } from "lucide-react";
 import { isEmptyMode } from "../../lib/data-mode";
 import { EmptyState } from "@mockups/web-ui";
 import { CopyOnHover } from "@mockups/web-ui";

@@ -26,7 +26,7 @@
 
 import { getCompanies, type Company } from "./admin-catalog";
 import { sampleSKUs, type SKUData } from "../pages/products/my-sku";
-import { getDemoCustomers, type DemoCustomer } from "./customers-demo-data";
+import { getDemoCustomers } from "./customers-demo-data";
 import { getAllSchemes } from "./offers-data";
 import type { QpsScheme } from "./qps-validation";
 import { getOrders, type Order } from "./orders-data";

@@ -33,14 +33,12 @@ import {
   User as UserIcon,
   FileText,
   Plug,
-  ShieldCheck,
   Building2,
   ShoppingBag,
   CheckCircle2,
   AlertCircle,
   Plus,
   X,
-  ArrowRight,
   MapPin,
   Truck,
 } from "lucide-react";
@@ -54,10 +52,8 @@ import {
   updateSellerImage,
   updateSellerActive,
   getQwipoCompanies,
-  emptyOndcConfig,
   type Seller,
   type SellerPermissions,
-  type OndcConfig,
   type ConnectorType,
   type CompanyBrandSelection,
 } from "../../lib/mock-store";
@@ -67,7 +63,7 @@ import {
   revokeImage,
   type Company as AdminCatalogCompany,
 } from "../../lib/admin-catalog";
-import { Camera, Upload as UploadIcon } from "lucide-react";
+import { Camera } from "lucide-react";
 
 const emptyPermissions: SellerPermissions = {
   view: false,

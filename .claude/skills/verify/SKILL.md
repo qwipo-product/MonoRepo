@@ -1,84 +1,102 @@
 ---
 name: verify
-description: Gate — the definition-of-done checks for a mockup. Invoked by every pathway when work completes; use directly for "check my work", "does it build", "is it done", "run the checks".
+description: Examine changed instructions or implementation. Record evidence, failures, warnings, and omitted checks.
 ---
 
-# Verify
+# Examine changes
 
-Nothing is done until this has run. Report each failure with its output,
-fix, re-run; report what passed and what you couldn't check.
+Use the [repository instructions](../../../CLAUDE.md).
+Verification does not authorize a commit, push, merge, or deployment.
 
-## 1. Lockfile, lint, typecheck, build — scoped to the app
+## Select the checks
 
-```bash
-bun install --frozen-lockfile                                # what every Dockerfile runs
-bunx turbo run lint typecheck build --filter=@mockups/<app>
-```
+1. Examine the changed files and their consumers.
+2. Select checks that exercise the changed behavior.
+3. Record the command, result, and related limitations.
 
-The frozen install is the gate Turbo doesn't run: it refuses when
-`bun.lock` disagrees with the `package.json` files on disk, and a Docker
-build refuses the same way. Red means a manifest was edited without an
-install (install, commit the lockfile with it) or the lockfile names a
-workspace this checkout doesn't have (step 4). Never delete the lockfile to
-turn it green.
+For documentation changes, examine file paths, links, examples, and conflicting instructions.
+Use a temporary repository for procedures that modify Git history or deployment files.
+Do not execute publication commands during a documentation test.
 
-Not `bun run check`: `@mockups/qwipo-buyer-paytm-app#lint` has a known
-pre-existing failure (a stale `eslint-disable` for `jsx-a11y/no-autofocus`,
-a plugin this repo doesn't install), and without `--filter` or `--continue`
-Turbo cancels everything still queued when it fails. It isn't yours; don't
-chase it, and don't fix it without asking — it's someone else's app.
+## Examine code changes
 
-Touched a shared package? Run the filter for every app that imports it, or
-`bunx turbo run lint typecheck build --continue` for all of them.
-
-## 2. The dev server compiles it
-
-Typecheck passes a missing Tailwind `@source` and a bad asset path; only
-the page tells you.
+From the repository root, run each command independently:
 
 ```bash
-bun dev --filter=@mockups/<app>       # port from `bun run ls`
+bun install --frozen-lockfile
+bun run check --continue --ui=stream
 ```
 
-Look at the actual screen: no Vite error overlay, styled (not naked)
-components, images present.
+The first command checks the dependency declarations against the lockfile.
+The second command runs lint, type checks, and builds.
+The `--continue` option lets other tasks finish after a failure.
+It does not convert a failed check into a successful result.
 
-## 3. The screen, in the states the demo will hit
-
-- Light **and** dark.
-- Empty state on every list screen — under the Empty personas where the
-  app has them (`seller-store`: `8888888888` / `9999999999`, OTP `1234`).
-- Loading and error where the screen pretends to fetch.
-- Mobile apps: the **Network** URL Vite prints, opened on a phone. For a
-  phone mockup that's the only review that counts.
-
-## 4. Nothing left behind
+For an application-only change, a scoped check is also available:
 
 ```bash
-git status --short
+bunx turbo run lint typecheck build --filter=@mockups/<app>...
 ```
 
-No stray `dist/` in a package, no `_to_delete/` folders, no placeholder
-copy ("Delete this screen"), no bare version in a `package.json`, no
-second token import or app-owned `@theme` block in an `index.css`.
+The trailing dots include workspace dependencies.
+For a shared-package change, examine every affected application.
+If the consumer list is uncertain, use the full check.
+There is no permanent exception for a known failure.
+Record any unrelated failure with its current evidence and effect on verification.
 
-Two lines in that output are stops, not tidies:
+## Examine behavior
 
-- `?? apps/<kit>/<something>/` or `?? packages/<something>/`. An untracked
-  folder with a `package.json` is already a workspace to `bun install`
-  (the root glob is `apps/*/*`, `packages/*`): the next install writes it
-  into `bun.lock` while the folder itself stays on one laptop, and every
-  other checkout's frozen install fails from then on. Either it's a mockup
-  — `new-mockup` / `import-mockup`, on its own branch — or it moves out of
-  the repo. Not "later".
-- ` M bun.lock` with no ` M …/package.json` beside it. The install above
-  already happened. Same cause: account for the folder, then `bun install`
-  once more and the lockfile drops it. That is fixing the cause, not
-  regenerating.
+1. Open the affected flow in the browser.
+2. Examine the normal, empty, loading, and error states that the change affects.
+3. Examine light and dark themes.
+4. Examine keyboard access and form error messages.
+5. If a shared Buyer screen changes, examine the two Buyer shells.
+6. If list data changes, examine the Seller empty persona.
 
-## Report
+For changed calculations, validation, or state transitions, examine the need for regression protection.
+If focused automated tests provide useful protection, add them.
+Do not add tests that only repeat implementation details.
+A successful build does not prove correct behavior.
 
-State plainly what was verified — "lint/typecheck/build green for
-seller-store, dev server renders Orders in light and dark, empty state
-checked under the Empty Seller persona" — and what wasn't ("not opened on
-a phone"). A gate you skipped is reported as skipped, not as passed.
+### Use the repository's review entry points
+
+| Change | Review entry point |
+| --- | --- |
+| Buyer screens and shells | `apps/frontend/qwipo-buyer-paytm-app/src/review/screenIndex.ts` and its README review URLs |
+| Buyer empty states | Registered `empty:<id>` entries resolved by `src/App.tsx` in the Buyer application |
+| Seller normal and empty states | The persona table in `apps/frontend/seller-store/README.md`; demonstration OTP `1234` |
+| Desktop shared component | `apps/frontend/seller-store/src/app/pages/design-system.tsx`, opened through the Design System persona |
+| Shared styles | Both application `src/index.css` files and the affected package's source |
+
+For a Seller list change, use Seller and Seller (Empty) where applicable.
+For an administrator list change, use Super Admin and Super Admin (Empty) where applicable.
+Examine the actual route. Some empty-mode dashboard values remain seeded.
+Use `bun run ls` to confirm the configured application name and port before starting a server.
+
+## Diagnose an installation failure
+
+Read the error before changes to manifests or lockfiles.
+Examine the Bun version, network access, registry access, workspace folders, and dependency declarations.
+Do not delete a lockfile to suppress a failure.
+A lockfile-only change can be valid. Examine its cause and dependency changes.
+
+Run these read-only inspections from the repository root:
+
+```bash
+git status --short --untracked-files=all
+git diff -- package.json bun.lock
+rg --files --hidden -g package.json -g '!node_modules' -g '!.git' apps packages
+```
+
+Compare discovered manifests with `workspaces.packages` in the root `package.json`.
+An untracked `apps/frontend/<name>/package.json` can participate in installation before Git tracks it.
+Keep unrelated application folders. Do not remove them merely to make the manifest list smaller.
+
+## Complete the checks
+
+Unless the user tells you to keep a temporary server active, stop it after verification.
+Stop only the server processes that you started.
+Record successful checks, failed checks, warnings, and checks that you could not perform.
+If cached results affect the conclusion, identify those results.
+The current deployment build does not run lint or type checks.
+Do not use that build as a substitute for this procedure.

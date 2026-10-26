@@ -6,10 +6,9 @@
  *
  * RELATIONSHIP TO @mockups/design-tokens
  * --------------------------------------
- * Colour is NOT redefined here. `colorLight` / `colorDark` / `ColorScheme`
- * are re-exported straight from `@mockups/design-tokens`, so the brand blue
- * and the status quads physically cannot drift between the mobile and web
- * layers — there is one definition, not two that agree today.
+ * This module re-exports `colorLight`, `colorDark`, and `ColorScheme`
+ * from `@mockups/design-tokens`. These TypeScript exports share one source.
+ * The desktop CSS contains separate values. Update that CSS where applicable.
  *
  * What this package adds is everything that genuinely differs on a dense
  * desktop surface: a tighter radius scale, 36px controls instead of 44px,
@@ -28,8 +27,8 @@ export { colorLight, colorDark, space, zIndex };
 export type { ColorScheme, StatusColor };
 
 // ─────────────────────────────────────────────────────────────────────────
-// Typography — denser than mobile. Two weights only; no 600+ headings on
-// dense UI, and never `text-3xl` or larger in product chrome.
+// Desktop typography uses weights 400, 500, and 600.
+// Use the defined typography roles for interface text.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const font = {

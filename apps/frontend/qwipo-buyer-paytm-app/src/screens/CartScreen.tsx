@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
-import { Button, SegmentedControl, EmptyState, cn } from '@mockups/ui';
+import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
+import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
-import { isBeatDay } from '../data/delivery';
+import { BEAT_WINDOW_NOTE, isBeatDay } from '../data/delivery';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
@@ -17,7 +17,6 @@ export function CartScreen({
   onCheckout,
   onViewItems,
   onAddMore,
-  onOpenCoupons,
   onItemTap,
 }: {
   /** The live cart, built from the same qty the buyer picked on the Product
@@ -28,7 +27,6 @@ export function CartScreen({
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
   onAddMore: (sellerId: string) => void;
-  onOpenCoupons: () => void;
   /** Opens one SKU's selling-units sheet from a seller card's strip. */
   onItemTap?: (productId: string) => void;
 }) {
@@ -71,24 +69,6 @@ export function CartScreen({
       ) : (
         <>
           <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-            {/* Apply coupon — first card in the list, so the offers are seen
-                before the buyer starts reading totals. */}
-            <button
-              onClick={onOpenCoupons}
-              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
-            >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-                <Tag className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
-                <span className="block text-xs text-foreground-secondary">
-                  Offers available — tap to view &amp; apply
-                </span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-            </button>
-
             {sellers.map((s) => (
               <SellerCard
                 key={s.id}
@@ -234,57 +214,35 @@ function SellerCard({
 
         {/* item thumbnail rail */}
         <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto">
-          {seller.items.map((item, i) => {
-            /* A free line was put there by an offer, so there is nothing to
-               edit — it stays a picture. Everything else opens its own
-               selling-units sheet, which is where quantity is changed. */
-            const Tile = item.free ? 'div' : 'button';
-            return (
-              <Tile
-                key={`${item.product.id}-${i}`}
-                {...(item.free
-                  ? {}
-                  : {
-                      onClick: () => onItemTap?.(item.product.id),
-                      'aria-label': `Edit ${item.product.shortName}`,
-                    })}
-                className={cn(
-                  'flex w-16 shrink-0 flex-col items-center',
-                  !item.free && 'active:scale-[0.98]'
-                )}
-              >
-                <div className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
-                  <ProductImage image={item.product.image} alt={item.product.name} />
-                  {/* Across the top inside the tile, not hanging off it: the
-                      rail scrolls sideways and clipped whatever poked out, so
-                      the tag was being sliced. A full-width strip also stops
-                      it sitting on top of the product. */}
-                  {item.free && (
-                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-2xs font-bold uppercase tracking-wide text-white">
-                      Free
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 text-2xs text-foreground-secondary">×{item.quantity}</div>
-                <div className="text-2xs font-medium tabular-nums text-foreground">
-                  {formatInr(item.lineTotal)}
-                </div>
-              </Tile>
-            );
-          })}
+          {seller.items.map((item) => (
+            <button
+              key={item.product.id}
+              onClick={() => onItemTap?.(item.product.id)}
+              aria-label={`Edit ${item.product.shortName}`}
+              className="flex w-16 shrink-0 flex-col items-center active:scale-[0.98]"
+            >
+              <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
+                <ProductImage image={item.product.image} alt={item.product.name} />
+              </div>
+              <div className="mt-1 text-2xs text-foreground-secondary">×{item.quantity}</div>
+              <div className="text-2xs font-medium tabular-nums text-foreground">
+                {formatInr(item.lineTotal)}
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* delivery window — beat day + tomorrow options */}
         <div className="mt-3">
           {/* A beat day is the day the van is in the area, not a promise the
               goods arrive that morning — so it carries the window the seller
-              actually works to. A "Tomorrow" slot means tomorrow and needs
-              nothing said. */}
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <span className="text-xs text-foreground-secondary">Delivery by</span>
+              actually works to, counted from that day. A "Tomorrow" slot
+              means tomorrow and needs nothing said. */}
+          <div className="mb-1.5 flex items-baseline justify-between gap-2">
+            <span className="shrink-0 text-xs text-foreground-secondary">Delivery by</span>
             {isBeatDay(win) && (
-              <span className="shrink-0 text-xs font-medium text-foreground-secondary">
-                Delivered within 24–48 hrs
+              <span className="min-w-0 text-right text-xs font-medium text-foreground-secondary">
+                {BEAT_WINDOW_NOTE}
               </span>
             )}
           </div>

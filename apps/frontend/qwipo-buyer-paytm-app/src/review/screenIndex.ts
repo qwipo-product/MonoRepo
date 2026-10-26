@@ -25,30 +25,10 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     ],
   },
   {
-    // Shown on BOTH surfaces. Paytm skips sign-in but still needs the buyer to
-    // onboard and complete KYC before they can order.
-    title: 'Onboarding & KYC',
-    items: [
-      { id: 'onboarding', label: 'Onboarding' },
-      { id: 'location-picker', label: 'Select Location (map)' },
-      { id: 'address-details', label: 'Address Details' },
-      { id: 'kyc-complete', label: 'Complete KYC · Basic Info' },
-      { id: 'kyc-docs', label: 'Complete KYC · ID Proofs' },
-      { id: 'kyc-docs-rejected', label: 'ID Proofs · Photo Rejected (1 of 5)' },
-      { id: 'kyc-docs-attempt-2', label: 'ID Proofs · Photo Rejected (2 of 5)' },
-      { id: 'kyc-docs-done', label: 'ID Proofs · All Accepted' },
-      { id: 'kyc-manual-review', label: 'Manual Review (after 5)' },
-      { id: 'kyc-success', label: 'KYC Active' },
-      { id: 'kyc-pending', label: 'Home · KYC Pending' },
-    ],
-  },
-  {
     title: 'Browse',
     items: [
       { id: 'home', label: 'Home Page' },
       { id: 'distributors-list', label: 'Distributors' },
-      { id: 'dms-partners', label: 'Distributors · Register to Order' },
-      { id: 'dms-register', label: 'Distributors · DMS Registration' },
       { id: 'wholesaler-categories', label: 'Wholesalers' },
       { id: 'wholesaler-groceries', label: 'Wholesalers \u00b7 Groceries' },
       { id: 'wholesaler-fmcg', label: 'Wholesalers \u00b7 FMCG' },
@@ -60,7 +40,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
     items: [
       { id: 'storefront', label: 'Authorised Distributor Storefront' },
       { id: 'listing', label: 'Product List' },
-      { id: 'offer-skus', label: 'Offers & Schemes (SKUs)' },
       { id: 'distributor-units', label: 'Distributor Selling Units' },
       { id: 'wholesaler-products', label: 'Product List (Wholesaler)' },
       { id: 'wholesaler-units', label: 'Wholesaler Selling Units' },
@@ -76,7 +55,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'cart-alerts', label: 'Cart · Alerts' },
       { id: 'order-summary', label: 'Order Summary' },
       { id: 'order-items', label: 'Order Summary · View Items' },
-      { id: 'coupons', label: 'Coupons / Offers' },
       { id: 'order-confirmation', label: 'Order Confirmation' },
     ],
   },
@@ -94,10 +72,6 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'notifications', label: 'Notifications' },
       { id: 'sub:business-details', label: 'Account · Business Details' },
       { id: 'sub:addresses', label: 'Account · Saved Addresses' },
-      { id: 'sub:payment', label: 'Account · Payments' },
-      { id: 'sub:payment-orders', label: 'Account · Payments · Orders' },
-      { id: 'sub:payment-gateways', label: 'Account · Payments · Pay' },
-      { id: 'sub:credit', label: 'Account · Credit Partners' },
       { id: 'sub:language', label: 'Account · Language' },
       { id: 'sub:help', label: 'Account · Contact Us' },
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
@@ -155,6 +129,16 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
   },
 ];
 
+/** Existing account links now open the matching empty-state screen. */
+const SCREEN_REPLACEMENTS = new Map<ScreenId, ScreenId>([
+  ['sub:payment', 'empty:sub:payment'],
+  ['sub:payment-orders', 'empty:sub:payment-orders'],
+  ['sub:payment-gateways', 'empty:sub:payment-gateways'],
+  ['sub:credit', 'empty:sub:credit'],
+]);
+
+export const resolveScreenId = (id: ScreenId): ScreenId => SCREEN_REPLACEMENTS.get(id) ?? id;
+
 /** Flat list in display order — handy for prev/next and index lookups. */
 export const ALL_SCREENS = SCREEN_GROUPS.flatMap((g) => g.items);
 
@@ -164,8 +148,8 @@ const PAYTM_HIDDEN = new Set<ScreenId>(['splash']);
 
 /** Groups + items visible for a surface. FlowIndex renders from this, and
     screenNumber counts from it, so the sidebar and the numbering can't drift.
-    (Paytm group only in paytm; Salesperson only for that role; Auth and
-    Onboarding & KYC on both surfaces, minus the per-item PAYTM_HIDDEN list.) */
+    (Paytm group only in paytm; Salesperson only for that role; Auth on both
+    surfaces, minus the per-item PAYTM_HIDDEN list.) */
 export function visibleGroups(shell: string, role: string) {
   const effectiveRole = shell === 'paytm' ? 'customer' : role;
   return SCREEN_GROUPS.filter((g) => effectiveRole === 'salesperson' || g.title !== 'Salesperson')

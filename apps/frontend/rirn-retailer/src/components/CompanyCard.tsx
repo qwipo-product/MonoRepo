@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Clock, Plus } from 'lucide-react';
-import { Badge, Button, cn } from '@mockups/ui';
+import { Badge, buttonVariants, cn } from '@mockups/ui';
 import type { Company } from '../lib/companies';
 import type { Connection } from '../lib/retailer-session';
 
@@ -83,10 +83,10 @@ export function CompanyCard({ company, connection, onPress }: Props) {
       {connection ? (
         <ChevronRight className="h-5 w-5 flex-shrink-0 text-foreground-tertiary" />
       ) : (
-        <Button size="sm" variant="secondary" className="pointer-events-none flex-shrink-0">
+        <span className={cn(buttonVariants({ size: 'sm', variant: 'secondary' }), 'flex-shrink-0')}>
           <Plus className="mr-1 h-4 w-4" />
           Add ID
-        </Button>
+        </span>
       )}
     </button>
   );

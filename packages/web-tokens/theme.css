@@ -10,7 +10,7 @@
  * WHY THIS EXISTS ALONGSIDE @mockups/design-tokens
  * ------------------------------------------------
  * `design-tokens` is the mobile-first layer — larger radii, roomier touch
- * targets, and a React Native binding. This one serves dense desktop admin
+ * targets. This one serves dense desktop admin
  * surfaces (data tables, dialogs, sidebars) which need tighter corners and
  * 36px controls. Brand values agree by design: same `#2563eb`, same Inter,
  * same z-index ladder. Where they differ, they differ on purpose.
@@ -19,8 +19,7 @@
  * every shared custom property, which is nobody's intent.
  *
  * DARK MODE: driven by a `.dark` class on <html> (or any ancestor) — the
- * same contract `design-tokens` uses, so `@storybook/addon-themes`'
- * `withThemeByClassName` and the app theme providers work unchanged.
+ * same contract `design-tokens` and both app theme providers use.
  * ========================================================================== */
 
 /* Radix-driven enter/exit animation utilities (`data-[state=open]:animate-in`

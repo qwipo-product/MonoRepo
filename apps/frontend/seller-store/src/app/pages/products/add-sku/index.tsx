@@ -98,7 +98,7 @@ export function AddSKU() {
         {/* Helper Text */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
-            Have questions? <a href="/support" className="text-purple-600 hover:text-purple-700 font-medium">Contact Support</a>
+            Have questions? <Link to="/support" className="text-purple-600 hover:text-purple-700 font-medium">Contact Support</Link>
           </p>
         </div>
       </div>

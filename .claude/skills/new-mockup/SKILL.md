@@ -1,70 +1,88 @@
 ---
 name: new-mockup
-description: Scaffold pathway — create a brand-new mockup app in apps/frontend with the right kit, port, packages and first real screen. Use for "start a new mockup", "new app for X", "set up a project for Y". Needs a brief; without one, route to brief first.
+description: Create a frontend prototype when the user requests a new application. Use the existing application generator.
 ---
 
-# New mockup
+# Create an application
 
-Precondition: a brief in `docs/briefs/<app>.md` (the `brief` skill). The
-brief decides the kit, and the kit can't change later without a rebuild — so
-no brief, no scaffold.
+Use the [repository instructions](../../../CLAUDE.md).
+Without a user instruction to create another application, do not create one.
+The current branch retains Buyer/Paytm and Seller Store.
 
-## 1. Name it
+## Prepare
 
-Kebab-case, saying what it *is*: `distributor-portal`, `rirn-admin`,
-`ops-console`. The folder name becomes the package name (`@mockups/<name>`),
-the dev filter, and — if it is ever deployed — the service name
-`mockups-<name>` and the demo URL. So:
+1. Establish the scope with [brief](../brief/SKILL.md).
+2. Select the mobile or desktop design kit.
+3. Select a descriptive folder name with lowercase words and hyphens.
+4. If a new task branch is necessary, use [start-work](../start-work/SKILL.md).
+5. Examine existing workspace folders before installation.
 
-- no `qwipo-` prefix (everything here is Qwipo);
-- no `-app` / `-mockup` suffix (everything here is one);
-- not a person's name, not a version number, not `new-`.
+If the user's selected name is valid, use it.
+Do not change an existing service identity to enforce a new naming convention.
 
-If a hostname is already reserved for it (`mockups-rirn-distributor`,
-`mockups-rirn-admin`), the name is decided — use it.
+## Generate the application
 
-## 2. Branch, then scaffold
-
-Invoke `start-work`; the branch is `<name>/scaffold`. Then:
+Select one command. Replace `<name>` with the application name.
 
 ```bash
-bun run new <name>          # phone frame — @mockups/ui + design-tokens
-bun run new <name> --web    # full-width — @mockups/web-ui + web-tokens
+bun run new <name>
 ```
 
-`--web` or not comes from the brief's `kit:` line. The generator picks a
-free port, wires the shared packages, adds the Tailwind `@source` lines,
-mounts the version badge and runs `bun install`. Don't hand-roll any of
-that, and don't copy another app's folder as a starting point — it drags
-that app's quirks along.
+For a desktop application, use this command instead:
 
-## 3. Make it that app, not the template
+```bash
+bun run new <name> --web
+```
 
-- `package.json` → `description`: one sentence saying what the mockup is.
-  `bun run ls` prints it and the deploy generator reads it.
-- `README.md` in the app folder: audience, user, flows and any demo login
-  from the brief, in the shape `apps/frontend/rirn-retailer/README.md`
-  uses. Every app has one; it is the first thing anyone — including you,
-  next session — reads before touching the app.
-- Replace `src/screens/Home.tsx` with the first real screen from the
-  brief's first flow. Delete the placeholder copy; nobody should see
-  "Delete this screen" in a demo.
-- Mobile apps: keep the 390×844 frame in `App.tsx` and the `relative` on it
-  — bottom sheets position against it.
-- Add a row to the apps table in `CLAUDE.md` and the layout block in
-  `README.md` so the next person can find it.
+The generator creates configuration files and runs dependency installation.
+The generator source is `scripts/new-mockup.ts`.
+It writes `apps/frontend/<name>/` and names the package `@mockups/<name>`.
 
-Screens beyond the first are `build-screen` work; don't build the whole
-brief inside the scaffold step.
+| Generated file | Responsibility |
+| --- | --- |
+| `package.json` | Description, scripts, catalog dependencies, and shared package dependencies |
+| `tsconfig.json` | Extension of `@mockups/tsconfig/react-app.json` |
+| `eslint.config.js` | Shared React lint preset |
+| `vite.config.ts` | React/Tailwind plugins, port, and relative preview base |
+| `src/main.tsx` | Root providers and version display |
+| `src/App.tsx` | Initial application shell |
+| `src/screens/Home.tsx` | Example screen to replace |
+| `src/index.css` | Tailwind source entries and the selected token theme |
+| `index.html`, `src/vite-env.d.ts` | Browser entry and Vite types |
 
-## 4. Verify and land
+These generated paths are relative to the new application folder.
+The mobile variant selects `@mockups/ui`.
+The `--web` variant selects `@mockups/web-ui`.
+Keep the selected token package consistent with that kit.
 
-Invoke `verify`. Then `land-work` to put it on `dev`, which is what makes
-it visible to anyone else. Deploying is a separate decision —
-`deploy-mockup`, only when the brief says a lasting URL is needed.
+The generator selects a port from the application configurations.
+Examine active listeners before the server starts. A configured port is not proof of an available port.
 
-## Report
+The generator writes application files before dependency installation.
+If installation fails, record the incomplete result.
+Examine the new folder and lockfile before another command.
+After correction of the installation failure, run `bun install` from the repository root.
+Do not repeat the generator command over the existing folder.
 
-"Created the <name> mockup (phone frame, port 5177) with the <first screen>
-screen; it's on the `<name>/scaffold` branch, verified, ready to land on
-dev." Name the port and the screen, not the files.
+For cancellation, remove only files that this attempt created. Keep other local work.
+
+## Complete the application
+
+1. Set the package description.
+2. Replace the example screen with the requested initial screen.
+3. Keep the theme provider and version display.
+4. Keep the generated Tailwind source entries.
+5. Write the application README with its flows and simulated behavior.
+6. Update the root application tables.
+7. Use [verify](../verify/SKILL.md).
+
+If sheets depend on the mobile frame's positioning context, keep that context.
+Build only the flows in the agreed scope.
+
+Set the description in `apps/frontend/<name>/package.json` and confirm the listing with `bun run ls`.
+Use `apps/frontend/seller-store/README.md` as an example for persona and simulation documentation.
+If a saved launch entry is necessary, update `.claude/launch.json` with the correct command and port.
+Keep the root `README.md` and `CLAUDE.md` application tables consistent with the authorized addition.
+
+Record the branch, application, port, and verification results.
+Do not automatically commit, push, merge, or deploy the new application.

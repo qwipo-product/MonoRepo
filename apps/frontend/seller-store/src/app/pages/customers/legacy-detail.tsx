@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
-import { Separator } from "@mockups/web-ui";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +24,6 @@ import {
 import {
   ArrowLeft,
   MapPin,
-  Phone,
   Store,
   User,
   Calendar,
@@ -33,11 +31,8 @@ import {
   XCircle,
   RefreshCw,
   Clock,
-  Shield,
   Navigation,
   Building2,
-  Hash,
-  Zap,
   AlertCircle,
   ExternalLink,
 } from "lucide-react";

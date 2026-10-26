@@ -233,12 +233,9 @@ export function ReorderScreen({
         onClose={() => setUnitsId(null)}
       />
 
-      {/* Both maps: a scheme can be worded against either catalogue, and the
-          ids never collide (p… vs wp…). */}
       <DiscountsSheet
         open={!!discountsProductId}
         productId={discountsProductId}
-        qty={{ ...qty, ...wholesaleQty }}
         onClose={() => setDiscountsProductId(null)}
       />
     </div>

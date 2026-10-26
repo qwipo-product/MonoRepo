@@ -24,7 +24,7 @@ export function PaytmSearchScreen({ onBack, onOpenQwipo }: { onBack: () => void;
           <div className="text-lg font-bold text-paytm-navy">Mini Apps</div>
           <button onClick={onOpenQwipo} className="mt-3 flex w-16 flex-col items-center gap-1 active:opacity-80">
             <span className="h-12 w-12 overflow-hidden rounded-full">
-              <img src="/brand/qwipo-primary.svg" alt="Qwipo" className="h-12 w-12 object-cover object-top" />
+              <img src="./brand/qwipo-primary.svg" alt="Qwipo" className="h-12 w-12 object-cover object-top" />
             </span>
             <span className="text-2xs font-medium italic text-paytm-link">DigiDukaan</span>
             <span className="text-sm text-paytm-text-strong">Qwipo</span>

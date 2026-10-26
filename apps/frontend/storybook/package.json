@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Storybook for the Qwipo design system — tokens, @mockups/ui primitives and @mockups/components. The living catalog, and the reference to port the React Native app from.",
+  "description": "Mobile Storybook for @mockups/design-tokens, @mockups/ui primitives, and @mockups/components. Development port 6006.",
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "dev": "storybook dev -p 6006 --no-open",
@@ -25,14 +25,14 @@
   },
   "devDependencies": {
     "@mockups/tsconfig": "workspace:*",
-    "@storybook/addon-a11y": "10.5.7",
-    "@storybook/addon-docs": "10.5.7",
-    "@storybook/addon-themes": "10.5.7",
-    "@storybook/react-vite": "10.5.7",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/addon-themes": "catalog:",
+    "@storybook/react-vite": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "storybook": "10.5.7",
+    "storybook": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"

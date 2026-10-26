@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { Button, InlineMessage, useTheme } from '@mockups/ui';
+import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
-import { type ScreenId, screenNumber } from './review/screenIndex';
+import { ALL_SCREENS, resolveScreenId, type ScreenId, screenNumber } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
@@ -17,7 +17,6 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CartScreen } from './screens/CartScreen';
 import { ViewItemsScreen } from './screens/ViewItemsScreen';
 import { OrderSummaryScreen } from './screens/OrderSummaryScreen';
-import { CouponsScreen } from './screens/CouponsScreen';
 import { OrderConfirmationScreen } from './screens/OrderConfirmationScreen';
 import { MyOrdersScreen } from './screens/MyOrdersScreen';
 import { OrderDetailsScreen } from './screens/OrderDetailsScreen';
@@ -51,23 +50,13 @@ import { OrderItemsSheet } from './sheets/OrderItemsSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
-import { OnboardingScreen } from './screens/auth/OnboardingScreen';
-import { CompleteKycScreen } from './screens/auth/CompleteKycScreen';
-import { useKycFlow } from './kyc/useKycFlow';
-import { KycActiveScreen, KycManualReviewScreen } from './kyc/KycResultScreens';
 import { SavedAddressesScreen } from './screens/SavedAddressesScreen';
-import { LocationPickerScreen } from './screens/LocationPickerScreen';
-import { AddressDetailsScreen } from './screens/AddressDetailsScreen';
 import { GlobalSearchScreen } from './screens/GlobalSearchScreen';
 import { SellerBrowseScreen, type BrowseTab } from './screens/SellerBrowseScreen';
-import { DmsPartnersScreen, DmsPromoCard } from './screens/DmsPartnersScreen';
-import { DmsRegisterScreen } from './screens/DmsRegisterScreen';
 import { LoadingScreen } from './screens/LoadingScreen';
-import { DMS_COMPANIES, dmsCompanyById, type DmsStatus } from './data/dmsPartners';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
-import { OffersSchemesSkusScreen } from './screens/OffersSchemesSkusScreen';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -79,24 +68,21 @@ import {
   ADDRESSES,
   availabilityFor,
   DEFAULT_ADDRESS_ID,
-  type Address,
 } from './data/addresses';
-import { CURRENT_PLACE_ID, formatPlace, placeById, type Place } from './data/places';
 
 // Screens migrated to v2 so far. Everything else shows a placeholder + "soon".
 const BUILT = new Set<ScreenId>([
   'paytm-launcher', 'paytm-search', 'paytm-welcome',
-  'splash', 'login', 'otp', 'onboarding', 'kyc-complete', 'kyc-success',
-  'kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done', 'kyc-manual-review', 'kyc-pending',
-  'home', 'listing', 'offer-skus', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
-  'distributors-list', 'dms-partners', 'dms-register',
+  'splash', 'login', 'otp',
+  'home', 'listing', 'cart', 'distributor-units', 'sub:addresses', 'global-search',
+  'distributors-list',
   'wholesaler-categories', 'wholesaler-groceries', 'wholesaler-fmcg',
   'storefront', 'wholesaler-products', 'wholesaler-units',
-  'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'coupons', 'order-confirmation', 'reorder',
+  'view-items', 'cart-units', 'cart-alerts', 'order-summary', 'order-items', 'order-confirmation', 'reorder',
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
-  'app-update', 'app-update-required', 'promo-banners', 'loading', 'location-picker', 'address-details',
+  'app-update', 'app-update-required', 'promo-banners', 'loading',
   'login-error', 'otp-error', 'cart-price-changes',
-  'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
+  'empty:sub:payment', 'empty:sub:payment-orders', 'empty:sub:payment-gateways', 'empty:sub:credit',
   'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
   'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
@@ -119,20 +105,18 @@ const baseScreenOf = (id: ScreenId): ScreenId => {
 };
 
 // Sidebar "soon" tags: an empty: entry is as built as the screen it renders.
-for (const id of [...BUILT]) BUILT.add(EMPTY_PREFIX + id);
+for (const id of [...BUILT]) {
+  if (!isEmptyScreen(id)) BUILT.add(EMPTY_PREFIX + id);
+}
 
 // Root screens get the bottom tab bar (buyer shell); pushed screens don't.
-const ROOT_SCREENS = new Set<ScreenId>(['home', 'kyc-pending', 'reorder', 'sub:help', 'profile', 'storefront']);
-
-// Complete KYC step 2 (ID Proofs) — the plain screen plus its review-gallery states.
-const KYC_DOCS_SCREENS = new Set<ScreenId>(['kyc-docs', 'kyc-docs-rejected', 'kyc-docs-attempt-2', 'kyc-docs-done']);
+const ROOT_SCREENS = new Set<ScreenId>(['home', 'reorder', 'sub:help', 'profile', 'storefront']);
 
 // Product-list screens that accept an incoming applied filter + Back target.
 const PRODUCT_LISTS = new Set<ScreenId>(['listing', 'wholesaler-products', 'wholesaler-units']);
 
 // Qwipo-app-only screens. The Paytm mini runs the same sign-in (phone → OTP)
-// and the same onboarding + KYC; the only thing it never shows is the app
-// splash, because it launches from inside Paytm rather than cold-starting.
+// but never shows the app splash, because it launches from inside Paytm.
 const QWIPO_ONLY_SCREENS = new Set<ScreenId>(['splash']);
 
 /* One screen the buyer has been on, with the context that made it that screen.
@@ -155,23 +139,22 @@ const TRAIL_MAX = 24;
    means "up one level", which is the best that can be said. */
 function fallbackBack(id: ScreenId): ScreenId {
   if (id.startsWith('sub:') || id.startsWith('sp:')) return 'profile';
-  if (id === 'checkout' || id === 'coupons' || id === 'view-items') return 'cart';
+  if (id === 'checkout' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
-  if (id === 'onboarding') return 'otp';
   if (id === 'order-details') return 'my-orders';
-  if (id === 'address-details') return 'location-picker';
-  if (id === 'offer-skus' || id === 'storefront') return 'listing';
-  if (id === 'dms-partners') return 'distributors-list';
-  if (id === 'dms-register') return 'dms-partners';
+  if (id === 'storefront') return 'listing';
   return 'home';
 }
 
 function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
-  const s = params.get('screen');
+  const requested = params.get('screen');
+  const s = requested ? resolveScreenId(requested) : null;
   // Paytm mini boots into the Paytm launcher
-  // (→ search → welcome/consent → login → OTP → onboarding → home).
+  // (→ search → welcome/consent → login → OTP → home).
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
+  // Retired or unknown review links return to an available screen.
+  if (!ALL_SCREENS.some((item) => item.id === s)) return 'home';
   if (s === 'distributor-units') return 'listing';
   if (s === 'cart-units') return 'view-items'; // = the sheet over View Items
   if (s === 'cart-price-changes') return 'view-items'; // = View Items, price-change lines
@@ -219,25 +202,6 @@ export default function App() {
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
-  // Saved addresses live here: adding one leaves Saved Addresses for the map.
-  const [addresses, setAddresses] = useState<Address[]>(ADDRESSES);
-  // Location flow: map → address details → back to whoever started it.
-  const [pickedPlace, setPickedPlace] = useState<Place>(() => placeById(CURRENT_PLACE_ID));
-  const [addressFlowFrom, setAddressFlowFrom] = useState<ScreenId>('sub:addresses');
-  // Onboarding form — held here so picking a location doesn't wipe the rest.
-  const [obLocation, setObLocation] = useState('');
-  const [obBusinessName, setObBusinessName] = useState('');
-  const [obBusinessType, setObBusinessType] = useState('');
-  /* KYC gate. The demo persona is already verified, so the existing flows work
-     as before; walking a fresh signup (onboarding) clears it, and KYC Success
-     sets it again. Ordering — not browsing — is what it blocks. */
-  const [kycComplete, setKycComplete] = useState(true);
-  /* The KYC flow itself — photo, location, owner ID, AI attempts. Its status
-     drives the Home "KYC Pending" notice. */
-  const kycFlow = useKycFlow();
-  // Payments flow context: selected vendor + amount carried into the pay screen.
-  const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
-  const [payAmount, setPayAmount] = useState<number>(0);
   // Salesperson flow: phone entered at login (9000000001 → salesperson) + task context.
   const [loginPhone, setLoginPhone] = useState<string>('');
   const [taskId, setTaskId] = useState<string>('tk1');
@@ -260,11 +224,6 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
-  // DMS registrations, keyed by company id. TCPL starts unregistered so the
-  // flow can be walked end to end from the list.
-  const [dmsStatus, setDmsStatus] = useState<Record<string, DmsStatus>>({});
-  const [dmsCompanyId, setDmsCompanyId] = useState<string>(DMS_COMPANIES[0].id);
-
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
      to the screen they actually came from rather than to a target each screen
      guessed for itself: the cart opened from a product list goes back to that
@@ -287,7 +246,6 @@ export default function App() {
     }
     if (s === 'promo-banners') setPromoOpen(true);
     if (s === 'order-items') setOrderItemsOpen(true);
-    if (s) seedKyc(s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -368,7 +326,8 @@ export default function App() {
     seller: viewSellerId,
   });
 
-  const go = (id: ScreenId, opts?: NavOpts) => {
+  const go = (requested: ScreenId, opts?: NavOpts) => {
+    const id = resolveScreenId(requested);
     /* Record the departure. Arriving somewhere already behind us unwinds to it
        rather than stacking a second copy, so Home → Cart → Home leaves one
        Home in the trail instead of a loop that Back walks forever. */
@@ -469,48 +428,6 @@ export default function App() {
     setScreen(prev.screen);
   };
 
-  /* Review-gallery jumps into the middle of the KYC flow need the flow in
-     that state (e.g. "Attempt 2 of 5" needs two failed attempts). Walking the
-     flow by hand never goes through here. */
-  function seedKyc(id: ScreenId) {
-    if (!id.startsWith('kyc-')) return;
-    kycFlow.seed(id);
-    setKycComplete(id === 'kyc-success');
-  }
-  const pick = (id: ScreenId) => {
-    seedKyc(id);
-    go(id);
-  };
-
-
-  const kycNotice =
-    kycFlow.kyc.status === 'pending' || screen === 'kyc-pending' ? (
-      <InlineMessage
-        variant="warning"
-        title="KYC Pending"
-        description="Your KYC is currently under review. You can continue using the application while the review is in progress."
-      />
-    ) : kycFlow.kyc.status === 'rejected' ? (
-      <InlineMessage
-        variant="error"
-        title="KYC Not Approved"
-        description="Please update your shop details and submit your KYC again."
-        action={
-          <Button size="sm" variant="soft" onClick={() => go('kyc-docs')}>
-            Update KYC
-          </Button>
-        }
-      />
-    ) : undefined;
-
-  /* Start the map → address-details flow. `from` is where Save returns to and
-     where Back unwinds to, so the same two screens serve onboarding and
-     Saved Addresses without either knowing about the other. */
-  const startLocationFlow = (from: ScreenId) => {
-    setAddressFlowFrom(from);
-    go('location-picker');
-  };
-
   // Open the shared Order Details for any order. Back is the trail's job now.
   const openOrder = (order: Order) => {
     setDetailsOrder(order);
@@ -536,7 +453,7 @@ export default function App() {
       case 'login-error':
         return <LoginScreen demoError onNext={() => go('otp')} />;
       case 'otp-error':
-        return <OtpScreen demoError onBack={goBack} onVerify={() => go('onboarding')} />;
+        return <OtpScreen demoError onBack={goBack} onVerify={() => go('home')} />;
       case 'login':
         return (
           <LoginScreen
@@ -553,81 +470,13 @@ export default function App() {
             onVerify={() => {
               const isSp = loginPhone === SALESPERSON_PHONE;
               setRole(isSp ? 'salesperson' : 'customer');
-              go(isSp ? 'home' : 'onboarding');
-            }}
-          />
-        );
-      case 'onboarding':
-        return (
-          <OnboardingScreen
-            onBack={goBack}
-            // Paytm lands on Home once onboarded; the Qwipo app goes on to KYC.
-            onProceed={() => {
-              setKycComplete(false);
-              kycFlow.reset();
-              go(shell === 'paytm' ? 'home' : 'kyc-complete');
-            }}
-            location={obLocation}
-            onPickLocation={() => startLocationFlow('onboarding')}
-            businessName={obBusinessName}
-            onBusinessName={setObBusinessName}
-            businessType={obBusinessType}
-            onBusinessType={setObBusinessType}
-          />
-        );
-      case 'kyc-complete':
-      case 'kyc-docs':
-      case 'kyc-docs-rejected':
-      case 'kyc-docs-attempt-2':
-      case 'kyc-docs-done': {
-        /* The existing two-step Complete KYC. Step 2 (ID Proofs) checks Shop
-           Image, Shop Location and Owner ID with AI as each is added. */
-        const registerKyc = () => {
-          const outcome = kycFlow.submit();
-          setKycComplete(outcome === 'active');
-          go(outcome === 'active' ? 'kyc-success' : 'home');
-        };
-        return (
-          <CompleteKycScreen
-            step={KYC_DOCS_SCREENS.has(view) ? 2 : 1}
-            flow={kycFlow}
-            onCancel={() => go(shell === 'paytm' ? 'home' : 'listing')}
-            onStep={(s) => go(s === 2 ? 'kyc-docs' : 'kyc-complete')}
-            onRegister={registerKyc}
-            onManualReview={() => {
-              setKycComplete(false);
-              go('kyc-manual-review');
-            }}
-          />
-        );
-      }
-      case 'kyc-success':
-        /* AI accepted all three — KYC is Active and ordering unlocks now.
-           (Before AI checks, this was "KYC Submitted · under review 24–48h";
-           that wait now only happens after 5 failed attempts.) */
-        return <KycActiveScreen onContinue={() => go('home')} />;
-      case 'kyc-manual-review': {
-        const remaining = (['photo', 'location', 'ownerId'] as const).filter(
-          (c) => !['accepted', 'review'].includes(kycFlow.kyc.fields[c].status)
-        ).length;
-        return (
-          <KycManualReviewScreen
-            remaining={remaining}
-            onFinishKyc={() => go('kyc-docs')}
-            onContinue={() => {
-              // All three are in: register now; the case waits in BMS "KYC Review".
-              kycFlow.setStatus('pending');
-              setKycComplete(false);
               go('home');
             }}
           />
         );
-      }
       case 'home':
-      case 'kyc-pending':
         return (
           <HomeScreen
-            notice={kycNotice}
             onNavigate={go}
             tab={homeTab}
             onTabChange={setHomeTab}
@@ -638,7 +487,7 @@ export default function App() {
                   ? 'distributors'
                   : availabilityFor(deliveryAddressId)
             }
-            deliveryLabel={addresses.find((a) => a.id === deliveryAddressId)?.title}
+            deliveryLabel={ADDRESSES.find((a) => a.id === deliveryAddressId)?.title}
             onOpenSheet={setSheetId}
             onOpenWholesaleSheet={setWholesaleSheetId}
             sheetOpen={!!sheetProduct || !!wholesaleSheetProduct}
@@ -651,8 +500,7 @@ export default function App() {
             onBack={goBack}
             selectedId={deliveryAddressId}
             onSelect={setDeliveryAddressId}
-            addresses={addresses}
-            onAddNew={() => startLocationFlow('sub:addresses')}
+            addresses={ADDRESSES}
           />
         );
       case 'global-search':
@@ -685,49 +533,10 @@ export default function App() {
             sellers={DISTRIBUTORS}
             initialTab={browseTab}
             onTabChange={setBrowseTab}
-            promo={<DmsPromoCard onClick={() => go('dms-partners')} />}
             onBack={goBack}
             onNavigate={go}
           />
         );
-      case 'dms-partners':
-        return (
-          <DmsPartnersScreen
-            statuses={dmsStatus}
-            onBack={goBack}
-            onOpenCompany={(id) => {
-              setDmsCompanyId(id);
-              go('dms-register');
-            }}
-          />
-        );
-      case 'dms-register': {
-        // Every company registers the same way: straight with the company.
-        const company = dmsCompanyById(dmsCompanyId) ?? DMS_COMPANIES[0];
-        const name = company.shortName ?? company.company;
-        const target = {
-          name,
-          via: company.company,
-          emoji: company.emoji,
-          distributor: name,
-          idHint: company.idHint,
-          dmsIntegrated: company.dmsIntegrated,
-          rejectedReason: company.rejectedReason,
-        };
-        const targetId = company.id;
-        return (
-          <DmsRegisterScreen
-            key={targetId}
-            target={target}
-            status={dmsStatus[targetId] ?? 'none'}
-            onBack={goBack}
-            onComplete={(status) => {
-              setDmsStatus((s) => ({ ...s, [targetId]: status }));
-              go('dms-partners');
-            }}
-          />
-        );
-      }
       // One screen per level-1 group, each listing only its own categories.
       case 'wholesaler-groceries':
       case 'wholesaler-fmcg': {
@@ -802,20 +611,6 @@ export default function App() {
             applied={listApplied}
             onBack={goBack}
             onSearch={() => go('global-search')}
-            onOffers={() => go('offer-skus')}
-            qty={qty}
-            onOpenSheet={setSheetId}
-            onOpenGallery={setGalleryId}
-            onGoToCart={() => go('cart')}
-            cartCount={cartCount}
-            cartTotal={cartTotal}
-            cartFreight={CART.freightTotal}
-          />
-        );
-      case 'offer-skus':
-        return (
-          <OffersSchemesSkusScreen
-            onBack={goBack}
             qty={qty}
             onOpenSheet={setSheetId}
             onOpenGallery={setGalleryId}
@@ -839,7 +634,6 @@ export default function App() {
               go('view-items');
             }}
             onAddMore={() => go('listing')}
-            onOpenCoupons={() => go('coupons')}
             /* Which sheet depends on the catalogue the line came from — a
                wholesale line is priced by vendor, so it opens the vendor
                sheet rather than the distributor one. */
@@ -865,17 +659,12 @@ export default function App() {
             cart={CART}
             onBack={goBack}
             onPlaceOrder={() => go('order-confirmation')}
-            kycPending={!kycComplete}
-            kycUnderReview={kycFlow.kyc.status === 'pending'}
-            onCompleteKyc={() => go('kyc-complete')}
             onViewItems={(sellerId) => {
               setViewSellerId(sellerId);
               setOrderItemsOpen(true);
             }}
           />
         );
-      case 'coupons':
-        return <CouponsScreen cart={CART} onBack={goBack} onApply={() => go('cart')} />;
       case 'order-confirmation':
         return <OrderConfirmationScreen onBackToHome={goBack} />;
       case 'reorder':
@@ -903,35 +692,11 @@ export default function App() {
       case 'sub:business-details':
         return <BusinessDetailsScreen onBack={goBack} />;
       case 'sub:payment':
-        return (
-          <PaymentsScreen
-            onBack={goBack}
-            onOpenVendor={(id) => {
-              setPaymentVendorId(id);
-              go('sub:payment-orders');
-            }}
-          />
-        );
+        return <PaymentsScreen onBack={goBack} />;
       case 'sub:payment-orders':
-        return (
-          <PaymentOrdersScreen
-            vendorId={paymentVendorId}
-            onBack={goBack}
-            onPay={(amount) => {
-              setPayAmount(amount);
-              go('sub:payment-gateways');
-            }}
-          />
-        );
+        return <PaymentOrdersScreen onBack={goBack} />;
       case 'sub:payment-gateways':
-        return (
-          <PaymentGatewaysScreen
-            vendorId={paymentVendorId}
-            amount={payAmount}
-            onBack={goBack}
-            onDone={() => go('sub:payment')}
-          />
-        );
+        return <PaymentGatewaysScreen onBack={goBack} />;
       case 'sub:credit':
         return <CreditPartnersScreen onBack={goBack} />;
       case 'sub:language':
@@ -997,36 +762,6 @@ export default function App() {
           />
         );
 
-      case 'location-picker':
-        return (
-          <LocationPickerScreen
-            onBack={goBack}
-            onConfirm={(place) => {
-              setPickedPlace(place);
-              go('address-details');
-            }}
-          />
-        );
-      case 'address-details':
-        return (
-          <AddressDetailsScreen
-            place={pickedPlace}
-            onBack={goBack}
-            onChangeLocation={() => go('location-picker')}
-            saveLabel={addressFlowFrom === 'onboarding' ? 'Confirm location' : 'Save address'}
-            onSave={(address) => {
-              if (addressFlowFrom === 'onboarding') {
-                // Onboarding shows the picked address in its Delivery Location field.
-                setObLocation(`${address.title}, ${formatPlace(pickedPlace)}`);
-              } else {
-                // Appended, not prepended: pending addresses belong at the
-                // bottom, and they don't take over delivery on their own.
-                setAddresses((list) => [...list, address]);
-              }
-              go(addressFlowFrom);
-            }}
-          />
-        );
       case 'my-orders':
         return (
           <MyOrdersScreen
@@ -1056,7 +791,7 @@ export default function App() {
       <FlowIndex
         active={screen}
         built={BUILT}
-        onPick={pick}
+        onPick={go}
         shell={shell}
         onShellChange={setShell}
         role={role}

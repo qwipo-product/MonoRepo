@@ -10,22 +10,6 @@ export interface OrderItem {
   image: string;
   price: number;
   mrp: number;
-  /** Granted by a scheme rather than bought — billed at ₹0. */
-  free?: boolean;
-}
-
-/** One offer that paid out on an order. */
-export interface OrderOffer {
-  /** The code the seller publishes — the same one the cart showed. */
-  code: string;
-  /** Scheme name (Bogo, Freebie, Case Bonus, Slab, Combo) or 'Coupon'. */
-  label: string;
-  /** What it gave, in words. */
-  benefit: string;
-  /** ₹ taken off the bill. 0 when the offer paid out in free goods instead. */
-  saved: number;
-  /** What it granted, when it paid out in goods rather than money. */
-  freeGoods?: string;
 }
 
 export interface Order {
@@ -36,7 +20,7 @@ export interface Order {
      the distributor delivering them, but each company invoices separately, so
      placing that cart raises one order per company — two companies bought
      from the same distributor become two orders, each with its own number,
-     its own bill and its own offers. `seller` is therefore the company being
+     its own bill. `seller` is therefore the company being
      invoiced (it's what the order lists show); `distributor` is who
      actually delivers it. */
   seller: string;
@@ -48,68 +32,49 @@ export interface Order {
   deliveryFee: number;
   status: OrderStatus;
   statusLabel: string;
+  /** When delivery is expected, as a plain ISO date — for an order already
+   *  delivered, the day it arrived. Never a time: nobody commits to one. */
   eta: string;
   items: OrderItem[];
-  /** ₹ off the items total, from the offers below. Absent → nothing came off. */
+  /** Discount on the items total. Absent means no discount. */
   discount?: number;
-  /** Offers that paid out on this order — schemes and any coupon applied. */
-  offers?: OrderOffer[];
 }
 
 /* One order per company, even when two of them came from one cart. o2 and o5
    were placed together from Sri Sai Krishna Traders — ITC and Adani Wilmar
    invoice separately, so they're separate orders with separate numbers.
-   o4 has no scheme running, which is what an order with no offers looks
-   like: no discount row, no offers section. */
+   o4 has no discount row. */
 export const ORDERS: Order[] = [
   {
-    id: 'o1', orderId: 'QWIP2402204', seller: 'Nestlé India', distributor: 'Omkar Enterprise', itemCount: 4,
+    id: 'o1', orderId: 'QWIP2402204', seller: 'Nestlé India', distributor: 'Omkar Enterprise', itemCount: 3,
     placedAt: '2026-06-16', total: 4200, deliveryFee: 200, status: 'placed', statusLabel: 'Order placed', eta: '2026-06-18',
     discount: 220,
-    offers: [
-      { code: 'MAGGIBOGO', label: 'Bogo', benefit: 'Buy 1 Case Get 1 Free on Maggi Family Pack', saved: 0, freeGoods: '8 × Maggi Family Pack' },
-      { code: 'SAVE5', label: 'Coupon', benefit: '5% off your order above ₹500, up to ₹100', saved: 100 },
-      { code: 'NESCAFE10', label: 'Slab', benefit: '10% off on 4+ cases of Nescafé Classic', saved: 120 },
-    ],
     items: [
       { brand: 'Maggi', name: 'Maggi Family Pack × 8', qty: 8, pack: '280 g · 24 Pcs/Case', image: '🍜', price: 52, mrp: 60 },
-      { brand: 'Maggi', name: 'Maggi Family Pack × 8', qty: 8, pack: '280 g · 24 Pcs/Case', image: '🍜', price: 0, mrp: 60, free: true },
       { brand: 'Nescafé', name: 'Nescafé Classic 200g × 4', qty: 4, pack: '200 g · 24 Pcs/Case', image: '☕', price: 185, mrp: 210 },
       { brand: 'KitKat', name: 'KitKat 4-Finger × 12', qty: 12, pack: '37.3 g · 24 Pcs/Case', image: '🍫', price: 20, mrp: 25 },
     ],
   },
   {
-    id: 'o2', orderId: 'QWIP2401204', seller: 'ITC Limited', distributor: 'Sri Sai Krishna Traders', itemCount: 3,
-    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
-    offers: [
-      { code: 'ATTA8FREE', label: 'Freebie', benefit: 'Buy 8 units → Get 1 FREE on Aashirvaad Atta', saved: 0, freeGoods: '1 × Aashirvaad Atta 10 kg' },
-    ],
+    id: 'o2', orderId: 'QWIP2401204', seller: 'ITC Limited', distributor: 'Sri Sai Krishna Traders', itemCount: 2,
+    placedAt: '2026-06-05', total: 7128, deliveryFee: 200, status: 'in_transit', statusLabel: 'Out for Delivery', eta: '2026-06-06',
     items: [
       { brand: 'Aashirvaad', name: 'Aashirvaad Atta 10kg × 8', qty: 8, pack: '10 kg · 4 Pcs/Case', image: '🌾', price: 420, mrp: 465 },
-      { brand: 'Aashirvaad', name: 'Aashirvaad Atta 10kg × 1', qty: 1, pack: '10 kg · 4 Pcs/Case', image: '🌾', price: 0, mrp: 465, free: true },
       { brand: 'Aashirvaad', name: 'Aashirvaad Ghee 1L × 2', qty: 2, pack: '1 L · 12 Pcs/Case', image: '🧈', price: 620, mrp: 690 },
     ],
   },
   {
-    id: 'o5', orderId: 'QWIP2401205', seller: 'Adani Wilmar', distributor: 'Sri Sai Krishna Traders', itemCount: 2,
-    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: 'Tomorrow 11 AM',
+    id: 'o5', orderId: 'QWIP2401205', seller: 'Adani Wilmar', distributor: 'Sri Sai Krishna Traders', itemCount: 1,
+    placedAt: '2026-06-05', total: 2890, deliveryFee: 0, status: 'in_transit', statusLabel: 'Out for Delivery', eta: '2026-06-06',
     discount: 185,
-    offers: [
-      { code: 'BESAN50', label: 'Case Bonus', benefit: 'Buy 50 units → Get 5 FREE on Fortune Besan', saved: 0, freeGoods: '5 × Fortune Besan 500 g' },
-      { code: 'OILBOGO10', label: 'Slab', benefit: '6% off on 5+ cases of Fortune Sunflower Oil', saved: 185 },
-    ],
     items: [
       { brand: 'Fortune', name: 'Fortune Besan × 50', qty: 50, pack: '500 g · 20 Pcs/Case', image: '🫘', price: 55, mrp: 62 },
-      { brand: 'Fortune', name: 'Fortune Besan × 5', qty: 5, pack: '500 g · 20 Pcs/Case', image: '🫘', price: 0, mrp: 62, free: true },
     ],
   },
   {
     id: 'o3', orderId: 'QWIP2400204', seller: 'Hindustan Unilever', distributor: 'Omkar Enterprise', itemCount: 3,
-    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: 'Tomorrow 8 PM',
+    placedAt: '2026-06-03', total: 3640, deliveryFee: 200, status: 'processing', statusLabel: 'Being Packed', eta: '2026-06-04',
     discount: 310,
-    offers: [
-      { code: 'TEACOMBO10', label: 'Combo', benefit: '10% off Red Label Tea bought with Close Up', saved: 310 },
-    ],
     items: [
       { brand: 'Red Label', name: 'Red Label Tea × 8', qty: 8, pack: '250 g · 40 Pcs/Case', image: '🍵', price: 135, mrp: 150 },
       { brand: 'Close Up', name: 'Close Up Red Toothpaste × 6', qty: 6, pack: '150 g · 36 Pcs/Case', image: '🪥', price: 48, mrp: 55 },
@@ -118,13 +83,21 @@ export const ORDERS: Order[] = [
   },
   {
     id: 'o4', orderId: 'QWIP2399204', seller: 'Karnataka Soaps & Detergents', itemCount: 2,
-    placedAt: '2026-05-28', total: 2260, deliveryFee: 200, status: 'delivered', statusLabel: 'Delivered', eta: 'Delivered 2026-05-30',
+    placedAt: '2026-05-28', total: 2260, deliveryFee: 200, status: 'delivered', statusLabel: 'Delivered', eta: '2026-05-30',
     items: [
       { brand: 'Mysore Sandal', name: 'Mysore Sandal Soap × 12', qty: 12, pack: '150 g · 72 Pcs/Case', image: '🧼', price: 42, mrp: 48 },
       { brand: 'Mysore Sandal', name: 'Mysore Talcum Powder × 6', qty: 6, pack: '100 g · 48 Pcs/Case', image: '🧴', price: 88, mrp: 98 },
     ],
   },
 ];
+
+/* What to call the delivery date, which depends on whether it has happened
+   yet. "Expected delivery" over a date the goods already arrived on is the
+   card describing the past as a plan; once an order is delivered the same
+   date is simply when it came. Both order screens ask here, so the card and
+   the detail page can't end up calling it different things. */
+export const deliveryDateLabel = (status: OrderStatus): string =>
+  status === 'delivered' ? 'Delivered on' : 'Expected delivery';
 
 /** Map a free-text status label to the canonical OrderStatus (for StatusBadge
  * + the shared Order Details, when an order comes from a leaner data source). */
@@ -150,7 +123,6 @@ export function buildOrder(o: {
   eta?: string;
   items?: OrderItem[];
   discount?: number;
-  offers?: OrderOffer[];
 }): Order {
   return {
     id: o.id,
@@ -165,7 +137,6 @@ export function buildOrder(o: {
     eta: o.eta ?? '—',
     items: o.items ?? [],
     discount: o.discount ?? 0,
-    offers: o.offers ?? [],
   };
 }
 

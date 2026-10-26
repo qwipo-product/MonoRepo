@@ -19,6 +19,13 @@ import './index.css';
  * No <StrictMode> here, matching the original app: several screens use
  * effect-driven mock-store seeding that double-invokes badly under it.
  */
+// The ported pages carry placeholder anchors (href="#"). Under hash routing a
+// bare "#" is the route "/", so swallow them once here instead of in nine files.
+document.addEventListener("click", (e) => {
+  const a = (e.target as Element).closest?.('a[href="#"]');
+  if (a) e.preventDefault();
+});
+
 createRoot(document.getElementById('root')!).render(
   <ThemeProvider
     attribute="class"
