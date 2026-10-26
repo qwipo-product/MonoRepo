@@ -1,5 +1,7 @@
 # Complete website content inventory
 
+> Historical copy inventory for the 2.0 fact-check revision. Phone labels, image provenance, product caption and the cart disclosure were subsequently updated by the hosted-screen restoration; see the adjacent source record `17-hosted-buyer-screens.md`. Other narrative entries are unchanged.
+
 Read together with [the fact-check report](../16-content-fact-check.md). Each entry below was reviewed in its component context; identifiers, headings and controls do not constitute independent business claims. Repeated copy is intentionally retained to make coverage explicit. Screenshot text is audited separately in the report.
 
 | Location | Exact text | Review / source |

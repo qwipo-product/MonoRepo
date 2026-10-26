@@ -63,7 +63,7 @@ export const site = {
     intro:
       "One app for authorised distributors and wholesalers serving a kirana’s area. Explore the range, compare seller offers and order whenever stock is needed.",
     caption:
-      "App screens from the DigiDukaan 2.0 presentation, shown for illustration. Products, prices, margins and offers may change; available sellers depend on location.",
+      "Screens captured from the Qwipo buyer-app website. Products, prices, seller terms and delivery examples are illustrative.",
     features: [
       {
         number: "01",

@@ -1,0 +1,93 @@
+{
+  "authority": "https://mockups-buyer-app.bms.qwipo.com",
+  "observedBuild": "v1.0.2 / cf477a9",
+  "capturedOn": "2026-10-27",
+  "method": "Read-only hosted phone DOM and stylesheet export to self-contained SVG; browser rendering at 3x for raster fallbacks. No local buyer-app build or deck screenshots.",
+  "screens": [
+    {
+      "screen": "home",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=home&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/home-4cc913e805.svg",
+      "svgSha256": "8acb19da3f2acbbff42570e3e1302ebf613fec2a51c60481c05b81d14261fa46",
+      "fallbackSourceSha256": "ddefd39f14843ee00723d575dd80173acf5b8b1d7769e6028c8044eb3b9c17cc",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 499214,
+      "gzipBytesLocalEstimate": 336285,
+      "embeddedPreviewBytes": 1700
+    },
+    {
+      "screen": "distributor",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=storefront&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/distributor-e075189471.svg",
+      "svgSha256": "94bdf6af5dd1186ae000264e17840a2e21211ec4c48a44cfc0e5a84d44bd9276",
+      "fallbackSourceSha256": "5a457d6d37def7f71d9bdbbef83bcebb70293a120463e6d2e0b7e4c8e33e042e",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 275146,
+      "gzipBytesLocalEstimate": 175426,
+      "embeddedPreviewBytes": 1086
+    },
+    {
+      "screen": "catalogue",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=listing&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/catalogue-cb0011fd32.svg",
+      "svgSha256": "334f58bae3ffb94eba2f24c07405c453c1f4a3b8246831ca0afe4096696d4292",
+      "fallbackSourceSha256": "7fcaa6ffb243e553828a994a345e2ae97fa14e35aad301679720a5276c54c5ee",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 179386,
+      "gzipBytesLocalEstimate": 93513,
+      "embeddedPreviewBytes": 1278
+    },
+    {
+      "screen": "cart",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=cart&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/cart-a5ea785da1.svg",
+      "svgSha256": "91fe38e067d26be263b3475105e9d28908e124c38073b787bb41f2718f051535",
+      "fallbackSourceSha256": "b61e7476436380767835495be794f8571a8febcde3254a9556d0993cc7a9a556",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 168334,
+      "gzipBytesLocalEstimate": 93312,
+      "embeddedPreviewBytes": 1060
+    },
+    {
+      "screen": "orders",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=my-orders&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/orders-6084023a8c.svg",
+      "svgSha256": "eb7471ccdb12b1ae3f6842f7f11248b18776cf9fffe546bef6ecd744c5615633",
+      "fallbackSourceSha256": "e61eacf1d09f5a3dfd6ae8259d1c0bf8ec953ab21c64470bd55cd702c5c2bf26",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 128717,
+      "gzipBytesLocalEstimate": 62248,
+      "embeddedPreviewBytes": 1270
+    },
+    {
+      "screen": "tracking",
+      "url": "https://mockups-buyer-app.bms.qwipo.com/?screen=my-orders&shell=buyer&device=iphone-14&orient=portrait",
+      "svg": "/images/optimized/tracking-2abb30645f.svg",
+      "svgSha256": "9de58d2d13f83742fd2004b73e6b05daa764706dd7c0772882da53164c93569e",
+      "fallbackSourceSha256": "008224be7e14ffababc7e6679ae69bab8c861f38f5b44225001fb89f2ce5886e",
+      "rasterDimensions": [
+        1170,
+        2532
+      ],
+      "svgBytes": 133949,
+      "gzipBytesLocalEstimate": 62873,
+      "embeddedPreviewBytes": 752,
+      "interaction": "My orders: ITC Limited, order QWIP2401204, Track order opens tracking sheet."
+    }
+  ]
+}

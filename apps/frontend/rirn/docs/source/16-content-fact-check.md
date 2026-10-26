@@ -1,5 +1,7 @@
 # DigiDukaan 2.0 website fact check
 
+> Screenshot update: the user subsequently designated the hosted buyer app as the sole screenshot authority. The image substitutions below are historical and are superseded by [17-hosted-buyer-screens.md](17-hosted-buyer-screens.md). The 2.0 narrative corrections remain in force.
+
 Reviewed 27 October 2026. Scope: all public copy on both routes, both audience states, five journey chapters and their disclosures, seven FAQs, both logistics controls, phone screens, image descriptions, contact actions, navigation, metadata and social preview. The original Next.js source and the deployed React/Vite adaptation receive the same narrative.
 
 This is verification against supplied evidence, not an independent audit of live delivery operations. The new deck is the primary source for the 2.0 operating model. Older material remains relevant to Qwipo's DMS and Logistics Tech capabilities but does not override the explicitly revised 2.0 delivery journey.

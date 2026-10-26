@@ -18,7 +18,7 @@ const chapters: {
   {
     title: "Discover",
     icon: "search",
-    screen: "marketplace",
+    screen: "home",
     actor: "AT THE RETAILER",
     heading: "Start with what the shelf needs.",
     text: "Search products and see authorised distributors and wholesalers serving the kirana’s area.",
@@ -33,7 +33,7 @@ const chapters: {
   {
     title: "Order",
     icon: "cart",
-    screen: "search",
+    screen: "cart",
     actor: "AT THE KIRANA",
     heading: "Order when the shop needs it.",
     text: "Choose from the seller’s range at distributor prices, with company schemes. Place orders any day, from ₹500.",
@@ -43,7 +43,7 @@ const chapters: {
       "Include the shop’s map pin & phone",
     ],
     detail:
-      "Each order carries the shop’s map pin and phone number so the delivery partner can find it, including in interior lanes. The 2.0 journey uses cash on delivery. The app image shows product selection; it is not a checkout or a live price quotation.",
+      "Each order carries the shop’s map pin and phone number so the delivery partner can find it, including in interior lanes. The 2.0 journey uses cash on delivery. The cart screen is captured from the buyer-app website; the seller terms shown are illustrative mockup examples.",
   },
   {
     title: "Pickup",

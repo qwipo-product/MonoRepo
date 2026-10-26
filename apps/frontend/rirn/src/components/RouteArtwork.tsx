@@ -89,7 +89,7 @@ export function RouteArtwork() {
       </svg>
       <div className="hero-phone" data-hero-phone>
         <ProductDevice
-          screens={["marketplace", "search"]}
+          screens={["home", "catalogue", "orders", "tracking"]}
           priority
           cycleTransition="spin"
         />
