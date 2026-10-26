@@ -1,11 +1,13 @@
 # mockups-lab
 
-This repository contains frontend prototypes, component catalogs, and an optional mock API for product review.
-Buyer/Paytm demonstrates mobile buyer and salesperson flows.
-Seller Store demonstrates distributor and administrator flows.
-RIRN demonstrates company and retailer identity flows.
-Qwipo Analytics demonstrates dashboards and reports.
-The applications use demonstration data. Mock API serves shared fixtures over HTTP.
+Mockups Lab is a shared workspace for Qwipo product prototypes and interface reviews.
+Use the applications to review user flows and designs before production implementation.
+Buyer/Paytm covers mobile buyer and salesperson flows.
+Seller Store covers distributor and administrator flows.
+RIRN Console and RIRN Retailer cover company and retailer identity flows.
+Qwipo Analytics provides dashboard and report prototypes.
+Mobile and desktop Storybook catalogs document the shared interface components.
+The applications use demonstration data. An optional Mock API serves shared fixtures over HTTP.
 
 Keep the demonstrated behavior correct.
 Record simulated results and incomplete integrations.
