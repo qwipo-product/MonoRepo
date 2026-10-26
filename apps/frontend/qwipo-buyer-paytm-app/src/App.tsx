@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
+import { PanelLeftOpen } from 'lucide-react';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
 import { ALL_SCREENS, resolveScreenId, type ScreenId, screenNumber } from './review/screenIndex';
@@ -57,6 +58,9 @@ import { LoadingScreen } from './screens/LoadingScreen';
 import { StorefrontScreen } from './screens/StorefrontScreen';
 import { WholesalerProductsScreen } from './screens/WholesalerProductsScreen';
 import { ReorderScreen } from './screens/ReorderScreen';
+import { DeliveryScheduleScreen } from './screens/DeliveryScheduleScreen';
+import { CompanyDistributorsScreen } from './screens/CompanyDistributorsScreen';
+import { SCHEDULE_COMPANIES, scheduleCompanyById, type Weekday } from './data/deliverySchedule';
 import type { NavOpts } from './nav';
 import type { AppliedFilter } from './data/filters';
 import { PRODUCTS, productById } from './data/products';
@@ -83,6 +87,7 @@ const BUILT = new Set<ScreenId>([
   'app-update', 'app-update-required', 'promo-banners', 'loading',
   'login-error', 'otp-error', 'cart-price-changes',
   'empty:sub:payment', 'empty:sub:payment-orders', 'empty:sub:payment-gateways', 'empty:sub:credit',
+  'sub:delivery-schedule', 'sub:delivery-company',
   'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
   'sp:performance', 'sp:orders', 'sp:switch-customer', 'sp:customers', 'sp:customer-details',
@@ -143,6 +148,7 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'otp') return 'login';
   if (id === 'order-details') return 'my-orders';
   if (id === 'storefront') return 'listing';
+  if (id === 'sub:delivery-company') return 'sub:delivery-schedule';
   return 'home';
 }
 
@@ -177,6 +183,12 @@ export default function App() {
   );
   const [orientation, setOrientation] = useState<Orientation>(() =>
     new URLSearchParams(window.location.search).get('orient') === 'landscape' ? 'landscape' : 'portrait'
+  );
+  /* Presenting: the screen list and every review control hide, leaving only
+     the phone — so a screen-share shows the walkthrough, not the list of what
+     has been built. ?present=1 keeps it through a reload. */
+  const [presenting, setPresenting] = useState(
+    () => new URLSearchParams(window.location.search).get('present') === '1'
   );
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [galleryId, setGalleryId] = useState<string | null>(null);
@@ -224,6 +236,12 @@ export default function App() {
   /* A wholesale card in Global Search opens the vendor sheet, which until now
      only existed inside the wholesale screens. */
   const [wholesaleSheetId, setWholesaleSheetId] = useState<string | null>(null);
+  /* Delivery Schedule: the day being looked at (null = the next delivery day)
+     and the company opened from it. Held here so Back from a company's
+     distributors lands on the same day. */
+  const [scheduleDay, setScheduleDay] = useState<Weekday | null>(null);
+  const [scheduleCompanyId, setScheduleCompanyId] = useState<string>(SCHEDULE_COMPANIES[0].id);
+
   /* Where the buyer has been, oldest first. Back pops this, so it returns them
      to the screen they actually came from rather than to a target each screen
      guessed for itself: the cart opened from a product list goes back to that
@@ -256,8 +274,29 @@ export default function App() {
     url.searchParams.set('shell', shell);
     url.searchParams.set('device', device.id);
     url.searchParams.set('orient', orientation);
+    if (presenting) url.searchParams.set('present', '1');
+    else url.searchParams.delete('present');
     window.history.replaceState(null, '', url);
-  }, [screen, shell, device, orientation]);
+  }, [screen, shell, device, orientation, presenting]);
+
+  // H toggles presenting — except while typing into a field on the phone.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'h' && e.key !== 'H') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      setPresenting((p) => !p);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // The version pill is mounted outside App (main.tsx); index.css hides it
+  // while this attribute is on.
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-presenting', presenting);
+  }, [presenting]);
 
   // Scale the device frame down to fit the viewport (never up) — big tablets
   // would otherwise overflow the review page.
@@ -697,6 +736,26 @@ export default function App() {
         return <PaymentOrdersScreen onBack={goBack} />;
       case 'sub:payment-gateways':
         return <PaymentGatewaysScreen onBack={goBack} />;
+      case 'sub:delivery-schedule':
+        return (
+          <DeliveryScheduleScreen
+            day={scheduleDay}
+            onDayChange={setScheduleDay}
+            onBack={goBack}
+            onOpenCompany={(id) => {
+              setScheduleCompanyId(id);
+              go('sub:delivery-company');
+            }}
+          />
+        );
+      case 'sub:delivery-company':
+        return (
+          <CompanyDistributorsScreen
+            company={scheduleCompanyById(scheduleCompanyId) ?? SCHEDULE_COMPANIES[0]}
+            onBack={goBack}
+            onNavigate={go}
+          />
+        );
       case 'sub:credit':
         return <CreditPartnersScreen onBack={goBack} />;
       case 'sub:language':
@@ -788,6 +847,20 @@ export default function App() {
 
   return (
     <div className="flex h-dvh items-center gap-8 overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#fdf2f8_100%)] p-6 dark:bg-none dark:bg-background">
+      {presenting ? (
+        /* The way back is invisible until hovered: a corner hotspot, so the
+           audience sees nothing but the phone. */
+        <div className="group fixed left-0 top-0 z-50 p-4">
+          <button
+            onClick={() => setPresenting(false)}
+            aria-label="Show menu"
+            title="Show the menu again (H)"
+            className="grid h-9 w-9 place-items-center rounded-md border border-border bg-card text-foreground opacity-0 transition-opacity hover:bg-muted focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+        </div>
+      ) : (
       <FlowIndex
         active={screen}
         built={BUILT}
@@ -809,7 +882,9 @@ export default function App() {
         onCapture={capture}
         emptyDemo={emptyDemo}
         onEmptyDemoChange={setEmptyDemo}
+        onPresent={() => setPresenting(true)}
       />
+      )}
 
       {/* The padding is the frame's drop shadow's room. The stage clips what
           it can't fit and the frame's own box stops at its edge, so without it

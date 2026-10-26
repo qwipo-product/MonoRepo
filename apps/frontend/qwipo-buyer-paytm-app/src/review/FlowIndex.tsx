@@ -1,4 +1,4 @@
-import { Moon, Sun, UserRound, Camera, PackageOpen } from 'lucide-react';
+import { Moon, Sun, UserRound, Camera, PackageOpen, PanelLeftClose } from 'lucide-react';
 import { cn } from '@mockups/ui';
 import { visibleGroups, type ScreenId } from './screenIndex';
 import { ShellSwitcher, type Shell } from './ShellSwitcher';
@@ -26,6 +26,7 @@ export default function FlowIndex({
   onCapture,
   emptyDemo,
   onEmptyDemoChange,
+  onPresent,
 }: {
   active: ScreenId;
   built: Set<ScreenId>;
@@ -46,6 +47,8 @@ export default function FlowIndex({
   /** Force every list empty, to review the zero-data designs. */
   emptyDemo: boolean;
   onEmptyDemoChange: (v: boolean) => void;
+  /** Hide this whole sidebar, leaving only the phone — for screen-sharing. */
+  onPresent: () => void;
 }) {
   let n = 0;
   // Paytm mini is customer-only — no salesperson persona there.
@@ -113,6 +116,20 @@ export default function FlowIndex({
           onOrientationChange={onOrientationChange}
         />
       </div>
+
+      {/* Presenting: a full-width row rather than another icon — the rows
+          above have no room left, and this one needs to be found. */}
+      <button
+        onClick={onPresent}
+        title="Hide this menu so only the phone shows (H)"
+        className="mt-2 flex h-9 w-full items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground hover:bg-muted"
+      >
+        <PanelLeftClose size={16} />
+        Hide menu to present
+        <kbd className="ml-auto rounded border border-border bg-muted px-1.5 font-mono text-2xs text-foreground-secondary">
+          H
+        </kbd>
+      </button>
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
         {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}

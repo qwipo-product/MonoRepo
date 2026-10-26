@@ -72,6 +72,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'notifications', label: 'Notifications' },
       { id: 'sub:business-details', label: 'Account · Business Details' },
       { id: 'sub:addresses', label: 'Account · Saved Addresses' },
+      { id: 'sub:delivery-schedule', label: 'Account · Delivery Schedule' },
+      { id: 'sub:delivery-company', label: 'Account · Delivery Schedule · Distributors' },
       { id: 'sub:language', label: 'Account · Language' },
       { id: 'sub:help', label: 'Account · Contact Us' },
       { id: 'sub:terms', label: 'Account · Terms & Conditions' },
@@ -95,6 +97,8 @@ export const SCREEN_GROUPS: { title: string; items: { id: ScreenId; label: strin
       { id: 'empty:sub:payment-orders', label: 'Payment Orders \u00b7 None' },
       { id: 'empty:sub:payment-gateways', label: 'Payment Options \u00b7 None' },
       { id: 'empty:sub:credit', label: 'Credit Partners \u00b7 None' },
+      { id: 'empty:sub:delivery-schedule', label: 'Delivery Schedule \u00b7 None' },
+      { id: 'empty:sub:delivery-company', label: 'Company Distributors \u00b7 None' },
     ],
   },
   {

@@ -121,3 +121,9 @@ body {
     animation-duration: 600ms;
   }
 }
+
+/* Presenting (App.tsx) hides the screen list; the version pill lives outside
+   App, so it is hidden here. `!important` because the pill styles inline. */
+html[data-presenting] [data-testid="version-badge"] {
+  display: none !important;
+}
