@@ -23,7 +23,7 @@
   --violet: #6c3bc8;
   --lilac: #eae3f4;
   --paper: #faf9f5;
-  --lime: #d2f86a;
+  --accent: #f2ceae;
   --dark: #1d122a;
   --line: rgba(50, 18, 92, 0.2);
   --muted: #655772;
@@ -48,7 +48,7 @@ body {
 }
 ::selection {
   color: var(--ink);
-  background: var(--lime);
+  background: var(--accent);
 }
 a {
   color: inherit;
@@ -151,7 +151,7 @@ section[id] {
   top: 12px;
   left: 20px;
   padding: 12px 18px;
-  background: var(--lime);
+  background: var(--accent);
   color: var(--ink);
   translate: 0 -200%;
   border-radius: 4px;
@@ -416,7 +416,7 @@ section[id] {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--lime);
+  background: var(--accent);
   transform: translateX(-101%);
   transition: transform 0.4s var(--ease);
   border-radius: inherit;
@@ -455,7 +455,7 @@ section[id] {
   scale: 0.98;
 }
 .action-light {
-  background: var(--lime);
+  background: var(--accent);
   color: var(--ink);
 }
 .hero-secondary {
@@ -563,7 +563,7 @@ section[id] {
   align-items: center;
   justify-content: center;
   font-size: 31px;
-  background: var(--lime);
+  background: var(--accent);
   border-radius: 50%;
 }
 .art-coordinate {
@@ -648,7 +648,7 @@ section[id] {
   position: absolute;
   left: 0;
   bottom: 0;
-  background: var(--lime);
+  background: var(--accent);
   padding: 20px 25px;
   width: 210px;
   font-family: var(--font-display);
@@ -788,7 +788,7 @@ section[id] {
   white-space: nowrap;
 }
 .product-stage-word > span:last-child {
-  color: var(--lime);
+  color: var(--accent);
 }
 .product-phone {
   width: 100%;
@@ -824,7 +824,7 @@ section[id] {
   color: var(--paper);
 }
 .product-stage-label .status-dot {
-  background: var(--lime);
+  background: var(--accent);
 }
 .product-copy h2 {
   font-size: clamp(45px, 4.7vw, 72px);
@@ -923,7 +923,7 @@ section[id] {
     90deg,
     transparent,
     var(--violet) 45%,
-    var(--lime)
+    var(--accent)
   );
 }
 .journey-steps {
@@ -965,7 +965,7 @@ section[id] {
   position: absolute;
   inset: auto -2px -3px;
   height: 7px;
-  background: var(--lime);
+  background: var(--accent);
   opacity: 0;
   transform-origin: left;
   z-index: -1;
@@ -1029,9 +1029,9 @@ section[id] {
   background: linear-gradient(
     110deg,
     transparent 15%,
-    #d2f86a24 35%,
+    color-mix(in srgb, var(--accent) 14%, transparent) 35%,
     #ffffff40 50%,
-    #d2f86a24 65%,
+    color-mix(in srgb, var(--accent) 14%, transparent) 65%,
     transparent 85%
   );
 }
@@ -1109,7 +1109,7 @@ section[id] {
   justify-content: center;
   width: 100px;
   height: 100px;
-  background: var(--lime);
+  background: var(--accent);
   border-radius: 50%;
   rotate: 8deg;
 }
@@ -1136,7 +1136,7 @@ section[id] {
   letter-spacing: 0.11em;
 }
 .tiny-route {
-  color: var(--lime);
+  color: var(--accent);
   letter-spacing: 2px;
   font-size: 14px;
 }
@@ -1150,8 +1150,8 @@ section[id] {
   line-height: 0.91;
   letter-spacing: -0.055em;
 }
-.lime {
-  color: var(--lime);
+.accent-text {
+  color: var(--accent);
 }
 .contact-description {
   font-size: 15px;
@@ -1212,7 +1212,7 @@ section[id] {
   opacity: 0;
 }
 .role-options label:has(input:focus-visible) {
-  outline: 2px solid var(--lime);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 .radio-mark {
@@ -1255,7 +1255,7 @@ section[id] {
   min-height: 66px;
   margin-top: 30px;
   padding: 15px 23px;
-  background: var(--lime);
+  background: var(--accent);
   color: var(--ink);
   border-radius: 4px;
   font-size: 16px;
@@ -1347,7 +1347,7 @@ section[id] {
     translate 0.2s;
 }
 .back-top:hover {
-  background: var(--lime);
+  background: var(--accent);
   translate: 0 -4px;
 }
 .footer-wordmark {
@@ -1404,7 +1404,7 @@ section[id] {
   background: currentColor;
 }
 .motion-control:hover {
-  background: var(--lime);
+  background: var(--accent);
 }
 .motion-control[disabled] {
   opacity: 0.9;
@@ -1413,7 +1413,7 @@ section[id] {
   position: fixed;
   inset: 0;
   background: var(--ink);
-  color: var(--lime);
+  color: var(--accent);
   z-index: 90;
   transform: translateY(-100%);
   display: flex;
@@ -2767,7 +2767,8 @@ html[data-motion="reduced"] *::after {
     translate 0.25s;
 }
 .device-controls button[aria-pressed="true"] {
-  background: var(--lime);
+  background: var(--accent);
+  border-color: var(--ink);
 }
 .device-controls button:hover {
   translate: 0 -3px;
@@ -2928,7 +2929,7 @@ html[data-motion="reduced"] *::after {
   width: 72px;
   height: 72px;
   border-radius: 20px;
-  background: var(--lime);
+  background: var(--accent);
   display: grid;
   place-items: center;
   z-index: 2;
@@ -3037,7 +3038,7 @@ html[data-motion="reduced"] *::after {
   transition: translate 0.25s;
 }
 .story-navigation button:hover {
-  background: var(--lime);
+  background: var(--accent);
   color: var(--ink);
 }
 .story-navigation button:hover > span {

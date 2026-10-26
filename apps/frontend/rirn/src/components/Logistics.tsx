@@ -144,7 +144,7 @@ export function Logistics({ compact = false }: { compact?: boolean }) {
               width="152"
               height="56"
               rx="28"
-              fill={!partner ? "#d2f86a" : "#eae3f4"}
+              fill={!partner ? "var(--accent)" : "#eae3f4"}
             />
             <text x="320" y="90" textAnchor="middle">
               Own fleet
@@ -155,7 +155,7 @@ export function Logistics({ compact = false }: { compact?: boolean }) {
               width="152"
               height="56"
               rx="28"
-              fill={partner ? "#d2f86a" : "#eae3f4"}
+              fill={partner ? "var(--accent)" : "#eae3f4"}
             />
             <text x="320" y="240" textAnchor="middle">
               3PL capacity

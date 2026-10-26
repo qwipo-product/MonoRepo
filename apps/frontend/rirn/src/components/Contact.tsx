@@ -25,7 +25,7 @@ export function Contact() {
         <div>
           <h2 id={`${id}-title`} data-reveal>
             {site.contact.heading.map((line, i) => (
-              <span key={line} className={i === 2 ? "lime" : ""}>
+              <span key={line} className={i === 2 ? "accent-text" : ""}>
                 {line}{" "}
               </span>
             ))}

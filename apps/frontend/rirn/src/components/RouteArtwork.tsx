@@ -61,7 +61,7 @@ export function RouteArtwork() {
               width="36"
               height="36"
               rx="10"
-              fill="#D2F86A"
+              fill="var(--accent)"
               stroke="#32125C"
               strokeWidth="1.5"
             />

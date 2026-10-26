@@ -1,7 +1,7 @@
 # Qwipo-WebApp — DigiDukaan by Qwipo
 
 This application replaces the RIRN company discovery console. It presents the DigiDukaan product website for brands and distributors.
-The source is `/Users/4nshuman/Development/Qwipo-WebApp`. That source folder is unchanged.
+The source is `/Users/4nshuman/Development/Qwipo-WebApp`. Website refinements are mirrored into this Vite application while preserving its deployment-specific routing and assets.
 
 The existing deployment identity is retained:
 
@@ -108,3 +108,10 @@ The build still runs `@mockups/rirn` and copies `dist/` into nginx.
 After an authorized merge and push to a deployment branch, this website replaces the company console in that branch's environment. The pipeline names continue to say RIRN Company.
 Do not rename the package, service, folder, or pipeline as an incidental cleanup.
 No commit, push, pipeline run, or remote deployment is part of local preparation.
+
+
+## Secondary colour refinement
+
+The website now uses warm apricot (`#F2CEAE`) in place of fluorescent lime. The semantic `--accent` token covers controls, route markers, logistics capacity highlights, enquiry emphasis and shimmer. Selected phone controls have a dark violet border. The favicon and static sharing image match the new accent. Motion timings, original product screenshots and deployment configuration are unchanged.
+
+The source site's desktop/mobile visual review found no reported axe violations; measured accent contrast is 10.33:1 against violet ink, 4.59:1 against the violet field and 12.13:1 against dark plum. Some automated SVG/decorative checks remain incomplete. Independent colour review: 8/10, with no colour blockers. Repository validation uses the scoped lint/typecheck/build command above.

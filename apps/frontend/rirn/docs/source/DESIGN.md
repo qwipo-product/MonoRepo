@@ -21,11 +21,11 @@ Selected: Beyond the beat. The word beat belongs to distribution, and the moving
 - Signature: A moving order travels through a route diagram as the product journey unfolds. The same advancing line, circle and arrow appear in section markers, controls and navigation.
 - Emotion: Optimistic, capable, human. Enterprise technology with the energy of everyday commerce.
 - Motion verb: Advance. Lines draw forward, text rises into place, arrows travel, product imagery gently changes angle with progress.
-- Screenshot: Oversized dark-violet typography on a pale lilac field, a real DigiDukaan phone at an angle, and a lime order marker on a continuous route.
+- Screenshot: Oversized dark-violet typography on a pale lilac field, a real DigiDukaan phone at an angle, and a warm apricot order marker on a continuous route.
 
 ## Design system
 
-- Violet ink #32125C; violet field #6C3BC8; pale lilac #EAE3F4; warm paper #FAF9F5; lime accent #D2F86A; dark plum #1D122A.
+- Violet ink #32125C; violet field #6C3BC8; pale lilac #EAE3F4; warm paper #FAF9F5; warm apricot accent #F2CEAE; dark plum #1D122A.
 - Bricolage Grotesque variable display, DM Sans variable body, both self-hosted WOFF2. Fluid display 64–176px; body 16–20px; labels 11–13px.
 - Desktop 12-column layout, 48–64px gutters; mobile four-column logic, 22px gutters. Wide content capped at 1760px.
 - Mostly squared editorial sections. Rounded ends reserved for route nodes, action buttons and the product stage. No repeated card grid.
@@ -117,3 +117,12 @@ The screenshot disclaimer has a 12px type size and ink colour. Production checks
 The product exhibit now advances a pair of real phone frames around an invisible centre below the violet panel. On every screen change, the outgoing phone curves down and right while the incoming phone curves up from the left; both tilt with the circle and move simultaneously. This choreography is explicitly confirmed by the user and applies to automatic and manual changes.
 
 The existing Next.js, React and GSAP stack keeps this scoped animation in its own client component. One timeline rotates both phones around the same measured centre. A clipped preview area protects the fixed headline and controls. Screen images retain embedded previews and progressive loading; the next automatic screen preloads after the current image is ready. Rapid selections queue the latest destination without creating more moving phones. Pause and off-screen cleanup settle to a readable selected screen. This replaces the product exhibit's prior scroll tilt and floating fade; the hero animation is separate.
+
+
+## Revision: a softer secondary colour
+
+The fluorescent lime is replaced by warm apricot (#F2CEAE). This keeps violet as the dominant brand field and gives actions and order markers a warmer, quieter character suited to the existing product and field imagery. Soft sage was considered but weakened the warm/cool separation; muted amber felt too yellow beside the lilac. Apricot preserves a clear secondary role without the fluorescent effect.
+
+The semantic `--accent` token now drives buttons, selected screens, route arrows, stage highlights, the journey shimmer, enquiry highlights and focus details. The favicon and sharing image use the same colour. Selected phone controls also receive a violet-ink border so the softer fill remains easy to distinguish from neighbouring paper buttons. Original product screenshots and supplied brand assets retain their source colours. Earlier revision descriptions of lime document the previous palette.
+
+Contrast ratios: violet ink on apricot 10.33:1, apricot on violet 4.59:1, and apricot on dark plum 12.13:1. Apricot is a fill or decorative highlight on light backgrounds, never small text on paper. Layout, choreography and animation timings are unchanged.
