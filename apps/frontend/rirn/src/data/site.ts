@@ -83,36 +83,36 @@ export const site = {
   },
   journey: {
     label: "03 / A NETWORK IN MOTION",
-    heading: ["From the next need.", "To the next order."],
+    heading: ["From discovery.", "To the shop door."],
     intro:
-      "Every order moves through a network of people. DigiDukaan brings the steps together.",
+      "A retailer finds the range. A distributor fulfils the order. DigiDukaan connects every step.",
     steps: [
       {
         number: "01",
         name: "Discover",
-        text: "A retailer searches for products and finds sellers serving their store.",
-        tag: "THE RIGHT RANGE",
+        text: "Find the products you need and the distributors serving your store.",
+        tag: "AT THE RETAILER",
       },
       {
         number: "02",
         name: "Connect",
-        text: "The retailer connects with a distributor, then explores the authorised catalogue and schemes.",
-        tag: "A KNOWN RELATIONSHIP",
+        text: "Connect with a distributor. Explore their catalogue, prices and schemes.",
+        tag: "WITH THE DISTRIBUTOR",
       },
       {
         number: "03",
         name: "Order",
-        text: "The order reaches the distributor for acceptance and fulfillment.",
-        tag: "A DIGITAL HANDOFF",
+        text: "Place the order with your distributor for acceptance and preparation.",
+        tag: "RETAILER TO DISTRIBUTOR",
       },
       {
         number: "04",
         name: "Deliver",
-        text: "The distributor’s fleet or an approved 3PL partner delivers the order, supported by Qwipo’s logistics tools.",
-        tag: "THE NEXT CHAPTER",
+        text: "The distributor’s fleet or an approved third-party logistics (3PL) partner brings it to the shop.",
+        tag: "ON THE DELIVERY ROUTE",
       },
     ],
-    note: "A beat is a scheduled sales or delivery route. Off-beat delivery depends on distributor approval, serviceability and applicable order requirements.",
+    note: "A beat is a scheduled sales or delivery route. Off-beat delivery is subject to distributor approval, serviceability and order requirements.",
   },
   qwipo: {
     label: "04 / THE QWIPO CONNECTION",

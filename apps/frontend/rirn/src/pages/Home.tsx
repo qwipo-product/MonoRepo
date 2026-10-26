@@ -1,6 +1,7 @@
 import { ProgressiveImage } from "../components/ProgressiveImage";
 import { OrbitProductDevice } from "../components/OrbitProductDevice";
-import { JourneyIcon, type JourneyIconName } from "../components/JourneyIcon";
+import { JourneyIcon } from "../components/JourneyIcon";
+import { NetworkScene } from "../components/NetworkScene";
 import { Logistics } from "../components/Logistics";
 import { PageTransition } from "../components/PageTransition";
 import { SiteLink as Link } from "../components/SiteLink";
@@ -163,9 +164,6 @@ export default function Home() {
       >
         <div className="section-top">
           <span className="eyebrow">{site.journey.label}</span>
-          <span className="section-index" aria-hidden="true">
-            ↗
-          </span>
         </div>
         <div className="section-intro">
           <h2 id="network-title" data-reveal>
@@ -186,36 +184,37 @@ export default function Home() {
           <ol className="journey-steps">
             {site.journey.steps.map((step, i) => (
               <li key={step.number} data-step={i}>
-                <span className="step-number">
-                  <JourneyIcon
-                    name={
-                      (
-                        [
-                          "search",
-                          "store",
-                          "cart",
-                          "truck",
-                        ] as JourneyIconName[]
-                      )[i]
-                    }
-                  />
-                </span>
-                <p className="step-tag">{step.tag}</p>
-                <h3>
-                  <span
-                    className="step-highlight"
-                    data-journey-highlight
-                    aria-hidden="true"
-                  />
-                  {step.name}
-                </h3>
-                <p>{step.text}</p>
+                <div className="step-art" data-journey-art>
+                  <NetworkScene stage={i} />
+                </div>
+                <span className="step-route-stop" aria-hidden="true" />
+                <div className="step-copy">
+                  <div className="step-heading">
+                    <p className="step-tag">{step.tag}</p>
+                    <h3>
+                      <span className="step-index" aria-hidden="true">
+                        {step.number}
+                      </span>
+                      <span className="step-name">
+                        <span
+                          className="step-highlight"
+                          data-journey-highlight
+                          aria-hidden="true"
+                        />
+                        {step.name}
+                      </span>
+                    </h3>
+                  </div>
+                  <p className="step-description">{step.text}</p>
+                </div>
               </li>
             ))}
           </ol>
         </div>
         <div className="journey-bottom">
-          <p>{site.journey.note}</p>
+          <p>
+            <strong>Built around the beat.</strong> {site.journey.note}
+          </p>
           <Link href="/how-it-works" className="text-link journey-cta">
             <span
               className="journey-shimmer"

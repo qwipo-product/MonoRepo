@@ -144,6 +144,9 @@ export function usePageMotion(root: RefObject<HTMLDivElement | null>) {
             const highlights = steps.map((step) =>
               step.querySelector<HTMLElement>("[data-journey-highlight]")!,
             );
+            const artworks = steps.map((step) =>
+              step.querySelector<HTMLElement>("[data-journey-art]")!,
+            );
             const axis = mobile ? "y" : "x";
             const scale = mobile ? "scaleY" : "scaleX";
             const duration = 7.2;
@@ -180,8 +183,8 @@ export function usePageMotion(root: RefObject<HTMLDivElement | null>) {
               // so each stage follows the same line position on desktop and mobile.
               steps.forEach((step, index) => {
                 const offset = mobile
-                  ? step.offsetTop + 20 - rail.offsetTop
-                  : step.offsetLeft;
+                  ? step.offsetTop + 40 - rail.offsetTop
+                  : step.offsetLeft + 28;
                 const at =
                   gsap.utils.clamp(0, 1, offset / Math.max(distance, 1)) *
                   duration;
@@ -194,6 +197,12 @@ export function usePageMotion(root: RefObject<HTMLDivElement | null>) {
                       duration: 0.55,
                       ease: "power3.out",
                     },
+                    at,
+                  )
+                  .fromTo(
+                    artworks[index],
+                    { y: 0 },
+                    { y: mobile ? -3 : -6, duration: 0.55, ease: "power3.out" },
                     at,
                   )
                   .fromTo(
@@ -213,6 +222,11 @@ export function usePageMotion(root: RefObject<HTMLDivElement | null>) {
                 .to(
                   steps,
                   { scale: 1, duration: 0.65, ease: "power3.inOut" },
+                  duration + 0.2,
+                )
+                .to(
+                  artworks,
+                  { y: 0, duration: 0.65, ease: "power3.inOut" },
                   duration + 0.2,
                 )
                 .to(highlights, { opacity: 0, duration: 0.4 }, duration + 0.2)
