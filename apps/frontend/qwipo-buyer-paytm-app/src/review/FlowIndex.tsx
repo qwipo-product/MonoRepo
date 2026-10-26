@@ -115,7 +115,7 @@ export default function FlowIndex({
       </div>
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight">
-        {shell === 'paytm' ? 'Qwipo · Paytm Mini' : 'Qwipo Buyer App'}
+        This is a feature branch from Neha
       </h1>
       <p className="mt-1 text-sm text-foreground-secondary">
         {shell === 'paytm'
