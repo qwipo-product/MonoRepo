@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Lock, Clock, BadgeCheck, FileSearch, XCircle } from 'lucide-react';
 import { DMS_COMPANIES, type DmsStatus } from '../data/dmsPartners';
 
@@ -68,46 +67,33 @@ export function DmsStatusPill({
   );
 }
 
+/* Logo, name and status only — Qwipo doesn't hold a company's brand list or
+   product count, so the card shows neither. The name wraps to a second line
+   rather than being cut off. */
 function PartnerCard({
   emoji,
   title,
-  meta,
   status,
   rejectedLabel,
-  chips,
   onClick,
 }: {
   emoji: string;
   title: string;
-  meta: ReactNode;
   status: DmsStatus;
   rejectedLabel?: string;
-  chips: string[];
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className="block w-full overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm active:scale-[0.99]"
+      className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-3 text-left shadow-sm active:scale-[0.99]"
     >
-      <span className="flex items-center gap-3 p-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border bg-muted text-2xl">
-          {emoji}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
-          <span className="mt-0.5 block text-xs leading-snug text-foreground-secondary">{meta}</span>
-        </span>
-        <DmsStatusPill status={status} rejectedLabel={rejectedLabel} />
-        <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-border bg-muted text-2xl">
+        {emoji}
       </span>
-      <span className="flex flex-wrap gap-1.5 border-t border-border px-3 py-2.5">
-        {chips.map((b) => (
-          <span key={b} className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground-secondary">
-            {b}
-          </span>
-        ))}
-      </span>
+      <span className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold text-foreground">{title}</span>
+      <DmsStatusPill status={status} rejectedLabel={rejectedLabel} />
+      <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
     </button>
   );
 }
@@ -152,10 +138,8 @@ export function DmsPartnersScreen({
             key={c.id}
             emoji={c.emoji}
             title={c.company}
-            meta={<>{c.method} · {c.products} products</>}
             status={statuses[c.id] ?? 'none'}
             rejectedLabel={c.linksExisting ? 'Failed' : undefined}
-            chips={c.brands}
             onClick={() => onOpenCompany(c.id)}
           />
         ))}

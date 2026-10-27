@@ -27,10 +27,6 @@ export interface DmsCompany {
   /** Short name used in sentences ("Register with HUL"). */
   shortName?: string;
   emoji: string;
-  brands: string[];
-  products: number;
-  /** How the card says the shop registers ("Register directly"). */
-  method: string;
   /** Placeholder for the Customer ID field — a company's own ID format. */
   idHint?: string;
   /** The company's DMS is wired into Qwipo: it links its own customers and
@@ -53,9 +49,6 @@ export const DMS_COMPANIES: DmsCompany[] = [
     company: 'Tata Consumer Products (TCPL)',
     shortName: 'TCPL',
     emoji: '🫖',
-    brands: ['Tata Tea', 'Tata Salt', 'Tata Sampann', 'Tetley', 'Himalayan'],
-    products: 126,
-    method: 'Register directly',
     dmsIntegrated: true,
   },
   {
@@ -63,9 +56,6 @@ export const DMS_COMPANIES: DmsCompany[] = [
     company: 'Hindustan Unilever (HUL)',
     shortName: 'HUL',
     emoji: '🧴',
-    brands: ['Surf Excel', 'Dove', 'Lifebuoy', 'Brooke Bond', 'Horlicks'],
-    products: 240,
-    method: 'Existing customers',
     idHint: 'e.g. HUL12345',
     linksExisting: true,
     knownCustomerIds: ['HUL12345'],
