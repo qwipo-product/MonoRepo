@@ -59,7 +59,9 @@ Do not replace these links with host-root paths such as `/how-it-works` or `/ima
 
 The site includes the brand/distributor audience switch, six app screenshots, the animated device gallery, order journey tabs, delivery-mode control, FAQs, and mobile navigation.
 Motion starts enabled on a fresh visit. The Pause motion control keeps its selection during navigation. Native page transitions run in browsers that support them; navigation also works without that API.
-Contact opens an email draft addressed to the supplied public Qwipo address. There is no submission backend and no message is sent by the website.
+Contact submits directly to `https://qwipo-website-api.bms.qwipo.com/api/contact_us` using the five JSON fields `first_name`, `last_name`, `email`, `phone` and `message`. Business type and optional company are appended to `message`. Browser-managed curl headers are omitted. Input validation, a pending state, duplicate-click protection and a 15-second timeout are included. HTTP 2xx confirms submission; errors retain the input. Email remains an alternative. The form is shared by the landing and journey pages.
+
+Run the isolated contact tests with `bun test apps/frontend/rirn/tests/contact.test.ts` from the repository root. These tests mock the response and never submit an enquiry to the live API.
 
 ## Framework adaptation
 
@@ -82,6 +84,7 @@ The application is rendered in the browser. It does not run a Next.js server.
 | `src/pages/Home.tsx` | Product landing page |
 | `src/pages/HowItWorks.tsx`, `src/pages/NotFound.tsx` | Product journey and unknown-page view |
 | `src/App.tsx`, `src/lib/navigation.ts`, `src/components/SiteLink.tsx` | Page selection, navigation, and focus |
+| `src/components/Contact.tsx`, `src/lib/contact.ts` | Enquiry form, validation and API submission |
 | `src/data/site.ts` | Approved narrative, FAQs, and contact destinations |
 | `src/data/image-assets.json`, `public/images/` | Responsive imagery and embedded previews |
 | `src/data/app-screens.ts` | Screenshot labels and descriptions |

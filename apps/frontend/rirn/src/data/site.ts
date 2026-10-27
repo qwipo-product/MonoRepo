@@ -136,8 +136,8 @@ export const site = {
     heading: ["Let’s move", "business", "forward."],
     text: "Tell us where you want to go. We’ll start with your distribution network and explore what fits.",
     roles: ["A brand", "A distributor", "An ecosystem partner"],
-    button: "Open email enquiry",
-    note: "Opens your email app with a draft. Nothing is sent until you send it.",
+    button: "Send enquiry",
+    note: "Your details and message will be sent to Qwipo so we can respond to your enquiry. Prefer email? Reach us below.",
   },
   details: {
     eyebrow: "THE DIGIDUKAAN JOURNEY",
