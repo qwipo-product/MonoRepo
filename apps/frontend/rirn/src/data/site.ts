@@ -8,26 +8,26 @@ export const site = {
   companyUrl: "https://qwipo.com",
   appUrl: "https://play.google.com/store/apps/details?id=com.qwipo.b2b",
   description:
-    "Digital ordering for your distribution network. DigiDukaan connects FMCG brands, distributors and retailers, beyond the sales visit.",
+    "DigiDukaan is a B2B ordering app for kirana stores on ONDC, connecting retailers with participating FMCG distributors and wholesalers.",
   navigation: [
     { label: "The product", href: "/#product" },
-    { label: "The network", href: "/#network" },
-    { label: "About Qwipo", href: "/about-qwipo" },
+    { label: "ONDC’s role", href: "/#ondc" },
+    { label: "Qwipo for DigiDukaan", href: "/qwipo-for-digidukaan" },
   ],
   hero: {
-    eyebrow: "FOR BRANDS. FOR DISTRIBUTORS. FOR EVERYDAY BUSINESS.",
+    eyebrow: "DIGIDUKAAN / B2B ORDERING ON ONDC",
     lines: ["Beyond", "the beat."],
     description:
-      "Your next order doesn’t have to wait for the next visit. Connect your retailers, brands and distributors with DigiDukaan.",
+      "DigiDukaan is a B2B ordering app for kirana stores on ONDC. Retailers discover products and schemes from participating distributors and wholesalers, then order between scheduled sales visits.",
     primary: "Let’s talk business",
     secondary: "See how it works",
-    footnote: "Built around your network. Ready for its next chapter.",
+    footnote: "Retailers order. Authorised sellers supply.",
   },
   opportunity: {
-    label: "01 / THE OPPORTUNITY",
-    heading: ["Your relationships.", "A wider reach."],
+    label: "01 / WHY DIGIDUKAAN",
+    heading: ["Stock runs low.", "Business can’t wait."],
     intro:
-      "The local store is full of possibility. Give it a direct way to order from your distribution network, even between sales visits.",
+      "Sales visits, phone calls and separate brand channels make replenishment fragmented. DigiDukaan gives kiranas one place to discover supply and place orders, including stores that regular visits do not reach.",
     caption: "Real stores. Real relationships. A digital way forward.",
   },
   audiences: [
@@ -35,11 +35,11 @@ export const site = {
       id: "brands",
       label: "For brands",
       title: "Be there between visits.",
-      text: "Help retailers discover your range and place orders through the distributors who serve them.",
+      text: "Help retailers discover your range and schemes, including outlets beyond regular sales visits, and order from participating authorised sellers.",
       items: [
         "Make your range easier to discover",
         "Reach beyond the sales visit",
-        "Keep your distributor network at the centre",
+        "Build visibility into outlet ordering",
       ],
       cta: "Discuss your brand",
     },
@@ -60,19 +60,19 @@ export const site = {
     label: "02 / MEET DIGIDUKAAN",
     heading: ["Familiar brands.", "A new way", "to order."],
     intro:
-      "One app. The brands they need. The distributors they know. A simpler way for retailers to place their next order.",
+      "Browse participating brands, compare available products and schemes, and place orders with distributors and wholesalers serving the store’s location.",
     caption:
       "Screens captured from the DigiDukaan product mockup. Products, prices, delivery dates and order data are illustrative; availability varies by distributor.",
     features: [
       {
         number: "01",
         title: "A multi-brand catalogue",
-        text: "Discover products and available schemes across participating brands and distributors.",
+        text: "Discover products and available schemes across participating distributors and wholesalers.",
       },
       {
         number: "02",
         title: "Relationships, retained",
-        text: "Order through the authorised distributor relationship, with existing payment arrangements.",
+        text: "Buy from participating authorised distributors and wholesalers serving the store’s area.",
       },
       {
         number: "03",
@@ -82,10 +82,10 @@ export const site = {
     ],
   },
   journey: {
-    label: "03 / A NETWORK IN MOTION",
+    label: "04 / A NETWORK IN MOTION",
     heading: ["From discovery.", "To the shop door."],
     intro:
-      "A retailer finds the range. A distributor fulfils the order. DigiDukaan connects every step.",
+      "The retailer discovers supply, connects with a seller and places an order. The seller accepts and prepares it; its fleet or an approved 3PL partner delivers.",
     steps: [
       {
         number: "01",
@@ -102,7 +102,7 @@ export const site = {
       {
         number: "03",
         name: "Order",
-        text: "Place the order with your distributor for acceptance and preparation.",
+        text: "Place an order for the seller to accept, prepare and plan for dispatch.",
         tag: "RETAILER TO DISTRIBUTOR",
       },
       {
@@ -112,40 +112,81 @@ export const site = {
         tag: "ON THE DELIVERY ROUTE",
       },
     ],
-    note: "A beat is a scheduled sales or delivery route. Off-beat delivery is subject to distributor approval, serviceability and order requirements.",
+    note: "A beat is a scheduled sales or delivery route. The full journey also shows acceptance and dispatch before delivery. Off-beat delivery depends on distributor approval, serviceability and order requirements.",
   },
-  qwipo: {
-    label: "THE COMPANY BEHIND DIGIDUKAAN",
-    heading: ["Good technology.", "Grounded in", "real business."],
-    text: "Behind DigiDukaan is Qwipo. We build technology around the way distribution actually works, from retailer ordering to the systems and people that fulfill it.",
-    description:
-      "Meet Qwipo, the company behind DigiDukaan, and explore its distributor-system connectivity and logistics technology.",
-    relationship: {
-      heading: "One company. Connected capabilities.",
-      text: "DigiDukaan is Qwipo’s retailer ordering product. It gives stores a digital way to buy through their distributor relationships. Qwipo’s integration and logistics tools support the work around those orders.",
-      company: "Technology for brands, distributors and the people who keep everyday commerce moving.",
-      product: "The retailer-facing app for discovering products, connecting with distributors and placing orders.",
-      note: "The distributor relationship stays at the centre. System integrations and delivery services are agreed for each engagement.",
-    },
-    capabilities: [
+  ondc: {
+    label: "03 / ONDC’S ROLE",
+    heading: ["One open network.", "Many businesses."],
+    text: "ONDC stands for Open Network for Digital Commerce. It provides common standards that let participating buying and selling systems discover each other and transact.",
+    meaning:
+      "For DigiDukaan, this connects a retailer’s ordering experience with participating sellers across the network. Available products and services still depend on the seller and the store’s location.",
+    roles: [
       {
-        title: "Connect the systems",
-        label: "DMS CONNECTIVITY",
-        text: "Connect catalogue, prices, stock and schemes with distributor systems, and pass orders back.",
-        detail: "The DMS remains the source of truth for its master data. Supported interfaces and integration scope are agreed for each system.",
+        name: "DigiDukaan",
+        role: "THE ORDERING EXPERIENCE",
+        text: "Kiranas discover products, view schemes and place orders.",
       },
       {
-        title: "Keep fulfillment moving",
-        label: "LOGISTICS TECH",
-        text: "Plan routes, consolidate loads and follow deliveries across distributor fleets and approved 3PL capacity.",
-        detail: "Logistics Tech can also support a separate engagement. Serviceability, tracking and confirmation methods depend on the agreed scope.",
+        name: "ONDC",
+        role: "THE OPEN NETWORK",
+        text: "Common standards connect participating buyer and seller systems.",
+      },
+      {
+        name: "Authorised sellers",
+        role: "THE SUPPLY",
+        text: "Distributors and wholesalers provide the products and their commercial terms.",
+      },
+    ],
+    source: "https://www.ondc.org/pages/digidukaan.html",
+  },
+  qwipo: {
+    label: "QWIPO FOR DIGIDUKAAN",
+    heading: ["The technology", "behind the", "connection."],
+    text: "Qwipo provides technology for DigiDukaan: the retailer app, ONDC connectivity, distributor-system integration and logistics tools that support the order journey.",
+    description:
+      "Explore Qwipo’s technology contribution to DigiDukaan: the retailer app, ONDC connectivity, DMS integration and logistics tools.",
+    capabilities: [
+      {
+        title: "Give retailers a way to order",
+        label: "RETAILER EXPERIENCE",
+        text: "Qwipo builds the app experience for discovering sellers, browsing products and schemes, and placing orders.",
+        detail:
+          "The retailer sees the participating sellers and assortment available for their store. The app is the customer-facing part of a wider network.",
+      },
+      {
+        title: "Connect through ONDC",
+        label: "NETWORK CONNECTIVITY",
+        text: "Qwipo’s technology connects the ordering experience with participating seller systems through ONDC.",
+        detail:
+          "ONDC provides the common network standards. Qwipo supplies software that works with those standards for DigiDukaan’s commerce workflows.",
+      },
+      {
+        title: "Connect the seller’s systems",
+        label: "DMS INTEGRATION",
+        text: "A distributor management system, or DMS, holds products, prices, stock, schemes and customer records. Qwipo’s connector can make this data available for ordering and pass orders back.",
+        detail:
+          "The DMS remains the source of truth for its master data. Data mapping, supported interfaces and update frequency are agreed for each integration.",
+      },
+      {
+        title: "Support the physical journey",
+        label: "LOGISTICS TECHNOLOGY",
+        text: "Qwipo’s logistics tools support load consolidation, route planning, delivery visibility and confirmation workflows.",
+        detail:
+          "The software supports the teams moving goods. Delivery partners carry out transport; available tracking and confirmation features depend on the agreed operating scope.",
+      },
+      {
+        title: "Make operations visible",
+        label: "ORDER AND DELIVERY INFORMATION",
+        text: "Digital order records and delivery reporting help teams see demand and follow fulfillment activity.",
+        detail:
+          "Reporting access, available fields and integration coverage are defined for the engagement.",
       },
     ],
   },
   contact: {
     label: "YOUR NETWORK. OUR NEXT CONVERSATION.",
     heading: ["Let’s move", "business", "forward."],
-    text: "Tell us where you want to go. We’ll start with your distribution network and explore what fits.",
+    text: "Tell us about your market, distributor network and current ordering process. We can discuss participation, system connections and delivery requirements.",
     roles: ["A Brand", "A Distributor", "An Ecosystem Partner"],
     button: "Send enquiry",
     note: "Your details and message will be sent to Qwipo so we can respond to your enquiry. Prefer email? Reach us below.",
@@ -165,6 +206,11 @@ export const site = {
       "An accepted order moves into the distributor’s fulfillment process. The usual beat can serve the store; an off-beat request needs approval and may have different minimum order requirements.",
     ],
     faqs: [
+      {
+        question: "How do DigiDukaan, ONDC and Qwipo fit together?",
+        answer:
+          "DigiDukaan is the retailer ordering experience. ONDC provides the open network standards connecting participating buying and selling systems. Qwipo provides technology for the app, integrations and supporting operations. Authorised sellers supply the goods; the distributor’s fleet or an approved 3PL partner delivers them.",
+      },
       {
         question: "What is 3PL, and when does it enter the journey?",
         answer:

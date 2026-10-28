@@ -11,8 +11,8 @@ export function Footer() {
           Extraordinary possibility.
         </p>
         <div className="footer-links">
-          <Link href="/about-qwipo">
-            About Qwipo
+          <Link href="/qwipo-for-digidukaan">
+            Qwipo for DigiDukaan
             <Arrow diagonal />
           </Link>
           <a href={site.appUrl} target="_blank" rel="noreferrer">
@@ -34,7 +34,7 @@ export function Footer() {
       <div className="footer-bottom">
         <span>© 2026 Qwipo. All rights reserved.</span>
         <span>Built for the business of everyday.</span>
-        <span>A QWIPO PRODUCT</span>
+        <span>TECHNOLOGY BY QWIPO</span>
       </div>
     </footer>
   );

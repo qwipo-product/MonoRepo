@@ -9,7 +9,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const pathname = useSitePathname();
-  const contactHref = pathname === "/about-qwipo" || pathname === "/how-it-works"
+  const contactHref = pathname === "/qwipo-for-digidukaan" || pathname === "/how-it-works"
     ? "#contact" : "/#contact";
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {

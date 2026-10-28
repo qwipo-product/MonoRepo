@@ -6,6 +6,7 @@ import { JourneyIcon, type JourneyIconName } from "./JourneyIcon";
 
 const chapters: {
   title: string;
+  summary: string;
   icon: JourneyIconName;
   screen: AppScreen;
   actor: string;
@@ -16,6 +17,7 @@ const chapters: {
 }[] = [
   {
     title: "Discover",
+    summary: "Retailer finds products and local sellers.",
     icon: "search",
     screen: "home",
     actor: "AT THE RETAILER",
@@ -27,6 +29,7 @@ const chapters: {
   },
   {
     title: "Connect",
+    summary: "Retailer selects a seller and confirms the relationship.",
     icon: "store",
     screen: "distributor",
     actor: "WITH THE DISTRIBUTOR",
@@ -42,6 +45,7 @@ const chapters: {
   },
   {
     title: "Order",
+    summary: "Retailer submits quantities and delivery choices.",
     icon: "cart",
     screen: "cart",
     actor: "BACK AT THE STORE",
@@ -57,6 +61,7 @@ const chapters: {
   },
   {
     title: "Dispatch",
+    summary: "Seller accepts, prepares and plans the order.",
     icon: "box",
     screen: "orders",
     actor: "AT DISTRIBUTOR OPERATIONS",
@@ -72,6 +77,7 @@ const chapters: {
   },
   {
     title: "Deliver",
+    summary: "Distributor fleet or approved 3PL delivers and confirms.",
     icon: "truck",
     screen: "tracking",
     actor: "ON THE ROAD",
@@ -90,6 +96,17 @@ export function OrderJourney() {
   const chapter = chapters[active];
   return (
     <div className="order-story">
+      <ol
+        className="story-summary"
+        aria-label="The complete order journey at a glance"
+      >
+        {chapters.map((step) => (
+          <li key={step.title}>
+            <strong>{step.title}</strong>
+            <p>{step.summary}</p>
+          </li>
+        ))}
+      </ol>
       <div className="story-tabs" role="tablist" aria-label="Follow an order">
         {chapters.map((step, index) => (
           <button

@@ -1,4 +1,4 @@
-# Qwipo-WebApp — DigiDukaan and About Qwipo
+# Qwipo-WebApp — DigiDukaan and Qwipo for DigiDukaan
 
 This application replaces the RIRN company discovery console. It presents the DigiDukaan product website for brands and distributors.
 The source is `/Users/4nshuman/Development/Qwipo-WebApp`. Website refinements are mirrored into this Vite application while preserving its deployment-specific routing and assets.
@@ -50,9 +50,10 @@ bun run check --filter=@mockups/rirn... --continue --ui=stream
 | --- | --- |
 | `/` | Product landing page |
 | `/?page=how-it-works` | Order journey, delivery options, FAQs, and contact |
-| `/?page=about-qwipo` | Qwipo company story, DigiDukaan relationship, DMS and Logistics Tech |
+| `/?page=qwipo-for-digidukaan` | Qwipo’s technology contribution: app, ONDC connectivity, DMS integration and logistics tools |
+| `/?page=about-qwipo` | Compatibility alias for Qwipo for DigiDukaan |
 | `/?page=unknown` | Page-not-found view |
-| `/#product`, `/#network`, `/#contact` | Landing-page sections |
+| `/#product`, `/#ondc`, `/#network`, `/#contact` | Landing-page sections |
 
 The route table describes the suffix below the current application base. A preview can use `/builds/<branch>/<commit>/?page=how-it-works`.
 Query navigation keeps the document path unchanged. Section anchors use the URL hash. Relative image URLs and Vite's `base: './'` keep assets inside the preview prefix.
@@ -83,7 +84,7 @@ The application is rendered in the browser. It does not run a Next.js server.
 | Path | Responsibility |
 | --- | --- |
 | `src/pages/Home.tsx` | Product landing page |
-| `src/pages/HowItWorks.tsx`, `src/pages/AboutQwipo.tsx`, `src/pages/NotFound.tsx` | Product journey, company story and unknown-page view |
+| `src/pages/HowItWorks.tsx`, `src/pages/QwipoForDigiDukaan.tsx`, `src/pages/NotFound.tsx` | Product journey, provider contribution and unknown-page view |
 | `src/App.tsx`, `src/lib/navigation.ts`, `src/components/SiteLink.tsx` | Page selection, navigation, and focus |
 | `src/components/Contact.tsx`, `src/lib/contact.ts` | Enquiry form, validation and API submission |
 | `src/data/site.ts` | Approved narrative, FAQs, and contact destinations |

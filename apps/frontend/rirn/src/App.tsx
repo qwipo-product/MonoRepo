@@ -8,7 +8,7 @@ import { useSitePathname } from './lib/navigation';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import NotFound from './pages/NotFound';
-import AboutQwipo from './pages/AboutQwipo';
+import QwipoForDigiDukaan from './pages/QwipoForDigiDukaan';
 import { site } from './data/site';
 
 export default function App() {
@@ -20,10 +20,10 @@ export default function App() {
   useEffect(() => {
     const samePage = previousPath.current === pathname;
     previousPath.current = pathname;
-    const pageTitle = pathname === '/about-qwipo' ? 'About Qwipo'
+    const pageTitle = pathname === '/qwipo-for-digidukaan' ? 'Qwipo for DigiDukaan'
       : pathname === '/how-it-works' ? 'How it works' : 'Page not found';
     document.title = pathname === '/' ? 'DigiDukaan | Beyond the beat' : `${pageTitle} | DigiDukaan`;
-    const description = pathname === '/about-qwipo' ? site.qwipo.description
+    const description = pathname === '/qwipo-for-digidukaan' ? site.qwipo.description
       : pathname === '/how-it-works'
         ? 'Follow a DigiDukaan order from product discovery and distributor connection through acceptance, dispatch and delivery.'
         : site.description;
@@ -57,7 +57,7 @@ export default function App() {
       <a className="skip-link" href="#main">Skip to content</a>
       <Header key={pathname} />
       <main id="main" tabIndex={-1}>
-        {pathname === '/' ? <Home /> : pathname === '/how-it-works' ? <HowItWorks /> : pathname === '/about-qwipo' ? <AboutQwipo /> : <NotFound />}
+        {pathname === '/' ? <Home /> : pathname === '/how-it-works' ? <HowItWorks /> : pathname === '/qwipo-for-digidukaan' ? <QwipoForDigiDukaan /> : <NotFound />}
       </main>
       <Footer />
       {import.meta.env.DEV && <ReviewTools />}

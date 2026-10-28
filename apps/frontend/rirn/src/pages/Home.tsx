@@ -11,6 +11,7 @@ import { Arrow } from "../components/Arrow";
 import { RouteArtwork } from "../components/RouteArtwork";
 import { Audience } from "../components/Audience";
 import { Contact } from "../components/Contact";
+import { OndcStory } from "../components/OndcStory";
 
 export default function Home() {
   return (
@@ -101,8 +102,8 @@ export default function Home() {
             <span className="product-orbit orbit-one" aria-hidden="true" />
             <span className="product-orbit orbit-two" aria-hidden="true" />
             <p className="product-stage-word">
+              <span>Discover.</span>
               <span>Order.</span>
-              <span>Connect.</span>
               <span>Repeat.</span>
             </p>
             <div className="product-phone">
@@ -145,6 +146,8 @@ export default function Home() {
         </div>
         <p className="product-disclaimer">{site.product.caption}</p>
       </section>
+
+      <OndcStory />
 
       <section
         className="journey section-space"

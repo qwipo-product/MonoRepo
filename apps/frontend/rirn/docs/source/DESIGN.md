@@ -149,3 +149,12 @@ About Qwipo is a separate editorial page: a company introduction with existing f
 Decorative photo arrows, section arrows, audience arrows and the footer arrow are removed. The two moving hero route arrows, phone choreography and useful action/scroll indicators remain. Contact role labels are title case; the compact form and API contract are unchanged. Journey metadata now describes the visible five-step flow.
 
 Source: Next.js route /about-qwipo. Deployment mirror: query route ?page=about-qwipo, preserving preview base paths. Existing research in docs/01-qwipo-understanding.md supports the company/capability copy; no new metrics, partner endorsements or universal service promises were added.
+
+
+## Story and technology-provider refinement — 28 October 2026
+
+The homepage must explain what DigiDukaan is, why kiranas need it, ONDC's network role and the order handoffs. The user confirmed the existing distributor model: own fleet with optional approved 3PL. Do not insert the 2.0 dark-store model into this version.
+
+Qwipo for DigiDukaan is a dedicated technology-provider page, not a general company profile or an ownership diagram. Use the existing type, colours and motion. Its functional diagram replaces the generic delivery photograph and separates software responsibilities from supply and transport. ONDC is the open network; Qwipo provides technology; sellers supply and accept orders; delivery teams transport goods. No exclusive-provider claim, universal integration promise or unverified scale metrics.
+
+The new explanation uses static HTML and CSS, with existing reveal motion only. No extra animation library, screen capture source or heavy image is added. Keep all changes local and uncommitted; no push or deployment without a new explicit user instruction.
