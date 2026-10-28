@@ -18,9 +18,7 @@ export default function Home() {
       <section className="hero" aria-labelledby="hero-title">
         <div className="hero-overline">
           <span className="eyebrow">{site.hero.eyebrow}</span>
-          <span className="hero-edition">
-            DIGITAL ORDERING / HUMAN CONNECTIONS
-          </span>
+          <span className="hero-edition">DIGITAL ORDERING / HUMAN CONNECTIONS</span>
         </div>
         <div className="hero-content">
           <div className="hero-copy">
@@ -63,9 +61,6 @@ export default function Home() {
       >
         <div className="section-top">
           <span className="eyebrow">{site.opportunity.label}</span>
-          <span className="section-index" aria-hidden="true">
-            ↗
-          </span>
         </div>
         <div className="section-intro">
           <h2 id="opportunity-title" data-reveal>
@@ -83,11 +78,6 @@ export default function Home() {
                 alt="A retailer using a phone at the counter of a stocked neighbourhood store"
                 sizes="(max-width: 700px) 90vw, 44vw"
               />
-              <span className="photo-corner" aria-hidden="true">
-                EVERYDAY
-                <br />
-                POSSIBILITY. <Arrow diagonal />
-              </span>
             </div>
             <figcaption>{site.opportunity.caption}</figcaption>
           </figure>
@@ -120,7 +110,7 @@ export default function Home() {
             </div>
             <div className="product-stage-label">
               <span className="status-dot" />
-              DIGIDUKAAN, BY QWIPO
+              DIGIDUKAAN
             </div>
           </div>
           <div className="product-copy">
@@ -229,54 +219,6 @@ export default function Home() {
 
       <Logistics compact />
 
-      <section
-        className="qwipo-section section-space"
-        id="qwipo"
-        aria-labelledby="qwipo-title"
-      >
-        <div className="section-top">
-          <span className="eyebrow">{site.qwipo.label}</span>
-          <img
-            src="./images/qwipo-mark.webp"
-            alt="Qwipo"
-            width={36}
-            height={36}
-          />
-        </div>
-        <div className="qwipo-grid">
-          <div className="qwipo-copy">
-            <h2 id="qwipo-title" data-reveal>
-              {site.qwipo.heading.map((line) => (
-                <span key={line}>{line} </span>
-              ))}
-            </h2>
-            <p>{site.qwipo.text}</p>
-            <div className="capabilities">
-              {site.qwipo.capabilities.map((capability) => (
-                <article key={capability.title}>
-                  <span className="eyebrow">{capability.label}</span>
-                  <h3>{capability.title}</h3>
-                  <p>{capability.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-          <figure className="operations-figure">
-            <ProgressiveImage
-              asset="delivery"
-              alt="A delivery team member handling stock beside a loaded distribution truck"
-              sizes="(max-width: 700px) 85vw, 35vw"
-            />
-            <figcaption>
-              <span>ON THE GROUND.</span>
-              <span>CONNECTED BY QWIPO.</span>
-            </figcaption>
-            <span className="photo-route" aria-hidden="true">
-              <Arrow diagonal />
-            </span>
-          </figure>
-        </div>
-      </section>
       <Contact />
     </PageTransition>
   );

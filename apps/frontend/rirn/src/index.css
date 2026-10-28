@@ -170,10 +170,6 @@ section[id] {
   align-items: center;
   margin-bottom: 46px;
 }
-.section-index {
-  font-size: 36px;
-  line-height: 1;
-}
 .section-intro {
   display: grid;
   grid-template-columns: 1.65fr 1fr;
@@ -220,14 +216,10 @@ section[id] {
   margin: auto;
 }
 .brand {
+  min-height: 44px;
   display: flex;
   gap: 11px;
   align-items: center;
-}
-.brand-mark {
-  border-radius: 50%;
-  width: 37px;
-  height: 37px;
 }
 .brand-type {
   font-family: var(--font-display);
@@ -235,14 +227,6 @@ section[id] {
   font-size: 25px;
   letter-spacing: -1px;
   line-height: 1;
-}
-.brand-type > span {
-  display: block;
-  font-family: var(--font-body);
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 2.2px;
-  margin-top: 8px;
 }
 .desktop-nav {
   display: flex;
@@ -269,7 +253,8 @@ section[id] {
   transition: transform 0.35s var(--ease);
 }
 .nav-link:hover::after,
-.nav-link:focus-visible::after {
+.nav-link:focus-visible::after,
+.nav-link[aria-current="page"]::after {
   transform: scaleX(1);
 }
 .header-cta {
@@ -546,7 +531,7 @@ section[id] {
 .tag-bottom {
   bottom: 17%;
   left: 7%;
-  padding: 13px 20px 13px 13px;
+  padding: 16px 20px;
   rotate: -4deg;
 }
 .tag-bottom strong {
@@ -555,16 +540,6 @@ section[id] {
   font-weight: 500;
   margin-top: 3px;
   letter-spacing: 0;
-}
-.order-symbol {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 31px;
-  background: var(--accent);
-  border-radius: 50%;
 }
 .art-coordinate {
   position: absolute;
@@ -644,25 +619,6 @@ section[id] {
 .photo-window:hover > .progressive-image {
   scale: 1.035;
 }
-.photo-corner {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  background: var(--accent);
-  padding: 20px 25px;
-  width: 210px;
-  font-family: var(--font-display);
-  font-size: 26px;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-}
-.photo-corner .arrow {
-  position: absolute;
-  right: 19px;
-  top: 20px;
-  width: 25px;
-  height: 25px;
-}
 .retailer-figure figcaption {
   font-size: 11px;
   padding-top: 15px;
@@ -707,13 +663,6 @@ section[id] {
 .audience-switch button:hover::after {
   transform: scaleX(1);
 }
-.audience-switch button > span {
-  font-size: 19px;
-  transition: translate 0.3s;
-}
-.audience-switch button:hover > span {
-  translate: 2px -2px;
-}
 .audience-content h3 {
   font-size: clamp(32px, 3.3vw, 52px);
   max-width: 430px;
@@ -737,9 +686,6 @@ section[id] {
   font-size: 13px;
   align-items: center;
   margin: 14px 0;
-}
-.audience-content li > span {
-  font-size: 20px;
 }
 .audience-content .text-link {
   margin-top: 4px;
@@ -1088,86 +1034,6 @@ section[id] {
 }
 
 /* Field work and technology sit together. */
-.qwipo-section {
-  background: #eeeae1;
-  padding-bottom: 90px;
-}
-.qwipo-section .section-top > img {
-  border-radius: 50%;
-}
-.qwipo-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: clamp(70px, 12vw, 180px);
-  align-items: center;
-}
-.qwipo-copy h2 {
-  font-size: clamp(45px, 5.7vw, 87px);
-}
-.qwipo-copy > p {
-  font-size: 17px;
-  line-height: 1.7;
-  max-width: 440px;
-  margin: 30px 0 40px;
-}
-.capabilities {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  border-top: 1px solid var(--line);
-  padding-top: 28px;
-}
-.capabilities .eyebrow {
-  font-size: 8px;
-  letter-spacing: 0.1em;
-}
-.capabilities h3 {
-  font-size: 25px;
-  line-height: 1.05;
-  max-width: 180px;
-  margin: 16px 0;
-}
-.capabilities p {
-  font-size: 12px;
-  line-height: 1.8;
-  color: #655772;
-}
-.operations-figure {
-  position: relative;
-  margin-bottom: 30px;
-}
-.operations-figure > .progressive-image {
-  width: 100%;
-  aspect-ratio: 0.67;
-  max-height: 690px;
-  object-fit: cover;
-  border-radius: 180px 180px 0 0;
-}
-.operations-figure figcaption {
-  display: flex;
-  justify-content: space-between;
-  font-size: 8px;
-  letter-spacing: 0.07em;
-  margin-top: 17px;
-  gap: 20px;
-}
-.photo-route {
-  position: absolute;
-  bottom: 80px;
-  left: -45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  height: 100px;
-  background: var(--accent);
-  border-radius: 50%;
-  rotate: 8deg;
-}
-.photo-route .arrow {
-  width: 52px;
-  height: 52px;
-}
 
 /* Partnership enquiries, with email as an alternative. */
 .contact-section {
@@ -1185,11 +1051,6 @@ section[id] {
 .contact-section .eyebrow {
   font-size: 10px;
   letter-spacing: 0.11em;
-}
-.tiny-route {
-  color: var(--accent);
-  letter-spacing: 2px;
-  font-size: 14px;
 }
 .contact-grid {
   display: grid;
@@ -1223,7 +1084,7 @@ section[id] {
   margin-bottom: 12px;
 }
 .enquiry-required {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
   color: #bfb1c9;
   margin-bottom: 28px;
@@ -1251,7 +1112,7 @@ section[id] {
 }
 .enquiry-panel legend,
 .company-label {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   margin-bottom: 15px;
   color: #d0c7d7;
@@ -1396,11 +1257,11 @@ section[id] {
   border-color: #ffb9b0;
 }
 .enquiry-note {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.6;
   color: #bfb1c9;
   margin-top: 14px;
-  max-width: 290px;
+  max-width: 480px;
 }
 .contact-email {
   display: inline-flex;
@@ -1481,11 +1342,6 @@ section[id] {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-}
-.footer-wordmark > span {
-  font-size: clamp(25px, 4vw, 70px);
-  padding-top: 20px;
-  letter-spacing: 0;
 }
 .footer-bottom {
   border-top: 1px solid var(--line);
@@ -1580,14 +1436,6 @@ section[id] {
   font-size: 18px;
   line-height: 1.6;
   max-width: 500px;
-}
-.detail-route {
-  position: absolute;
-  right: 30px;
-  bottom: -20px;
-  font-size: 400px;
-  line-height: 1;
-  color: #c4b2df;
 }
 .detail-journey {
   display: grid;
@@ -1710,14 +1558,6 @@ section[id] {
   margin-bottom: 25px;
   position: relative;
 }
-.not-found-route {
-  position: absolute;
-  font-size: 600px;
-  line-height: 1;
-  right: 50px;
-  top: 40px;
-  color: #cebde3;
-}
 
 @media (min-width: 1600px) {
   .hero-content {
@@ -1805,9 +1645,6 @@ section[id] {
     gap: 13px;
     padding: 18px 0;
   }
-  .qwipo-grid {
-    gap: 65px;
-  }
   .contact-grid {
     gap: 40px;
   }
@@ -1871,11 +1708,6 @@ section[id] {
     left: 3%;
     gap: 7px;
   }
-  .order-symbol {
-    width: 30px;
-    height: 30px;
-    font-size: 24px;
-  }
   .route-tag {
     font-size: 8px;
   }
@@ -1915,10 +1747,6 @@ section[id] {
   .audience-content .text-link {
     font-size: 11px;
   }
-  .photo-corner {
-    font-size: 22px;
-    width: 180px;
-  }
   .product-copy h2 {
     font-size: 5.5vw;
   }
@@ -1953,24 +1781,6 @@ section[id] {
   }
   .journey-bottom {
     gap: 35px;
-  }
-  .qwipo-copy > p {
-    font-size: 15px;
-  }
-  .qwipo-grid {
-    gap: 50px;
-  }
-  .capabilities {
-    gap: 20px;
-    grid-template-columns: 1fr;
-  }
-  .capabilities h3 {
-    max-width: none;
-    font-size: 24px;
-    margin-block: 10px;
-  }
-  .operations-figure > .progressive-image {
-    aspect-ratio: 0.55;
   }
   .contact-grid {
     gap: 32px;
@@ -2036,17 +1846,8 @@ section[id] {
   .brand-type {
     font-size: 22px;
   }
-  .brand-mark {
-    width: 31px;
-    height: 31px;
-  }
   .brand {
     gap: 8px;
-  }
-  .brand-type > span {
-    font-size: 7px;
-    letter-spacing: 1.6px;
-    margin-top: 7px;
   }
   .header-cta {
     display: none;
@@ -2147,10 +1948,6 @@ section[id] {
     font-size: 10px;
     margin-top: 2px;
   }
-  .order-symbol {
-    width: 32px;
-    height: 32px;
-  }
   .coordinate-one {
     top: 10%;
     left: 24%;
@@ -2196,9 +1993,6 @@ section[id] {
   .eyebrow {
     font-size: 9px;
   }
-  .section-index {
-    font-size: 28px;
-  }
   .section-intro {
     display: block;
     margin-bottom: 34px;
@@ -2224,11 +2018,6 @@ section[id] {
   }
   .photo-window {
     aspect-ratio: 1.1;
-  }
-  .photo-corner {
-    font-size: 23px;
-    width: 185px;
-    padding: 20px;
   }
   .retailer-figure figcaption {
     font-size: 9px;
@@ -2435,58 +2224,6 @@ section[id] {
     font-size: 14px;
     padding-inline: 22px;
   }
-  .qwipo-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 35px;
-  }
-  .qwipo-copy h2 {
-    font-size: clamp(44px, 11.5vw, 70px);
-  }
-  .qwipo-copy > p {
-    font-size: 15px;
-    margin-block: 25px 30px;
-  }
-  .capabilities {
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    padding-top: 24px;
-  }
-  .capabilities h3 {
-    font-size: 24px;
-    line-height: 1.03;
-  }
-  .capabilities p {
-    font-size: 11px;
-    line-height: 1.7;
-  }
-  .capabilities .eyebrow {
-    font-size: 7px;
-  }
-  .operations-figure {
-    width: 80%;
-    margin: 0 0 0 9%;
-  }
-  .operations-figure > .progressive-image {
-    aspect-ratio: 0.75;
-    border-radius: 150px 150px 0 0;
-    max-height: 450px;
-  }
-  .operations-figure figcaption {
-    font-size: 6px;
-    gap: 8px;
-    margin-top: 13px;
-  }
-  .photo-route {
-    left: -34px;
-    bottom: 70px;
-    width: 78px;
-    height: 78px;
-  }
-  .photo-route .arrow {
-    width: 40px;
-    height: 40px;
-  }
   .contact-section {
     padding: 37px var(--gutter) 55px;
   }
@@ -2498,11 +2235,6 @@ section[id] {
   .contact-section .eyebrow {
     font-size: 8px;
     max-width: 240px;
-  }
-  .tiny-route {
-    font-size: 10px;
-    letter-spacing: 0;
-    white-space: nowrap;
   }
   .contact-grid {
     display: block;
@@ -2541,7 +2273,7 @@ section[id] {
     font-size: 15px;
   }
   .enquiry-note {
-    font-size: 10px;
+    font-size: 13px;
   }
   .site-footer {
     padding-top: 33px;
@@ -2566,10 +2298,6 @@ section[id] {
     line-height: 1.2;
     letter-spacing: -0.055em;
     margin: 20px 0 25px;
-  }
-  .footer-wordmark > span {
-    font-size: 20px;
-    padding-top: 5px;
   }
   .footer-bottom {
     font-size: 8px;
@@ -2626,12 +2354,6 @@ section[id] {
   .detail-lead .action {
     margin-top: 25px;
   }
-  .detail-route {
-    font-size: 250px;
-    right: -40px;
-    bottom: -20px;
-    opacity: 0.7;
-  }
   .detail-journey {
     display: flex;
     flex-direction: column;
@@ -2686,12 +2408,6 @@ section[id] {
   .not-found p {
     font-size: 16px;
     max-width: 220px;
-  }
-  .not-found-route {
-    font-size: 340px;
-    right: -40px;
-    top: 70px;
-    opacity: 0.6;
   }
 }
 @media (max-width: 360px) {
@@ -2751,33 +2467,11 @@ html[data-motion="reduced"] *::after {
   color: var(--ink);
 }
 @media (max-width: 640px) {
-  .capabilities {
-    grid-template-columns: 1fr;
-    gap: 26px;
-  }
-  .capabilities article + article {
-    border-top: 1px solid var(--line);
-    padding-top: 24px;
-  }
-  .capabilities h3 {
-    font-size: 28px;
-    margin-block: 13px;
-  }
-  .capabilities p {
-    font-size: 14px;
-    line-height: 1.75;
-  }
-  .capabilities .eyebrow {
-    font-size: 9px;
-  }
   .retailer-figure figcaption {
     font-size: 11px;
   }
   .journey-bottom > p {
     font-size: 12px;
-  }
-  .operations-figure figcaption {
-    font-size: 8px;
   }
   .product-copy h2 > span {
     display: block;
@@ -3630,10 +3324,6 @@ html[data-motion="reduced"]::view-transition-group(*) {
   }
 }
 
-.page-content {
-  view-transition-name: page;
-}
-
 @media (min-width: 641px) and (max-width: 1000px) {
   .journey-steps {
     gap: 20px;
@@ -3671,4 +3361,179 @@ html[data-motion="reduced"]::view-transition-group(*) {
   }
 }
 
-.journey .eyebrow { font-size: 12px; color: var(--ink); }
+.journey .eyebrow {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+/* Company story: a quieter editorial page within the DigiDukaan website. */
+.company-hero {
+  background: #eeeae1;
+  padding-top: 48px;
+}
+.company-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+.company-identity img { border-radius: 50%; }
+.company-identity > span:not(.eyebrow) {
+  font: 500 32px/1 var(--font-display);
+  letter-spacing: -0.04em;
+}
+.company-identity .eyebrow {
+  margin-left: auto;
+  text-align: right;
+  max-width: 220px;
+}
+.company-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(36px, 7vw, 110px);
+}
+.company-hero h1 {
+  font-size: clamp(54px, 6.25vw, 100px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+.company-hero h1 > span { display: block; }
+.company-hero-copy > p {
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 490px;
+  margin: 30px 0;
+}
+.company-photo > .progressive-image {
+  display: block;
+  aspect-ratio: 0.95;
+  width: 100%;
+  border-radius: 160px 160px 0 0;
+  overflow: hidden;
+}
+.company-photo figcaption {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 16px;
+  color: var(--muted);
+}
+.company-relationship {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(48px, 10vw, 150px);
+  background: var(--ink);
+  color: var(--paper);
+  padding-block: 100px;
+}
+.company-relationship h2 {
+  font-size: clamp(42px, 4.8vw, 72px);
+  margin: 28px 0;
+  max-width: 580px;
+}
+.company-relationship-copy > p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #e2d7ed;
+  max-width: 470px;
+  margin-bottom: 32px;
+}
+.company-family h3 {
+  font-size: clamp(36px, 3.8vw, 56px);
+  margin: 16px 0;
+}
+.company-family p {
+  font-size: 16px;
+  line-height: 1.65;
+  max-width: 390px;
+}
+.company-family-parent { padding-block: 6px 30px; }
+.company-family-product {
+  margin-left: 24px;
+  padding: 30px;
+  background: var(--lilac);
+  color: var(--ink);
+  position: relative;
+}
+.company-family-product::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: -24px;
+  width: 24px;
+  height: 55px;
+  border-left: 1px solid #faf9f580;
+  border-bottom: 1px solid #faf9f580;
+}
+.company-family .company-family-note {
+  max-width: none;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 24px 0 0 24px;
+  color: #e2d7ed;
+}
+.company-capabilities { background: var(--paper); }
+.company-capability-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 60px;
+  border-top: 1px solid var(--line);
+  padding-block: 36px;
+}
+.company-capability-list h3 {
+  font-size: clamp(32px, 3vw, 46px);
+  margin-top: 16px;
+}
+.company-capability-list p {
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 560px;
+}
+.company-capability-list .company-capability-detail {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.company-external {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+.company-external p { font-size: 16px; }
+.audience-content li::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  background: currentColor;
+  border-radius: 50%;
+}
+.mobile-nav a[aria-current="page"] { font-weight: 600; }
+@media (max-width: 700px) {
+  .company-capabilities .section-intro > p { justify-self: start; }
+  .company-hero { padding-top: 32px; }
+  .company-identity { gap: 10px; margin-bottom: 36px; }
+  .company-identity img { width: 36px; height: 36px; }
+  .company-identity > span:not(.eyebrow) { font-size: 28px; }
+  .company-identity .eyebrow { font-size: 10px; max-width: 145px; }
+  .company-hero-grid, .company-relationship, .company-capability-list article {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .company-hero h1 { font-size: clamp(48px, 11.8vw, 76px); }
+  .company-hero-copy > p { font-size: 16px; margin-block: 24px; }
+  .company-photo > .progressive-image { aspect-ratio: 1.15; border-radius: 120px 120px 0 0; }
+  .company-relationship { padding-block: 64px; gap: 44px; }
+  .company-relationship h2 { font-size: clamp(40px, 10vw, 60px); }
+  .company-relationship-copy > p { font-size: 16px; }
+  .company-family-product { padding: 24px; }
+  .company-family h3 { font-size: 38px; }
+  .company-capability-list article { gap: 22px; padding-block: 30px; }
+  .company-capability-list h3 { font-size: 32px; }
+  .company-capability-list p { font-size: 16px; }
+}
+
+.page-content { view-transition-name: page; }

@@ -138,3 +138,14 @@ One existing GSAP timeline drives the line, stage scale, artwork lift and title 
 Existing Next.js source and the repository's React/Vite adaptation are retained. No dependency is added. This refinement changes only the network summary and its scoped styles/motion.
 
 Verification: production layouts checked at 320px, 390px, 768px and desktop width; no horizontal overflow in the checked states. The paused route restores readable untransformed stages, and both Next and Vite journey links open the detailed journey. Desktop and mobile axe runs reported zero violations; automated contrast inspection retains incomplete checks on some existing decorative content. Scoped repository lint/type/build passed, with only unchanged version-badge checks served from cache. Two independent screenshot critiques informed additional mobile scale clearance and stronger role-label typography. Their latest scoped score was 7.25/10 before the final label adjustment, not a whole-site award score. Real-device throttled performance and keyboard hover measurements were not benchmarked in this scoped pass.
+
+
+## Revision: distinct product and company stories
+
+The homepage is dedicated to DigiDukaan. The header and phone exhibit use the product name alone; About Qwipo navigation, footer credit and enquiry recipient disclosure preserve the company connection. The full delivery explainer stays on home, framed around accepted DigiDukaan orders, own-fleet delivery and approved 3PL capacity.
+
+About Qwipo is a separate editorial page: a company introduction with existing field photography, a clear company/product relationship, and DMS and Logistics Tech capabilities with their implementation conditions. It uses the established palette, fonts, progressive imagery and page transitions. It is intentionally quieter at rest than the product homepage; existing interactive feedback and page reveals provide continuity without a second signature animation.
+
+Decorative photo arrows, section arrows, audience arrows and the footer arrow are removed. The two moving hero route arrows, phone choreography and useful action/scroll indicators remain. Contact role labels are title case; the compact form and API contract are unchanged. Journey metadata now describes the visible five-step flow.
+
+Source: Next.js route /about-qwipo. Deployment mirror: query route ?page=about-qwipo, preserving preview base paths. Existing research in docs/01-qwipo-understanding.md supports the company/capability copy; no new metrics, partner endorsements or universal service promises were added.

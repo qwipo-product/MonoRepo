@@ -1,6 +1,6 @@
 // Public copy distilled from the supplied Qwipo documents.
 // No invented metrics, testimonials, partner endorsements or delivery guarantees.
-// Email enquiry is a draft in the visitor's mail app; no submission backend is implied.
+// Enquiries use the contact API; the public email address is an alternative.
 export const site = {
   name: "DigiDukaan",
   company: "Qwipo",
@@ -8,11 +8,11 @@ export const site = {
   companyUrl: "https://qwipo.com",
   appUrl: "https://play.google.com/store/apps/details?id=com.qwipo.b2b",
   description:
-    "Digital ordering for your distribution network. DigiDukaan by Qwipo connects FMCG brands, distributors and retailers, beyond the sales visit.",
+    "Digital ordering for your distribution network. DigiDukaan connects FMCG brands, distributors and retailers, beyond the sales visit.",
   navigation: [
     { label: "The product", href: "/#product" },
     { label: "The network", href: "/#network" },
-    { label: "Why Qwipo", href: "/#qwipo" },
+    { label: "About Qwipo", href: "/about-qwipo" },
   ],
   hero: {
     eyebrow: "FOR BRANDS. FOR DISTRIBUTORS. FOR EVERYDAY BUSINESS.",
@@ -115,19 +115,30 @@ export const site = {
     note: "A beat is a scheduled sales or delivery route. Off-beat delivery is subject to distributor approval, serviceability and order requirements.",
   },
   qwipo: {
-    label: "04 / THE QWIPO CONNECTION",
+    label: "THE COMPANY BEHIND DIGIDUKAAN",
     heading: ["Good technology.", "Grounded in", "real business."],
     text: "Behind DigiDukaan is Qwipo. We build technology around the way distribution actually works, from retailer ordering to the systems and people that fulfill it.",
+    description:
+      "Meet Qwipo, the company behind DigiDukaan, and explore its distributor-system connectivity and logistics technology.",
+    relationship: {
+      heading: "One company. Connected capabilities.",
+      text: "DigiDukaan is Qwipo’s retailer ordering product. It gives stores a digital way to buy through their distributor relationships. Qwipo’s integration and logistics tools support the work around those orders.",
+      company: "Technology for brands, distributors and the people who keep everyday commerce moving.",
+      product: "The retailer-facing app for discovering products, connecting with distributors and placing orders.",
+      note: "The distributor relationship stays at the centre. System integrations and delivery services are agreed for each engagement.",
+    },
     capabilities: [
       {
         title: "Connect the systems",
         label: "DMS CONNECTIVITY",
-        text: "Connect catalogue, prices, stock and schemes with distributor systems, and pass orders back. Integration scope is agreed with each partner.",
+        text: "Connect catalogue, prices, stock and schemes with distributor systems, and pass orders back.",
+        detail: "The DMS remains the source of truth for its master data. Supported interfaces and integration scope are agreed for each system.",
       },
       {
         title: "Keep fulfillment moving",
         label: "LOGISTICS TECH",
-        text: "Bring route planning, load consolidation and delivery visibility into the operation. Logistics Tech can also support a separate logistics engagement.",
+        text: "Plan routes, consolidate loads and follow deliveries across distributor fleets and approved 3PL capacity.",
+        detail: "Logistics Tech can also support a separate engagement. Serviceability, tracking and confirmation methods depend on the agreed scope.",
       },
     ],
   },
@@ -135,7 +146,7 @@ export const site = {
     label: "YOUR NETWORK. OUR NEXT CONVERSATION.",
     heading: ["Let’s move", "business", "forward."],
     text: "Tell us where you want to go. We’ll start with your distribution network and explore what fits.",
-    roles: ["A brand", "A distributor", "An ecosystem partner"],
+    roles: ["A Brand", "A Distributor", "An Ecosystem Partner"],
     button: "Send enquiry",
     note: "Your details and message will be sent to Qwipo so we can respond to your enquiry. Prefer email? Reach us below.",
   },
@@ -150,14 +161,14 @@ export const site = {
     examples: [
       "The shop owner opens DigiDukaan to look for a refill. The range and schemes they see depend on their location and the participating distributors available to them.",
       "The order follows an authorised relationship between retailer and distributor. The distributor remains the business partner serving the store; DigiDukaan adds a digital way to connect.",
-      "The retailer places an order for the distributor to review. Where a DMS connection is in scope, Qwipo can pass the order into the distributor’s system, using that system’s master data.",
+      "The retailer places an order for the distributor to review. Where a DMS connection is in scope, the order can pass into the distributor’s system, using that system’s master data.",
       "An accepted order moves into the distributor’s fulfillment process. The usual beat can serve the store; an off-beat request needs approval and may have different minimum order requirements.",
     ],
     faqs: [
       {
         question: "What is 3PL, and when does it enter the journey?",
         answer:
-          "3PL means third-party logistics. After an order is accepted and prepared, an approved external delivery partner can provide transport capacity for overflow or an agreed service need. Qwipo Logistics Tech helps coordinate the load and route. The distributor remains the seller, and its own fleet is the primary path in the described operating model.",
+          "3PL means third-party logistics. After an order is accepted and prepared, an approved external delivery partner can provide transport capacity for overflow or an agreed service need. Load and route planning connect that capacity to the order. The distributor remains the seller, and its own fleet is the primary path in the described operating model.",
       },
       {
         question: "Does DigiDukaan replace the distributor?",
@@ -177,7 +188,7 @@ export const site = {
       {
         question: "Can DigiDukaan connect to a DMS?",
         answer:
-          "Qwipo’s DMS connector is designed to read master products, prices, stock and schemes, and push orders back. The DMS remains the source of truth for its master data. Supported interfaces and implementation scope need to be agreed for each system.",
+          "A DMS connection can make master products, prices, stock and schemes available for ordering, and pass orders back. The DMS remains the source of truth for its master data. Supported interfaces and implementation scope need to be agreed for each system.",
       },
       {
         question: "Is the catalogue the same everywhere?",

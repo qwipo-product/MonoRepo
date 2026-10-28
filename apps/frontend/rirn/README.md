@@ -1,4 +1,4 @@
-# Qwipo-WebApp — DigiDukaan by Qwipo
+# Qwipo-WebApp — DigiDukaan and About Qwipo
 
 This application replaces the RIRN company discovery console. It presents the DigiDukaan product website for brands and distributors.
 The source is `/Users/4nshuman/Development/Qwipo-WebApp`. Website refinements are mirrored into this Vite application while preserving its deployment-specific routing and assets.
@@ -50,8 +50,9 @@ bun run check --filter=@mockups/rirn... --continue --ui=stream
 | --- | --- |
 | `/` | Product landing page |
 | `/?page=how-it-works` | Order journey, delivery options, FAQs, and contact |
+| `/?page=about-qwipo` | Qwipo company story, DigiDukaan relationship, DMS and Logistics Tech |
 | `/?page=unknown` | Page-not-found view |
-| `/#product`, `/#network`, `/#qwipo`, `/#contact` | Landing-page sections |
+| `/#product`, `/#network`, `/#contact` | Landing-page sections |
 
 The route table describes the suffix below the current application base. A preview can use `/builds/<branch>/<commit>/?page=how-it-works`.
 Query navigation keeps the document path unchanged. Section anchors use the URL hash. Relative image URLs and Vite's `base: './'` keep assets inside the preview prefix.
@@ -59,7 +60,7 @@ Do not replace these links with host-root paths such as `/how-it-works` or `/ima
 
 The site includes the brand/distributor audience switch, six app screenshots, the animated device gallery, order journey tabs, delivery-mode control, FAQs, and mobile navigation.
 Motion starts enabled on a fresh visit. The Pause motion control keeps its selection during navigation. Native page transitions run in browsers that support them; navigation also works without that API.
-Contact submits directly to `https://qwipo-website-api.bms.qwipo.com/api/contact_us` using the five JSON fields `first_name`, `last_name`, `email`, `phone` and `message`. Business type and optional company are appended to `message`. Browser-managed curl headers are omitted. Input validation, a pending state, duplicate-click protection and a 15-second timeout are included. HTTP 2xx confirms submission; errors retain the input. Email remains an alternative. The form is shared by the landing and journey pages.
+Contact submits directly to `https://qwipo-website-api.bms.qwipo.com/api/contact_us` using the five JSON fields `first_name`, `last_name`, `email`, `phone` and `message`. Business type and optional company are appended to `message`. Browser-managed curl headers are omitted. Input validation, a pending state, duplicate-click protection and a 15-second timeout are included. HTTP 2xx confirms submission; errors retain the input. Email remains an alternative. The form is shared by the landing, journey and company pages.
 
 Run the isolated contact tests with `bun test apps/frontend/rirn/tests/contact.test.ts` from the repository root. These tests mock the response and never submit an enquiry to the live API.
 
@@ -82,7 +83,7 @@ The application is rendered in the browser. It does not run a Next.js server.
 | Path | Responsibility |
 | --- | --- |
 | `src/pages/Home.tsx` | Product landing page |
-| `src/pages/HowItWorks.tsx`, `src/pages/NotFound.tsx` | Product journey and unknown-page view |
+| `src/pages/HowItWorks.tsx`, `src/pages/AboutQwipo.tsx`, `src/pages/NotFound.tsx` | Product journey, company story and unknown-page view |
 | `src/App.tsx`, `src/lib/navigation.ts`, `src/components/SiteLink.tsx` | Page selection, navigation, and focus |
 | `src/components/Contact.tsx`, `src/lib/contact.ts` | Enquiry form, validation and API submission |
 | `src/data/site.ts` | Approved narrative, FAQs, and contact destinations |

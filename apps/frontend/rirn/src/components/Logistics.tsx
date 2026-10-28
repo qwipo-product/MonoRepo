@@ -48,8 +48,8 @@ export function Logistics({ compact = false }: { compact?: boolean }) {
           The right ride.
         </h2>
         <p>
-          Digital orders still need a physical journey. Qwipo Logistics Tech
-          connects route planning with available delivery capacity. A 3PL
+          An order on DigiDukaan still needs a physical journey. Route planning
+          connects accepted orders with available delivery capacity. A 3PL
           (third-party logistics) partner adds external delivery capacity for
           approved overflow or service needs.
         </p>
@@ -166,7 +166,7 @@ export function Logistics({ compact = false }: { compact?: boolean }) {
               y="165"
               textAnchor="middle"
             >
-              PLANNED BY QWIPO
+              ORDER TO DELIVERY
             </text>
             <g ref={van} transform="translate(155 160)" aria-hidden="true">
               <circle

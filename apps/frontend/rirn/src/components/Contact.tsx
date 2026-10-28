@@ -128,9 +128,6 @@ export function Contact() {
     >
       <div className="section-top">
         <span className="eyebrow">{site.contact.label}</span>
-        <span className="tiny-route" aria-hidden="true">
-          ● ───────── ↗
-        </span>
       </div>
       <div className="contact-grid">
         <div>

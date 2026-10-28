@@ -99,9 +99,6 @@ export function RouteArtwork() {
         Your network. Connected.
       </div>
       <div className="route-tag tag-bottom">
-        <span className="order-symbol" aria-hidden="true">
-          ↗
-        </span>
         <span>
           THE NEXT ORDER
           <br />

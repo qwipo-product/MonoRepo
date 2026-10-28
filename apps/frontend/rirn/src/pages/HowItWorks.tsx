@@ -15,9 +15,6 @@ export default function HowItWorks() {
           <p>{site.details.intro}</p>
           <Action href="#journey-detail">Follow an order</Action>
         </div>
-        <span className="detail-route" aria-hidden="true">
-          ↳
-        </span>
       </section>
       <section
         className="order-journey-section section-space"
@@ -36,7 +33,6 @@ export default function HowItWorks() {
       <section className="faq-section section-space">
         <div className="section-top">
           <span className="eyebrow">A FEW GOOD QUESTIONS</span>
-          <span aria-hidden="true">↗</span>
         </div>
         <div className="faq-grid">
           <h2>

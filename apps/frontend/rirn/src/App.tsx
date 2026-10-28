@@ -8,6 +8,8 @@ import { useSitePathname } from './lib/navigation';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import NotFound from './pages/NotFound';
+import AboutQwipo from './pages/AboutQwipo';
+import { site } from './data/site';
 
 export default function App() {
   const pathname = useSitePathname();
@@ -18,9 +20,16 @@ export default function App() {
   useEffect(() => {
     const samePage = previousPath.current === pathname;
     previousPath.current = pathname;
-    document.title = pathname === '/'
-      ? 'DigiDukaan by Qwipo | Beyond the beat'
-      : `${pathname === '/how-it-works' ? 'How it works' : 'Page not found'} | DigiDukaan by Qwipo`;
+    const pageTitle = pathname === '/about-qwipo' ? 'About Qwipo'
+      : pathname === '/how-it-works' ? 'How it works' : 'Page not found';
+    document.title = pathname === '/' ? 'DigiDukaan | Beyond the beat' : `${pageTitle} | DigiDukaan`;
+    const description = pathname === '/about-qwipo' ? site.qwipo.description
+      : pathname === '/how-it-works'
+        ? 'Follow a DigiDukaan order from product discovery and distributor connection through acceptance, dispatch and delivery.'
+        : site.description;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', document.title);
     // Same-page clicks already scroll through MotionProvider. Back/Forward
     // and cross-page links still need their destination restored here.
     if (samePage && navigationType !== 'POP') return;
@@ -48,7 +57,7 @@ export default function App() {
       <a className="skip-link" href="#main">Skip to content</a>
       <Header key={pathname} />
       <main id="main" tabIndex={-1}>
-        {pathname === '/' ? <Home /> : pathname === '/how-it-works' ? <HowItWorks /> : <NotFound />}
+        {pathname === '/' ? <Home /> : pathname === '/how-it-works' ? <HowItWorks /> : pathname === '/about-qwipo' ? <AboutQwipo /> : <NotFound />}
       </main>
       <Footer />
       {import.meta.env.DEV && <ReviewTools />}

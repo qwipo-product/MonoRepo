@@ -11,10 +11,10 @@ export function Footer() {
           Extraordinary possibility.
         </p>
         <div className="footer-links">
-          <a href={site.companyUrl} target="_blank" rel="noreferrer">
-            Meet Qwipo
+          <Link href="/about-qwipo">
+            About Qwipo
             <Arrow diagonal />
-          </a>
+          </Link>
           <a href={site.appUrl} target="_blank" rel="noreferrer">
             Get the app
             <Arrow diagonal />
@@ -29,7 +29,7 @@ export function Footer() {
         </a>
       </div>
       <div className="footer-wordmark" aria-hidden="true">
-        DigiDukaan<span>↗</span>
+        DigiDukaan
       </div>
       <div className="footer-bottom">
         <span>© 2026 Qwipo. All rights reserved.</span>

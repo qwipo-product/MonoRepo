@@ -61,7 +61,7 @@ const chapters: {
     screen: "orders",
     actor: "AT DISTRIBUTOR OPERATIONS",
     heading: "From accepted order to planned trip.",
-    text: "The distributor reviews and prepares the order. Qwipo’s logistics tools help group loads and plan the delivery route.",
+    text: "The distributor reviews and prepares the order. Logistics tools help group loads and plan the delivery route.",
     points: [
       "Accept & prepare",
       "Group orders by route",

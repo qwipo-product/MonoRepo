@@ -20,7 +20,6 @@ export function Audience() {
             onClick={() => setSelected(i)}
           >
             {item.label}
-            <span aria-hidden="true">↗</span>
           </button>
         ))}
       </div>
@@ -30,7 +29,6 @@ export function Audience() {
         <ul>
           {audience.items.map((item) => (
             <li key={item}>
-              <span aria-hidden="true">↗</span>
               {item}
             </li>
           ))}

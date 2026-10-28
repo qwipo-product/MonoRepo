@@ -5,7 +5,7 @@ import { useLocation } from 'react-router';
 export function siteHref(href: string): string {
   if (href === '/') return '?';
   if (href.startsWith('/#')) return `?${href.slice(1)}`;
-  if (href === '/how-it-works') return '?page=how-it-works';
+  if (href === '/how-it-works' || href === '/about-qwipo') return `?page=${href.slice(1)}`;
   return href;
 }
 

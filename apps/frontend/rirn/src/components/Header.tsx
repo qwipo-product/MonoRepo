@@ -9,8 +9,8 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const pathname = useSitePathname();
-  // Native anchors keep repeated same-page section navigation reliable.
-  const SectionLink = Link;
+  const contactHref = pathname === "/about-qwipo" || pathname === "/how-it-works"
+    ? "#contact" : "/#contact";
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && open) {
@@ -26,31 +26,23 @@ export function Header() {
       <Link
         className="brand"
         href="/"
-        aria-label="DigiDukaan by Qwipo home"
+        aria-label="DigiDukaan home"
         onClick={() => setOpen(false)}
       >
-        <img
-          src="./images/qwipo-mark.webp"
-          alt=""
-          width={38}
-          height={38}
-          className="brand-mark"
-        />
-        <span className="brand-type">
-          DigiDukaan<span> BY QWIPO</span>
-        </span>
+        <span className="brand-type">DigiDukaan</span>
       </Link>
       <nav className="desktop-nav" aria-label="Main navigation">
         {site.navigation.map((link) => (
-          <SectionLink className="nav-link" key={link.label} href={link.href}>
+          <Link className="nav-link" key={link.label} href={link.href}
+            aria-current={pathname === link.href ? "page" : undefined}>
             {link.label}
-          </SectionLink>
+          </Link>
         ))}
       </nav>
-      <SectionLink className="header-cta" href="/#contact">
+      <Link className="header-cta" href={contactHref}>
         <span>Let’s talk</span>
         <Arrow diagonal />
-      </SectionLink>
+      </Link>
       <button
         ref={button}
         className="menu-button"
@@ -68,15 +60,16 @@ export function Header() {
         hidden={!open}
       >
         {site.navigation.map((link, i) => (
-          <SectionLink
+          <Link
             key={link.label}
             href={link.href}
+            aria-current={pathname === link.href ? "page" : undefined}
             onClick={() => setOpen(false)}
           >
             <span>0{i + 1}</span>
             {link.label}
             <Arrow diagonal />
-          </SectionLink>
+          </Link>
         ))}
         <Link
           href="/how-it-works"
@@ -86,10 +79,10 @@ export function Header() {
           <span>04</span>How it works
           <Arrow diagonal />
         </Link>
-        <SectionLink href="/#contact" onClick={() => setOpen(false)}>
+        <Link href={contactHref} onClick={() => setOpen(false)}>
           <span>05</span>Let’s talk
           <Arrow diagonal />
-        </SectionLink>
+        </Link>
       </nav>
     </header>
   );
