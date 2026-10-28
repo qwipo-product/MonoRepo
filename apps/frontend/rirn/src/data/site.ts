@@ -10,8 +10,8 @@ export const site = {
   description:
     "DigiDukaan is a B2B ordering app for kirana stores on ONDC, connecting retailers with participating FMCG distributors and wholesalers.",
   navigation: [
-    { label: "The product", href: "/#product" },
-    { label: "ONDC’s role", href: "/#ondc" },
+    { label: "Meet DigiDukaan", href: "/#product" },
+    { label: "The ONDC Connect", href: "/#ondc" },
     { label: "Qwipo for DigiDukaan", href: "/qwipo-for-digidukaan" },
   ],
   hero: {
@@ -115,7 +115,7 @@ export const site = {
     note: "A beat is a scheduled sales or delivery route. The full journey also shows acceptance and dispatch before delivery. Off-beat delivery depends on distributor approval, serviceability and order requirements.",
   },
   ondc: {
-    label: "03 / ONDC’S ROLE",
+    label: "03 / THE ONDC CONNECT",
     heading: ["One open network.", "Many businesses."],
     text: "ONDC stands for Open Network for Digital Commerce. It provides common standards that let participating buying and selling systems discover each other and transact.",
     meaning:
