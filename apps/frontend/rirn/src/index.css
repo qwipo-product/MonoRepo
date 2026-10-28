@@ -221,12 +221,11 @@ section[id] {
   gap: 11px;
   align-items: center;
 }
-.brand-type {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 25px;
-  letter-spacing: -1px;
-  line-height: 1;
+.brand-logo {
+  display: block;
+  width: 222px;
+  height: auto;
+  flex-shrink: 0;
 }
 .desktop-nav {
   display: flex;
@@ -1843,8 +1842,8 @@ section[id] {
     height: 78px;
     gap: 12px;
   }
-  .brand-type {
-    font-size: 22px;
+  .brand-logo {
+    width: clamp(168px, 50vw, 196px);
   }
   .brand {
     gap: 8px;

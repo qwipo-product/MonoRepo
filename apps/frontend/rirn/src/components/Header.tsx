@@ -29,7 +29,14 @@ export function Header() {
         aria-label="DigiDukaan home"
         onClick={() => setOpen(false)}
       >
-        <span className="brand-type">DigiDukaan</span>
+        <img
+          className="brand-logo"
+          src="./images/brand/digidukaan-logo.svg"
+          width={248}
+          height={56}
+          alt=""
+          loading="eager"
+        />
       </Link>
       <nav className="desktop-nav" aria-label="Main navigation">
         {site.navigation.map((link) => (
