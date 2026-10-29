@@ -52,6 +52,16 @@
       "port": 5177
     },
     {
+      "name": "digidukaan",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--filter=@mockups/digidukaan"
+      ],
+      "port": 5178
+    },
+    {
       "name": "storybook",
       "runtimeExecutable": "bun",
       "runtimeArgs": [

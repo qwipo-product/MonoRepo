@@ -1,0 +1,57 @@
+# Release pipeline — digidukaan (DigiDukaan public website).
+#
+# Registered in Azure DevOps as:  \Mockups Lab\DigiDukaan - Deploy
+# URL:  https://digidukaan.qwipo.com
+#
+# PRODUCTION ONLY. DigiDukaan has no dev, testing or staging deployment, and
+# only bms-chart/production/mockups-digidukaan.yaml exists in the k8s repo, so
+# the environment is fixed rather than mapped from the branch.
+#
+# Takes the image built by "DigiDukaan - Build", waits on the
+# `mockups-production` environment approval, rewrites `version:` in the GitOps
+# repo (k8s) at bms-chart/production/mockups-digidukaan.yaml, then syncs the
+# ArgoCD app `production-mockups-digidukaan-argo-app`. The deploy logic lives
+# in azure-cicd/templates/mockup-release-template.yaml, shared by every mockup.
+#
+# `source:` below is the *display name* of the build pipeline. Rename that
+# pipeline and you must change this string in the same commit.
+#
+# SERVICE_NAME reaches the deploy through the build's artefact, so changing
+# `service_name` needs a fresh BUILD run before any deploy can bind.
+#
+# ── Triggers ────────────────────────────────────────────────────────────────
+#
+# Runs automatically after a successful `main` build of "DigiDukaan - Build".
+# The `branches:` filter is read from the copy of THIS FILE on the pipeline's
+# default branch, which is `main` for this pipeline.
+#
+# A manual run deploys the latest successful build of "DigiDukaan - Build".
+# Only main triggers that pipeline, but a build queued by hand on another
+# branch would become the latest; check the selected build before approving.
+#
+# ── Deploying a tag (release or rollback) ───────────────────────────────────
+#
+# Run this pipeline by hand and pick a `digidukaan-v<semver>` tag in the run
+# dialog's branch/tag selector. No build is involved: the template checks that
+# the image `mockups-digidukaan:<semver>` exists in the registry and deploys it.
+#
+# Before each release, make sure that Azure has the required approval check.
+# This file does not prove that the live approval check exists.
+
+trigger: none
+
+resources:
+    pipelines:
+        - pipeline: buildPipeline
+          source: 'DigiDukaan - Build'
+          trigger:
+              branches:
+                  include:
+                      - main
+
+extends:
+    template: /azure-cicd/templates/mockup-release-template.yaml
+    parameters:
+        environment: production
+        service_name: 'mockups-digidukaan'
+        tag_prefix: 'digidukaan'

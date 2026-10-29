@@ -68,6 +68,7 @@ For an unmatched request, use the specified scope. Do not add a screen change wi
 | `rirn` | 5173 | 6173 | Desktop |
 | `rirn-retailer` | 5176 | 6176 | Mobile |
 | `qwipo-analytics` | 5177 | 6177 | Mobile kit in a desktop layout |
+| `digidukaan` | 5178 | 6178 | Imported website design; public site at digidukaan.qwipo.com |
 | `storybook` | 6006 | — | Mobile component catalog |
 | `storybook-web` | 6007 | — | Desktop component catalog |
 | `mock-api` | 8787 | — | Bun HTTP service |
@@ -91,6 +92,7 @@ Use each application's README for its routes and demonstration inputs.
 | Buyer fixtures | `apps/frontend/qwipo-buyer-paytm-app/src/data` |
 | Seller fixtures and stores | `apps/frontend/seller-store/src/app/lib` |
 | Analytics fixtures | `apps/frontend/qwipo-analytics/src/data` |
+| DigiDukaan website content and images | `apps/frontend/digidukaan/src/data` |
 | RIRN company session and fixtures | `apps/frontend/rirn/src/lib` |
 | RIRN retailer session and fixtures | `apps/frontend/rirn-retailer/src/lib` |
 | Mock API routes and collection map | `apps/backend/mock-api/src` |
