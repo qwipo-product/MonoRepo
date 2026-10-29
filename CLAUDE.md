@@ -65,9 +65,10 @@ For an unmatched request, use the specified scope. Do not add a screen change wi
 | --- | --- | --- | --- |
 | `qwipo-buyer-paytm-app` | 5175 | 6175 | Mobile |
 | `seller-store` | 5174 | 6174 | Desktop |
-| `rirn` (Qwipo-WebApp) | 5173 | 6173 | Imported website design |
+| `rirn` | 5173 | 6173 | Desktop |
 | `rirn-retailer` | 5176 | 6176 | Mobile |
 | `qwipo-analytics` | 5177 | 6177 | Mobile kit in a desktop layout |
+| `digidukaan` | 5178 | 6178 | Imported website design; public site at digidukaan.qwipo.com |
 | `storybook` | 6006 | — | Mobile component catalog |
 | `storybook-web` | 6007 | — | Desktop component catalog |
 | `mock-api` | 8787 | — | Bun HTTP service |
@@ -76,9 +77,6 @@ The frontend applications use local demonstration data.
 Mock API is optional. It serves shared fixtures over HTTP.
 Buyer and Seller Store do not require it.
 Use each application's README for its routes and demonstration inputs.
-Qwipo-WebApp replaces the RIRN company console in `apps/frontend/rirn`. Keep its `@mockups/rirn` package name and RIRN Company deployment identity.
-Its imported website design uses local CSS and fonts. Its contact action opens an email draft.
-Use query navigation and relative public asset URLs so the site works under `/builds/<branch>/<commit>/`.
 
 | Purpose | Location |
 | --- | --- |
@@ -94,8 +92,8 @@ Use query navigation and relative public asset URLs so the site works under `/bu
 | Buyer fixtures | `apps/frontend/qwipo-buyer-paytm-app/src/data` |
 | Seller fixtures and stores | `apps/frontend/seller-store/src/app/lib` |
 | Analytics fixtures | `apps/frontend/qwipo-analytics/src/data` |
-| Qwipo-WebApp content and images | `apps/frontend/rirn/src/data` |
-| Qwipo-WebApp navigation | `apps/frontend/rirn/src/lib/navigation.ts` |
+| DigiDukaan website content and images | `apps/frontend/digidukaan/src/data` |
+| RIRN company session and fixtures | `apps/frontend/rirn/src/lib` |
 | RIRN retailer session and fixtures | `apps/frontend/rirn-retailer/src/lib` |
 | Mock API routes and collection map | `apps/backend/mock-api/src` |
 

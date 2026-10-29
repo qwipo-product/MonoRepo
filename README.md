@@ -4,9 +4,9 @@ Mockups Lab is a shared workspace for Qwipo product prototypes and interface rev
 Use the applications to review user flows and designs before production implementation.
 Buyer/Paytm covers mobile buyer and salesperson flows.
 Seller Store covers distributor and administrator flows.
-Qwipo-WebApp presents the DigiDukaan product website through the existing RIRN Company deployment.
-RIRN Retailer covers retailer identity flows.
+RIRN Console and RIRN Retailer cover company and retailer identity flows.
 Qwipo Analytics provides dashboard and report prototypes.
+DigiDukaan is the public product website for the DigiDukaan ordering app. It is hosted at https://digidukaan.qwipo.com.
 Mobile and desktop Storybook catalogs document the shared interface components.
 The applications use demonstration data. An optional Mock API serves shared fixtures over HTTP.
 
@@ -52,9 +52,10 @@ Use that URL only on a permitted network.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `http://localhost:5175` | 6175 | [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md) |
 | Seller Store | `http://localhost:5174` | 6174 | [Seller README](apps/frontend/seller-store/README.md) |
-| Qwipo-WebApp (RIRN deployment) | `http://localhost:5173` | 6173 | [Website README](apps/frontend/rirn/README.md) |
+| RIRN Console | `http://localhost:5173` | 6173 | [RIRN README](apps/frontend/rirn/README.md) |
 | RIRN Retailer | `http://localhost:5176` | 6176 | [Retailer README](apps/frontend/rirn-retailer/README.md) |
 | Qwipo Analytics | `http://localhost:5177` | 6177 | [Analytics README](apps/frontend/qwipo-analytics/README.md) |
+| DigiDukaan website | `http://localhost:5178` | 6178 | [DigiDukaan README](apps/frontend/digidukaan/README.md) |
 | Mobile Storybook | `http://localhost:6006` | — | [Mobile catalog README](apps/frontend/storybook/README.md) |
 | Desktop Storybook | `http://localhost:6007` | — | [Desktop catalog README](apps/frontend/storybook-web/README.md) |
 | Mock API | `http://localhost:8787` | — | [API README](apps/backend/mock-api/README.md) |
@@ -120,17 +121,14 @@ Use [start-work](.claude/skills/start-work/SKILL.md) for the branch procedure.
 
 | Purpose | Mobile | Desktop |
 | --- | --- | --- |
-| Application | Buyer/Paytm, RIRN Retailer | Seller Store |
+| Application | Buyer/Paytm, RIRN Retailer | Seller Store, RIRN Console |
 | Primitives | `@mockups/ui` | `@mockups/web-ui` |
 | CSS tokens | `@mockups/design-tokens/theme.css` | `@mockups/web-tokens/theme.css` |
 | Review location | Mobile Storybook and Buyer sidebar | Desktop Storybook and Seller Design System persona |
 
-Qwipo-WebApp preserves its imported website design, fonts, and motion in `apps/frontend/rirn`.
-Its Vite build uses relative assets and query navigation for static branch previews.
-The package name and deployment files remain unchanged.
-
 Qwipo Analytics uses the mobile kit in a desktop layout.
 Keep that existing exception unless the user requests a design-kit migration.
+The DigiDukaan website uses neither kit. It keeps its imported website design, fonts, and motion.
 
 Import one CSS token layer in each application.
 Keep the Tailwind `@source` entries for shared component code.
@@ -176,13 +174,15 @@ Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
 | Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
-| Qwipo-WebApp | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
+| RIRN Console | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
 | RIRN Retailer | `mockups-rirn-retailer` | RIRN Retailer - Build | RIRN Retailer - Deploy |
 | Qwipo Analytics | `mockups-analytics` | Analytics - Build | Analytics - Deploy |
+| DigiDukaan website | `mockups-digidukaan` | DigiDukaan - Build | DigiDukaan - Deploy |
 | Mobile Storybook | `mockups-storybook` | Storybook - Build | Storybook - Deploy |
 | Desktop Storybook | `mockups-storybook-web` | Storybook Web - Build | Storybook Web - Deploy |
 
 The dev host has the form `https://<service>.dev.bms.qwipo.com`.
+DigiDukaan has no dev, testing, or preview host. It builds only from `main` and is served only at `https://digidukaan.qwipo.com`.
 These names show the repository configuration. They do not prove live service availability.
 
 | Branch | Current automatic behavior |

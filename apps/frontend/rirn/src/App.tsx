@@ -1,66 +1,74 @@
-import { useEffect, useRef } from 'react';
-import { useLocation, useNavigationType } from 'react-router';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
-import { MotionProvider } from './components/Motion';
-import { ReviewTools } from './components/ReviewTools';
-import { useSitePathname } from './lib/navigation';
-import Home from './pages/Home';
-import HowItWorks from './pages/HowItWorks';
-import NotFound from './pages/NotFound';
-import QwipoForDigiDukaan from './pages/QwipoForDigiDukaan';
-import { site } from './data/site';
+import { Outlet, Route, Routes, useLocation } from 'react-router';
+import { LogOut } from 'lucide-react';
+import {
+  AppShell,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  Toaster,
+  TooltipProvider,
+} from '@mockups/web-ui';
+import { getPageTitle, navigation } from './navigation';
+import { DiscoverPage } from './pages/discover';
+import { MappingsPage } from './pages/mappings';
+import { LoginPage } from './pages/login';
+import { QuotaMeter } from './components/quota-meter';
+import { logout, useCompanySession } from './lib/company-session';
 
-export default function App() {
-  const pathname = useSitePathname();
-  const location = useLocation();
-  const navigationType = useNavigationType();
-  const previousPath = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    const samePage = previousPath.current === pathname;
-    previousPath.current = pathname;
-    const pageTitle = pathname === '/qwipo-for-digidukaan' ? 'Qwipo for DigiDukaan'
-      : pathname === '/how-it-works' ? 'How it works' : 'Page not found';
-    document.title = pathname === '/' ? 'DigiDukaan | Beyond the beat' : `${pageTitle} | DigiDukaan`;
-    const description = pathname === '/qwipo-for-digidukaan' ? site.qwipo.description
-      : pathname === '/how-it-works'
-        ? 'Follow a DigiDukaan order from product discovery and distributor connection through acceptance, dispatch and delivery.'
-        : site.description;
-    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
-    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', document.title);
-    // Same-page clicks already scroll through MotionProvider. Back/Forward
-    // and cross-page links still need their destination restored here.
-    if (samePage && navigationType !== 'POP') return;
-    // Wait for the destination page to mount before resolving its section.
-    const frame = requestAnimationFrame(() => {
-      let section = '';
-      try { section = decodeURIComponent(location.hash.slice(1)); } catch { /* Ignore malformed fragments. */ }
-      const target = section ? document.getElementById(section) : null;
-      if (target) {
-        target.scrollIntoView({ behavior: 'instant', block: 'start' });
-        const hadTabIndex = target.hasAttribute('tabindex');
-        if (!hadTabIndex) target.tabIndex = -1;
-        target.focus({ preventScroll: true });
-        if (!hadTabIndex) target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
-      } else if (location.key !== 'default') {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        document.getElementById('main')?.focus({ preventScroll: true });
-      }
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [pathname, location.hash, location.key, navigationType]);
+function Shell() {
+  const { pathname } = useLocation();
+  const { user } = useCompanySession();
+  if (!user) return null;
 
   return (
-    <MotionProvider>
-      <a className="skip-link" href="#main">Skip to content</a>
-      <Header key={pathname} />
-      <main id="main" tabIndex={-1}>
-        {pathname === '/' ? <Home /> : pathname === '/how-it-works' ? <HowItWorks /> : pathname === '/qwipo-for-digidukaan' ? <QwipoForDigiDukaan /> : <NotFound />}
-      </main>
-      <Footer />
-      {import.meta.env.DEV && <ReviewTools />}
-    </MotionProvider>
+    <AppShell
+      navigation={navigation}
+      title={getPageTitle(pathname)}
+      brand={{ alt: 'Qwipo RIRN' }}
+      topBarActions={<QuotaMeter />}
+      user={{
+        name: user.name,
+        subtitle: user.company,
+        initials: user.initials,
+      }}
+      userMenu={
+        <>
+          <DropdownMenuLabel>
+            <p className="font-medium">{user.name}</p>
+            <p className="text-xs font-normal text-gray-600">
+              {user.company} · {user.companyCode}
+            </p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-red-600" onClick={logout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign out
+          </DropdownMenuItem>
+        </>
+      }
+    >
+      <Outlet />
+    </AppShell>
+  );
+}
+
+export default function App() {
+  const { user } = useCompanySession();
+
+  return (
+    <TooltipProvider>
+      {!user ? (
+        <LoginPage />
+      ) : (
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<DiscoverPage />} />
+            <Route path="mappings" element={<MappingsPage />} />
+            <Route path="*" element={<DiscoverPage />} />
+          </Route>
+        </Routes>
+      )}
+      <Toaster />
+    </TooltipProvider>
   );
 }

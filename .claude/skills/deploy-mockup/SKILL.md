@@ -18,6 +18,7 @@ A command to push can cause automatic deployment. Tell the user that effect befo
 | `rirn` | `mockups-rirn-company` | `RIRN Company` | `rirn-company` |
 | `rirn-retailer` | `mockups-rirn-retailer` | `RIRN Retailer` | `rirn-retailer` |
 | `qwipo-analytics` | `mockups-analytics` | `Analytics` | `analytics` |
+| `digidukaan` | `mockups-digidukaan` | `DigiDukaan` | `digidukaan` |
 | `storybook` | `mockups-storybook` | `Storybook` | `storybook` |
 | `storybook-web` | `mockups-storybook-web` | `Storybook Web` | `storybook-web` |
 
@@ -53,7 +54,7 @@ The build YAML extends `/azure-cicd/templates/mockup-docker-template.yaml`.
 The release YAML extends `/azure-cicd/templates/mockup-release-template.yaml`.
 Keep `resources.pipelines.source` equal to the registered build pipeline's display name.
 Use the pipeline label in the identity table followed by ` - Build`.
-For example, Qwipo-WebApp in `apps/frontend/rirn` uses `RIRN Company - Build`.
+For example, RIRN Console uses `RIRN Company - Build`.
 
 ## Generate files safely
 
@@ -129,6 +130,7 @@ The static frontend applications do not need configuration swapping for their bu
 | `main` | Reserve a release tag and build a versioned image. |
 | Other names, including `dev-cleanup` | No automatic trigger in the current branch filters. |
 
+DigiDukaan is the exception. Its build triggers only on `main`, and its release always targets production.
 The files also contain `dev/*`, but that prefix conflicts with the existing `dev` branch.
 If the user does not supply a branch name, use `feature/*` for a new preview branch.
 Do not change an existing branch name without authorization.
