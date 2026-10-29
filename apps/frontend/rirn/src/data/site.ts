@@ -18,7 +18,9 @@ export const site = {
     eyebrow: "DIGIDUKAAN / B2B ORDERING ON ONDC",
     lines: ["Beyond", "the beat."],
     description:
-      "DigiDukaan is a B2B ordering app for kirana stores on ONDC. Retailers discover products and schemes from participating distributors and wholesalers, then order between scheduled sales visits.",
+      "DigiDukaan is an ONDC-enabled B2B ordering app that connects kirana stores directly with authorized distributors.",
+    details:
+      "Retailers discover brands, browse products and schemes, and place orders anytime, with deliveries fulfilled by distributors and enhanced by logistics partners.",
     primary: "Let’s talk business",
     secondary: "See how it works",
     footnote: "Retailers order. Authorised sellers supply.",

@@ -29,7 +29,10 @@ export default function Home() {
                 the beat<span className="hero-period">.</span>
               </span>
             </h1>
-            <p className="hero-description">{site.hero.description}</p>
+            <div className="hero-description" data-intro>
+              <p className="hero-lead">{site.hero.description}</p>
+              <p>{site.hero.details}</p>
+            </div>
             <div className="hero-actions">
               <Action href="#contact">{site.hero.primary}</Action>
               <a className="hero-secondary" href="#network">

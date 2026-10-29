@@ -158,3 +158,12 @@ The homepage must explain what DigiDukaan is, why kiranas need it, ONDC's networ
 Qwipo for DigiDukaan is a dedicated technology-provider page, not a general company profile or an ownership diagram. Use the existing type, colours and motion. Its functional diagram replaces the generic delivery photograph and separates software responsibilities from supply and transport. ONDC is the open network; Qwipo provides technology; sellers supply and accept orders; delivery teams transport goods. No exclusive-provider claim, universal integration promise or unverified scale metrics.
 
 The new explanation uses static HTML and CSS, with existing reveal motion only. No extra animation library, screen capture source or heavy image is added. Keep all changes local and uncommitted; no push or deployment without a new explicit user instruction.
+
+
+## Hero introduction — 29 October 2026
+
+The user-approved product introduction appears as two complete paragraphs beneath “Beyond the beat.” The first defines DigiDukaan, its retailer audience and distributor connection; the second describes discovery, ordering and delivery. Both remain visible, with a slightly stronger first paragraph, a wider reading measure and one shared entrance using the existing animation system. No carousel or additional animation library is introduced.
+
+Desktop spacing is tightened to keep the primary actions visible at 1280 × 720. Mobile body text is 16px, reducing to 15px on the narrowest layout. The existing phone scroll, spin, alternating tilt, screenshot cycle and two route arrows are unchanged.
+
+Validation: source lint and production build passed; the deployment app's scoped lint, type and build checks passed. Browser checks covered 320px, 390px, 768px and 1280px layouts, including paused motion, with no horizontal overflow or text/device overlap in the checked states. This was a scoped copy/layout check, not a new whole-site performance benchmark. The user explicitly authorized pushing this update and monitoring its feature-branch deployment.
