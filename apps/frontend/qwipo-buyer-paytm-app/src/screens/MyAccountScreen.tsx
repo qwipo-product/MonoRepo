@@ -37,8 +37,8 @@ const ACCOUNT: Item[] = [
   { icon: Briefcase, label: 'My Orders', to: 'my-orders' },
   { icon: CalendarDays, label: 'Delivery Schedule', to: 'sub:delivery-schedule' },
   { icon: MapPin, label: 'Saved Addresses', to: 'sub:addresses' },
-  { icon: CreditCard, label: 'Payments', to: 'empty:sub:payment' },
-  { icon: Users, label: 'Credit Partners', to: 'empty:sub:credit' },
+  { icon: CreditCard, label: 'Payments', to: 'sub:payment' },
+  { icon: Users, label: 'Credit Partners', to: 'sub:credit' },
 ];
 
 const PREFERENCES: Item[] = [

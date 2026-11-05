@@ -3,7 +3,7 @@ import { toPng } from 'html-to-image';
 import { PanelLeftOpen } from 'lucide-react';
 import { useTheme } from '@mockups/ui';
 import FlowIndex from './review/FlowIndex';
-import { ALL_SCREENS, resolveScreenId, type ScreenId, screenNumber } from './review/screenIndex';
+import { ALL_SCREENS, type ScreenId, screenNumber } from './review/screenIndex';
 import { type Shell } from './review/ShellSwitcher';
 import { type Role } from './review/RoleSwitcher';
 import { deviceById, frameSize, type Device, type Orientation } from './review/DeviceSwitcher';
@@ -98,7 +98,7 @@ const BUILT = new Set<ScreenId>([
   'my-orders', 'order-details', 'profile', 'notifications', 'sub:business-details',
   'app-update', 'app-update-required', 'promo-banners', 'loading',
   'login-error', 'otp-error', 'cart-price-changes',
-  'empty:sub:payment', 'empty:sub:payment-orders', 'empty:sub:payment-gateways', 'empty:sub:credit',
+  'sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit',
   'sub:delivery-schedule', 'sub:delivery-company',
   'sub:language', 'sub:help', 'sub:terms',
   'sp:attendance', 'sp:tasks', 'sp:task-details', 'sp:create-interaction',
@@ -171,8 +171,7 @@ function fallbackBack(id: ScreenId): ScreenId {
 
 function readInitialScreen(): ScreenId {
   const params = new URLSearchParams(window.location.search);
-  const requested = params.get('screen');
-  const s = requested ? resolveScreenId(requested) : null;
+  const s = params.get('screen');
   // Paytm mini boots into the Paytm launcher
   // (→ search → welcome/consent → login → OTP → home).
   if (!s) return params.get('shell') === 'paytm' ? 'paytm-launcher' : 'listing';
@@ -233,6 +232,9 @@ export default function App() {
   const [viewSellerId, setViewSellerId] = useState<string | null>(CART.sellers[0]?.id ?? null);
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null);
   const [deliveryAddressId, setDeliveryAddressId] = useState<string>(DEFAULT_ADDRESS_ID);
+  // Payments flow context: selected vendor + amount carried into the pay screen.
+  const [paymentVendorId, setPaymentVendorId] = useState<string>('qwipo');
+  const [payAmount, setPayAmount] = useState<number>(0);
   // Salesperson flow: phone entered at login (9000000001 → salesperson) + task context.
   const [loginPhone, setLoginPhone] = useState<string>('');
   const [taskId, setTaskId] = useState<string>('tk1');
@@ -423,8 +425,7 @@ export default function App() {
     seller: viewSellerId,
   });
 
-  const go = (requested: ScreenId, opts?: NavOpts) => {
-    const id = resolveScreenId(requested);
+  const go = (id: ScreenId, opts?: NavOpts) => {
     /* Record the departure. Arriving somewhere already behind us unwinds to it
        rather than stacking a second copy, so Home → Cart → Home leaves one
        Home in the trail instead of a loop that Back walks forever. */
@@ -839,11 +840,35 @@ export default function App() {
       case 'sub:business-details':
         return <BusinessDetailsScreen onBack={goBack} />;
       case 'sub:payment':
-        return <PaymentsScreen onBack={goBack} />;
+        return (
+          <PaymentsScreen
+            onBack={goBack}
+            onOpenVendor={(id) => {
+              setPaymentVendorId(id);
+              go('sub:payment-orders');
+            }}
+          />
+        );
       case 'sub:payment-orders':
-        return <PaymentOrdersScreen onBack={goBack} />;
+        return (
+          <PaymentOrdersScreen
+            vendorId={paymentVendorId}
+            onBack={goBack}
+            onPay={(amount) => {
+              setPayAmount(amount);
+              go('sub:payment-gateways');
+            }}
+          />
+        );
       case 'sub:payment-gateways':
-        return <PaymentGatewaysScreen onBack={goBack} />;
+        return (
+          <PaymentGatewaysScreen
+            vendorId={paymentVendorId}
+            amount={payAmount}
+            onBack={goBack}
+            onDone={() => go('sub:payment')}
+          />
+        );
       case 'sub:delivery-schedule':
         return (
           <DeliveryScheduleScreen

@@ -74,17 +74,9 @@ http://localhost:5175/?screen=empty:cart&shell=buyer
 
 Use a registered screen ID from `src/review/screenIndex.ts`.
 The sidebar numbers follow the current screen order. They change when screens are removed.
-Retired account links use these empty-state replacements:
-
-| Previous screen ID | Replacement screen ID |
-| --- | --- |
-| `sub:payment` | `empty:sub:payment` |
-| `sub:payment-orders` | `empty:sub:payment-orders` |
-| `sub:payment-gateways` | `empty:sub:payment-gateways` |
-| `sub:credit` | `empty:sub:credit` |
-
-`resolveScreenId` in `src/review/screenIndex.ts` applies the replacements to navigation and review URLs.
-Other retired or unknown screen links open Home.
+Payments (`sub:payment`, `sub:payment-orders`, `sub:payment-gateways`) and Credit Partners (`sub:credit`) show their demo data.
+Their `empty:` entries show the same screens with no data.
+Retired or unknown screen links open Home.
 Empty entries use `empty:<id>` and resolve through `baseScreenOf` in `src/App.tsx`.
 Examine the actual screen's empty-state support before adding another review entry.
 

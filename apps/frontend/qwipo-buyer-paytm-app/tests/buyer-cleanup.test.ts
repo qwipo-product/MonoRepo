@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { buildCart, INITIAL_QTY } from '../src/data/cart';
 import { OFFERS } from '../src/data/coupons';
 import { ORDERS } from '../src/data/orders';
-import { resolveScreenId, visibleScreens } from '../src/review/screenIndex';
+import { visibleScreens } from '../src/review/screenIndex';
 
 describe('Purchased cart lines', () => {
   test('keeps the seeded payable total while excluding reward units from counts and weight', () => {
@@ -54,24 +54,15 @@ test('order history counts only purchased items and preserves the payable amount
   }
 });
 
-describe('Retired account destinations', () => {
+describe('Payments and Credit Partners', () => {
   for (const id of ['sub:payment', 'sub:payment-orders', 'sub:payment-gateways', 'sub:credit']) {
-    test(`${id} resolves to its registered empty-state counterpart in both shells`, () => {
-      const destination = resolveScreenId(id);
-      expect(destination).toBe(`empty:${id}`);
-      expect(resolveScreenId(destination)).toBe(destination);
+    test(`${id} and its empty state are both listed in both shells`, () => {
       for (const shell of ['buyer', 'paytm']) {
         const ids = visibleScreens(shell, 'customer').map((screen) => screen.id);
-        expect(ids).toContain(destination);
-        expect(ids).not.toContain(id);
+        expect(ids).toContain(id);
+        expect(ids).toContain(`empty:${id}`);
         expect(ids).not.toContain('offer-skus');
       }
     });
   }
-
-  test('other IDs are unchanged', () => {
-    for (const id of ['listing', 'cart', 'empty:cart', 'constructor', 'toString']) {
-      expect(resolveScreenId(id)).toBe(id);
-    }
-  });
 });
