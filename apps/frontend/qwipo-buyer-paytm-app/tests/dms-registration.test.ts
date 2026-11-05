@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { DEMO_FAILED_LINK, REGISTERED_MOBILE, dmsCompanyById, replyTo } from '../src/data/dmsPartners';
+import {
+  DEMO_FAILED_LINK,
+  REGISTERED_MOBILE,
+  dmsCompanyById,
+  isValidMobile,
+  replyTo,
+} from '../src/data/dmsPartners';
 
 describe('HUL reply to a Customer ID or mobile number (simulated)', () => {
   const hul = dmsCompanyById('hul')!;
@@ -16,5 +22,22 @@ describe('HUL reply to a Customer ID or mobile number (simulated)', () => {
 
   test('finds the shop by the mobile number registered on Qwipo', () => {
     expect(replyTo(hul, { by: 'mobile', value: REGISTERED_MOBILE })).toBe('registered');
+  });
+
+  test('also finds the shop by another mobile number the buyer typed', () => {
+    expect(replyTo(hul, { by: 'mobile', value: '9123456780' })).toBe('registered');
+  });
+});
+
+describe('HUL pop-up mobile number check (10 digits, no OTP)', () => {
+  test('accepts the Qwipo number and any other 10-digit number', () => {
+    expect(isValidMobile(REGISTERED_MOBILE)).toBe(true);
+    expect(isValidMobile('9123456780')).toBe(true);
+  });
+
+  test('rejects a number that is short, long or empty', () => {
+    expect(isValidMobile('98765')).toBe(false);
+    expect(isValidMobile('98765432101')).toBe(false);
+    expect(isValidMobile('')).toBe(false);
   });
 });

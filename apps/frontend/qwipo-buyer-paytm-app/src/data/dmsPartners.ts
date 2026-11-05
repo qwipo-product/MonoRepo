@@ -11,8 +11,9 @@
 // - `linksExisting` (HUL) — the company takes existing customers only (HUL P2P,
 //   stories 21543–21546 and 21741). Tapping it opens the Register with HUL
 //   pop-up: the shop picks Customer ID or Mobile number, and Continue sends that
-//   to the company to find the shop in its own records. Phase 1 sends the
-//   mobile number registered on Qwipo; typing another number comes later.
+//   to the company to find the shop in its own records. The mobile number
+//   starts as the one registered on Qwipo; the shop can change it to any
+//   10-digit number (no OTP).
 //   The company answers found (registered) or not found (rejected, shown as
 //   Failed, with Retry — story 21545).
 
@@ -67,8 +68,11 @@ export const dmsCompanyById = (id: string) => DMS_COMPANIES.find((c) => c.id ===
 export const dmsShortName = (c: DmsCompany) => c.shortName ?? c.company;
 
 /* The shop's mobile number on Qwipo — the same one Account · Business Details
-   and the registration form show. Phase 1 of the HUL pop-up sends this one. */
+   and the registration form show. The HUL pop-up fills it in by default. */
 export const REGISTERED_MOBILE = '9876543210';
+
+/** A mobile number the HUL pop-up will send: exactly 10 digits. No OTP. */
+export const isValidMobile = (m: string) => /^\d{10}$/.test(m);
 
 /** "9876543210" → "+91 98765 43210". */
 export const formatMobile = (m: string) => `+91 ${m.slice(0, 5)} ${m.slice(5)}`;
@@ -84,8 +88,8 @@ export interface DmsLinkRequest {
 export const describeLink = (r: DmsLinkRequest) =>
   r.by === 'customerId' ? `customer ID ${r.value}` : `mobile number ${formatMobile(r.value)}`;
 
-/* The company's simulated reply to a link request. It finds the shop by the
-   mobile number on Qwipo or by a known customer ID, and rejects any other ID —
+/* The company's simulated reply to a link request. It finds the shop by any
+   mobile number sent or by a known customer ID, and rejects any other ID —
    so a mistyped ID walks into Failed and Retry. Nothing is sent anywhere. */
 export const replyTo = (c: DmsCompany, r: DmsLinkRequest): DmsStatus =>
   r.by === 'mobile' ||

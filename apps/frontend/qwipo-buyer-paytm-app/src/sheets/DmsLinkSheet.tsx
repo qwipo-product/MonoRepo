@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { Clock, Lock, XCircle } from 'lucide-react';
-import { Button, Input, Sheet, cardVariants, cn } from '@mockups/ui';
+import { Clock, XCircle } from 'lucide-react';
+import { Button, FieldError, Input, Sheet, cardVariants, cn } from '@mockups/ui';
 import { Field } from '../components/formbits';
 import {
   REGISTERED_MOBILE,
   describeLink,
   dmsShortName,
   formatMobile,
+  isValidMobile,
   type DmsCompany,
   type DmsLinkRequest,
 } from '../data/dmsPartners';
+
+const MOBILE_ERROR = 'Enter a valid 10-digit mobile number';
 
 const OPTIONS: { by: DmsLinkRequest['by']; label: string; hint: (name: string) => string }[] = [
   { by: 'customerId', label: 'Customer ID', hint: (name) => `Printed on your ${name} bill` },
@@ -19,9 +22,10 @@ const OPTIONS: { by: DmsLinkRequest['by']; label: string; hint: (name: string) =
 /* Register with <company> — the pop-up a `linksExisting` company (HUL) opens
    from Register to Order. The shop already buys from the company, so instead
    of a form it says how the company knows it: a customer ID (free text) or
-   its mobile number. Phase 1 pre-fills the mobile number registered on Qwipo
-   and does not let it be changed; typing a different number, verified, is
-   phase 2.
+   a mobile number. The mobile number starts as the one registered on Qwipo,
+   and the shop can change it to another number. The only check is 10 digits:
+   no OTP, nothing verified. Like Login, the error shows on Continue, not
+   while the buyer is still typing.
 
    Continue sends the request — `onSend` puts the company at Pending behind
    the sheet — and the sheet turns into the Request sent confirmation.
@@ -29,9 +33,8 @@ const OPTIONS: { by: DmsLinkRequest['by']; label: string; hint: (name: string) =
    Opened from a Failed card (story 21545) it is the Rejected by distributor
    pop-up: the message quotes what was sent last, and Retry sends again with no
    limit. Retry is by customer ID only — the Mobile number option is greyed
-   out, since the shop's Qwipo number can't be changed in phase 1 — so it opens
-   on Customer ID, holding the ID that failed. No reason is shown — the company
-   sends none in phase 1. */
+   out — so it opens on Customer ID, holding the ID that failed. No reason is
+   shown — the company sends none. */
 export function DmsLinkSheet({
   company,
   initial,
@@ -51,11 +54,16 @@ export function DmsLinkSheet({
   const failed = rejected && initial ? initial : null;
   const [by, setBy] = useState<DmsLinkRequest['by']>(failed ? 'customerId' : (initial?.by ?? 'customerId'));
   const [customerId, setCustomerId] = useState(initial?.by === 'customerId' ? initial.value : '');
+  const [mobile, setMobile] = useState(initial?.by === 'mobile' ? initial.value : REGISTERED_MOBILE);
+  const [mobileError, setMobileError] = useState('');
   const [sent, setSent] = useState<DmsLinkRequest | null>(null);
 
+  // Continue is off only while the field is empty; a short number is caught on tap.
   const request: DmsLinkRequest | null =
     by === 'mobile'
-      ? { by, value: REGISTERED_MOBILE }
+      ? mobile
+        ? { by, value: mobile }
+        : null
       : customerId.trim()
         ? { by, value: customerId.trim() }
         : null;
@@ -105,6 +113,10 @@ export function DmsLinkSheet({
           disabled={!request}
           onClick={() => {
             if (!request) return;
+            if (request.by === 'mobile' && !isValidMobile(request.value)) {
+              setMobileError(MOBILE_ERROR);
+              return;
+            }
             onSend(request);
             setSent(request);
           }}
@@ -200,28 +212,46 @@ export function DmsLinkSheet({
             />
           </Field>
         ) : (
-          <Field label="Mobile number">
+          <Field label="Mobile number" required>
             <div className="relative">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-foreground"
+              >
+                +91
+              </span>
               <Input
                 id="dms-link-mobile"
-                value={formatMobile(REGISTERED_MOBILE)}
-                readOnly
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={mobile}
+                onChange={(e) => {
+                  setMobile(e.target.value.replace(/\D/g, ''));
+                  setMobileError('');
+                }}
+                placeholder="10-digit mobile number"
+                autoComplete="off"
                 aria-label="Mobile number"
-                aria-describedby="dms-link-help"
-                className="pr-10"
-              />
-              <Lock
-                aria-hidden
-                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-secondary"
+                aria-invalid={!!mobileError || undefined}
+                aria-describedby={mobileError ? 'dms-link-mobile-error' : 'dms-link-help'}
+                className="pl-12"
               />
             </div>
+            {mobileError && (
+              <FieldError id="dms-link-mobile-error">{mobileError}</FieldError>
+            )}
           </Field>
         )}
-        <p id="dms-link-help" className="mt-1.5 text-xs leading-relaxed text-foreground-secondary">
-          {by === 'customerId'
-            ? `Enter the ID exactly as it appears on your ${name} invoice.`
-            : `Your mobile number on Qwipo. ${name} will use it to find your shop.`}
-        </p>
+        {!(by === 'mobile' && mobileError) && (
+          <p id="dms-link-help" className="mt-1.5 text-xs leading-relaxed text-foreground-secondary">
+            {by === 'customerId'
+              ? `Enter the ID exactly as it appears on your ${name} invoice.`
+              : mobile === REGISTERED_MOBILE
+                ? `Your mobile number on Qwipo. Change it if ${name} has another number for your shop.`
+                : `${name} will use this number to find your shop.`}
+          </p>
+        )}
       </div>
     </Sheet>
   );
