@@ -1,7 +1,16 @@
 customer_id,customer_name,mobile_number,business_type,business_status,status,salesperson_name,salesperson_number,cluster,registered_date,latitude,longitude
-DEMO-001,Demo West Grocers,6000990001,Kirana,Active-User,Active,Demo Sales West,6000980002,Demo West,2026-01-01,17.485,78.391
-DEMO-002,Demo West Market,6000990002,Kirana,Active-User,Active,Demo Sales West,6000980002,Demo West,2026-02-01,17.495,78.401
-DEMO-003,Demo North Kitchen,6000990003,Restaurant,Active-User,Active,Demo Sales North,6000980001,Demo North,2026-03-01,17.505,78.513
-DEMO-004,Demo North Pantry,6000990004,Kirana,Business-Shutdown,InActive,,,Demo North,2026-01-15,17.518,78.521
-DEMO-005,Demo Central Stores,6000990005,Kirana,Active-User,Active,,,Demo Central,2026-04-01,17.445,78.451
-DEMO-006,Demo East Canteen,6000990006,Restaurant,Active-User,Active,Demo Sales North,6000980001,Demo East,2026-02-15,17.468,78.545
+DEMO-001,Sri Sai Kirana & General Stores,6000990001,Kirana,Active-User,Active,Naveen Kumar,6000980002,KPHB Colony,2026-01-01,17.485,78.391
+DEMO-002,Balaji Provision Stores,6000990002,Kirana,Active-User,Active,Naveen Kumar,6000980002,KPHB Colony,2026-02-01,17.495,78.401
+DEMO-003,Hotel Annapurna Tiffins,6000990003,Restaurant,Active-User,Active,Praveen Goud,6000980001,Alwal,2026-03-01,17.505,78.513
+DEMO-004,Venkatadri Kirana,6000990004,Kirana,Business-Shutdown,InActive,,,Alwal,2026-01-15,17.518,78.521
+DEMO-005,Begumpet Daily Needs,6000990005,Kirana,Active-User,Active,,,Begumpet,2026-04-01,17.445,78.451
+DEMO-006,Sri Durga Canteen,6000990006,Restaurant,Active-User,Active,Praveen Goud,6000980001,Malkajgiri,2026-02-15,17.468,78.545
+DEMO-007,Vijaya Super Market,6000990007,Kirana,Active-User,Active,Naveen Kumar,6000980002,KPHB Colony,2026-03-12,17.478,78.386
+DEMO-008,Hotel Swagath Grand,6000990008,Restaurant,Active-User,Active,Swathi Reddy,6000980003,Kukatpally,2026-04-05,17.492,78.409
+DEMO-009,Ravi Teja General Stores,6000990009,Kirana,Active-User,Active,Naveen Kumar,6000980002,KPHB Colony,2026-05-20,17.503,78.394
+DEMO-010,Mahalakshmi Rice Depot,6000990010,Kirana,Active-User,Active,Swathi Reddy,6000980003,Kukatpally,2026-06-08,17.474,78.413
+DEMO-011,Annapoorna Mess,6000990011,Restaurant,Active-User,Active,Swathi Reddy,6000980003,Kukatpally,2026-07-14,17.507,78.416
+DEMO-012,Kukatpally Fresh Mart,6000990012,Kirana,Active-User,Active,Swathi Reddy,6000980003,Kukatpally,2026-08-02,17.486,78.418
+DEMO-013,Sai Krishna Kirana,6000990013,Kirana,Active-User,Active,Praveen Goud,6000980001,Alwal,2026-04-22,17.497,78.502
+DEMO-014,Lothkunta Daily Mart,6000990014,Kirana,Active-User,Active,Praveen Goud,6000980001,Alwal,2026-06-30,17.521,78.508
+DEMO-015,Hotel Alwal Paradise,6000990015,Restaurant,Active-User,Active,Praveen Goud,6000980001,Alwal,2026-09-09,17.512,78.524

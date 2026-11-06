@@ -297,7 +297,7 @@ export function AdminDarkStoreDashboard() {
               [
                 "Sellers on this dark store",
                 cds ? (
-                  `${fmt(cds.sellers.length)} sellers${cds.removed.length ? ` · ${fmt(cds.removed.length)} removed` : ""}`
+                  `${fmt(cds.sellers.length)} ${cds.sellers.length === 1 ? "seller" : "sellers"}${cds.removed.length ? ` · ${fmt(cds.removed.length)} removed` : ""}`
                 ) : (
                   <Pending />
                 ),
@@ -309,7 +309,7 @@ export function AdminDarkStoreDashboard() {
               ["Retailers not served yet", cds ? fmt(cds.notServed) : <Pending />],
               [
                 "Companies on this dark store",
-                cds ? `${fmt(cds.companies.length)} companies` : <Pending />,
+                cds ? `${fmt(cds.companies.length)} ${cds.companies.length === 1 ? "company" : "companies"}` : <Pending />,
               ],
             ]}
           />

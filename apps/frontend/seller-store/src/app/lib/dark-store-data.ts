@@ -262,11 +262,13 @@ type SeedMeta = Pick<
   | "pincode"
   | "zone"
   | "zoneFileName"
->;
+> &
+  Partial<Pick<DarkStoreConfig, "removedSellers">>;
 
 // Sample details so every field has a value for demos. The polygon's
 // centre stands in for the store location. Every area seller is on the
-// store automatically, so nothing is removed to begin with.
+// store automatically; KPHB starts with one seller already removed so
+// "Removed sellers" has an entry to add back.
 function seedStore(meta: SeedMeta): DarkStoreConfig {
   const centre = zoneCentre(meta.zone);
   return {
@@ -276,7 +278,7 @@ function seedStore(meta: SeedMeta): DarkStoreConfig {
     longitude: Number(centre.lng.toFixed(6)),
     ondcCityCode: "std:040",
     isActive: true,
-    removedSellers: [],
+    removedSellers: meta.removedSellers ?? [],
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
   };
@@ -296,6 +298,8 @@ function seedStores(): DarkStoreConfig[] {
       pincode: "500072",
       zone: kphbZone,
       zoneFileName: "kphb-dark-store-zone.geojson",
+      // Lakshmi Ganapathi Agencies (seller-7) — sample removal.
+      removedSellers: [{ sellerId: "seller-7", removedAt: "2026-10-28T11:30:00.000Z" }],
     }),
     seedStore({
       id: "alwal",
@@ -313,9 +317,14 @@ function seedStores(): DarkStoreConfig[] {
   ];
 }
 
-// v4: area sellers join automatically; only removals are stored.
-const STORES_KEY = "qwipo.mock.dark-stores.v4";
-const LEGACY_STORES_KEYS = ["qwipo.mock.dark-stores.v3", "qwipo.mock.dark-stores.v2"];
+// v5: area sellers join automatically; only removals are stored. (v5
+// re-seeds so the sample removal on KPHB shows in browsers that saved v4.)
+const STORES_KEY = "qwipo.mock.dark-stores.v5";
+const LEGACY_STORES_KEYS = [
+  "qwipo.mock.dark-stores.v4",
+  "qwipo.mock.dark-stores.v3",
+  "qwipo.mock.dark-stores.v2",
+];
 
 function readConfigs(): DarkStoreConfig[] {
   try {
@@ -558,7 +567,14 @@ export function sampleDailyOperations(
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
   const r = ((h >>> 0) % 1000) / 1000;
-  const ordersToday = cdsSellers === 0 ? 0 : Math.max(12, Math.round(activeRetailers * (0.07 + 0.04 * r)));
+  // A small store sees about one order per retailer (each order goes to
+  // one seller); a large one a steady base plus 7–11% of its retailers.
+  const ordersToday =
+    cdsSellers === 0
+      ? 0
+      : Math.round(
+          Math.min(activeRetailers * (0.9 + 0.6 * r), 12 + activeRetailers * (0.07 + 0.04 * r)),
+        );
   const delivered = Math.round(ordersToday * (0.42 + 0.1 * r));
   const outForDelivery = Math.round(ordersToday * 0.21);
   const receivedAtStore = Math.round(ordersToday * 0.17);
