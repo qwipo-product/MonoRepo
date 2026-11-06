@@ -46,7 +46,7 @@ import {
 import { getSellerById } from "../../lib/mock-store";
 import {
   findStoreForPoint,
-  getConnectedSellerIds,
+  getCdsSellerIds,
   useDarkStores,
 } from "../../lib/dark-store-data";
 
@@ -268,10 +268,13 @@ export function AdminCustomerDetail() {
             </span>
             <span className="text-gray-500">
               {(() => {
-                const n = getConnectedSellerIds(fulfilmentStore).length;
+                const onStore = new Set(getCdsSellerIds(fulfilmentStore));
+                const mine = [...new Set(matchedBeats.map((b) => b.sellerId ?? ""))].filter(Boolean);
+                const n = mine.filter((id) => onStore.has(id)).length;
+                if (mine.length === 0) return "No seller delivers to this retailer yet.";
                 return n
-                  ? `Orders to its ${n} connected seller account${n === 1 ? "" : "s"} (sellers with delivery beats in the polygon) are delivered by the dark store.`
-                  : "No seller's delivery beats reach into its polygon, so sellers deliver directly.";
+                  ? `${n} of this retailer's ${mine.length} seller${mine.length === 1 ? "" : "s"} ${n === 1 ? "is" : "are"} on the dark store — those orders are delivered by it; the rest deliver directly.`
+                  : "None of this retailer's sellers are on the dark store yet, so they deliver directly.";
               })()}
             </span>
           </>

@@ -47,18 +47,21 @@ import { isEmptyMode } from "./data-mode";
 // connected to them and deliver to the retailer on the seller's behalf.
 //
 // A store's SERVICE AREA is an uploaded GeoJSON polygon, not a pincode
-// list, and the
-// polygon is also how sellers connect: every active seller whose
-// delivery-beat polygons reach into it is a connected account
-// (getConnectedSellerIds) — there is no hand-kept seller list. A
-// retailer is routed to the ACTIVE store whose polygon contains their
-// lat/long (findStoreForPoint), and orders to its connected sellers go
-// through that store. Polygons may overlap — the seed KPHB and Alwal
-// circles already do — so a retailer inside two goes to the nearer
-// store.
+// list, and it is also how sellers join: every active seller whose
+// delivery-beat polygons reach into it is on the store AUTOMATICALLY
+// (getAreaSellerIds) — a newly onboarded seller or a moved beat joins
+// with no action. The super admin can only take a seller off
+// (removeSellerFromDarkStore); a removed seller stays off until added
+// back (addSellersBackToDarkStore). On the store, a seller hands its
+// stock over in its daily handover slot and the store delivers its
+// orders. A retailer is routed to the ACTIVE store whose polygon
+// contains their lat/long (findStoreForPoint). Polygons may overlap —
+// the seed KPHB and Alwal circles already do — so a retailer inside two
+// goes to the nearer store.
 //
 // Persisted to localStorage like the rest of the mock store. KPHB and
-// Alwal are the seed; in a real install this would live behind an API.
+// Alwal are the seed, with sample contact details; in a real install
+// this would live behind an API.
 
 /** The persisted record — the Add / Update Dark Store form. */
 export interface DarkStoreConfig {
@@ -87,8 +90,34 @@ export interface DarkStoreConfig {
   zone: unknown;
   /** Name of the uploaded polygon file. */
   zoneFileName?: string;
+  /**
+   * Area sellers the super admin took off this store — every other
+   * area seller is on it automatically.
+   */
+  removedSellers: RemovedSellerLink[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** A seller taken off a dark store. */
+export interface RemovedSellerLink {
+  sellerId: string;
+  removedAt: string;
+}
+
+/** Daily windows a seller hands its stock over at the store. */
+export const HANDOVER_SLOTS = [
+  "6:00 – 8:00 AM",
+  "8:00 – 10:00 AM",
+  "12:00 – 2:00 PM",
+  "4:00 – 6:00 PM",
+];
+
+/** A seller's daily stock-handover slot (sample: spread by seller id). */
+export function handoverSlotFor(sellerId: string): string {
+  let h = 0;
+  for (let i = 0; i < sellerId.length; i++) h = (h * 31 + sellerId.charCodeAt(i)) >>> 0;
+  return HANDOVER_SLOTS[h % HANDOVER_SLOTS.length];
 }
 
 /** A store with its polygon measured, for display and analysis. */
@@ -163,8 +192,8 @@ export const STORE_FORMATS = {
 
 /**
  * Logistics account — the store's ONDC logistics roles (LBNP + LSP) can
- * be provisioned once every detail the network needs is on file. Seed
- * stores show "Provisioning incomplete" until they're updated.
+ * be provisioned once every detail the network needs is on file; until
+ * then the store shows "Provisioning incomplete".
  */
 export function isLogisticsProvisioned(s: DarkStoreConfig): boolean {
   return (
@@ -180,69 +209,146 @@ export function isLogisticsProvisioned(s: DarkStoreConfig): boolean {
   );
 }
 
+// ---- Sellers in a store's area ----
+
+// Per store, keyed on its zone object and the beat-store version so an
+// edited polygon or beat recomputes; the store pages call this on
+// every render. Declared before the registry below, which seeds from it.
+const _areaCache = new Map<string, { zone: unknown; beatsVersion: number; ids: string[] }>();
+
+/**
+ * Sellers in the store's area — the active sellers whose delivery-beat
+ * polygons reach into its polygon, sorted by business name. These are
+ * the sellers the super admin can add to the CDS.
+ */
+export function getAreaSellerIds(store: Pick<DarkStoreConfig, "id" | "zone">): string[] {
+  const beatsVersion = getServiceabilityBeatsVersion();
+  const hit = _areaCache.get(store.id);
+  if (hit && hit.zone === store.zone && hit.beatsVersion === beatsVersion) return hit.ids;
+  const sellers = getSellers().filter((s) => s.isActive !== false);
+  const active = new Set(sellers.map((s) => s.id));
+  const found = new Set<string>();
+  for (const b of getServiceabilityBeats()) {
+    if (
+      b.sellerId &&
+      active.has(b.sellerId) &&
+      !found.has(b.sellerId) &&
+      b.polygonData != null &&
+      polygonsOverlap(b.polygonData, store.zone)
+    ) {
+      found.add(b.sellerId);
+    }
+  }
+  const name = new Map(sellers.map((s) => [s.id, s.businessName || s.name]));
+  const ids = [...found].sort((a, b) => (name.get(a) ?? "").localeCompare(name.get(b) ?? ""));
+  _areaCache.set(store.id, { zone: store.zone, beatsVersion, ids });
+  return ids;
+}
+
+// ---- Seed ----
+
 const SEED_TIMESTAMP = "2026-07-24T00:00:00.000Z";
 
-// The seed polygons' centres stand in for the store location; contact
-// details are left blank for the admin to fill in.
-function seedStore(
-  meta: Pick<DarkStoreConfig, "id" | "name" | "areaName" | "city" | "pincode" | "zone" | "zoneFileName">,
-): DarkStoreConfig {
+type SeedMeta = Pick<
+  DarkStoreConfig,
+  | "id"
+  | "name"
+  | "areaName"
+  | "gstNumber"
+  | "mobile"
+  | "email"
+  | "address"
+  | "city"
+  | "pincode"
+  | "zone"
+  | "zoneFileName"
+>;
+
+// Sample details so every field has a value for demos. The polygon's
+// centre stands in for the store location. Every area seller is on the
+// store automatically, so nothing is removed to begin with.
+function seedStore(meta: SeedMeta): DarkStoreConfig {
   const centre = zoneCentre(meta.zone);
   return {
     ...meta,
-    gstNumber: "",
-    mobile: "",
-    email: "",
-    address: "",
     state: "Telangana",
     latitude: Number(centre.lat.toFixed(6)),
     longitude: Number(centre.lng.toFixed(6)),
     ondcCityCode: "std:040",
     isActive: true,
+    removedSellers: [],
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
   };
 }
 
-const SEED_STORES: DarkStoreConfig[] = [
-  seedStore({
-    id: "kphb",
-    name: "KPHB Dark Store",
-    areaName: "KPHB",
-    city: "Hyderabad",
-    pincode: "500072",
-    zone: kphbZone,
-    zoneFileName: "kphb-dark-store-zone.geojson",
-  }),
-  seedStore({
-    id: "alwal",
-    name: "Alwal Dark Store",
-    areaName: "Alwal",
-    city: "Secunderabad",
-    pincode: "500010",
-    zone: alwalZone,
-    zoneFileName: "alwal-dark-store-zone.geojson",
-  }),
-];
+function seedStores(): DarkStoreConfig[] {
+  return [
+    seedStore({
+      id: "kphb",
+      name: "KPHB Dark Store",
+      areaName: "KPHB",
+      gstNumber: "36AAICQ4821K1Z7",
+      mobile: "9849034561",
+      email: "cds.kphb@qwipo.com",
+      address: "Plot No. 27, Road No. 3, KPHB Colony Phase 6, Kukatpally",
+      city: "Hyderabad",
+      pincode: "500072",
+      zone: kphbZone,
+      zoneFileName: "kphb-dark-store-zone.geojson",
+    }),
+    seedStore({
+      id: "alwal",
+      name: "Alwal Dark Store",
+      areaName: "Alwal",
+      gstNumber: "36AAICQ4821K2Z6",
+      mobile: "9701245563",
+      email: "cds.alwal@qwipo.com",
+      address: "H.No. 1-4-112, Lothkunta Main Road, Alwal",
+      city: "Secunderabad",
+      pincode: "500010",
+      zone: alwalZone,
+      zoneFileName: "alwal-dark-store-zone.geojson",
+    }),
+  ];
+}
 
-// v2: the connector form's fields (v1 was an earlier internal shape).
-const STORES_KEY = "qwipo.mock.dark-stores.v2";
+// v4: area sellers join automatically; only removals are stored.
+const STORES_KEY = "qwipo.mock.dark-stores.v4";
+const LEGACY_STORES_KEYS = ["qwipo.mock.dark-stores.v3", "qwipo.mock.dark-stores.v2"];
 
 function readConfigs(): DarkStoreConfig[] {
   try {
     const raw = localStorage.getItem(STORES_KEY);
-    if (raw === null) return SEED_STORES;
-    const parsed = JSON.parse(raw) as (DarkStoreConfig & {
-      sellerIds?: unknown;
-      zoneSource?: unknown;
-    })[];
-    if (!Array.isArray(parsed)) return SEED_STORES;
-    // Drop fields earlier builds saved: the hand-picked seller list
-    // (connected sellers now come from the polygon) and the map-editor
-    // mode (polygons are uploaded now).
-    return parsed.map(({ sellerIds: _s, zoneSource: _z, ...config }) => config);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw) as DarkStoreConfig[];
+      if (Array.isArray(parsed)) {
+        return parsed.map((c) => ({
+          ...c,
+          removedSellers: Array.isArray(c.removedSellers) ? c.removedSellers : [],
+        }));
+      }
+    }
+    // First run on v4: fresh seeds, plus any store the admin added under
+    // an earlier version (it starts with nothing removed).
+    const seeds = seedStores();
+    const legacyRaw = LEGACY_STORES_KEYS.map((k) => localStorage.getItem(k)).find((r) => r !== null);
+    const legacy = JSON.parse(legacyRaw ?? "[]") as unknown;
+    const kept = Array.isArray(legacy)
+      ? (legacy as (DarkStoreConfig & {
+          sellerIds?: unknown;
+          zoneSource?: unknown;
+          cdsSellers?: unknown;
+        })[])
+          .filter((c) => c && typeof c.id === "string" && !seeds.some((s) => s.id === c.id))
+          .map(({ sellerIds: _s, zoneSource: _z, cdsSellers: _c, ...c }) => ({
+            ...c,
+            removedSellers: [],
+          }))
+      : [];
+    return [...seeds, ...kept];
   } catch {
-    return SEED_STORES;
+    return seedStores();
   }
 }
 
@@ -323,11 +429,15 @@ function makeStoreId(areaName: string): string {
   return `${base}-${n}`;
 }
 
-export type DarkStoreInput = Omit<DarkStoreConfig, "id" | "createdAt" | "updatedAt">;
+export type DarkStoreInput = Omit<
+  DarkStoreConfig,
+  "id" | "removedSellers" | "createdAt" | "updatedAt"
+>;
 
 /**
- * Create (no id) or update a store. Throws with a user-facing message
- * when the zone is empty or the browser can't store it.
+ * Create (no id) or update a store. Its removed sellers are kept on
+ * update; a new store starts with none. Throws with a user-facing
+ * message when the zone is empty or the browser can't store it.
  */
 export function saveDarkStore(input: DarkStoreInput, id?: string): DarkStore {
   if (polygonOuterRings(input.zone).length === 0) {
@@ -336,55 +446,131 @@ export function saveDarkStore(input: DarkStoreInput, id?: string): DarkStore {
   const now = new Date().toISOString();
   const existing = id ? _stores.find((s) => s.id === id) : undefined;
   const record: DarkStoreConfig = existing
-    ? { ...input, id: existing.id, createdAt: existing.createdAt, updatedAt: now }
-    : { ...input, id: makeStoreId(input.areaName), createdAt: now, updatedAt: now };
+    ? {
+        ...input,
+        id: existing.id,
+        removedSellers: existing.removedSellers,
+        createdAt: existing.createdAt,
+        updatedAt: now,
+      }
+    : {
+        ...input,
+        id: makeStoreId(input.areaName),
+        removedSellers: [],
+        createdAt: now,
+        updatedAt: now,
+      };
   commit(existing ? _stores.map((s) => (s.id === id ? record : s)) : [..._stores, record]);
   return _stores.find((s) => s.id === record.id)!;
 }
 
 /** The form values of a saved store. */
 export function toDarkStoreInput(store: DarkStore): DarkStoreInput {
-  const { centre: _c, areaKm2: _a, id: _id, createdAt: _cr, updatedAt: _u, ...input } =
-    store;
+  const {
+    centre: _c,
+    areaKm2: _a,
+    id: _id,
+    removedSellers: _rm,
+    createdAt: _cr,
+    updatedAt: _u,
+    ...input
+  } = store;
   return input;
 }
 
-// Per store, keyed on its zone object and the beat-store version so an
-// edited polygon or beat recomputes; the store pages call this on
-// every render.
-const _connectedCache = new Map<string, { zone: unknown; beatsVersion: number; ids: string[] }>();
+// ---- Sellers on a store ----
 
 /**
- * Connected accounts — the active sellers whose delivery-beat polygons
- * reach into the store's polygon, sorted by business name.
+ * Sellers on the store — every area seller except the ones the super
+ * admin removed.
  */
-export function getConnectedSellerIds(store: Pick<DarkStore, "id" | "zone">): string[] {
-  const beatsVersion = getServiceabilityBeatsVersion();
-  const hit = _connectedCache.get(store.id);
-  if (hit && hit.zone === store.zone && hit.beatsVersion === beatsVersion) return hit.ids;
-  const sellers = getSellers().filter((s) => s.isActive !== false);
-  const active = new Set(sellers.map((s) => s.id));
-  const found = new Set<string>();
-  for (const b of getServiceabilityBeats()) {
-    if (
-      b.sellerId &&
-      active.has(b.sellerId) &&
-      !found.has(b.sellerId) &&
-      b.polygonData != null &&
-      polygonsOverlap(b.polygonData, store.zone)
-    ) {
-      found.add(b.sellerId);
-    }
-  }
-  const name = new Map(sellers.map((s) => [s.id, s.businessName || s.name]));
-  const ids = [...found].sort((a, b) => (name.get(a) ?? "").localeCompare(name.get(b) ?? ""));
-  _connectedCache.set(store.id, { zone: store.zone, beatsVersion, ids });
-  return ids;
+export function getCdsSellerIds(store: DarkStoreConfig): string[] {
+  const removed = new Set(store.removedSellers.map((l) => l.sellerId));
+  return getAreaSellerIds(store).filter((id) => !removed.has(id));
 }
 
-/** Stores a seller is connected to through its delivery beats. */
+/** Take a seller off a store — its orders go back to direct delivery. */
+export function removeSellerFromDarkStore(storeId: string, sellerId: string): void {
+  const now = new Date().toISOString();
+  commit(
+    _stores.map((s) =>
+      s.id === storeId
+        ? {
+            ...s,
+            removedSellers: [
+              ...s.removedSellers.filter((l) => l.sellerId !== sellerId),
+              { sellerId, removedAt: now },
+            ],
+            updatedAt: now,
+          }
+        : s,
+    ),
+  );
+}
+
+/** Put removed sellers back on a store. */
+export function addSellersBackToDarkStore(storeId: string, sellerIds: string[]): void {
+  const now = new Date().toISOString();
+  const ids = new Set(sellerIds);
+  commit(
+    _stores.map((s) =>
+      s.id === storeId
+        ? {
+            ...s,
+            removedSellers: s.removedSellers.filter((l) => !ids.has(l.sellerId)),
+            updatedAt: now,
+          }
+        : s,
+    ),
+  );
+}
+
+/** Stores a seller is on. */
 export function getSellerDarkStores(sellerId: string): DarkStore[] {
-  return getDarkStores().filter((s) => getConnectedSellerIds(s).includes(sellerId));
+  return getDarkStores().filter((s) => getCdsSellerIds(s).includes(sellerId));
+}
+
+// ---- Daily operations (sample) ----
+
+export interface DailyOperations {
+  ordersToday: number;
+  awaitingHandover: number;
+  receivedAtStore: number;
+  outForDelivery: number;
+  delivered: number;
+  /** Order placed → delivered, minutes. */
+  avgDeliveryMins: number;
+  /** Added sellers that have handed today's stock over. */
+  sellersHandedOver: number;
+}
+
+/**
+ * Sample figures until orders are routed through the store — sized from
+ * its active retailers and added sellers, steady through the day and
+ * different each day.
+ */
+export function sampleDailyOperations(
+  store: Pick<DarkStoreConfig, "id">,
+  activeRetailers: number,
+  cdsSellers: number,
+): DailyOperations {
+  const seed = `${store.id}:${new Date().toDateString()}`;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  const r = ((h >>> 0) % 1000) / 1000;
+  const ordersToday = cdsSellers === 0 ? 0 : Math.max(12, Math.round(activeRetailers * (0.07 + 0.04 * r)));
+  const delivered = Math.round(ordersToday * (0.42 + 0.1 * r));
+  const outForDelivery = Math.round(ordersToday * 0.21);
+  const receivedAtStore = Math.round(ordersToday * 0.17);
+  return {
+    ordersToday,
+    awaitingHandover: Math.max(0, ordersToday - delivered - outForDelivery - receivedAtStore),
+    receivedAtStore,
+    outForDelivery,
+    delivered,
+    avgDeliveryMins: Math.round(150 + 70 * r),
+    sellersHandedOver: Math.round(cdsSellers * (0.7 + 0.2 * r)),
+  };
 }
 
 // ---- Analysis ----
@@ -849,6 +1035,80 @@ export function buildDarkStoreAnalysis(
   };
 }
 
+// ---- Coverage through the added sellers ----
+
+export interface CdsCompany {
+  companyName: string;
+  /** Added sellers carrying it. */
+  sellers: number;
+  /** Active retailers inside who can order it through the store. */
+  reached: number;
+  pct: number;
+}
+
+export interface CdsCoverage {
+  /** Sellers on the store. */
+  sellerIds: Set<string>;
+  /** Sellers on the store, most retailers reached first. */
+  sellers: SellerCoverage[];
+  /** Area sellers the super admin removed, most recent first. */
+  removed: SellerCoverage[];
+  /** Every seller delivering inside the polygon, on the store or not. */
+  areaTotal: number;
+  /** Active retailers inside that at least one seller on the store delivers to. */
+  served: number;
+  servedPct: number;
+  notServed: number;
+  companies: CdsCompany[];
+}
+
+/**
+ * What the store carries without the sellers the super admin removed.
+ * Takes the store separately from the analysis so removing or adding
+ * back a seller doesn't need the (slow) analysis rebuilt.
+ */
+export function buildCdsCoverage(a: DarkStoreAnalysis, store: DarkStoreConfig): CdsCoverage {
+  const removedAt = new Map(store.removedSellers.map((l) => [l.sellerId, l.removedAt]));
+  const area = a.sellers.filter((s) => s.sellerId);
+  const sellers = area.filter((s) => !removedAt.has(s.sellerId));
+  const ids = new Set(sellers.map((s) => s.sellerId));
+  const removed = area
+    .filter((s) => removedAt.has(s.sellerId))
+    .sort((x, y) => (removedAt.get(y.sellerId) ?? "").localeCompare(removedAt.get(x.sellerId) ?? ""));
+  const total = a.customers.length;
+
+  let served = 0;
+  const reach = new Map<string, number>();
+  for (const z of a.customers) {
+    const beats = z.beats.filter((b) => b.sellerId && ids.has(b.sellerId));
+    if (beats.length) served++;
+    for (const name of new Set(beats.map((b) => b.companyName))) {
+      reach.set(name, (reach.get(name) ?? 0) + 1);
+    }
+  }
+  const carriers = new Map<string, number>();
+  for (const s of sellers) {
+    for (const c of s.companyNames) carriers.set(c, (carriers.get(c) ?? 0) + 1);
+  }
+  const companies = [...carriers.entries()]
+    .map(([companyName, n]) => {
+      const reached = reach.get(companyName) ?? 0;
+      return { companyName, sellers: n, reached, pct: pct(reached, total) };
+    })
+    .sort((x, y) => y.reached - x.reached || x.companyName.localeCompare(y.companyName));
+
+  return {
+    sellerIds: ids,
+    sellers,
+    removed,
+    areaTotal: area.length,
+    served,
+    servedPct: pct(served, total),
+    notServed: total - served,
+    companies,
+  };
+}
+
 // ---- Table exports ----
 //
 // Each dashboard table has a header list + a row → cells mapper, shared
@@ -1018,7 +1278,8 @@ export async function downloadAnalyticsXlsx(
     ["Store location (lat, long)", `${store.centre.lat.toFixed(6)}, ${store.centre.lng.toFixed(6)}`],
     ["Service area", `Polygon · ${storeZoneLabel(store)}`],
     ["Service area (km²)", Number(store.areaKm2.toFixed(2))],
-    ["Connected seller accounts", getConnectedSellerIds(store).length],
+    ["Sellers in the area", getAreaSellerIds(store).length],
+    ["Sellers on the dark store", getCdsSellerIds(store).length],
     ["Customers in zone (all statuses)", a.totalInZone],
     ...(full ? [["Customers in coverage (all statuses)", a.totalInScope]] : []),
     [full ? "Active customers in coverage" : "Active customers in zone", a.customers.length],

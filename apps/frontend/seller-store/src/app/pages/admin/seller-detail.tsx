@@ -46,7 +46,7 @@ import {
   RefreshCw,
   Warehouse,
 } from "lucide-react";
-import { getConnectedSellerIds, useDarkStores } from "../../lib/dark-store-data";
+import { getCdsSellerIds, useDarkStores } from "../../lib/dark-store-data";
 import { toast } from "sonner";
 import {
   getSellerById,
@@ -111,10 +111,10 @@ export function AdminSellerDetail() {
   const [activeTab, setActiveTab] = useState(
     () => searchParams.get("tab") ?? "profile",
   );
-  // Dark stores this seller is a connected account of — its delivery
-  // beats reach into their polygon (Digidukaan Darkstore Connector).
+  // Dark stores this seller has been added to (Dark Stores → store →
+  // Add sellers); only sellers delivering inside the polygon can be added.
   const sellerDarkStores = useDarkStores().filter((s) =>
-    sellerId ? getConnectedSellerIds(s).includes(sellerId) : false,
+    sellerId ? getCdsSellerIds(s).includes(sellerId) : false,
   );
 
   // Profile is read-only post-creation (no edit affordance in Phase 1).
@@ -675,9 +675,9 @@ export function AdminSellerDetail() {
                       iconBg="bg-emerald-100 text-emerald-600"
                       name="Digidukaan Darkstore"
                       subtitle="Dark store"
-                      description={`Orders from retailers inside the polygon of ${sellerDarkStores
+                      description={`Added to ${sellerDarkStores
                         .map((s) => `${s.name} (${s.areaName})`)
-                        .join(", ")} are delivered by the dark store. Manage in Connectors → Digidukaan Darkstore Connector.`}
+                        .join(", ")}. The seller hands its stock over at the dark store, which delivers its orders to retailers inside the polygon. Manage in Dark Stores.`}
                       badge={
                         <Badge className="bg-green-50 text-green-700 border-green-200 gap-1">
                           <CheckCircle2 className="h-3 w-3" />

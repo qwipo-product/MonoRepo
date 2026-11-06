@@ -2,8 +2,9 @@
 // -----------------------------------------------------------------
 // Every dark store (CDS) side by side in one plain table — the few
 // numbers that tell you how a store is set up and how well its area is
-// served. Click a row for that store's page. Stores are added and edited
-// in Connectors → Digidukaan Darkstore Connector.
+// served. Click a row for that store's page, where sellers are added.
+// Stores themselves are added and edited in Connectors → Digidukaan
+// Darkstore Connector.
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Card } from "@mockups/web-ui";
@@ -23,13 +24,22 @@ import { ChevronRight, Plug, Search, Warehouse } from "lucide-react";
 import { getCustomers, subscribeToCustomers } from "../../lib/customer-database";
 import { subscribeToServiceabilityBeats } from "../../lib/serviceability-data";
 import {
+  buildCdsCoverage,
   buildDarkStoreAnalysis,
+  sampleDailyOperations,
   storeZoneLabel,
   useDarkStores,
+  type CdsCoverage,
   type DarkStoreAnalysis,
 } from "../../lib/dark-store-data";
 
 const fmt = (n: number) => n.toLocaleString("en-IN");
+
+interface StoreStats {
+  analysis: DarkStoreAnalysis;
+  cds: CdsCoverage;
+  ordersToday: number;
+}
 
 export function AdminDarkStores() {
   const navigate = useNavigate();
@@ -48,10 +58,19 @@ export function AdminDarkStores() {
       un2();
     };
   }, []);
-  const [stats, setStats] = useState<Map<string, DarkStoreAnalysis>>(new Map());
+  const [stats, setStats] = useState<Map<string, StoreStats>>(new Map());
   useEffect(() => {
     const t = setTimeout(() => {
-      setStats(new Map(stores.map((s) => [s.id, buildDarkStoreAnalysis(s, customers, "zone")])));
+      setStats(
+        new Map(
+          stores.map((s) => {
+            const analysis = buildDarkStoreAnalysis(s, customers, "zone");
+            const cds = buildCdsCoverage(analysis, s);
+            const ops = sampleDailyOperations(s, analysis.customers.length, cds.sellers.length);
+            return [s.id, { analysis, cds, ordersToday: ops.ordersToday }];
+          }),
+        ),
+      );
     }, 0);
     return () => clearTimeout(t);
   }, [stores, customers, beatsVersion]);
@@ -60,7 +79,7 @@ export function AdminDarkStores() {
   const rows = stores.filter(
     (s) => !q || s.name.toLowerCase().includes(q) || s.areaName.toLowerCase().includes(q),
   );
-  const cell = (id: string, pick: (a: DarkStoreAnalysis) => string) => {
+  const cell = (id: string, pick: (a: StoreStats) => string) => {
     const a = stats.get(id);
     return a ? pick(a) : "…";
   };
@@ -115,9 +134,10 @@ export function AdminDarkStores() {
                     <TableHead className="text-xs uppercase text-gray-500">Status</TableHead>
                     <TableHead className="text-xs uppercase text-gray-500">Polygon</TableHead>
                     <TableHead className="text-xs uppercase text-gray-500 text-right">Active retailers</TableHead>
-                    <TableHead className="text-xs uppercase text-gray-500 text-right">Served by sellers</TableHead>
-                    <TableHead className="text-xs uppercase text-gray-500 text-right">Connected sellers</TableHead>
+                    <TableHead className="text-xs uppercase text-gray-500 text-right">Sellers on store</TableHead>
+                    <TableHead className="text-xs uppercase text-gray-500 text-right">Retailers served</TableHead>
                     <TableHead className="text-xs uppercase text-gray-500 text-right">Companies</TableHead>
+                    <TableHead className="text-xs uppercase text-gray-500 text-right">Orders today</TableHead>
                     <TableHead className="w-8" />
                   </TableRow>
                 </TableHeader>
@@ -141,16 +161,19 @@ export function AdminDarkStores() {
                       </TableCell>
                       <TableCell className="text-sm text-gray-700">{storeZoneLabel(s)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {cell(s.id, (a) => fmt(a.customers.length))}
+                        {cell(s.id, (a) => fmt(a.analysis.customers.length))}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {cell(s.id, (a) => `${fmt(a.covered)} (${a.coveragePct}%)`)}
+                        {cell(s.id, (a) => fmt(a.cds.sellers.length))}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {cell(s.id, (a) => fmt(a.sellers.length))}
+                        {cell(s.id, (a) => `${fmt(a.cds.served)} (${a.cds.servedPct}%)`)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {cell(s.id, (a) => fmt(a.companies.length))}
+                        {cell(s.id, (a) => fmt(a.cds.companies.length))}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {cell(s.id, (a) => fmt(a.ordersToday))}
                       </TableCell>
                       <TableCell>
                         <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -163,9 +186,9 @@ export function AdminDarkStores() {
           )}
         </Card>
         <p className="text-xs text-gray-500 mt-3">
-          Active retailers — inside the store's polygon. Served by sellers — of those, how many at
-          least one connected seller already delivers to. Connected sellers — sellers whose delivery
-          beats reach into the polygon.
+          Active retailers — inside the store's polygon. Sellers on store — every seller delivering
+          inside the polygon joins automatically, less any the super admin removed. Retailers served —
+          active retailers at least one seller on the store delivers to.
         </p>
       </div>
     </div>

@@ -3,12 +3,12 @@
 // One dark store (CDS) on one plain page — label / value lists and
 // small tables, no charts:
 // 1. Store details   — who and where it is (from the connector form).
-// 2. Service area    — its polygon and the retailers inside it.
-// 3. Connected sellers — sellers whose delivery beats reach the polygon.
-// 4. Companies       — what retailers here can order through the store.
-// 5. Retailers       — every active retailer inside, searchable, CSV.
-// 6. Daily operations — orders / handover / delivery figures; empty
-//    until orders are routed through the store.
+// 2. Service area    — its polygon and the totals.
+// 3. Sellers on this dark store — every seller delivering inside the
+//    polygon joins automatically. Delete takes one off; "Removed
+//    sellers" lists them with Add back.
+// 4. Active retailers — every active retailer inside, searchable, CSV.
+// 5. Daily operations — today's orders, handover and delivery figures.
 //
 // Only ACTIVE sellers and ACTIVE retailers (Business Status Active-User,
 // Status Active) are counted — the same rules as Generate Report.
@@ -18,6 +18,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@mockups/web-ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@mockups/web-ui";
 import {
   Table,
   TableBody,
@@ -29,34 +47,41 @@ import {
 import { ListPagination } from "@mockups/web-ui";
 import { EmptyState } from "@mockups/web-ui";
 import { PolygonPreviewMap } from "../../components/serviceability-map-view";
-import { ArrowLeft, Download, Loader2, Pencil, Search, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Pencil,
+  RotateCcw,
+  Search,
+  Store,
+  Trash2,
+  UserMinus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { getCustomers, subscribeToCustomers } from "../../lib/customer-database";
 import { subscribeToServiceabilityBeats } from "../../lib/serviceability-data";
 import {
+  addSellersBackToDarkStore,
+  buildCdsCoverage,
   buildDarkStoreAnalysis,
   customerTable,
   downloadTableCsv,
+  handoverSlotFor,
   isLogisticsProvisioned,
+  removeSellerFromDarkStore,
+  sampleDailyOperations,
   storeZoneLabel,
   useDarkStores,
   type DarkStoreAnalysis,
+  type SellerCoverage,
 } from "../../lib/dark-store-data";
 
 const fmt = (n: number) => n.toLocaleString("en-IN");
-
-const DAY_SHORT: Record<string, string> = {
-  "Next Day": "NDD",
-  Monday: "Mon",
-  Tuesday: "Tue",
-  Wednesday: "Wed",
-  Thursday: "Thu",
-  Friday: "Fri",
-  Saturday: "Sat",
-  Sunday: "Sun",
-};
-const shortDays = (days: string[]) =>
-  days.length ? days.map((d) => DAY_SHORT[d] ?? d).join(", ") : "—";
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+const fmtMins = (m: number) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} m`;
+const warehouse = (s: SellerCoverage) => (s.warehouseKm != null ? `${s.warehouseKm} km` : "Not on file");
 
 const PAGE_SIZE = 20;
 
@@ -66,6 +91,8 @@ export function AdminDarkStoreDashboard() {
   const store = useDarkStores().find((s) => s.id === storeId);
 
   // Built after first paint — a point-in-polygon pass over the roster.
+  // Keyed on what the analysis reads (polygon + location), not the whole
+  // store, so removing or adding back a seller doesn't rebuild it.
   const [customers, setCustomers] = useState(getCustomers());
   const [beatsVersion, setBeatsVersion] = useState(0);
   useEffect(() => {
@@ -77,12 +104,29 @@ export function AdminDarkStoreDashboard() {
     };
   }, []);
   const [analysis, setAnalysis] = useState<DarkStoreAnalysis | null>(null);
+  const analysisKey = store ? `${store.id}|${store.centre.lat}|${store.centre.lng}` : "";
   useEffect(() => {
     if (!store) return;
     setAnalysis(null);
     const t = setTimeout(() => setAnalysis(buildDarkStoreAnalysis(store, customers, "zone")), 0);
     return () => clearTimeout(t);
-  }, [store, customers, beatsVersion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysisKey, store?.zone, customers, beatsVersion]);
+
+  const cds = useMemo(
+    () => (analysis && store ? buildCdsCoverage(analysis, store) : null),
+    [analysis, store],
+  );
+
+  // Delete / add back. The seller stays set while the confirmation fades
+  // out, so its name doesn't blank mid-animation.
+  const [deleting, setDeleting] = useState<SellerCoverage | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const askDelete = (s: SellerCoverage) => {
+    setDeleting(s);
+    setDeleteOpen(true);
+  };
+  const [removedOpen, setRemovedOpen] = useState(false);
 
   // Retailer table
   const [search, setSearch] = useState("");
@@ -134,6 +178,40 @@ export function AdminDarkStoreDashboard() {
     store.latitude != null && store.longitude != null
       ? `${store.latitude.toFixed(5)}, ${store.longitude.toFixed(5)}`
       : "—";
+  const removedAt = new Map(store.removedSellers.map((l) => [l.sellerId, l.removedAt]));
+  const ops =
+    analysis && cds ? sampleDailyOperations(store, analysis.customers.length, cds.sellers.length) : null;
+
+  const addBack = (sellers: SellerCoverage[]) => {
+    try {
+      addSellersBackToDarkStore(
+        store.id,
+        sellers.map((s) => s.sellerId),
+      );
+      toast.success(
+        sellers.length === 1
+          ? `${sellers[0].businessName} added back to ${store.name}`
+          : `${sellers.length} sellers added back to ${store.name}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't add the seller back");
+    }
+  };
+
+  const confirmDelete = () => {
+    if (!deleting) return;
+    const seller = deleting;
+    try {
+      removeSellerFromDarkStore(store.id, seller.sellerId);
+      toast.success(`${seller.businessName} removed from ${store.name}`, {
+        description: "Removed by mistake? Undo, or add them back from Removed sellers.",
+        action: { label: "Undo", onClick: () => addBack([seller]) },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't remove the seller");
+    }
+    setDeleteOpen(false);
+  };
 
   return (
     <div className="p-6 space-y-5">
@@ -163,7 +241,7 @@ export function AdminDarkStoreDashboard() {
             {[store.areaName, store.city].filter(Boolean).join(", ")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => navigate(`/admin/connectors/darkstore?edit=${store.id}`)}
@@ -217,13 +295,21 @@ export function AdminDarkStoreDashboard() {
               ["Retailers inside (all)", analysis ? fmt(analysis.totalInZone) : <Pending />],
               ["Active retailers", analysis ? fmt(analysis.customers.length) : <Pending />],
               [
-                "Served by connected sellers",
-                analysis ? `${fmt(analysis.covered)} (${analysis.coveragePct}%)` : <Pending />,
+                "Sellers on this dark store",
+                cds ? (
+                  `${fmt(cds.sellers.length)} sellers${cds.removed.length ? ` · ${fmt(cds.removed.length)} removed` : ""}`
+                ) : (
+                  <Pending />
+                ),
               ],
-              ["Not served by any seller", analysis ? fmt(analysis.notCovered) : <Pending />],
               [
-                "Companies a retailer can order (avg)",
-                analysis ? String(analysis.avgCompanies) : <Pending />,
+                "Retailers served through the store",
+                cds ? `${fmt(cds.served)} (${cds.servedPct}%)` : <Pending />,
+              ],
+              ["Retailers not served yet", cds ? fmt(cds.notServed) : <Pending />],
+              [
+                "Companies on this dark store",
+                cds ? `${fmt(cds.companies.length)} companies` : <Pending />,
               ],
             ]}
           />
@@ -234,50 +320,70 @@ export function AdminDarkStoreDashboard() {
         </div>
       </Section>
 
-      {/* 3 — Connected sellers */}
-      <Section title={`Connected sellers${analysis ? ` (${analysis.sellers.length})` : ""}`}>
-        {!analysis ? (
+      {/* 3 — Sellers on this dark store */}
+      <Section
+        title={`Sellers on this dark store${cds ? ` (${cds.sellers.length})` : ""}`}
+        action={
+          cds && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRemovedOpen(true)}
+              disabled={cds.removed.length === 0}
+            >
+              <UserMinus className="h-4 w-4 mr-1.5" />
+              Removed sellers ({cds.removed.length})
+            </Button>
+          )
+        }
+      >
+        {!cds ? (
           <Pending block />
-        ) : analysis.sellers.length === 0 ? (
-          <p className="text-sm text-gray-500">No seller's delivery beats reach into this polygon yet.</p>
         ) : (
-          <SimpleTable
-            headers={["Seller", "Companies", "Active retailers reached", "Delivery days", "Warehouse distance"]}
-            rightFrom={1}
-            rows={analysis.sellers.map((s) => [
-              <div key="n">
-                <p className="font-medium text-gray-900">{s.businessName}</p>
-                <p className="text-xs text-gray-500">{s.sellerName}</p>
-              </div>,
-              fmt(s.companyNames.length),
-              fmt(s.customersReached),
-              shortDays(s.deliveryDays),
-              s.warehouseKm != null ? `${s.warehouseKm} km` : "—",
-            ])}
-          />
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Every seller delivering inside the {store.areaName} polygon is on this dark store
+              automatically.
+            </p>
+            {cds.sellers.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500">
+                No sellers on this dark store.
+              </p>
+            ) : (
+              <SimpleTable
+                headers={[
+                  "Seller",
+                  "Handover slot",
+                  "Companies",
+                  "Active retailers reached",
+                  "Warehouse distance",
+                  "",
+                ]}
+                rightFrom={2}
+                rows={cds.sellers.map((s) => [
+                  <SellerName key="n" s={s} onOpen={() => navigate(`/admin/users/${s.sellerId}`)} />,
+                  handoverSlotFor(s.sellerId),
+                  fmt(s.companyNames.length),
+                  fmt(s.customersReached),
+                  warehouse(s),
+                  <button
+                    key="x"
+                    type="button"
+                    aria-label={`Remove ${s.businessName}`}
+                    title="Remove from this dark store"
+                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => askDelete(s)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>,
+                ])}
+              />
+            )}
+          </div>
         )}
       </Section>
 
-      {/* 4 — Companies */}
-      <Section title={`Companies available${analysis ? ` (${analysis.companies.length})` : ""}`}>
-        {!analysis ? (
-          <Pending block />
-        ) : analysis.companies.length === 0 ? (
-          <p className="text-sm text-gray-500">No company is delivered inside this polygon yet.</p>
-        ) : (
-          <SimpleTable
-            headers={["Company", "Sellers", "Active retailers reached"]}
-            rightFrom={1}
-            rows={analysis.companies.map((c) => [
-              <span key="c" className="font-medium text-gray-900">{c.companyName}</span>,
-              fmt(c.sellerNames.length),
-              `${fmt(c.customersReached)} (${c.coveragePct}%)`,
-            ])}
-          />
-        )}
-      </Section>
-
-      {/* 5 — Retailers */}
+      {/* 4 — Active retailers */}
       <Section
         title={`Active retailers${analysis ? ` (${fmt(analysis.customers.length)})` : ""}`}
         action={
@@ -292,30 +398,33 @@ export function AdminDarkStoreDashboard() {
           </div>
         }
       >
-        {!analysis ? (
+        {!analysis || !cds ? (
           <Pending block />
         ) : (
           <>
             <SimpleTable
-              headers={["Retailer", "Mobile", "Cluster", "Companies", "Sellers", "Distance"]}
+              headers={["Retailer", "Mobile", "Cluster", "Sellers on store", "Companies", "Distance"]}
               rightFrom={3}
               rows={retailerRows
                 .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-                .map((z) => [
-                  <button
-                    key="r"
-                    type="button"
-                    className="font-medium text-gray-900 hover:text-violet-700 hover:underline text-left"
-                    onClick={() => navigate(`/admin/customers/${z.customer.id}`)}
-                  >
-                    {z.customer.name}
-                  </button>,
-                  z.customer.mobile || "—",
-                  z.customer.cluster || "—",
-                  fmt(z.companyNames.length),
-                  fmt(z.sellerIds.length),
-                  `${z.distanceKm} km`,
-                ])}
+                .map((z) => {
+                  const beats = z.beats.filter((b) => b.sellerId && cds.sellerIds.has(b.sellerId));
+                  return [
+                    <button
+                      key="r"
+                      type="button"
+                      className="font-medium text-gray-900 hover:text-violet-700 hover:underline text-left"
+                      onClick={() => navigate(`/admin/customers/${z.customer.id}`)}
+                    >
+                      {z.customer.name}
+                    </button>,
+                    z.customer.mobile || "—",
+                    z.customer.cluster || store.areaName,
+                    fmt(new Set(beats.map((b) => b.sellerId)).size),
+                    fmt(new Set(beats.map((b) => b.companyName)).size),
+                    `${z.distanceKm} km`,
+                  ];
+                })}
             />
             <ListPagination
               page={page}
@@ -329,27 +438,118 @@ export function AdminDarkStoreDashboard() {
         )}
       </Section>
 
-      {/* 6 — Daily operations */}
+      {/* 5 — Daily operations */}
       <Section title="Daily operations">
-        <p className="text-xs text-gray-500 mb-3">
-          Fills in once retailer orders are routed through this dark store.
-        </p>
-        <Facts
-          items={[
-            ["Orders today", "—"],
-            ["Waiting for seller handover", "—"],
-            ["Received at store", "—"],
-            ["Out for delivery", "—"],
-            ["Delivered today", "—"],
-            ["Average delivery time", "—"],
-          ]}
-        />
+        {!ops || !cds ? (
+          <Pending block />
+        ) : (
+          <>
+            <p className="text-xs text-gray-500 mb-3">
+              Today so far ·{" "}
+              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
+            </p>
+            <Facts
+              items={[
+                ["Orders today", fmt(ops.ordersToday)],
+                ["Sellers handed over stock", `${fmt(ops.sellersHandedOver)} of ${fmt(cds.sellers.length)}`],
+                ["Waiting for seller handover", fmt(ops.awaitingHandover)],
+                ["Received at store", fmt(ops.receivedAtStore)],
+                ["Out for delivery", fmt(ops.outForDelivery)],
+                ["Delivered today", fmt(ops.delivered)],
+                ["Average delivery time", fmtMins(ops.avgDeliveryMins)],
+              ]}
+            />
+          </>
+        )}
       </Section>
+
+      {/* Removed sellers — add back */}
+      {cds && (
+        <Dialog open={removedOpen} onOpenChange={setRemovedOpen}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Removed sellers</DialogTitle>
+              <DialogDescription>
+                Sellers taken off {store.name}. Add one back and it's on the dark store again
+                straight away.
+              </DialogDescription>
+            </DialogHeader>
+            {cds.removed.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gray-500">No removed sellers.</p>
+            ) : (
+              <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {cds.removed.map((s) => (
+                  <div key={s.sellerId} className="flex items-center gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{s.businessName}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {s.sellerName} · Removed on {fmtDate(removedAt.get(s.sellerId) ?? store.updatedAt)}
+                      </p>
+                    </div>
+                    <p className="hidden sm:block text-xs text-gray-600 shrink-0 text-right">
+                      {fmt(s.companyNames.length)} {s.companyNames.length === 1 ? "company" : "companies"}
+                      <br />
+                      {fmt(s.customersReached)} retailers
+                    </p>
+                    <Button size="sm" variant="outline" onClick={() => addBack([s])}>
+                      <RotateCcw className="h-4 w-4 mr-1.5" />
+                      Add back
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <DialogFooter>
+              {cds.removed.length > 1 && (
+                <Button variant="outline" onClick={() => addBack(cds.removed)}>
+                  Add all back
+                </Button>
+              )}
+              <Button onClick={() => setRemovedOpen(false)}>Done</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {deleting?.businessName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They'll stop handing stock over at {store.name}, and their orders from retailers in{" "}
+              {store.areaName} go back to direct delivery. You can add them back any time from
+              Removed sellers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={confirmDelete}>
+              Remove seller
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 // ---- Building blocks ----
+
+function SellerName({ s, onOpen }: { s: SellerCoverage; onOpen: () => void }) {
+  return (
+    <div>
+      <button
+        type="button"
+        className="font-medium text-gray-900 hover:text-violet-700 hover:underline text-left"
+        onClick={onOpen}
+      >
+        {s.businessName}
+      </button>
+      <p className="text-xs text-gray-500">{s.sellerName}</p>
+    </div>
+  );
+}
 
 function Section({
   title,
@@ -406,7 +606,7 @@ function SimpleTable({
           <TableRow className="bg-gray-50">
             {headers.map((h, i) => (
               <TableHead
-                key={h}
+                key={i}
                 className={`text-xs uppercase text-gray-500 ${i >= rightFrom ? "text-right" : ""}`}
               >
                 {h}
