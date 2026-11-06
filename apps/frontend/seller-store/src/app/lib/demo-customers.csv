@@ -1,0 +1,7 @@
+customer_id,customer_name,mobile_number,business_type,business_status,status,salesperson_name,salesperson_number,cluster,registered_date,latitude,longitude
+DEMO-001,Demo West Grocers,6000990001,Kirana,Active-User,Active,Demo Sales West,6000980002,Demo West,2026-01-01,17.485,78.391
+DEMO-002,Demo West Market,6000990002,Kirana,Active-User,Active,Demo Sales West,6000980002,Demo West,2026-02-01,17.495,78.401
+DEMO-003,Demo North Kitchen,6000990003,Restaurant,Active-User,Active,Demo Sales North,6000980001,Demo North,2026-03-01,17.505,78.513
+DEMO-004,Demo North Pantry,6000990004,Kirana,Business-Shutdown,InActive,,,Demo North,2026-01-15,17.518,78.521
+DEMO-005,Demo Central Stores,6000990005,Kirana,Active-User,Active,,,Demo Central,2026-04-01,17.445,78.451
+DEMO-006,Demo East Canteen,6000990006,Restaurant,Active-User,Active,Demo Sales North,6000980001,Demo East,2026-02-15,17.468,78.545
