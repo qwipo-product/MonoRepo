@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Card } from "@mockups/web-ui";
+import { Card, CardContent } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
 import { MultiSelect } from "@mockups/web-ui";
+import { Textarea } from "@mockups/web-ui";
 import { Checkbox } from "@mockups/web-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@mockups/web-ui";
 import {
@@ -32,18 +33,19 @@ import {
   ShoppingCart,
   AlertCircle,
   PackageCheck,
+  ExternalLink,
+  Calendar,
   X,
   Filter,
   Eye,
   Download,
-  Clock,
   Zap,
-  CalendarClock,
   Route,
   MapPin,
   CalendarDays,
-  CalendarPlus,
-  MessageCircle,
+  Clock,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
@@ -52,41 +54,79 @@ import { EmptyState } from "@mockups/web-ui";
 import { CopyOnHover } from "@mockups/web-ui";
 import { ListPagination } from "@mockups/web-ui";
 import { OrdersMapDialog } from "../../components/orders-map-dialog";
+import { useAuth } from "../../lib/auth-context";
+import {
+  getLogisticsSettings,
+  subscribeToLogisticsSettings,
+} from "../../lib/logistics-settings";
 // Shared store — seeds + writers live in lib/orders-data so the
 // detail page can read the same orders by id and writes flow both
-// ways. `Order` / `OrderLineItem` / `OrderStatus` are exported from
-// the lib so we don't redeclare them here.
+// ways. `Order` / `OrderLineItem` are exported from the lib so we
+// don't redeclare them here.
 import {
   type Order,
   type OrderLineItem,
   type DeliveryType,
-  type DeliveryBucket,
   type CancelledBy,
   SELLER_INFO,
   getOrders,
   setOrders as setOrdersStore,
   subscribeToOrders,
   updateOrderStatuses,
-  getDeliveryBucket,
   getOrdersToday,
+  getOrderType,
+  getOrderOperationMode,
+  getCustomerOrderId,
+  requestLogisticsForOrders,
+  getStalePendingOrders,
+  getPendingAgeDays,
+  isStalePendingOrder,
+  STALE_PENDING_NUDGE_DAYS,
+  getAttentionOrders,
 } from "../../lib/orders-data";
 
-// An order is a "beat" delivery when it's a regular scheduled
-// delivery riding a configured serviceability beat — i.e. it carries
-// a beat name AND its delivery type is Regular. Anything else
-// (urgent / off-schedule, or no beat configured) is a "non-beat"
-// delivery the seller has to handle as an exception.
+// An order is a "beat" delivery when it rides a configured
+// serviceability beat. The June 2026 review decoupled this from
+// Urgent / Regular — that delivery-type axis was a UI artefact, not
+// a routing one. Beat-vs-Standard now flows from the explicit
+// `orderType` field on the order, with `beatName` as a backstop for
+// older seeds. Kept as a wrapper around the shared `getOrderType`
+// helper so call-sites read clearly at usage.
 function isBeatOrder(order: Order): boolean {
-  return order.deliveryType === "Regular" && Boolean(order.beatName);
+  return getOrderType(order) === "beat";
 }
 
 // "rejected" tab label is retired alongside the status rename; the
 // tab now shows Cancelled orders. The TabType value stays as
 // "cancelled" so future code reads consistently.
-type TabType = "all" | "new" | "confirmed" | "delivered" | "cancelled";
+// "logistics" holds orders handed to the 3PL network. It isn't an
+// order STATUS — those rows are still Confirmed underneath — it's a
+// fulfilment route, so it gets its own tab rather than a status entry.
+type TabType =
+  | "all"
+  | "new"
+  | "confirmed"
+  | "logistics"
+  | "delivered"
+  | "cancelled";
 
 export function Orders() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Read logistics enabled flag for the current seller, and keep it
+  // live across tab — the admin can toggle it without a page reload.
+  const [logisticsEnabled, setLogisticsEnabled] = useState(() =>
+    user ? getLogisticsSettings(user.id).enabled : false,
+  );
+  useEffect(() => {
+    if (!user) return;
+    setLogisticsEnabled(getLogisticsSettings(user.id).enabled);
+    return subscribeToLogisticsSettings(user.id, () =>
+      setLogisticsEnabled(getLogisticsSettings(user.id).enabled),
+    );
+  }, [user]);
+
   // Source of truth lives in lib/orders-data. We mirror it locally
   // and resubscribe so writes from the detail page propagate here.
   const [orders, setOrdersState] = useState<Order[]>(() =>
@@ -129,13 +169,15 @@ export function Orders() {
   const [selectedStatusFilters, setSelectedStatusFilters] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  // Delivery filters
+  // Delivery filters — Delivery Type (Urgent / Regular) is still
+  // a useful slicer in the drawer; the Today / Tomorrow / Overdue
+  // bucket multi-select and the Tomorrow-only / Urgent-only quick
+  // toggles were retired in June 2026 along with the rest of the
+  // relative-date model. Sellers filter by a concrete Delivery Day
+  // (via the pill row + an optional date range below) instead.
   const [selectedDeliveryTypes, setSelectedDeliveryTypes] = useState<string[]>([]);
-  const [selectedDeliveryBuckets, setSelectedDeliveryBuckets] = useState<string[]>([]);
   const [deliveryStartDate, setDeliveryStartDate] = useState<string>("");
   const [deliveryEndDate, setDeliveryEndDate] = useState<string>("");
-  const [tomorrowOnly, setTomorrowOnly] = useState(false);
-  const [urgentOnly, setUrgentOnly] = useState(false);
   // "Cancelled By" quick filter — only consulted on the Cancelled
   // tab. "all" matches buyer + seller cancellations; the other two
   // narrow to just one origin so the seller can audit one cancellation
@@ -159,12 +201,6 @@ export function Orders() {
     { label: "Urgent", value: "Urgent" },
     { label: "Regular", value: "Regular" },
   ];
-  const deliveryBucketOptions: { label: string; value: DeliveryBucket }[] = [
-    { label: "Today", value: "today" },
-    { label: "Tomorrow", value: "tomorrow" },
-    { label: "Beyond Tomorrow", value: "beyond" },
-    { label: "Overdue", value: "past" },
-  ];
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -180,15 +216,26 @@ export function Orders() {
   // orders' customer locations. Opened from the New + Confirmed
   // bulk action bars.
   const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
-  // "Update Expected Delivery Date" bulk action — Confirmed tab.
-  // The seller picks one or more confirmed orders, opens the
-  // dialog, chooses a new date, and on save we mutate
-  // expectedDeliveryDate across the selection. A WhatsApp
-  // notification banner in the success toast tells the seller
-  // their customers were informed about the schedule change.
-  const [isUpdateDeliveryDialogOpen, setIsUpdateDeliveryDialogOpen] =
+  // "Request 3PL Logistics" bulk action — Confirmed tab, only when
+  // the seller has Logistics enabled. Confirms the hand-off before
+  // the orders leave the seller's working list.
+  const [isRequestLogisticsDialogOpen, setIsRequestLogisticsDialogOpen] =
     useState(false);
-  const [newExpectedDeliveryDate, setNewExpectedDeliveryDate] = useState("");
+  // Pending Orders Review — VIW-2026-06911 soft nudge. Opened from the
+  // New-tab banner; lets the seller pick which stale orders to act on
+  // (not all-or-nothing) and route the picked subset to either the
+  // existing Confirm or Cancel dialog.
+  const [isStaleReviewDialogOpen, setIsStaleReviewDialogOpen] =
+    useState(false);
+  const [staleReviewSelection, setStaleReviewSelection] = useState<string[]>(
+    [],
+  );
+  // Stale-pending nudge popup — VIW-2026-06911. A banner that sits in
+  // the page permanently pushes the order rows down and eats into
+  // scroll budget, which was the opposite of the goal (keep New
+  // orders visible). A pop-up interrupts once, forces an explicit
+  // close, and then gets out of the way entirely.
+  const [isStaleNudgePopupOpen, setIsStaleNudgePopupOpen] = useState(false);
 
   // Form data
   const [cancelReason, setCancelReason] = useState("");
@@ -241,12 +288,25 @@ export function Orders() {
     return new Date(s.getTime() + 30 * 86400000).toISOString().split("T")[0];
   })();
 
+  // Orders handed to the 3PL network stay Confirmed underneath but
+  // drop out of the seller's working list — the delivery is the
+  // partner's to run, and asking the seller to action it would be
+  // misleading. They come back on the Delivered tab once the partner
+  // closes them out. `isSellerActionable` is the single predicate
+  // every Confirmed-tab count and list runs through.
+  const isWithLogisticsPartner = (o: Order) =>
+    o.status === "Confirmed" && o.logisticsRequested === true;
+  const isSellerActionable = (o: Order) => !isWithLogisticsPartner(o);
+
   // Calculate summary statistics
   const summary = useMemo(() => {
     return {
       all: orders.length,
       new: orders.filter((o) => o.status === "New").length,
-      confirmed: orders.filter((o) => o.status === "Confirmed").length,
+      confirmed: orders.filter(
+        (o) => o.status === "Confirmed" && isSellerActionable(o),
+      ).length,
+      logistics: orders.filter(isWithLogisticsPartner).length,
       delivered: orders.filter((o) => o.status === "Delivered").length,
       cancelled: orders.filter((o) => o.status === "Cancelled").length,
     };
@@ -254,7 +314,10 @@ export function Orders() {
 
   // Get orders for active tab
   const getTabOrders = (tab: TabType): Order[] => {
-    const statusMap: Record<Exclude<TabType, "all">, Order["status"]> = {
+    const statusMap: Record<
+      Exclude<TabType, "all" | "logistics">,
+      Order["status"]
+    > = {
       new: "New",
       confirmed: "Confirmed",
       delivered: "Delivered",
@@ -262,9 +325,21 @@ export function Orders() {
     };
 
     return orders.filter((order) => {
-      // "all" tab bypasses the status filter
+      // "all" bypasses the status filter; "logistics" is keyed off the
+      // hand-off flag rather than a status, since those rows are still
+      // Confirmed underneath.
       const matchesStatus =
-        tab === "all" ? true : order.status === statusMap[tab];
+        tab === "all"
+          ? true
+          : tab === "logistics"
+            ? isWithLogisticsPartner(order)
+            : order.status === statusMap[tab];
+      // Orders out with the 3PL partner leave the seller's Confirmed
+      // working list — they live in the Logistics tab instead. They
+      // stay visible on "All" so the seller can still find an order by
+      // id without hunting.
+      const matchesLogisticsHandoff =
+        tab === "confirmed" ? isSellerActionable(order) : true;
       const matchesSearch =
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.retailerName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -283,16 +358,13 @@ export function Orders() {
         matchesDate = orderDate >= start && orderDate <= end;
       }
 
-      // Delivery filters
-      const bucket = getDeliveryBucket(order);
+      // Delivery filters — Delivery Type stays (Urgent / Regular),
+      // backed by the optional Delivery Day range below. The relative
+      // bucket multi-select and Tomorrow-only / Urgent-only quick
+      // toggles were dropped in June 2026.
       const matchesDeliveryType =
         selectedDeliveryTypes.length === 0 ||
         selectedDeliveryTypes.includes(order.deliveryType);
-      const matchesDeliveryBucket =
-        selectedDeliveryBuckets.length === 0 ||
-        selectedDeliveryBuckets.includes(bucket);
-      const matchesUrgentOnly = !urgentOnly || order.deliveryType === "Urgent";
-      const matchesTomorrowOnly = !tomorrowOnly || bucket === "tomorrow";
 
       let matchesDeliveryDateRange = true;
       if (deliveryStartDate && deliveryEndDate) {
@@ -301,11 +373,14 @@ export function Orders() {
           order.expectedDeliveryDate <= deliveryEndDate;
       }
 
-      // Confirmed sub-navigation — Delivery Day pill + Beat/Non-Beat
-      // tab. Only applies when viewing the Confirmed tab. "all" on
-      // either filter is a pass-through.
+      // Delivery Day pill + Beat/Non-Beat sub-navigation. Same shape
+      // on the New, Confirmed and 3PL Logistics tabs — the seller
+      // plans new arrivals, their own deliveries and the partner's
+      // deliveries the same way (which day? which route?), so the
+      // filters mirror across all three. "all" on either dimension is
+      // a pass-through.
       let matchesConfirmedSub = true;
-      if (tab === "confirmed") {
+      if (tab === "confirmed" || tab === "new" || tab === "logistics") {
         if (confirmedDeliveryDay !== "all") {
           matchesConfirmedSub =
             matchesConfirmedSub &&
@@ -332,15 +407,13 @@ export function Orders() {
 
       return (
         matchesStatus &&
+        matchesLogisticsHandoff &&
         matchesSearch &&
         matchesMarketplace &&
         matchesBrand &&
         matchesStatusFilter &&
         matchesDate &&
         matchesDeliveryType &&
-        matchesDeliveryBucket &&
-        matchesUrgentOnly &&
-        matchesTomorrowOnly &&
         matchesDeliveryDateRange &&
         matchesConfirmedSub &&
         matchesCancelledBy
@@ -362,29 +435,34 @@ export function Orders() {
       startDate,
       endDate,
       selectedDeliveryTypes,
-      selectedDeliveryBuckets,
       deliveryStartDate,
       deliveryEndDate,
-      tomorrowOnly,
-      urgentOnly,
       cancelledByFilter,
     ],
   );
 
-  // Counts for the Confirmed-tab navigation. We compute:
+  // Counts for the Delivery Day + Beat/Non-Beat sub-navigation. The
+  // same shape is rendered on both the New and the Confirmed tabs,
+  // so the compute is factored into a helper and called twice —
+  // once filtered to "New", once to "Confirmed". We expose:
   //   - dayBuckets: one entry per distinct expectedDeliveryDate
-  //     with how many Confirmed orders sit on that day (ignoring the
-  //     active day filter so the pill row stays steady when the user
-  //     hops between days).
-  //   - beatCounts: how many Beat vs Non-Beat orders sit inside the
-  //     currently-selected day (or across all days when day === "all").
+  //     with how many orders sit on that day (ignoring the active
+  //     day filter so the pill row stays steady when the user hops
+  //     between days).
+  //   - beat / nonBeat: how many Beat vs Non-Beat orders sit inside
+  //     the currently-selected day (or across all days when day ===
+  //     "all").
   //
-  // Both run off the same `baseConfirmed` source so a search /
-  // marketplace / brand filter is reflected in the counts the user
-  // sees on the pills + tabs.
-  const confirmedBucketCounts = useMemo(() => {
-    const baseConfirmed = orders.filter((o) => {
-      if (o.status !== "Confirmed") return false;
+  // Both run off the same base filter so a search / marketplace /
+  // brand filter is reflected in the counts the user sees on the
+  // pills + tabs.
+  // `scope` picks the tab's population. It takes a predicate rather
+  // than a status because the 3PL Logistics tab isn't status-backed —
+  // those rows are Confirmed underneath and are selected on
+  // `logisticsRequested` instead.
+  const buildBucketCounts = (scope: (order: Order) => boolean) => {
+    const base = orders.filter((o) => {
+      if (!scope(o)) return false;
       const matchesSearch =
         o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.retailerName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -405,7 +483,7 @@ export function Orders() {
     });
 
     const dayMap = new Map<string, number>();
-    for (const o of baseConfirmed) {
+    for (const o of base) {
       dayMap.set(
         o.expectedDeliveryDate,
         (dayMap.get(o.expectedDeliveryDate) ?? 0) + 1,
@@ -417,25 +495,197 @@ export function Orders() {
 
     const scopedToDay =
       confirmedDeliveryDay === "all"
-        ? baseConfirmed
-        : baseConfirmed.filter(
+        ? base
+        : base.filter(
             (o) => o.expectedDeliveryDate === confirmedDeliveryDay,
           );
 
     return {
-      all: baseConfirmed.length,
+      all: base.length,
       dayBuckets,
       beat: scopedToDay.filter(isBeatOrder).length,
       nonBeat: scopedToDay.filter((o) => !isBeatOrder(o)).length,
     };
-  }, [
-    orders,
-    searchQuery,
-    marketplaceFilter,
-    selectedBrandFilters,
-    selectedDeliveryTypes,
-    confirmedDeliveryDay,
-  ]);
+  };
+
+  // Keeps the day + Beat/Non-Beat pill counts in step with the rows
+  // the seller can actually see — an order out with the 3PL partner
+  // shouldn't inflate a day pill the seller can't action.
+  const confirmedBucketCounts = useMemo(
+    () =>
+      buildBucketCounts(
+        (o) => o.status === "Confirmed" && isSellerActionable(o),
+      ),
+    [
+      orders,
+      searchQuery,
+      marketplaceFilter,
+      selectedBrandFilters,
+      selectedDeliveryTypes,
+      confirmedDeliveryDay,
+    ],
+  );
+
+  // Same two chip rows as Confirmed, scoped to what the partner is
+  // carrying. The planning question doesn't change just because
+  // someone else is driving: which day is this going out, and is it
+  // riding a beat?
+  const logisticsBucketCounts = useMemo(
+    () => buildBucketCounts(isWithLogisticsPartner),
+    [
+      orders,
+      searchQuery,
+      marketplaceFilter,
+      selectedBrandFilters,
+      selectedDeliveryTypes,
+      confirmedDeliveryDay,
+    ],
+  );
+
+  const newBucketCounts = useMemo(
+    () => buildBucketCounts((o) => o.status === "New"),
+    [
+      orders,
+      searchQuery,
+      marketplaceFilter,
+      selectedBrandFilters,
+      selectedDeliveryTypes,
+      confirmedDeliveryDay,
+    ],
+  );
+
+  // VIW-2026-06911 — Soft nudge only (Stage 1). New orders the seller
+  // has sat on past the threshold, across the whole list — not just
+  // the current page/filters — so the banner doesn't disappear just
+  // because a search or filter hides the stale rows. Nothing here
+  // disables the Accept/Confirm actions for newer orders; it's purely
+  // advisory, per the call to drop Stage 2's hard restriction.
+  const stalePendingOrders = useMemo(
+    () => getStalePendingOrders(orders),
+    [orders],
+  );
+
+  // Opens the review picker with every stale order pre-checked — the
+  // seller can then uncheck the ones they don't want to act on yet
+  // before routing the rest to Confirm or Cancel.
+  const handleReviewStaleOrders = () => {
+    setStaleReviewSelection(stalePendingOrders.map((o) => o.id));
+    setIsStaleReviewDialogOpen(true);
+  };
+
+  // Nudge popup dismissal — once-per-day, not once-per-exact-backlog.
+  // Re-showing it every time the stale set changes even slightly (e.g.
+  // the seller clears 3 of 5) felt like nagging for a problem they'd
+  // already started fixing. Instead: show it once when they first hit
+  // New each day, stay quiet for the rest of the day while they work
+  // through the picker, and only interrupt again *that same day* if
+  // the backlog gets worse than what they already saw (more stale
+  // orders than last time), not merely different.
+  const staleNudgeStorageKey = "stalePendingNudgeLastSeen";
+  useEffect(() => {
+    if (activeTab !== "new" || stalePendingOrders.length === 0) return;
+    let lastSeen: { date: string; count: number } | null;
+    try {
+      lastSeen = JSON.parse(
+        localStorage.getItem(staleNudgeStorageKey) ?? "null",
+      );
+    } catch {
+      lastSeen = null;
+    }
+    const isNewDay = lastSeen?.date !== todayIso;
+    const backlogGrew =
+      !isNewDay && stalePendingOrders.length > (lastSeen?.count ?? 0);
+    if (isNewDay || backlogGrew) {
+      setIsStaleNudgePopupOpen(true);
+    }
+  }, [activeTab, stalePendingOrders, todayIso]);
+
+  const dismissStaleNudgePopup = () => {
+    localStorage.setItem(
+      staleNudgeStorageKey,
+      JSON.stringify({ date: todayIso, count: stalePendingOrders.length }),
+    );
+    setIsStaleNudgePopupOpen(false);
+  };
+
+  // Hands the review picker's checked subset off to the existing
+  // Confirm / Cancel dialogs — same handlers the bulk action bar
+  // uses, so eligibility rules and toasts stay identical.
+  const handleStaleReviewConfirm = () => {
+    setSelectedOrders(staleReviewSelection);
+    setIsStaleReviewDialogOpen(false);
+    setIsConfirmDialogOpen(true);
+  };
+  const handleStaleReviewCancel = () => {
+    setSelectedOrders(staleReviewSelection);
+    setIsStaleReviewDialogOpen(false);
+    setIsCancelDialogOpen(true);
+  };
+
+  // ── Feature 9 — Order Status Update Enforcement (hard restriction) ──
+  // While any New order is older than the nudge age, fresh New orders
+  // are masked and can't be confirmed until every one of those older
+  // orders is confirmed or cancelled.
+  const [isGatePopupOpen, setIsGatePopupOpen] = useState(false);
+  const [gateSelection, setGateSelection] = useState<string[]>([]);
+
+  const attentionItems = useMemo(
+    () => getAttentionOrders(orders),
+    [orders],
+  );
+  const attentionIds = useMemo(
+    () => new Set(attentionItems.map((i) => i.order.id)),
+    [attentionItems],
+  );
+  const gateActive = attentionItems.length > 0;
+  // Fresh incoming orders: New, but not themselves part of the backlog.
+  const isMaskedOrder = (o: Order) =>
+    gateActive && o.status === "New" && !attentionIds.has(o.id);
+  const maskedCount = gateActive
+    ? orders.filter((o) => isMaskedOrder(o)).length
+    : 0;
+  // Selection survives only for orders still in the backlog.
+  const gateSelectedIds = gateSelection.filter((id) => attentionIds.has(id));
+  const oldestOverdue = attentionItems[0]?.overdueDays ?? 0;
+  // The gate pop-ups keep showing the last real numbers while they
+  // fade out, instead of flashing "0 orders" once the backlog clears.
+  const currentGate = {
+    items: attentionItems,
+    masked: maskedCount,
+    oldest: oldestOverdue,
+    selected: gateSelectedIds.length,
+  };
+  const [confirmedGate, setConfirmedGate] = useState<typeof currentGate | null>(null);
+  const gateView = gateActive || !confirmedGate ? currentGate : confirmedGate;
+  // Open the pop-up each time the seller lands on New while gated.
+  // Deferred slightly so the tab click's focus change can't dismiss it.
+  useEffect(() => {
+    if (activeTab !== "new" || !gateActive) return;
+    const t = setTimeout(() => setIsGatePopupOpen(true), 150);
+    return () => clearTimeout(t);
+  }, [activeTab, gateActive]);
+
+  // Simple Yes/No confirm for the pop-up's multi-select (no review
+  // dialog, same as the portal's quick confirm).
+  const [isGateConfirmOpen, setIsGateConfirmOpen] = useState(false);
+  const handleGateConfirm = () => {
+    const ids = new Set(gateSelectedIds);
+    if (ids.size === 0) return;
+    setConfirmedGate(currentGate);
+    setOrders((prev) =>
+      prev.map((o) =>
+        ids.has(o.id) ? { ...o, status: "Confirmed" as const } : o,
+      ),
+    );
+    toast.success(
+      `Confirmed ${ids.size} order${ids.size === 1 ? "" : "s"}.`,
+    );
+    setGateSelection([]);
+    setIsGateConfirmOpen(false);
+    // The seller just worked the backlog from the gate pop-up, so the
+    // daily soft nudge would only repeat it.
+    dismissStaleNudgePopup();
+  };
 
   // Counts for the Cancelled tab's "Cancelled By" quick filter.
   // Counts respect the search box + global filters, but not the
@@ -465,7 +715,9 @@ export function Orders() {
   // Handle select all for current tab
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrders(currentTabOrders.map((o) => o.id));
+      setSelectedOrders(
+        currentTabOrders.filter((o) => !isMaskedOrder(o)).map((o) => o.id),
+      );
     } else {
       setSelectedOrders([]);
     }
@@ -480,15 +732,26 @@ export function Orders() {
     }
   };
 
+  // The 3PL Logistics tab only exists while the connector is on. If
+  // the admin turns it off mid-session, fall back to All rather than
+  // leaving the seller on a tab whose trigger has disappeared.
+  useEffect(() => {
+    if (!logisticsEnabled && activeTab === "logistics") {
+      setActiveTab("all");
+      setSelectedOrders([]);
+    }
+  }, [logisticsEnabled, activeTab]);
+
   // Clear selection when changing tabs
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as TabType);
     setSelectedOrders([]);
     setCurrentPage(1); // Reset to first page
-    // Reset the Confirmed sub-navigation whenever we leave Confirmed
-    // so the user always lands on "All days / All orders" the next
-    // time they open Confirmed.
-    if (tab !== "confirmed") {
+    // Reset the Delivery Day + Beat/Non-Beat sub-navigation whenever
+    // we leave New, Confirmed or 3PL Logistics (the tabs that host
+    // the filters), so a fresh visit always lands on "All days / All
+    // orders".
+    if (tab !== "confirmed" && tab !== "new" && tab !== "logistics") {
       setConfirmedDeliveryDay("all");
       setConfirmedBeatMode("all");
     }
@@ -509,19 +772,14 @@ export function Orders() {
     setCurrentPage(1);
   };
 
-  // Format an ISO delivery date as a pill label. "Today" / "Tomorrow"
-  // sit at the top of the operator's mental model; everything else
-  // reads as "Wed 22 May" so the seller knows the exact date without
-  // having to count days.
+  // Format an ISO delivery date as a pill label. The June 2026 review
+  // dropped Today / Tomorrow / Yesterday suffixes — distributors plan
+  // around the committed delivery DAY, and the relative labels added
+  // noise without changing the operational decision. The pill row
+  // still tints today's date red (handled at the pill render site)
+  // so the imminent window stays visually distinct without text.
   const formatDeliveryPillLabel = (iso: string): string => {
-    const today = getOrdersToday();
-    if (iso === today) return "Today";
-    const t = Date.parse(today + "T00:00:00Z");
     const d = Date.parse(iso + "T00:00:00Z");
-    if (!Number.isNaN(t) && !Number.isNaN(d)) {
-      const diff = Math.round((d - t) / 86400000);
-      if (diff === 1) return "Tomorrow";
-    }
     if (Number.isNaN(d)) return iso;
     return new Date(d).toLocaleDateString("en-GB", {
       weekday: "short",
@@ -539,8 +797,25 @@ export function Orders() {
   }, [currentTabOrders, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(currentTabOrders.length / itemsPerPage);
-  const totalValue = useMemo(() => {
-    return currentTabOrders.reduce((sum, order) => sum + order.orderValue, 0);
+  // Order Summary metrics — drives the strip rendered between the
+  // tab row and the per-tab content. Reads off `currentTabOrders`
+  // so the figures react to every active filter (tab, Beat /
+  // Non-Beat, Delivery Day pill, search, drawer filters).
+  // `customers` is a count of distinct retailers — each retailer
+  // can sit behind multiple orders in a single day, so the seller
+  // needs both axes to plan dispatch.
+  const orderSummary = useMemo(() => {
+    const customers = new Set<string>();
+    let value = 0;
+    for (const o of currentTabOrders) {
+      customers.add(o.retailerName);
+      value += o.orderValue;
+    }
+    return {
+      customers: customers.size,
+      orders: currentTabOrders.length,
+      value,
+    };
   }, [currentTabOrders]);
 
   // View on Map — bulk action available on the New + Confirmed
@@ -568,19 +843,29 @@ export function Orders() {
     setIsMapDialogOpen(true);
   };
 
-  // Confirm orders (New → Confirmed). Pure confirmation surface —
-  // dispatch date / time / notes are no longer captured here.
+  // Confirm orders (New → Confirmed). There's no delivery-day gate —
+  // any selected New order can be confirmed regardless of how far out
+  // its committed Delivery Day is. (The earlier today/tomorrow-only
+  // rule was dropped — it didn't reflect an actual business
+  // requirement.)
   const handleConfirmOrders = () => {
+    const allSelected = orders.filter((o) => selectedOrders.includes(o.id));
+    if (allSelected.length === 0) {
+      toast.error("Nothing to confirm — no orders selected.");
+      return;
+    }
+    const selectedIds = new Set(allSelected.map((o) => o.id));
     setOrders((prev) =>
       prev.map((order) =>
-        selectedOrders.includes(order.id)
+        selectedIds.has(order.id)
           ? { ...order, status: "Confirmed" as const }
-          : order
-      )
+          : order,
+      ),
     );
-
-    toast.success(`${selectedOrders.length} order(s) confirmed.`);
-    setSelectedOrders([]);
+    toast.success(
+      `Confirmed ${allSelected.length} order${allSelected.length === 1 ? "" : "s"}.`,
+    );
+    setSelectedOrders((prev) => prev.filter((id) => !selectedIds.has(id)));
     setIsConfirmDialogOpen(false);
   };
 
@@ -601,57 +886,6 @@ export function Orders() {
     setCancelReason("");
   };
 
-  // Bulk reschedule — Confirmed tab. Rewrites expectedDeliveryDate on
-  // every selected order to the date the seller picked in the
-  // dialog, then surfaces two notifications: a primary toast
-  // confirming the update, and a description line telling the
-  // seller a WhatsApp notification went out to each affected
-  // customer. (The WhatsApp send is mocked at this layer — in
-  // production this would queue against the messaging backend.)
-  const handleUpdateDeliveryDate = () => {
-    if (!newExpectedDeliveryDate) {
-      toast.error("Please pick a new expected delivery date.");
-      return;
-    }
-    // Block past-dated reschedules — picking yesterday makes no
-    // operational sense and would confuse the customer message.
-    const today = new Date().toISOString().slice(0, 10);
-    if (newExpectedDeliveryDate < today) {
-      toast.error("New delivery date can't be in the past.");
-      return;
-    }
-    const count = selectedOrders.length;
-    setOrders((prev) =>
-      prev.map((order) =>
-        selectedOrders.includes(order.id)
-          ? { ...order, expectedDeliveryDate: newExpectedDeliveryDate }
-          : order,
-      ),
-    );
-    // Friendly date for the toast — same format the column uses.
-    const t = Date.parse(newExpectedDeliveryDate + "T00:00:00Z");
-    const friendly = Number.isNaN(t)
-      ? newExpectedDeliveryDate
-      : new Date(t).toLocaleDateString("en-GB", {
-          weekday: "short",
-          day: "2-digit",
-          month: "short",
-          timeZone: "UTC",
-        });
-    toast.success(
-      `${count} order${count === 1 ? "" : "s"} rescheduled to ${friendly}.`,
-      {
-        description:
-          "WhatsApp notification sent to inform customers about the delayed delivery.",
-        icon: <MessageCircle className="h-4 w-4 text-emerald-600" />,
-        duration: 5000,
-      },
-    );
-    setSelectedOrders([]);
-    setIsUpdateDeliveryDialogOpen(false);
-    setNewExpectedDeliveryDate("");
-  };
-
   // Mark as delivered (Confirmed → Delivered). No metadata to capture
   // — the dialog is purely a confirmation surface.
   const handleDeliverOrders = () => {
@@ -670,6 +904,31 @@ export function Orders() {
     setIsDeliverDialogOpen(false);
   };
 
+  // Hand the selected confirmed orders to the third-party logistics
+  // network. The seller doesn't need to know the order is crossing
+  // into LBNP — from their side it simply leaves the Confirmed list
+  // and reappears under Delivered once the partner closes it out.
+  // Anything they didn't hand over stays selectable and can still be
+  // marked delivered by hand, which is the whole point of the split.
+  const handleRequestLogistics = () => {
+    const moved = requestLogisticsForOrders(selectedOrders);
+    if (moved === 0) {
+      toast.error("Nothing to send — the selected orders are already with the logistics partner.");
+      return;
+    }
+    toast.success(
+      `${moved} order${moved === 1 ? "" : "s"} sent for 3PL delivery.`,
+      {
+        description:
+          "Track them under the 3PL Logistics tab until the delivery partner completes them.",
+        icon: <Truck className="h-4 w-4 text-blue-600" />,
+        duration: 5000,
+      },
+    );
+    setSelectedOrders([]);
+    setIsRequestLogisticsDialogOpen(false);
+  };
+
   // Clear all filters
   const clearFilters = () => {
     setSearchQuery("");
@@ -679,11 +938,8 @@ export function Orders() {
     setStartDate("");
     setEndDate("");
     setSelectedDeliveryTypes([]);
-    setSelectedDeliveryBuckets([]);
     setDeliveryStartDate("");
     setDeliveryEndDate("");
-    setTomorrowOnly(false);
-    setUrgentOnly(false);
   };
 
   const hasActiveFilters =
@@ -694,11 +950,8 @@ export function Orders() {
     startDate ||
     endDate ||
     selectedDeliveryTypes.length > 0 ||
-    selectedDeliveryBuckets.length > 0 ||
     deliveryStartDate ||
-    deliveryEndDate ||
-    tomorrowOnly ||
-    urgentOnly;
+    deliveryEndDate;
 
   // Handle export
   // ---- Export helpers ----
@@ -789,19 +1042,28 @@ export function Orders() {
       return;
     }
 
-    // 23-column layout — one row per line item; order-level fields
+    // 28-column layout — one row per line item; order-level fields
     // (Original Order Value, Order Level Savings, Final Order Value)
-    // repeat on every row. Phase 1 retired four columns the ops team
-    // never used (Invoice ID, Buyer Code, Seller Code, Line Total),
-    // so the sheet stays focused on the fields finance actually
-    // reconciles against.
+    // repeat on every row. The June 2026 review replaced the
+    // Expected / Actual Delivery Date pair with a single Delivery
+    // Day field, and added Order Type (Beat / Non-Beat) so finance
+    // can reconcile by beat route without re-joining against the
+    // settings sheet.
+    // "Clubbed Orders" (how many seller orders were split out of the
+    // same buyer-app checkout — blank for standalone orders) sits
+    // beside Order ID. The earlier dummy "Parent Order No." was
+    // rejected: order IDs come from the buyer app, and a fabricated
+    // number read like a real ID. "Operation Mode" follows Company.
+    // Wholesale rows mask the company as "Wholesaler" — same as the
+    // list.
     const headers = [
       "Order ID",
+      "Clubbed Orders",
       "Order Status",
       "Order Date",
+      "Order Type",
       "Beat Name",
-      "Expected Delivery Date",
-      "Actual Delivery Date",
+      "Delivery Day",
       "Buyer Name",
       "Buyer Contact",
       "Buyer Address",
@@ -813,6 +1075,7 @@ export function Orders() {
       "SKU code",
       "Product Name",
       "Company",
+      "Operation Mode",
       "Brand",
       "Category",
       "QTY",
@@ -826,6 +1089,15 @@ export function Orders() {
 
     const csvRows = [headers.join(",")];
 
+    // Clubbed-order counts — how many exported orders share each
+    // checkout. Counted within the export window so the sheet is
+    // self-consistent.
+    const clubSizes = new Map<string, number>();
+    for (const o of ordersToExport) {
+      const k = getCustomerOrderId(o);
+      clubSizes.set(k, (clubSizes.get(k) ?? 0) + 1);
+    }
+
     ordersToExport.forEach((order) => {
       const lines =
         order.lineItems && order.lineItems.length > 0
@@ -836,14 +1108,17 @@ export function Orders() {
         0,
       );
       const finalOrderValue = order.orderValue;
+      const isWholesale = getOrderOperationMode(order) === "wholesale";
       lines.forEach((item) => {
+        const clubSize = clubSizes.get(getCustomerOrderId(order)) ?? 1;
         const row = [
           order.id,
+          clubSize > 1 ? clubSize : "",
           statusLabelFor(order),
           orderDateLabelFor(order),
+          getOrderType(order) === "beat" ? "Beat" : "Non-Beat",
           order.beatName ?? "",
           order.expectedDeliveryDate,
-          order.actualDeliveryDate ?? "",
           order.retailerName,
           order.buyerContact ?? "",
           order.buyerAddress ?? "",
@@ -851,10 +1126,11 @@ export function Orders() {
           SELLER_INFO.contact,
           order.paymentMode,
           channelOrderIdFor(order),
-          order.orderValue,
+          order.originalOrderValue ?? order.orderValue,
           item.skuCode,
           item.productName,
-          item.company,
+          isWholesale ? "Wholesaler" : item.company,
+          isWholesale ? "Wholesale" : "Distribution",
           item.brand,
           item.category,
           item.qty,
@@ -930,15 +1206,13 @@ export function Orders() {
         const who = order.cancelledBy ?? "Seller";
         if (who === "Buyer") {
           return (
-            <Badge className="bg-amber-50 text-amber-800 border-amber-200 gap-1">
-              <XCircle className="h-3 w-3" />
-              Cancelled by Buyer
+            <Badge className="bg-amber-50 text-amber-800 border-amber-200">
+              Cancelled by Customer
             </Badge>
           );
         }
         return (
-          <Badge className="bg-purple-50 text-purple-700 border-purple-200 gap-1">
-            <XCircle className="h-3 w-3" />
+          <Badge className="bg-purple-50 text-purple-700 border-purple-200">
             Cancelled by Seller
           </Badge>
         );
@@ -948,53 +1222,22 @@ export function Orders() {
     }
   };
 
-  // Delivery-type badge — collapsed to two operational classes per
-  // the May 2026 product call. Urgent reads red with a lightning
-  // icon so dispatch staff can spot priority work; Regular is a
-  // muted blue with the route icon so the bulk of the table doesn't
-  // scream for attention. Beat name (when present) shows alongside
-  // as supporting context — the type tells you "how soon", the beat
-  // tells you "which truck".
-  const getDeliveryTypeBadge = (order: Order) => {
-    switch (order.deliveryType) {
-      case "Urgent":
-        return (
-          <Badge className="bg-red-50 text-red-700 border-red-200 gap-1">
-            <Zap className="h-3 w-3" />
-            Urgent
-          </Badge>
-        );
-      case "Regular":
-        return (
-          <Badge className="bg-blue-50 text-blue-700 border-blue-200 gap-1">
-            <Route className="h-3 w-3" />
-            Regular
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Short date formatter — "Wed, 21 May" / "Mon, 16 May". Strips
-  // the year (always current in the demo data) so dates fit on a
-  // single line in the table. Returns the input unchanged when it's
-  // not a parseable ISO date.
-  const formatShortDate = (iso: string): string => {
-    const t = Date.parse(iso + "T00:00:00Z");
-    if (Number.isNaN(t)) return iso;
-    return new Date(t).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      weekday: "short",
-      timeZone: "UTC",
-    });
-  };
-
   // (Priority badge was retired alongside the May 2026 column sweep
   // — urgency now reads off the Delivery Type badge, and the row
   // surfaces Beat Name + Beat Delivery Day as first-class columns
   // instead of the old past/today/tomorrow/future bucket chip.)
+
+  const maskedText = "••••••••";
+
+  // "Wed, 13 May": weekday + date, rendered in UTC so it matches the
+  // ISO string whatever the viewer's timezone is.
+  const gateDate = (iso: string) =>
+    new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
 
   // Render order table
   const renderOrderTable = (ordersToRender: Order[]) => {
@@ -1004,12 +1247,16 @@ export function Orders() {
         ? "No orders match your search"
         : activeTab === "all"
           ? "No orders yet"
-          : `No ${activeTab} orders`;
+          : activeTab === "logistics"
+            ? "Nothing with the logistics partner"
+            : `No ${activeTab} orders`;
       const description = hasActiveFilters
         ? "No orders match your current filters. Try clearing them to see everything."
         : activeTab === "all"
           ? "Once retailers start placing orders on ONDC and connected marketplaces, they'll show up here ready for you to confirm and dispatch."
-          : `You don't have any ${activeTab} orders right now — new ones will land here automatically.`;
+          : activeTab === "logistics"
+            ? "Orders you send from Confirmed using Request 3PL Logistics will appear here until the delivery partner completes them."
+            : `You don't have any ${activeTab} orders right now — new ones will land here automatically.`;
       return (
         <div className="flex-1 flex items-center justify-center min-h-0">
           <EmptyState
@@ -1028,6 +1275,10 @@ export function Orders() {
       );
     }
 
+    // Tabs that carry a bulk-action bar need row checkboxes. Logistics
+    // is deliberately excluded — the order belongs to the partner at
+    // that point and completion arrives from their app, so there is
+    // nothing for the seller to select or act on.
     const isActionable = activeTab === "new" || activeTab === "confirmed";
 
     return (
@@ -1046,37 +1297,40 @@ export function Orders() {
                   />
                 </th>
               )}
-              {/* Order Date moved to first per the May 2026 ops
-                  request — the distributor scans by "when did this
-                  land" before anything else. Beat Name +
-                  Expected/Actual Delivery Date columns follow so
-                  each row carries the full operational shape. */}
+              {/* Column shape locked on June 26 — Order Date leads
+                  (when did it land), followed by Delivery Date (when
+                  it ships), then the order ID, identity columns,
+                  operational tags (Type / Beat), commercial (Value /
+                  Marketplace), and Status + per-tab Actions. */}
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
                 Order Date
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                Order
+                Delivery Date
+              </th>
+              <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+                Order ID
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
                 Company
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                Retailer
+                Business Name
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
                 Mobile
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+                Order Type
+              </th>
+              <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
                 Beat Name
               </th>
-              <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                Expected Delivery
-              </th>
-              <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                Actual Delivery
-              </th>
               <th className="text-right px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                Value
+                Order Value
+              </th>
+              <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+                Marketplace
               </th>
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
                 Status
@@ -1099,56 +1353,72 @@ export function Orders() {
               >
                 {isActionable && (
                   <td className="px-3 py-2.5">
-                    <Checkbox
-                      checked={selectedOrders.includes(order.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectOrder(order.id, checked as boolean)
-                      }
-                    />
+                    {isMaskedOrder(order) ? (
+                      <Lock className="h-3.5 w-3.5 text-gray-400" />
+                    ) : (
+                      <Checkbox
+                        checked={selectedOrders.includes(order.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectOrder(order.id, checked as boolean)
+                        }
+                      />
+                    )}
                   </td>
                 )}
-                {/* Order Date — now the first content column. Stacks
-                    the ISO source under the formatted line so the
-                    seller can grok both at a glance. */}
+                {/* Order Date — ISO date the order landed. */}
                 <td
-                  className="px-3 py-2.5 whitespace-nowrap"
-                  title={order.orderDate}
+                  className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700 tabular-nums"
+                  title={order.orderTime ? `${order.orderDate} ${order.orderTime}` : order.orderDate}
                 >
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatShortDate(order.orderDate)}
-                  </p>
-                  {order.orderTime && (
-                    <p className="text-[10px] text-gray-500">
-                      {order.orderTime}
-                    </p>
+                  {order.orderDate}
+                  {/* Stale-pending flag — VIW-2026-06911 soft nudge.
+                      Visual only; the row stays fully actionable. */}
+                  {isStalePendingOrder(order) && (
+                    <span
+                      className="mt-1 flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-0.5 w-fit"
+                      title={`Placed ${getPendingAgeDays(order)} days ago — please confirm or cancel it before piling on new orders.`}
+                    >
+                      <Clock className="h-2.5 w-2.5" />
+                      {getPendingAgeDays(order)}d pending
+                    </span>
                   )}
                 </td>
-                {/* Order ID + marketplace stacked compactly. Showing
-                    the last 8 chars keeps the chip readable; full
-                    ID is on hover via CopyOnHover. */}
+                {/* Delivery Date — the date the seller committed to
+                    deliver on. Same ISO format as Order Date so the
+                    two columns read in lockstep. */}
+                <td
+                  className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700 tabular-nums"
+                  title={order.expectedDeliveryDate}
+                >
+                  {order.expectedDeliveryDate}
+                </td>
+                {/* Order ID — full ID rendered as a code chip with
+                    copy-on-hover. */}
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <CopyOnHover value={order.id} label="Order ID">
                     <code
                       className="text-[11px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-mono"
                       title={order.id}
                     >
-                      …{order.id.slice(-8)}
+                      {order.id}
                     </code>
                   </CopyOnHover>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    {order.marketplace}
-                  </p>
                 </td>
                 <td className="px-3 py-2.5">
                   <p
                     className="text-sm font-medium text-gray-900 truncate max-w-[160px]"
-                    title={order.company}
+                    title={isMaskedOrder(order) ? undefined : order.company}
                   >
-                    {order.company}
+                    {isMaskedOrder(order) ? maskedText : order.company}
                   </p>
                 </td>
                 <td className="px-3 py-2.5">
-                  <CopyOnHover value={order.retailerName} label="Retailer name">
+                  {isMaskedOrder(order) ? (
+                    <p className="text-sm text-gray-400 select-none">
+                      {maskedText}
+                    </p>
+                  ) : (
+                  <CopyOnHover value={order.retailerName} label="Business name">
                     <p
                       className="text-sm font-medium text-gray-900 truncate max-w-[160px]"
                       title={order.retailerName}
@@ -1156,9 +1426,14 @@ export function Orders() {
                       {order.retailerName}
                     </p>
                   </CopyOnHover>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  {order.buyerContact ? (
+                  {isMaskedOrder(order) ? (
+                    <p className="text-xs text-gray-400 select-none">
+                      {maskedText}
+                    </p>
+                  ) : order.buyerContact ? (
                     <CopyOnHover value={order.buyerContact} label="Mobile number">
                       <p className="text-xs text-gray-700 font-mono">
                         {order.buyerContact}
@@ -1166,6 +1441,26 @@ export function Orders() {
                     </CopyOnHover>
                   ) : (
                     <p className="text-xs text-gray-400">—</p>
+                  )}
+                </td>
+                {/* Order Type — Beat / Non-Beat. Derived from the
+                    explicit `orderType` field, or inferred from
+                    `beatName` for legacy seed rows. The tone pairs
+                    with the New / Confirmed tab's Beat-vs-Non-Beat
+                    filter pills (emerald = beat route, amber =
+                    off-schedule) so the row and the filter speak
+                    the same visual language. */}
+                <td className="px-3 py-2.5 whitespace-nowrap">
+                  {getOrderType(order) === "beat" ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-medium text-emerald-700">
+                      <Route className="h-3 w-3" />
+                      Beat
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-[11px] font-medium text-amber-800">
+                      <Zap className="h-3 w-3" />
+                      Non-Beat
+                    </span>
                   )}
                 </td>
                 {/* Beat Name — surfaces the configured serviceability
@@ -1183,39 +1478,19 @@ export function Orders() {
                     <span className="text-xs text-gray-400">—</span>
                   )}
                 </td>
-                {/* Expected Delivery — what the seller committed to. */}
-                <td
-                  className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700"
-                  title={order.expectedDeliveryDate}
-                >
-                  {formatShortDate(order.expectedDeliveryDate)}
-                </td>
-                {/* Actual Delivery — only populated once the order is
-                    Delivered. Late deliveries (actual > expected)
-                    render in red so the seller can spot slippage at
-                    a glance. */}
-                <td
-                  className="px-3 py-2.5 whitespace-nowrap text-sm"
-                  title={order.actualDeliveryDate ?? "Not yet delivered"}
-                >
-                  {order.actualDeliveryDate ? (
-                    <span
-                      className={
-                        order.actualDeliveryDate > order.expectedDeliveryDate
-                          ? "text-red-700 font-medium"
-                          : "text-emerald-700 font-medium"
-                      }
-                    >
-                      {formatShortDate(order.actualDeliveryDate)}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400">—</span>
-                  )}
-                </td>
                 <td className="px-3 py-2.5 whitespace-nowrap text-right">
-                  <p className="text-sm font-semibold text-gray-900">
-                    ₹{order.orderValue.toLocaleString()}
+                  <p
+                    className={`text-sm font-semibold tabular-nums ${isMaskedOrder(order) ? "text-gray-400 select-none" : "text-gray-900"}`}
+                  >
+                    {isMaskedOrder(order)
+                      ? "₹ ••••"
+                      : `₹${order.orderValue.toFixed(2)}`}
                   </p>
+                </td>
+                <td className="px-3 py-2.5 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded border border-gray-200 bg-white text-[11px] font-medium text-gray-700">
+                    {order.marketplace}
+                  </span>
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   {getStatusBadge(order)}
@@ -1236,14 +1511,25 @@ export function Orders() {
                 )}
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => navigate(`/orders/${order.id}`)}
-                      title="View Details"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    {isMaskedOrder(order) ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled
+                        title="Locked. Update your previous orders to view this order"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => navigate(`/orders/${order.id}`)}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1261,6 +1547,92 @@ export function Orders() {
   // identically to the populated state. The per-tab EmptyState
   // already handles rendering the illustration in each tab body.
   const isEmpty = orders.length === 0;
+
+  // Render helper — the Delivery Day pill row + Beat/Non-Beat tab
+  // row, parameterised on a counts object. Same JSX powers the New
+  // tab and the Confirmed tab so the surfaces stay in lockstep.
+  type BucketCounts = ReturnType<typeof buildBucketCounts>;
+  const renderDayAndBeatFilters = (counts: BucketCounts) => (
+    <div className="px-6 pt-4 pb-2 border-b flex-shrink-0 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mr-1">
+          Delivery day:
+        </span>
+        <button
+          onClick={() => handleConfirmedDayChange("all")}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            confirmedDeliveryDay === "all"
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          All days ({counts.all})
+        </button>
+        {counts.dayBuckets.map((b) => {
+          const isActive = confirmedDeliveryDay === b.date;
+          const label = formatDeliveryPillLabel(b.date);
+          const today = getOrdersToday();
+          const tone =
+            b.date === today
+              ? isActive
+                ? "bg-red-600 text-white border-red-600"
+                : "bg-red-50 text-red-800 border-red-200 hover:bg-red-100"
+              : isActive
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100";
+          return (
+            <button
+              key={b.date}
+              onClick={() => handleConfirmedDayChange(b.date)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${tone}`}
+              title={b.date}
+            >
+              <CalendarDays className="h-3 w-3" />
+              {label} ({b.count})
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mr-1">
+          Order type:
+        </span>
+        <button
+          onClick={() => handleConfirmedBeatModeChange("all")}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            confirmedBeatMode === "all"
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          All ({counts.beat + counts.nonBeat})
+        </button>
+        <button
+          onClick={() => handleConfirmedBeatModeChange("beat")}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
+            confirmedBeatMode === "beat"
+              ? "bg-emerald-600 text-white border-emerald-600"
+              : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+          }`}
+        >
+          <Route className="h-3 w-3" />
+          Beat orders ({counts.beat})
+        </button>
+        <button
+          onClick={() => handleConfirmedBeatModeChange("non-beat")}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
+            confirmedBeatMode === "non-beat"
+              ? "bg-amber-600 text-white border-amber-600"
+              : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+          }`}
+        >
+          <Zap className="h-3 w-3" />
+          Non-beat orders ({counts.nonBeat})
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -1302,6 +1674,18 @@ export function Orders() {
                       <CheckCircle2 className="h-4 w-4 mr-2" />
                       <span className="font-medium">Confirmed ({summary.confirmed})</span>
                     </TabsTrigger>
+                    {/* Only meaningful once the seller can actually
+                        hand orders off, so it's gated on the same flag
+                        as the Request 3PL Logistics action. */}
+                    {logisticsEnabled && (
+                      <TabsTrigger
+                        value="logistics"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      >
+                        <Truck className="h-4 w-4 mr-2" />
+                        <span className="font-medium">3PL Logistics ({summary.logistics})</span>
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger
                       value="delivered"
                       className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
@@ -1349,6 +1733,45 @@ export function Orders() {
                 {/* Bulk Action Buttons for Confirmed Tab */}
                 {/* Removed - now beside search bar */}
               </div>
+
+              {/* Order Summary strip — three figures (Customers,
+                  Orders, Total Value) reading off `currentTabOrders`
+                  so they react to every active filter. Lets the
+                  seller eyeball the business shape of the slice
+                  they're looking at without exporting a report. */}
+              {!isEmpty && (
+                <div className="px-6 py-2.5 border-b border-gray-100 bg-gradient-to-r from-purple-50/40 via-white to-emerald-50/40 flex-shrink-0 flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">
+                      Customers
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                      {orderSummary.customers.toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="h-3 w-px bg-gray-200" />
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">
+                      Orders
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                      {orderSummary.orders.toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="h-3 w-px bg-gray-200" />
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">
+                      Total Value
+                    </span>
+                    <span className="text-sm font-semibold text-emerald-700 tabular-nums">
+                      ₹{orderSummary.value.toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="ml-auto text-[10px] text-gray-500">
+                    Updates with active filters
+                  </span>
+                </div>
+              )}
 
               {/* Applied Filter Tags */}
               {(selectedBrandFilters.length > 0 || selectedStatusFilters.length > 0 || marketplaceFilter !== "all") && (
@@ -1423,6 +1846,7 @@ export function Orders() {
             </TabsContent>
 
             <TabsContent value="new" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
+              {!isEmpty && renderDayAndBeatFilters(newBucketCounts)}
               {!isEmpty && (
               <div className="px-6 py-4 border-b flex-shrink-0">
                 <div className="flex items-center justify-between gap-4">
@@ -1443,7 +1867,7 @@ export function Orders() {
                       </button>
                     )}
                   </div>
-                  
+
                   {/* Bulk Action Buttons — Confirm / Cancel keep the
                       green/red destructive treatment; View on Map sits
                       first because the seller usually wants to eyeball
@@ -1484,6 +1908,27 @@ export function Orders() {
               </div>
               )}
 
+              {/* Feature 9 — hard restriction. The detail lives in a
+                  pop-up (see "Order status update required" dialog);
+                  this slim strip only lets the seller reopen it. */}
+              {!isEmpty && gateActive && (
+                <div className="px-6 py-2 border-b bg-red-50/60 flex items-center justify-between gap-3 flex-shrink-0">
+                  <p className="text-xs text-red-800 flex items-center gap-2">
+                    <Lock className="h-3.5 w-3.5" />
+                    {maskedCount} new order{maskedCount === 1 ? "" : "s"}{" "}
+                    locked. Update {attentionItems.length} previous order
+                    {attentionItems.length === 1 ? "" : "s"} to unlock.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 border-red-300 text-red-700 hover:bg-red-50"
+                    onClick={() => setIsGatePopupOpen(true)}
+                  >
+                    Update now
+                  </Button>
+                </div>
+              )}
               {/* Table */}
               {renderOrderTable(paginatedOrders)}
               {!isEmpty && (
@@ -1500,94 +1945,7 @@ export function Orders() {
             <TabsContent value="confirmed" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
               {!isEmpty && (
                 <>
-                  {/* Two-level navigation — replaces the old urgency
-                      sub-tabs.
-                        Row 1: Delivery Day pills. One pill per
-                        distinct expectedDeliveryDate the confirmed
-                        orders carry, plus an "All days" reset on the
-                        left. "Today" / "Tomorrow" labels make the
-                        first couple of pills read in operator-speak.
-                        Row 2: Beat vs Non-Beat tabs scoped to the
-                        currently-selected day. */}
-                  <div className="px-6 pt-4 pb-2 border-b flex-shrink-0 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mr-1">
-                        Delivery day:
-                      </span>
-                      <button
-                        onClick={() => handleConfirmedDayChange("all")}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                          confirmedDeliveryDay === "all"
-                            ? "bg-gray-900 text-white border-gray-900"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        All days ({confirmedBucketCounts.all})
-                      </button>
-                      {confirmedBucketCounts.dayBuckets.map((b) => {
-                        const isActive = confirmedDeliveryDay === b.date;
-                        const label = formatDeliveryPillLabel(b.date);
-                        const today = getOrdersToday();
-                        const tone =
-                          b.date === today
-                            ? isActive
-                              ? "bg-red-600 text-white border-red-600"
-                              : "bg-red-50 text-red-800 border-red-200 hover:bg-red-100"
-                            : isActive
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100";
-                        return (
-                          <button
-                            key={b.date}
-                            onClick={() => handleConfirmedDayChange(b.date)}
-                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${tone}`}
-                            title={b.date}
-                          >
-                            <CalendarDays className="h-3 w-3" />
-                            {label} ({b.count})
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mr-1">
-                        Order type:
-                      </span>
-                      <button
-                        onClick={() => handleConfirmedBeatModeChange("all")}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                          confirmedBeatMode === "all"
-                            ? "bg-gray-900 text-white border-gray-900"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        All ({confirmedBucketCounts.beat + confirmedBucketCounts.nonBeat})
-                      </button>
-                      <button
-                        onClick={() => handleConfirmedBeatModeChange("beat")}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
-                          confirmedBeatMode === "beat"
-                            ? "bg-emerald-600 text-white border-emerald-600"
-                            : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
-                        }`}
-                      >
-                        <Route className="h-3 w-3" />
-                        Beat orders ({confirmedBucketCounts.beat})
-                      </button>
-                      <button
-                        onClick={() => handleConfirmedBeatModeChange("non-beat")}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
-                          confirmedBeatMode === "non-beat"
-                            ? "bg-amber-600 text-white border-amber-600"
-                            : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-                        }`}
-                      >
-                        <Zap className="h-3 w-3" />
-                        Non-beat orders ({confirmedBucketCounts.nonBeat})
-                      </button>
-                    </div>
-                  </div>
+                  {renderDayAndBeatFilters(confirmedBucketCounts)}
 
                   <div className="px-6 py-4 border-b flex-shrink-0">
                     <div className="flex items-center justify-between gap-4">
@@ -1611,10 +1969,15 @@ export function Orders() {
 
                       {/* Bulk Action Buttons — View on Map (route the
                           day's confirmed deliveries) anchors the row,
-                          then Mark Delivered, the May 2026 Update
-                          Delivery Date reschedule flow (with WhatsApp
-                          customer notification), and the destructive
-                          Cancel. */}
+                          then the two fulfilment routes, then the
+                          destructive Cancel.
+
+                          Fulfilment is a choice, not a mode: a seller
+                          with Logistics enabled hands SOME orders to
+                          the 3PL network and still delivers the rest
+                          themselves, so "Request 3PL Logistics" sits
+                          alongside "Mark Delivered" rather than
+                          replacing it. */}
                       {selectedOrders.length > 0 && (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600 mr-2">{selectedOrders.length} selected</span>
@@ -1627,22 +1990,23 @@ export function Orders() {
                             <MapPin className="h-4 w-4" />
                             View on Map
                           </Button>
+                          {logisticsEnabled && (
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                              onClick={() => setIsRequestLogisticsDialogOpen(true)}
+                            >
+                              <Truck className="h-4 w-4" />
+                              Request 3PL Logistics
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 text-white gap-2"
                             onClick={() => setIsDeliverDialogOpen(true)}
                           >
-                            <Truck className="h-4 w-4" />
+                            <PackageCheck className="h-4 w-4" />
                             Mark Delivered
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900 gap-2"
-                            onClick={() => setIsUpdateDeliveryDialogOpen(true)}
-                          >
-                            <CalendarPlus className="h-4 w-4" />
-                            Update Delivery Date
                           </Button>
                           <Button
                             size="sm"
@@ -1662,6 +2026,51 @@ export function Orders() {
 
               {/* Table */}
               {renderOrderTable(paginatedOrders)}
+            </TabsContent>
+
+            {/* 3PL Logistics — orders handed to the delivery partner.
+                Read-only as far as fulfilment goes: the seller can look
+                them up and answer a customer's "where is it?", but they
+                can't deliver or reschedule an order the partner now
+                owns. The one action is the partner-completion callback,
+                which in production arrives from the delivery-partner
+                app via LBNP rather than from a button here. */}
+            <TabsContent value="logistics" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
+              {!isEmpty && renderDayAndBeatFilters(logisticsBucketCounts)}
+              <div className="px-6 py-4 border-b flex-shrink-0">
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by order ID, retailer name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-3 text-xs text-gray-500">
+                  These orders are with the logistics partner. They move to Delivered automatically once the delivery partner completes them.
+                </p>
+              </div>
+
+              {/* Table */}
+              {renderOrderTable(paginatedOrders)}
+              {!isEmpty && (
+                <ListPagination
+                  page={currentPage}
+                  total={currentTabOrders.length}
+                  pageSize={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  itemLabel="order"
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="delivered" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
@@ -1721,27 +2130,25 @@ export function Orders() {
                         setCancelledByFilter("Buyer");
                         setCurrentPage(1);
                       }}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                         cancelledByFilter === "Buyer"
                           ? "bg-amber-600 text-white border-amber-600"
                           : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                       }`}
                     >
-                      <XCircle className="h-3 w-3" />
-                      Buyer ({cancelledByCounts.buyer})
+                      Customer ({cancelledByCounts.buyer})
                     </button>
                     <button
                       onClick={() => {
                         setCancelledByFilter("Seller");
                         setCurrentPage(1);
                       }}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors gap-1.5 inline-flex items-center ${
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                         cancelledByFilter === "Seller"
                           ? "bg-purple-600 text-white border-purple-600"
                           : "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
                       }`}
                     >
-                      <XCircle className="h-3 w-3" />
                       Seller ({cancelledByCounts.seller})
                     </button>
                   </div>
@@ -1794,11 +2201,167 @@ export function Orders() {
         }
       />
 
+      {/* Stale-pending nudge pop-up — VIW-2026-06911. Interrupts once
+          on landing in New with a stale backlog, instead of sitting
+          in the page as a permanent banner. Must be explicitly
+          closed (X, "Not now", clicking outside, or Escape all route
+          through the same dismiss handler) — the seller has to
+          actually register it before it goes away, which was the
+          point of moving off the sticky banner. */}
+      <Dialog
+        open={
+          isStaleNudgePopupOpen &&
+          !gateActive &&
+          stalePendingOrders.length > 0
+        }
+        onOpenChange={(open) => {
+          if (!open) dismissStaleNudgePopup();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Pending orders need attention
+            </DialogTitle>
+            <DialogDescription>
+              {stalePendingOrders.length} order
+              {stalePendingOrders.length === 1 ? "" : "s"} placed more than{" "}
+              {STALE_PENDING_NUDGE_DAYS} days ago{" "}
+              {stalePendingOrders.length === 1 ? "is" : "are"} still
+              unconfirmed. Please confirm or cancel them. New-order details stay
+              locked until you do.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={dismissStaleNudgePopup}>
+              Not now
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5"
+              onClick={() => {
+                dismissStaleNudgePopup();
+                handleReviewStaleOrders();
+              }}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              Review pending orders
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pending Orders Review — VIW-2026-06911 soft nudge. Opened
+          from the stale-pending nudge pop-up. Lets the seller pick
+          which stale orders to act on (defaults to all checked) and
+          route the picked subset to either Confirm or Cancel — the
+          ticket's Stage 1 nudge is advisory, so partial action + either
+          outcome both have to stay available, not just "confirm all
+          or ignore". */}
+      <Dialog
+        open={isStaleReviewDialogOpen}
+        onOpenChange={setIsStaleReviewDialogOpen}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-amber-600" />
+              Review Pending Orders
+            </DialogTitle>
+            <DialogDescription>
+              These New orders have been sitting for more than{" "}
+              {STALE_PENDING_NUDGE_DAYS} days. Pick the ones you want to
+              act on now, then Confirm or Cancel. Anything left
+              unchecked stays as-is.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Checkbox
+                checked={
+                  staleReviewSelection.length === stalePendingOrders.length &&
+                  stalePendingOrders.length > 0
+                }
+                onCheckedChange={(checked) =>
+                  setStaleReviewSelection(
+                    checked ? stalePendingOrders.map((o) => o.id) : [],
+                  )
+                }
+              />
+              <span className="text-xs font-medium text-gray-600">
+                {staleReviewSelection.length} of {stalePendingOrders.length}{" "}
+                selected
+              </span>
+            </div>
+            <ul className="space-y-1.5">
+              {stalePendingOrders.map((o) => (
+                <li
+                  key={o.id}
+                  className="flex items-center gap-3 text-xs bg-white rounded px-2 py-2 border border-gray-100"
+                >
+                  <Checkbox
+                    checked={staleReviewSelection.includes(o.id)}
+                    onCheckedChange={(checked) =>
+                      setStaleReviewSelection((prev) =>
+                        checked
+                          ? [...prev, o.id]
+                          : prev.filter((id) => id !== o.id),
+                      )
+                    }
+                  />
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-medium text-gray-900 truncate">
+                      {o.retailerName}
+                    </span>
+                    <span className="text-[10px] text-gray-500">{o.id}</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap border border-amber-200 bg-amber-50 text-amber-800">
+                    <Clock className="h-3 w-3" />
+                    {getPendingAgeDays(o)}d pending
+                  </span>
+                  <span className="text-[10px] text-gray-600 whitespace-nowrap">
+                    ₹{o.orderValue.toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsStaleReviewDialogOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              variant="outline"
+              className="border-red-300 text-red-700 hover:bg-red-50 gap-2"
+              disabled={staleReviewSelection.length === 0}
+              onClick={handleStaleReviewCancel}
+            >
+              <XCircle className="h-4 w-4" />
+              Cancel {staleReviewSelection.length || ""}
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white gap-2"
+              disabled={staleReviewSelection.length === 0}
+              onClick={handleStaleReviewConfirm}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Confirm {staleReviewSelection.length || ""}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirm Orders Dialog — pure confirmation surface, no
-          dispatch metadata captured here. Visually splits the
-          selection into Tomorrow vs Beyond-Tomorrow groups so the
-          distributor knows what's urgent vs what's future-dated
-          before clicking Confirm. */}
+          dispatch metadata captured here. The selection is grouped
+          by Delivery Day (the concrete committed date) so the
+          distributor can plan packing & dispatch per-day instead of
+          via the older Tomorrow / Beyond-Tomorrow relative buckets
+          retired in June 2026. */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -1807,7 +2370,8 @@ export function Orders() {
               Confirm Orders
             </DialogTitle>
             <DialogDescription>
-              Review the delivery windows below, then confirm.
+              Review the selected orders, grouped by Delivery Day, then
+              confirm.
             </DialogDescription>
           </DialogHeader>
 
@@ -1815,101 +2379,130 @@ export function Orders() {
             const selectedOrderObjects = orders.filter((o) =>
               selectedOrders.includes(o.id),
             );
-            const grouped = {
-              tomorrow: selectedOrderObjects.filter(
-                (o) => getDeliveryBucket(o) === "tomorrow",
-              ),
-              beyond: selectedOrderObjects.filter(
-                (o) => getDeliveryBucket(o) === "beyond",
-              ),
-              other: selectedOrderObjects.filter((o) => {
-                const b = getDeliveryBucket(o);
-                return b !== "tomorrow" && b !== "beyond";
-              }),
-            };
+            const today = getOrdersToday();
+            const eligible = selectedOrderObjects;
 
-            const renderGroup = (
-              title: string,
-              icon: ReactNode,
-              rows: Order[],
-              tone: "tomorrow" | "beyond" | "other",
-            ) => {
-              if (rows.length === 0) return null;
-              const toneClasses =
-                tone === "tomorrow"
-                  ? "border-amber-200 bg-amber-50/70"
-                  : tone === "beyond"
-                    ? "border-gray-200 bg-gray-50/70"
-                    : "border-blue-200 bg-blue-50/70";
-              return (
-                <div className={`rounded-md border p-3 ${toneClasses}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    {icon}
-                    <p className="text-sm font-semibold text-gray-900">
-                      {title}
-                    </p>
-                    <Badge variant="secondary" className="bg-white text-gray-700 border border-gray-200">
-                      {rows.length}
-                    </Badge>
-                  </div>
-                  <ul className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {rows.map((o) => (
-                      <li
-                        key={o.id}
-                        className="flex items-center justify-between gap-2 text-xs bg-white rounded px-2 py-1.5 border border-gray-100"
-                      >
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-medium text-gray-900 truncate">
-                            {o.retailerName}
-                          </span>
-                          <span className="text-[10px] text-gray-500">
-                            {o.id}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {getDeliveryTypeBadge(o)}
-                          <span className="text-[10px] text-gray-600 whitespace-nowrap">
-                            {o.expectedDeliveryDate}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            const groupByDay = (rows: Order[]) => {
+              const map = new Map<string, Order[]>();
+              for (const o of rows) {
+                const key = o.expectedDeliveryDate;
+                const arr = map.get(key);
+                if (arr) arr.push(o);
+                else map.set(key, [o]);
+              }
+              return Array.from(map.entries()).sort(([a], [b]) =>
+                a.localeCompare(b),
               );
             };
 
+            const renderRow = (o: Order) => (
+              <li
+                key={o.id}
+                className="flex items-center justify-between gap-2 text-xs bg-white rounded px-2 py-1.5 border border-gray-100"
+              >
+                <div className="flex flex-col min-w-0">
+                  <span className="font-medium text-gray-900 truncate">
+                    {o.retailerName}
+                  </span>
+                  <span className="text-[10px] text-gray-500">{o.id}</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap border ${
+                      getOrderType(o) === "beat"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-amber-200 bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    {getOrderType(o) === "beat" ? (
+                      <Route className="h-3 w-3" />
+                    ) : (
+                      <Zap className="h-3 w-3" />
+                    )}
+                    {getOrderType(o) === "beat" ? "Beat" : "Non-Beat"}
+                  </span>
+                  <span className="text-[10px] text-gray-600 whitespace-nowrap">
+                    ₹{o.orderValue.toLocaleString()}
+                  </span>
+                </div>
+              </li>
+            );
+
             return (
-              <div className="space-y-3 py-2">
-                {renderGroup(
-                  "Tomorrow Deliveries",
-                  <CalendarClock className="h-4 w-4 text-amber-600" />,
-                  grouped.tomorrow,
-                  "tomorrow",
-                )}
-                {renderGroup(
-                  "Beyond Tomorrow Deliveries",
-                  <CalendarDays className="h-4 w-4 text-gray-600" />,
-                  grouped.beyond,
-                  "beyond",
-                )}
-                {renderGroup(
-                  "Other (Today / Overdue / Urgent)",
-                  <Clock className="h-4 w-4 text-blue-600" />,
-                  grouped.other,
-                  "other",
+              <div className="space-y-3 py-2 max-h-[60vh] overflow-y-auto pr-1">
+                {eligible.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Will be confirmed
+                      </p>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                        {eligible.length}
+                      </Badge>
+                    </div>
+                    {groupByDay(eligible).map(([day, rows]) => {
+                      const isToday = day === today;
+                      const tone = isToday
+                        ? "border-red-200 bg-red-50/60"
+                        : "border-blue-200 bg-blue-50/60";
+                      const iconTone = isToday
+                        ? "text-red-600"
+                        : "text-blue-600";
+                      return (
+                        <div
+                          key={day}
+                          className={`rounded-md border p-3 ${tone}`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <CalendarDays className={`h-4 w-4 ${iconTone}`} />
+                            <p className="text-sm font-semibold text-gray-900">
+                              {formatDeliveryPillLabel(day)}
+                            </p>
+                            <Badge
+                              variant="secondary"
+                              className="bg-white text-gray-700 border border-gray-200"
+                            >
+                              {rows.length}
+                            </Badge>
+                          </div>
+                          <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                            {rows.map(renderRow)}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
 
-                <div className="flex items-start gap-2 p-2.5 rounded border border-blue-100 bg-blue-50/60 text-[11px] text-blue-900">
-                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <p>
-                    All {selectedOrders.length} order
-                    {selectedOrders.length === 1 ? "" : "s"} will be
-                    confirmed in a single action. The split above is
-                    only to help you plan packing &amp; dispatch — it
-                    doesn&apos;t change what gets confirmed.
-                  </p>
-                </div>
+                {eligible.length === 0 && (
+                  <div className="flex items-start gap-2 p-2.5 rounded border border-amber-200 bg-amber-50 text-[11px] text-amber-900">
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <p>No orders selected.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Soft nudge — VIW-2026-06911. Doesn't block this confirm;
+              just flags older orders left behind so the seller can
+              fold them into the same batch. */}
+          {(() => {
+            const leftBehind = stalePendingOrders.filter(
+              (o) => !selectedOrders.includes(o.id),
+            );
+            if (leftBehind.length === 0) return null;
+            return (
+              <div className="flex items-start gap-2 p-2.5 rounded border border-amber-200 bg-amber-50 text-[11px] text-amber-900">
+                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <p className="flex-1">
+                  You also have {leftBehind.length} order
+                  {leftBehind.length === 1 ? "" : "s"} pending for more than{" "}
+                  {STALE_PENDING_NUDGE_DAYS} days that {leftBehind.length === 1 ? "isn't" : "aren't"} in
+                  this batch. Consider confirming{" "}
+                  {leftBehind.length === 1 ? "it" : "them"} too.
+                </p>
               </div>
             );
           })()}
@@ -1921,11 +2514,21 @@ export function Orders() {
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirmOrders} className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Confirm {selectedOrders.length}{" "}
-              {selectedOrders.length === 1 ? "Order" : "Orders"}
-            </Button>
+            {(() => {
+              const count = selectedOrders.length;
+              return (
+                <Button
+                  onClick={handleConfirmOrders}
+                  disabled={count === 0}
+                  className="gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {count === 0
+                    ? "Nothing to confirm"
+                    : `Confirm ${count} order${count === 1 ? "" : "s"}`}
+                </Button>
+              );
+            })()}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1991,83 +2594,151 @@ export function Orders() {
         </DialogContent>
       </Dialog>
 
-      {/* Update Expected Delivery Date Dialog — bulk-reschedule
-          flow. The seller picks a new date in the input below;
-          on save we rewrite expectedDeliveryDate across the
-          selection and a mocked WhatsApp notification message is
-          surfaced in the success toast. Closing the dialog clears
-          the picked date so the next open starts blank. */}
+      {/* Feature 9 — hard-restriction pop-up. Opens when the seller
+          lands on New with a serious backlog. Closing it keeps the
+          new orders masked; "Update now" on the strip reopens it. */}
       <Dialog
-        open={isUpdateDeliveryDialogOpen}
-        onOpenChange={(open) => {
-          setIsUpdateDeliveryDialogOpen(open);
-          if (!open) setNewExpectedDeliveryDate("");
-        }}
+        open={isGatePopupOpen && gateActive}
+        onOpenChange={setIsGatePopupOpen}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CalendarPlus className="h-5 w-5 text-amber-600" />
-              Update Expected Delivery Date
+              <Lock className="h-5 w-5 text-red-600" />
+              Update {gateView.items.length} previous order
+              {gateView.items.length === 1 ? "" : "s"} to unlock{" "}
+              {gateView.masked} new order{gateView.masked === 1 ? "" : "s"}
             </DialogTitle>
             <DialogDescription>
-              Reschedule{" "}
-              {selectedOrders.length === 1
-                ? "1 order"
-                : `${selectedOrders.length} orders`}{" "}
-              to a new expected delivery date. Customers will be
-              notified on WhatsApp about the change.
+              Confirm or cancel these to unlock the new orders. Your oldest is{" "}
+              {gateView.oldest} days old.
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="new-delivery-date">
-                New Expected Delivery Date
-              </Label>
-              <Input
-                id="new-delivery-date"
-                type="date"
-                value={newExpectedDeliveryDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) =>
-                  setNewExpectedDeliveryDate(e.target.value)
+          <div className="flex items-center justify-between gap-2 px-1">
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <Checkbox
+                checked={
+                  gateView.items.length > 0 &&
+                  gateSelectedIds.length === gateView.items.length
                 }
-                className="w-full"
+                onCheckedChange={(checked) =>
+                  setGateSelection(
+                    checked ? gateView.items.map((i) => i.order.id) : [],
+                  )
+                }
               />
-              <p className="text-[11px] text-gray-500">
-                The same date will be applied to every selected
-                order. Past dates aren&apos;t allowed.
-              </p>
-            </div>
-
-            <div className="flex items-start gap-2 p-3 rounded border border-emerald-100 bg-emerald-50/60 text-[12px] text-emerald-900">
-              <MessageCircle className="h-4 w-4 mt-0.5 shrink-0 text-emerald-700" />
-              <p>
-                A WhatsApp message will be sent to each affected
-                customer with the new expected delivery date so they
-                know about the delay.
-              </p>
-            </div>
+              Select all
+              {gateSelectedIds.length > 0 && (
+                <span className="text-gray-500">
+                  ({gateSelectedIds.length} selected)
+                </span>
+              )}
+            </label>
           </div>
+          <div className="max-h-[322px] overflow-auto rounded-md border divide-y">
+            {gateView.items.map(({ order, overdueDays }) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between gap-3 px-3 py-1.5"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Checkbox
+                    checked={gateSelectedIds.includes(order.id)}
+                    onCheckedChange={(checked) =>
+                      setGateSelection((prev) =>
+                        checked
+                          ? [...prev.filter((id) => id !== order.id), order.id]
+                          : prev.filter((id) => id !== order.id),
+                      )
+                    }
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {order.retailerName}
+                      <span className="ml-2 text-xs font-normal text-gray-500 font-mono">
+                        {order.buyerContact ?? "No mobile"}
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-700">
+                      Ordered {gateDate(order.orderDate)}
+                      <span className="mx-1.5 text-gray-300">|</span>
+                      <span className="font-semibold">
+                        ₹{order.orderValue.toLocaleString("en-IN")}
+                      </span>
+                      <span className="mx-1.5 text-gray-300">|</span>
+                      {order.beatName ?? "No beat"}
+                    </p>
+                    <p className="text-xs text-red-700">
+                      Not confirmed, placed {overdueDays} days ago.{" "}
+                      <a
+                        href={`#/orders/${order.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 underline hover:text-blue-800"
+                      >
+                        View order
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsGatePopupOpen(false)}>
+                Close
+              </Button>
+              <Button
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-50 gap-1.5"
+                disabled={gateSelectedIds.length === 0}
+                onClick={() => {
+                  setSelectedOrders(gateSelectedIds);
+                  setIsCancelDialogOpen(true);
+                }}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Cancel selected
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                disabled={gateSelectedIds.length === 0}
+                onClick={() => setIsGateConfirmOpen(true)}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Confirm selected{gateSelectedIds.length > 0 ? ` (${gateSelectedIds.length})` : ""}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsUpdateDeliveryDialogOpen(false);
-                setNewExpectedDeliveryDate("");
-              }}
-            >
+      {/* Feature 9 — quick confirm for the pop-up selection. Same
+          shape as the portal's confirm: title, one line, Cancel and
+          Confirm Orders. */}
+      <Dialog open={isGateConfirmOpen} onOpenChange={setIsGateConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle2 className="h-5 w-5" />
+              Confirm Orders
+            </DialogTitle>
+            <DialogDescription>
+              Confirm {gateView.selected} order
+              {gateView.selected === 1 ? "" : "s"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setIsGateConfirmOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={handleUpdateDeliveryDate}
-              disabled={!newExpectedDeliveryDate}
-              className="gap-2 bg-amber-600 hover:bg-amber-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+              onClick={handleGateConfirm}
             >
-              <CalendarPlus className="h-4 w-4" />
-              Update &amp; Notify
+              <CheckCircle2 className="h-4 w-4" />
+              Confirm Orders
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2103,6 +2774,45 @@ export function Orders() {
             >
               <PackageCheck className="h-4 w-4" />
               Mark Delivered
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request 3PL Logistics Dialog — the hand-off is one-way from
+          the seller's side, so it gets a confirmation step. Kept to a
+          plain confirm, matching the other bulk dialogs on this page. */}
+      <Dialog
+        open={isRequestLogisticsDialogOpen}
+        onOpenChange={setIsRequestLogisticsDialogOpen}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-blue-600" />
+              Request 3PL Logistics
+            </DialogTitle>
+            <DialogDescription>
+              Send {selectedOrders.length === 1
+                ? "1 order"
+                : `${selectedOrders.length} orders`}{" "}
+              to the logistics partner for delivery.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsRequestLogisticsDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRequestLogistics}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <Truck className="h-4 w-4" />
+              Send for Delivery
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2322,9 +3032,14 @@ export function Orders() {
                     </div>
                   </div>
 
-                  {/* Delivery filters — anchored on the spec's
-                      operational priorities (Delivery Day, Delivery
-                      Type, Tomorrow / NDD quick toggles). */}
+                  {/* Delivery filters — June 2026 retired the relative
+                      bucket multi-select (Today / Tomorrow / Overdue)
+                      and the Tomorrow-only / Urgent-only quick toggles
+                      together with the broader Tomorrow indicator
+                      cleanup. Sellers slice deliveries by a concrete
+                      Delivery Day range (or via the pill row on the
+                      New / Confirmed tabs). Delivery Type stays as an
+                      Urgent vs Regular slicer. */}
                   <div className="pt-2 border-t border-gray-100">
                     <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-3">
                       Delivery
@@ -2332,21 +3047,7 @@ export function Orders() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Delivery Day</Label>
-                        <MultiSelect
-                          options={deliveryBucketOptions.map((d) => ({
-                            label: d.label,
-                            value: d.value,
-                          }))}
-                          selected={selectedDeliveryBuckets}
-                          onChange={setSelectedDeliveryBuckets}
-                          placeholder="Any day"
-                          className="w-full"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Expected Delivery Date</Label>
+                        <Label>Delivery Day Range</Label>
                         <div className="flex flex-col gap-2">
                           <Input
                             type="date"
@@ -2376,34 +3077,6 @@ export function Orders() {
                           placeholder="Urgent / Regular"
                           className="w-full"
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Quick toggles</Label>
-                        <div className="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <Checkbox
-                              checked={tomorrowOnly}
-                              onCheckedChange={(v) =>
-                                setTomorrowOnly(Boolean(v))
-                              }
-                            />
-                            <span className="text-sm text-gray-800 flex items-center gap-1.5">
-                              <CalendarClock className="h-3.5 w-3.5 text-amber-600" />
-                              Tomorrow orders only
-                            </span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <Checkbox
-                              checked={urgentOnly}
-                              onCheckedChange={(v) => setUrgentOnly(Boolean(v))}
-                            />
-                            <span className="text-sm text-gray-800 flex items-center gap-1.5">
-                              <Zap className="h-3.5 w-3.5 text-red-600" />
-                              Urgent orders only
-                            </span>
-                          </label>
-                        </div>
                       </div>
                     </div>
                   </div>

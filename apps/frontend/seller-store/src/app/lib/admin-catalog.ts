@@ -8,6 +8,7 @@
  *    seller works with)
  */
 
+
 // Pre-baked category cover images. Vite turns these into hashed URLs at
 // build time so the admin sees real artwork on the Category Master page
 // without anyone having to upload them. All 37 ONDC eB2B categories ship
@@ -121,6 +122,79 @@ export interface Company {
    * already reference them) but are hidden from new assignments.
    */
   isActive?: boolean;
+  /**
+   * Which image represents this company where a single logo is shown:
+   * "company" → the uploaded company logo, "brand" → the brand images.
+   * Defaults to "company" when unset (legacy records).
+   */
+  logoPreference?: "company" | "brand";
+  /**
+   * Commercial (commerce) fee for this company. Configured PER COMPANY from
+   * the "Commercial Fees" tab in the add/edit dialog, and applied to every
+   * seller/distributor linked to the company. Optional on legacy records —
+   * treat missing as an unconfigured, disabled fee.
+   */
+  commercialFee?: CommercialFeeConfig;
+}
+
+// ---- Company-level Commercial Fee ----
+// Commercial fee lives on the Company (not the seller) so a single setup
+// applies to all sellers/distributors that carry the company.
+export type CommerceMethod = "gmv_percent" | "order_slab";
+
+/** One order-value band for the "Order Value Slab" commerce method. The `fee`
+ *  is the total (Qwipo target) commercial fee for the band, split into the
+ *  seller's contribution and the retailer's contribution (= fee − seller). */
+export interface OrderSlab {
+  id: string;
+  minValue: number; // ₹ — order value lower bound
+  maxValue: number; // ₹ — order value upper bound
+  fee: number; // ₹ — total (Qwipo target) fee charged for orders in this band
+  sellerContribution: number; // ₹ — seller's share of the fee
+}
+
+export interface CommercialFeeConfig {
+  enabled: boolean;
+  method: CommerceMethod;
+  /** GMV %: Qwipo target fee (capped at MAX_COMMERCE_TARGET_PCT). Retailer =
+   *  target − seller. */
+  qwipoTargetPct: number;
+  sellerContributionPct: number;
+  /** Order Value Slab method. */
+  slabs: OrderSlab[];
+  /** Commercial fee waiver. When enabled, an order whose value crosses
+   *  `waiverThreshold` (₹) drops ONLY the retailer's share of the commercial
+   *  fee — the seller's contribution still applies. */
+  waiverEnabled: boolean;
+  waiverThreshold: number; // ₹
+}
+
+/** Hard cap on the Qwipo commercial target fee. */
+export const MAX_COMMERCE_TARGET_PCT = 0.5;
+
+/** Retailer contribution = Qwipo target − seller contribution (never < 0). */
+export function commercialRetailerPct(c: CommercialFeeConfig): number {
+  return Math.max(0, +(c.qwipoTargetPct - c.sellerContributionPct).toFixed(4));
+}
+
+/** Retailer's share of one order-value slab = fee − seller (never < 0). */
+export function slabRetailer(s: OrderSlab): number {
+  return Math.max(0, +(s.fee - s.sellerContribution).toFixed(2));
+}
+
+/** A blank commercial-fee config for a company that hasn't set one up. */
+export function emptyCommercialFee(): CommercialFeeConfig {
+  return {
+    enabled: true,
+    method: "gmv_percent",
+    qwipoTargetPct: 0.5,
+    sellerContributionPct: 0.3,
+    slabs: [
+      { id: makeId("slab"), minValue: 0, maxValue: 500, fee: 5, sellerContribution: 3 },
+    ],
+    waiverEnabled: false,
+    waiverThreshold: 50000,
+  };
 }
 
 export interface AdminCategory {
@@ -176,11 +250,11 @@ export function makeCompanyCategorySeed(): AdminCategory[] {
   return ONDC_CATEGORY_NAMES.map((name) => ({ name, imageUrl: null }));
 }
 
-// Seed companies — match the brands appearing on the seller-side SKU list.
+// Demo companies referenced by seller and catalog screens.
 export const seedCompanies: Company[] = [
   {
     id: "co-adani",
-    name: "Adani Wilmar Ltd",
+    name: "Adani Wilmar Limited",
     imageUrl: null,
     isActive: true,
     brands: [
@@ -191,7 +265,7 @@ export const seedCompanies: Company[] = [
   },
   {
     id: "co-freedom",
-    name: "Gemini Edibles & Fats India",
+    name: "Gemini Edibles & Fats India Private Limited",
     imageUrl: null,
     isActive: true,
     brands: [
@@ -200,28 +274,32 @@ export const seedCompanies: Company[] = [
     ],
     categories: makeCompanyCategorySeed(),
   },
+  // Demo-only company (not in the production catalog) — kept for SKU
+  // references but hidden from new assignments.
   {
     id: "co-srikrupa",
     name: "Sri Krupa Industries",
     imageUrl: null,
-    isActive: true,
+    isActive: false,
     brands: [{ id: "br-srikrupa", name: "Sri Krupa", imageUrl: null }],
     categories: makeCompanyCategorySeed(),
   },
   {
     id: "co-itc",
-    name: "ITC",
-    imageUrl: null,
+    name: "ITC Limited",
+    // Demo logos served from public/brands/ (drop the image files there).
+    imageUrl: "./brands/itc.png",
     isActive: true,
     brands: [
-      { id: "br-aashirvaad", name: "Aashirvaad", imageUrl: null },
-      { id: "br-sunfeast", name: "Sunfeast", imageUrl: null },
-      { id: "br-bingo", name: "Bingo", imageUrl: null },
-      { id: "br-yippee", name: "Yippee", imageUrl: null },
-      { id: "br-classmate", name: "Classmate", imageUrl: null },
+      { id: "br-aashirvaad", name: "Aashirvaad", imageUrl: "./brands/aashirvaad.png" },
+      { id: "br-sunfeast", name: "Sunfeast", imageUrl: "./brands/sunfeast.png" },
+      { id: "br-bingo", name: "Bingo", imageUrl: "./brands/bingo.png" },
+      { id: "br-yippee", name: "Yippee", imageUrl: "./brands/yippee.png" },
+      { id: "br-classmate", name: "Classmate", imageUrl: "./brands/classmate.png" },
     ],
     categories: makeCompanyCategorySeed(),
   },
+
 ];
 
 /** Tiny in-memory store. In a real app this would live behind an API. */

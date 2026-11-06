@@ -1,0 +1,8 @@
+/* Profile page (spec 07 §5.3) — shared module rules are in modules/settings-modules.css. */
+.profile-page .profile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 5px; }
+.profile-page .profile-grid > .settings-section { min-width: 0; }
+.profile-page .profile-content { margin-top: 24px; display: flex; flex-direction: column; }
+.profile-page .profile-field { margin-bottom: 24px; }
+.profile-page .profile-field label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #555; }
+.profile-page .profile-value { background: #f9fafb; border-radius: 6px; padding: 12px 16px; width: 100%; }
+.profile-page .profile-data { font-size: 16px; color: #333; font-weight: 400; }

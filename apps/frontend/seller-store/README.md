@@ -1,6 +1,6 @@
 # Seller Store
 
-Seller Store is a browser prototype for distributors and Qwipo administrators.
+Seller Store is a browser prototype for distributors, Qwipo administrators, catalog administrators, and brand managers.
 It uses `@mockups/web-ui` and `@mockups/web-tokens`.
 Its routes use the URL hash.
 
@@ -18,7 +18,7 @@ The build preview uses port `6174`.
 
 ## Demonstration accounts
 
-Select a persona on the login screen.
+Select a persona on the login screen, or enter its mobile number or email address.
 Use the demonstration OTP `1234` for each persona.
 These accounts simulate authentication.
 
@@ -28,6 +28,8 @@ These accounts simulate authentication.
 | Seller (Empty) | `8888888888` | Supported empty states |
 | Super Admin | `9900000001` | `/#/admin` |
 | Super Admin (Empty) | `9999999999` | Admin empty states |
+| Catalog Admin | `5500000001` | `/#/catalog-portal` |
+| Brand Manager | `5500000002` | `/#/catalog-portal` (open **My Catalog** for assigned SKUs) |
 | Design System | `7777777777` | `/#/design` |
 
 The empty personas clear mock master data and activate supported empty states.
@@ -39,7 +41,20 @@ After a data change, examine the two normal and empty modes.
 
 The seller flows include the dashboard, SKU management, customers, offers, orders, connectors, KYC, reports, settings, and support.
 The administrator flows include requests, active sellers, users, companies, categories, and connectors.
-The application also contains error and loading examples.
+Sellers can track DMS customer registration at `/#/new-onboarding` and create QPS, BOGO, case bonus, combo, and off-invoice offers at `/#/offers`.
+Administrators can open the customer database at `/#/admin/customers`, generate serviceability reports at `/#/admin/reports`, and inspect dark-store coverage.
+Catalog administrators can review SKU requests and manage the master catalog. Brand managers can submit changes for their assigned companies. The application also contains error and loading examples.
+
+## Design source and demonstration data
+
+The import uses the [Seller Store design at commit 00587ac](https://github.com/qwipo-product/ONDC-Seller-Store/tree/00587ac28fa00483fd2b44a5c32c57bdf40eea09) on the upstream `version-3` branch.
+The local build uses hash routes, the shared desktop theme, and the Seller Store Azure pipeline.
+The reference design includes dashboards marked **Coming Soon**. Use the actions below each dashboard to open its implemented workflows.
+
+Use synthetic records for uploads and login tests. The six initial customer records are in `src/app/lib/demo-customers.csv`.
+The two fictional coverage areas in `src/app/lib/demo-geography.ts` allow the report to demonstrate customers inside and outside a delivery area.
+DMS onboarding examples are in `src/app/lib/customers-dms-data.ts`.
+Customer uploads stay in the current browser. Map tiles and some product images require network access.
 
 ## Source layout
 

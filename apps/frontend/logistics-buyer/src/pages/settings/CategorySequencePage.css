@@ -1,0 +1,52 @@
+/* Category Sequence (spec 08 §7.3). Scoped under .category-sequence-page; visual language shared with Delivery. */
+.category-sequence-page .settings-section { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px #0000000d; padding: 24px; margin-bottom: 12px; }
+.category-sequence-page .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; }
+.category-sequence-page .section-header h2 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.category-sequence-page .header-actions { display: flex; align-items: center; gap: 12px; }
+.category-sequence-page .search-box { position: relative; }
+.category-sequence-page .search-box .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 13px; }
+.category-sequence-page .search-input { width: 240px; padding: 8px 12px 8px 34px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; background: #fafafa; }
+.category-sequence-page .search-input:focus { outline: none; border-color: #4a90e2; background: #fff; }
+.category-sequence-page .add-category-btn { display: inline-flex; align-items: center; gap: 6px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.category-sequence-page .add-category-btn:hover { background: #2d2d44; }
+
+.category-sequence-page .table-container { overflow-x: auto; }
+.category-sequence-page .customers-table { width: 100%; border-collapse: collapse; }
+.category-sequence-page .customers-table th { text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; padding: 12px 16px; border-bottom: 1px solid #eee; letter-spacing: .03em; }
+.category-sequence-page .customers-table td { padding: 12px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f3f3f3; }
+.category-sequence-page .customers-table tbody tr:hover { background: #f9f9f9; }
+.category-sequence-page .action-buttons { display: flex; gap: 8px; }
+.category-sequence-page .edit-btn, .category-sequence-page .delete-btn { background: transparent; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; }
+.category-sequence-page .edit-btn { color: #4a90e2; }
+.category-sequence-page .delete-btn { color: #dc3545; }
+
+.category-sequence-page .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 24px; padding-top: 16px; font-size: 13px; color: #666; }
+.category-sequence-page .rows-per-page { display: flex; align-items: center; gap: 8px; }
+.category-sequence-page .rows-per-page select { border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 13px; }
+.category-sequence-page .page-nav { display: flex; gap: 8px; }
+.category-sequence-page .page-btn { width: 30px; height: 30px; border: 1px solid #ddd; border-radius: 4px; background: #fff; color: #333; cursor: pointer; }
+.category-sequence-page .page-btn:disabled { color: #ccc; border-color: #eee; cursor: not-allowed; }
+.category-sequence-page .empty-state { text-align: center; padding: 60px; color: #999; font-size: 15px; }
+.category-sequence-page .empty-state p { margin: 8px 0 0; }
+
+.category-sequence-page .modal-overlay { position: fixed; inset: 0; background: #00000080; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.category-sequence-page .modal-content { width: 500px; max-width: 90%; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px #00000026; }
+.category-sequence-page .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #eee; }
+.category-sequence-page .modal-header h3 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.category-sequence-page .close-btn { background: none; border: none; color: #999; font-size: 16px; cursor: pointer; }
+.category-sequence-page .close-btn:hover { color: #333; }
+.category-sequence-page .modal-body { padding: 24px; }
+.category-sequence-page .form-group { margin-bottom: 20px; }
+.category-sequence-page .form-group > label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 8px; }
+.category-sequence-page .required { color: #dc3545; }
+.category-sequence-page .form-input { width: 100%; border: none; background-color: #f5f5f5; padding: 12px 16px; border-radius: 8px; font-size: 14px; color: #333; }
+.category-sequence-page .form-input:focus { outline: 2px solid #e0e0ff; }
+.category-sequence-page .form-input--readonly { background-color: #f0f0f0; color: #888; cursor: not-allowed; }
+.category-sequence-page .form-input--readonly:focus { outline: none; }
+.category-sequence-page .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #eee; }
+.category-sequence-page .modal-footer > * { margin: 0; }
+.category-sequence-page .cancel-btn { background: #fff; border: 1px solid #ddd; color: #666; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+.category-sequence-page .cancel-btn:hover { background: #f5f5f5; }
+.category-sequence-page .save-btn { background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.category-sequence-page .save-btn:hover:not(:disabled) { background: #2d2d44; }
+.category-sequence-page .save-btn:disabled { background: #ccc; cursor: not-allowed; }

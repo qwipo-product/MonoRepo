@@ -1,0 +1,143 @@
+/* <app-update-delivery-address-modal> (spec 01 §1.8) — scoped under .update-delivery-dialog */
+.update-delivery-dialog {
+  width: 1300px; max-width: calc(100vw - 40px); height: 780px; max-height: calc(100vh - 40px); background: #fff; border-radius: 12px;
+  display: flex; flex-direction: column; font-family: Inter, Roboto, sans-serif; color: #111827; box-sizing: border-box; overflow: hidden;
+}
+.update-delivery-dialog .material-icons { font-size: 18px; }
+
+.update-delivery-dialog .udd-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 32px 16px; border-bottom: 1px solid #e5e7eb; }
+.update-delivery-dialog .udd-header h2 { font-size: 18px; font-weight: 600; color: #111827; margin: 0 0 4px; }
+.update-delivery-dialog .udd-header p { font-size: 13px; color: #6b7280; margin: 0; }
+.update-delivery-dialog .udd-close-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; color: #6b7280;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+}
+.update-delivery-dialog .udd-close-btn:hover { background: #f3f4f6; color: #111827; }
+
+.update-delivery-dialog .udd-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.4fr auto 1fr; padding: 20px 32px; overflow: hidden; }
+.update-delivery-dialog .udd-column { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
+.update-delivery-dialog .vertical-divider { width: 1px; background: #e5e7eb; margin: 0 24px; }
+.update-delivery-dialog .step-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #3b82f6; letter-spacing: .8px; margin-bottom: 2px; }
+.update-delivery-dialog .step-title { font-size: 14px; font-weight: 600; color: #111827; margin: 0 0 14px; }
+.update-delivery-dialog .field-label { font-size: 12px; font-weight: 500; color: #6b7280; margin-bottom: 6px; display: block; }
+
+.update-delivery-dialog .invoice-textarea {
+  width: 100%; min-height: 88px; font-size: 13px; padding: 10px 12px; border: 1px solid #E5E7EB; border-radius: 8px; resize: vertical;
+  font-family: inherit; box-sizing: border-box; color: #111827;
+}
+.update-delivery-dialog .invoice-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #3b82f614; }
+.update-delivery-dialog .search-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
+.update-delivery-dialog .invoice-count { font-size: 12px; color: #9ca3af; }
+.update-delivery-dialog .btn-search {
+  height: 38px; padding: 0 22px; border-radius: 10px; background: #3b82f6; color: #fff; border: none; display: inline-flex; align-items: center;
+  gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.update-delivery-dialog .btn-search:hover:not(:disabled) { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 10px #2563eb40; }
+.update-delivery-dialog .btn-search:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+.update-delivery-dialog .btn-arrow { font-size: 16px; }
+
+.update-delivery-dialog .msg-warning { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: #b5410b; margin: 10px 0 0; }
+.update-delivery-dialog .msg-warning .material-icons { font-size: 16px; color: #f59e0b; }
+.update-delivery-dialog .msg-muted { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; margin: 10px 0 0; }
+
+.update-delivery-dialog .skeleton-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.update-delivery-dialog .skeleton-row { display: grid; grid-template-columns: 20px 1fr 60px; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid #E5E7EB; border-radius: 6px; }
+.update-delivery-dialog .sk { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: udd-shimmer 1.5s infinite; border-radius: 4px; }
+.update-delivery-dialog .sk-check { width: 15px; height: 15px; }
+.update-delivery-dialog .sk-lines { display: flex; flex-direction: column; gap: 6px; }
+.update-delivery-dialog .sk-line { height: 10px; }
+.update-delivery-dialog .sk-short { width: 60px; height: 10px; }
+@keyframes udd-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.update-delivery-dialog .orders-results { display: flex; flex-direction: column; min-height: 0; margin-top: 14px; flex: 1; }
+.update-delivery-dialog .list-header { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.update-delivery-dialog .orders-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; padding-right: 4px; }
+.update-delivery-dialog .orders-list::-webkit-scrollbar { width: 4px; }
+.update-delivery-dialog .orders-list::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+.update-delivery-dialog .order-row {
+  display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 10px; border: 1px solid #E5E7EB; border-radius: 6px;
+  padding: 6px 10px; cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+.update-delivery-dialog .order-row:hover { background: #f8faff; }
+.update-delivery-dialog .order-row.selected { background: #eef4ff; border-color: #93b4fd; }
+.update-delivery-dialog .order-row input[type='checkbox'] { accent-color: #3B82F6; width: 15px; height: 15px; margin: 0; cursor: pointer; }
+.update-delivery-dialog .order-info { display: flex; flex-direction: column; min-width: 0; }
+.update-delivery-dialog .order-invoice { font-size: 13px; font-weight: 600; color: #111827; }
+.update-delivery-dialog .order-customer { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.update-delivery-dialog .order-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #374151; white-space: nowrap; }
+.update-delivery-dialog .order-meta .sep { color: #d1d5db; }
+
+.update-delivery-dialog .empty-card {
+  margin-top: 14px; background: #f9fafb; border: 1px dashed #E5E7EB; border-radius: 10px; min-height: 180px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 20px;
+}
+.update-delivery-dialog .empty-icon { width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: center; color: #9ca3af; margin-bottom: 10px; }
+.update-delivery-dialog .empty-icon .material-icons { font-size: 24px; }
+.update-delivery-dialog .empty-title { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.update-delivery-dialog .empty-hint { font-size: 13px; color: #9ca3af; line-height: 1.5; }
+.update-delivery-dialog .empty-hint strong { color: #6b7280; }
+
+.update-delivery-dialog .customer-search { position: relative; }
+.update-delivery-dialog .customer-search input {
+  width: 100%; height: 40px; padding: 0 36px; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 13px; box-sizing: border-box; font-family: inherit;
+}
+.update-delivery-dialog .customer-search input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #3b82f614; }
+.update-delivery-dialog .customer-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+.update-delivery-dialog .customer-search .clear-btn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; border: none;
+  background: transparent; color: #6b7280; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.update-delivery-dialog .customer-search .clear-btn .material-icons { font-size: 16px; }
+.update-delivery-dialog .customer-search .clear-btn:hover { background: #fef2f2; color: #dc2626; }
+
+.update-delivery-dialog .customer-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; overflow-y: auto; min-height: 0; }
+.update-delivery-dialog .customer-card {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer;
+}
+.update-delivery-dialog .customer-card:hover { background: #f8faff; border-color: #93b4fd; }
+.update-delivery-dialog .customer-main { min-width: 0; }
+.update-delivery-dialog .customer-name { font-size: 13px; font-weight: 600; color: #111827; }
+.update-delivery-dialog .customer-address { font-size: 12px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.update-delivery-dialog .customer-mobile { font-size: 12px; font-weight: 500; color: #6b7280; }
+
+.update-delivery-dialog .selected-customer { margin-top: 12px; background: #f0fdf4; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px; }
+.update-delivery-dialog .sc-top { display: flex; align-items: center; gap: 12px; }
+.update-delivery-dialog .sc-avatar { width: 40px; height: 40px; border-radius: 50%; background: #0596691a; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.update-delivery-dialog .sc-avatar .material-icons { font-size: 20px; }
+.update-delivery-dialog .sc-name { font-size: 14px; font-weight: 600; color: #111827; }
+.update-delivery-dialog .sc-mobile { font-size: 12px; color: #6b7280; }
+.update-delivery-dialog .sc-address { display: flex; align-items: flex-start; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #A7F3D0; font-size: 12px; color: #374151; }
+.update-delivery-dialog .sc-address .material-icons { color: #059669; font-size: 16px; }
+
+.update-delivery-dialog .udd-footer {
+  min-height: 64px; padding: 12px 32px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; box-sizing: border-box;
+}
+.update-delivery-dialog .spacer { flex: 1; }
+.update-delivery-dialog .summary-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.update-delivery-dialog .chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #fff;
+  border: 1px solid #E5E7EB; color: #374151; white-space: nowrap;
+}
+.update-delivery-dialog .chip .material-icons { font-size: 14px; color: #6b7280; }
+.update-delivery-dialog .chip-highlight { background: #eef4ff; border-color: #93b4fd; color: #2563eb; }
+.update-delivery-dialog .chip-highlight .material-icons { color: #2563eb; }
+.update-delivery-dialog .footer-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.update-delivery-dialog .btn-cancel {
+  height: 40px; padding: 0 18px; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; color: #374151; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.update-delivery-dialog .btn-cancel:hover { background: #f3f4f6; }
+.update-delivery-dialog .btn-primary-udd {
+  height: 40px; min-width: 140px; padding: 0 18px; border-radius: 8px; border: none; background: #3b82f6; color: #fff; font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+}
+.update-delivery-dialog .btn-primary-udd:hover:not(:disabled) { background: #2563eb; }
+.update-delivery-dialog .btn-primary-udd:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 900px) {
+  .update-delivery-dialog { width: calc(100vw - 32px); height: calc(100vh - 40px); }
+  .update-delivery-dialog .udd-body { grid-template-columns: 1fr; padding: 16px; overflow-y: auto; gap: 20px; }
+  .update-delivery-dialog .vertical-divider { display: none; }
+  .update-delivery-dialog .udd-header, .update-delivery-dialog .udd-footer { padding-left: 16px; padding-right: 16px; }
+  .update-delivery-dialog .udd-footer { flex-wrap: wrap; }
+}

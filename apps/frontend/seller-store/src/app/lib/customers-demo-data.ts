@@ -3,6 +3,11 @@
 // Module-level state + a tiny publish/subscribe pattern keeps the surface
 // familiar to anyone who's worked with the other mock stores.
 
+import {
+  findBeatsForCustomer,
+  type ServiceabilityBeat,
+} from "./serviceability-data";
+
 /** A single (customer → company) link. Status lives here — block/unblock
  *  is done per-company, so a single customer can be Active for one company
  *  and Blocked for another (e.g. unpaid dues against one brand). */
@@ -25,6 +30,42 @@ export interface CompanyLink {
  */
 export type CustomerOrigin = "polygon-sync" | "first-order";
 
+/**
+ * A single delivery address for a customer. A customer can have more
+ * than one (main store, branch, warehouse …). Each address sits in its
+ * own location, so it maps into its OWN set of serviceability beats —
+ * meaning different addresses of the same customer can be served by
+ * different companies and on different delivery/beat days.
+ */
+export interface CustomerAddress {
+  id: string;
+  /** Short human label — "Main Store", "Warehouse", "Branch – KPHB". */
+  label: string;
+  /** Free-form address line shown on the detail card. */
+  fullAddress?: string;
+  area: string;
+  city: string;
+  state: string;
+  pincode: string;
+  /** Lat/long power the embedded map for this address. */
+  latitude: number;
+  longitude: number;
+  /** The customer's default delivery address. Exactly one per customer. */
+  isPrimary?: boolean;
+  /**
+   * Per-company beat mapping for THIS address, keyed by companyId →
+   * beat ids in the serviceability store. Two roles:
+   *   1. The KEYS declare which companies deliver to this address — a
+   *      company absent from the map has no beat covering this spot.
+   *   2. The beat ids resolve live against the serviceability store, so
+   *      the beat name + delivery days always reflect the admin's
+   *      current polygon config (auto-derived, not copied).
+   * Omit entirely to fall back to the deterministic hash picker for
+   * every linked company (legacy single-address behaviour).
+   */
+  serviceabilityOverrides?: Record<string, string[]>;
+}
+
 export interface DemoCustomer {
   customerId: string;
   customerName: string;
@@ -45,6 +86,9 @@ export interface DemoCustomer {
   totalOrders: number;
   /** Total revenue in INR — surfaced on the detail page Business card. */
   totalRevenue?: number;
+  /** Customer-level status — Active / Blocked. Blocking a customer stops all
+   *  new orders for them across every linked company. Defaults to "Active". */
+  status?: "Active" | "Blocked";
   /** Companies the customer buys from. Length ≥ 1. */
   companies: CompanyLink[];
   /**
@@ -60,9 +104,19 @@ export interface DemoCustomer {
    * multiple delivery days for the same customer". Keyed by companyId
    * and listing the bit ids the customer is mapped to.
    *
+   * Applies to the customer's PRIMARY address. Per-address overrides
+   * live on each `CustomerAddress` instead.
+   *
    * Production wiring will swap this for point-in-polygon results.
    */
   serviceabilityOverrides?: Record<string, string[]>;
+  /**
+   * Delivery addresses for this customer. When present (length ≥ 1) the
+   * detail page renders one entry per address, each with its own map and
+   * its own company × beat-day serviceability. When omitted, the legacy
+   * top-level address fields are treated as a single primary address.
+   */
+  addresses?: CustomerAddress[];
 }
 
 // ---------- Seed ----------
@@ -93,7 +147,7 @@ const SEED: DemoCustomer[] = [
     // chips behind a single beat row. One beat per company is the
     // seller-side rule.
     serviceabilityOverrides: {
-      "co-itc": ["beat-itc-kphb1"],
+      "co-itc": ["beat-itc-kphb-1"],
     },
   },
   {
@@ -114,6 +168,37 @@ const SEED: DemoCustomer[] = [
     totalRevenue: 612400,
     companies: [
       { companyId: "co-itc", companyName: "ITC Limited", status: "Active" },
+    ],
+    // Same company (ITC), two addresses that fall on DIFFERENT beats —
+    // so the same wholesaler gets a Saturday delivery at the main shop
+    // (Secunderabad beat) and a Friday delivery at the godown (Kondapur
+    // beat). Demonstrates "different address → different beat day".
+    addresses: [
+      {
+        id: "c2-addr-1",
+        label: "Main Shop",
+        fullAddress: "Plot 47, Patny Centre, Secunderabad",
+        area: "Secunderabad",
+        city: "Hyderabad",
+        state: "Telangana",
+        pincode: "500003",
+        latitude: 17.4399,
+        longitude: 78.4983,
+        isPrimary: true,
+        serviceabilityOverrides: { "co-itc": ["beat-itc-secunderabad"] },
+      },
+      {
+        id: "c2-addr-2",
+        label: "Godown",
+        fullAddress: "Warehouse 3, Kondapur Main Road, near Botanical Garden",
+        area: "Kondapur",
+        city: "Hyderabad",
+        state: "Telangana",
+        pincode: "500084",
+        latitude: 17.4622,
+        longitude: 78.3568,
+        serviceabilityOverrides: { "co-itc": ["beat-itc-kondapur"] },
+      },
     ],
   },
   {
@@ -146,23 +231,83 @@ const SEED: DemoCustomer[] = [
     businessName: "City Supermart",
     mobile: "+91 98765 43226",
     email: "suresh@citysupermart.in",
-    fullAddress: "F-12 Connaught Place, Outer Circle",
-    area: "Connaught Place",
-    city: "Delhi",
-    state: "Delhi",
-    pincode: "110001",
-    latitude: 28.6328,
-    longitude: 77.2197,
-    gstNumber: "07ABCDE5678G1Z9",
+    fullAddress: "Plot 9, Madhapur Main Road, near Cyber Towers",
+    area: "Madhapur",
+    city: "Hyderabad",
+    state: "Telangana",
+    pincode: "500081",
+    latitude: 17.4483,
+    longitude: 78.3915,
+    gstNumber: "36ABCDE5678G1Z9",
     totalOrders: 92,
     totalRevenue: 1480000,
     companies: [
       { companyId: "co-itc", companyName: "ITC Limited", status: "Active" },
-      { companyId: "co-marico", companyName: "Marico", status: "Blocked" },
+      { companyId: "co-marico", companyName: "Marico", status: "Active" },
       {
         companyId: "co-freedom",
         companyName: "Gemini Edibles & Fats India",
         status: "Active",
+      },
+      // Per-company block example: this customer is Active overall but
+      // blocked for this one company.
+      { companyId: "co-adani", companyName: "Adani Wilmar Ltd", status: "Blocked" },
+    ],
+    // Multi-address showcase. City Supermart runs three locations, and
+    // each one falls in a different beat — so the COMPANY set and the
+    // DELIVERY DAYS differ per address:
+    //   • Main Store (Madhapur)   → ITC + Gemini, both Thursday.
+    //   • Branch (KPHB)           → ITC + Adani,  both Mon & Tue.
+    //   • Warehouse (Jubilee Hlls)→ ITC + Adani,  both Tuesday.
+    // Marico is linked but has no serviceability polygon anywhere, so it
+    // shows "not served" at every address — a realistic gap the seller
+    // can spot at a glance.
+    addresses: [
+      {
+        id: "c4-addr-1",
+        label: "Main Store",
+        fullAddress: "Plot 9, Madhapur Main Road, near Cyber Towers",
+        area: "Madhapur",
+        city: "Hyderabad",
+        state: "Telangana",
+        pincode: "500081",
+        latitude: 17.4483,
+        longitude: 78.3915,
+        isPrimary: true,
+        serviceabilityOverrides: {
+          "co-itc": ["beat-itc-madhapur"],
+          "co-freedom": ["beat-gemini-madhapur"],
+        },
+      },
+      {
+        id: "c4-addr-2",
+        label: "Branch – KPHB",
+        fullAddress: "Shop 21, KPHB Phase 1, Kukatpally",
+        area: "KPHB",
+        city: "Hyderabad",
+        state: "Telangana",
+        pincode: "500072",
+        latitude: 17.4948,
+        longitude: 78.3996,
+        serviceabilityOverrides: {
+          "co-itc": ["beat-itc-kphb-1"],
+          "co-adani": ["beat-adani-kphb-1"],
+        },
+      },
+      {
+        id: "c4-addr-3",
+        label: "Warehouse",
+        fullAddress: "Godown 5, Road No. 10, Jubilee Hills",
+        area: "Jubilee Hills",
+        city: "Hyderabad",
+        state: "Telangana",
+        pincode: "500033",
+        latitude: 17.4326,
+        longitude: 78.4071,
+        serviceabilityOverrides: {
+          "co-itc": ["beat-itc-jubilee-hills"],
+          "co-adani": ["beat-adani-jubilee-hills"],
+        },
       },
     ],
   },
@@ -220,11 +365,13 @@ const SEED: DemoCustomer[] = [
     gstNumber: "33ABCDE9876H1Z3",
     totalOrders: 38,
     totalRevenue: 487000,
+    // Customer-level block example for the demo.
+    status: "Blocked",
     companies: [
       {
         companyId: "co-freedom",
         companyName: "Gemini Edibles & Fats India",
-        status: "Blocked",
+        status: "Active",
       },
     ],
   },
@@ -251,7 +398,23 @@ export const setDemoCustomers = (next: DemoCustomer[]) => {
   notify();
 };
 
-/** Update the status of a single company link for a single customer. */
+/** Block / unblock a customer at the customer level. This is a master switch:
+ *  while the customer is Blocked, every linked company is effectively blocked
+ *  regardless of its own status. When the customer is Active, the per-company
+ *  statuses apply. */
+export const setDemoCustomerStatus = (
+  customerId: string,
+  status: "Active" | "Blocked",
+) => {
+  _customers = _customers.map((c) =>
+    c.customerId === customerId ? { ...c, status } : c,
+  );
+  notify();
+};
+
+/** Update the status of a single company link for a single customer. Only
+ *  meaningful while the customer is Active (a customer-level block overrides
+ *  every company). */
 export const setDemoCompanyStatus = (
   customerId: string,
   companyId: string,
@@ -270,7 +433,96 @@ export const setDemoCompanyStatus = (
   notify();
 };
 
+/** Effective status of one company link for a customer — a customer-level
+ *  block forces "Blocked"; otherwise the company's own status wins. */
+export const effectiveCompanyStatus = (
+  customer: Pick<DemoCustomer, "status">,
+  company: Pick<CompanyLink, "status">,
+): "Active" | "Blocked" =>
+  (customer.status ?? "Active") === "Blocked" ? "Blocked" : company.status;
+
 export const subscribeToDemoCustomers = (cb: () => void) => {
   subscribers.add(cb);
-  return () => subscribers.delete(cb);
+  return () => { subscribers.delete(cb); };
+};
+
+// ---------- Address helpers ----------
+
+/**
+ * Normalised address list for a customer. Returns `customer.addresses`
+ * when present; otherwise synthesises a single primary address from the
+ * legacy top-level fields so older single-address seed rows keep working.
+ */
+export const getCustomerAddresses = (c: DemoCustomer): CustomerAddress[] => {
+  if (c.addresses && c.addresses.length > 0) return c.addresses;
+  return [
+    {
+      id: `${c.customerId}-addr-1`,
+      label: "Primary address",
+      fullAddress: c.fullAddress,
+      area: c.area,
+      city: c.city,
+      state: c.state,
+      pincode: c.pincode,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      isPrimary: true,
+      serviceabilityOverrides: c.serviceabilityOverrides,
+    },
+  ];
+};
+
+/** The customer's default address — the one flagged primary, else first. */
+export const getPrimaryAddress = (c: DemoCustomer): CustomerAddress => {
+  const list = getCustomerAddresses(c);
+  return list.find((a) => a.isPrimary) ?? list[0];
+};
+
+/** Convenience — how many distinct addresses a customer has. */
+export const getAddressCount = (c: DemoCustomer): number =>
+  getCustomerAddresses(c).length;
+
+/** One company's resolved beats at a specific address. */
+export interface AddressCompanyServiceability extends CompanyLink {
+  beats: ServiceabilityBeat[];
+}
+
+/**
+ * Resolve the company × beat mapping for ONE address of a customer.
+ * A company is "served" here only if a beat covers this address:
+ *   • when the address carries serviceabilityOverrides, the KEYS decide
+ *     which linked companies are served (and which beats resolve);
+ *   • otherwise every linked company is resolved via the location hash
+ *     picker (legacy single-address behaviour).
+ * Linked companies with no covering beat come back in `unserved`, so the
+ * detail page can flag coverage gaps (e.g. a brand with no polygon).
+ */
+export const getAddressServiceability = (
+  c: DemoCustomer,
+  address: CustomerAddress,
+): { served: AddressCompanyServiceability[]; unserved: CompanyLink[] } => {
+  const served: AddressCompanyServiceability[] = [];
+  const unserved: CompanyLink[] = [];
+  const overrides = address.serviceabilityOverrides;
+  for (const co of c.companies) {
+    // With explicit overrides, a company that isn't a key doesn't
+    // deliver to this address — skip the hash-picker fallback for it.
+    if (overrides != null && !(co.companyId in overrides)) {
+      unserved.push(co);
+      continue;
+    }
+    const beats = findBeatsForCustomer(
+      {
+        customerId: c.customerId,
+        city: address.city,
+        area: address.area,
+        pincode: address.pincode,
+        serviceabilityOverrides: overrides,
+      },
+      co.companyId,
+    );
+    if (beats.length === 0) unserved.push(co);
+    else served.push({ ...co, beats });
+  }
+  return { served, unserved };
 };

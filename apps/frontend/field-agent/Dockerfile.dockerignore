@@ -1,0 +1,15 @@
+**
+!apps/
+!apps/frontend/
+!apps/frontend/field-agent/
+!apps/frontend/field-agent/nginx.conf
+!apps/frontend/field-agent/app/
+!apps/frontend/field-agent/app/**
+**/node_modules/
+**/.angular/
+**/dist/
+**/platforms/
+**/hooks/
+**/web/gen/
+**/.git/
+**/.env*
