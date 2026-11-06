@@ -173,7 +173,7 @@ Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
 | Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
-| Field Agent | `mockups-field-agent` | Field Agent - Build | Field Agent - Deploy |
+| Field Agent | `mockups-field-delivery-agent` | Field Delivery Agent - Build | Field Delivery Agent - Deploy |
 | RIRN Console | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
 | RIRN Retailer | `mockups-rirn-retailer` | RIRN Retailer - Build | RIRN Retailer - Deploy |
 | Qwipo Analytics | `mockups-analytics` | Analytics - Build | Analytics - Deploy |

@@ -1,7 +1,7 @@
 # Build pipeline — field-agent (Angular browser app behind nginx).
 #
-# Azure DevOps pipeline name:  \Mockups Lab\Field Agent - Build
-# "Field Agent - Deploy" binds to that exact display name via
+# Azure DevOps pipeline name:  \Mockups Lab\Field Delivery Agent - Build
+# "Field Delivery Agent - Deploy" binds to that exact display name via
 # `resources.pipelines.source`, so renaming this pipeline breaks the release.
 # Rename both or neither.
 #
@@ -15,12 +15,12 @@
 #
 # ── Versions ─────────────────────────────────────────────────────────────────
 #
-#     main       → next semver from the `field-agent-v*` git tags; the tag
-#                  `field-agent-v<semver>` is pushed, the image is <semver>
+#     main       → next semver from the `field-delivery-agent-v*` git tags; the tag
+#                  `field-delivery-agent-v<semver>` is pushed, the image is <semver>
 #     other      → <branch>-<sha>, no git tag
 #     dev/*, feature/* → PREVIEW: no image, the built site is uploaded to the
 #                  qwipo-mockups Space and served at
-#                  https://mockups-field-agent.dev.bms.qwipo.com/builds/<branch>/<sha>/
+#                  https://mockups-field-delivery-agent.dev.bms.qwipo.com/builds/<branch>/<sha>/
 #
 # `bump` only matters on main. An auto-triggered run always takes patch; run
 # the pipeline by hand and pick minor/major for a bigger step.
@@ -63,7 +63,7 @@ parameters:
 extends:
     template: /azure-cicd/templates/mockup-docker-template.yaml
     parameters:
-        service_name: 'mockups-field-agent'
-        tag_prefix: 'field-agent'
+        service_name: 'mockups-field-delivery-agent'
+        tag_prefix: 'field-delivery-agent'
         dockerfile: apps/frontend/field-agent/Dockerfile
         bump: ${{ parameters.bump }}

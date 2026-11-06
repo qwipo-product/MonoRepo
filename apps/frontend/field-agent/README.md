@@ -19,6 +19,15 @@ Use demo number `9876543210` and any six-digit OTP to open trip ALWAL-1. See [ap
 
 The initial import is from [Field-Agent-App main at 140b53e](https://github.com/qwipo-product/Field-Agent-App/tree/140b53eec8aa904fc564aff45a20f0bc67674312). Edit shared screens, services and fixtures in `app/src/`. Edit browser adapters in `app/web/`. Android resources are in `app/App_Resources/`.
 
-In Azure DevOps, **Field Agent - Build** uses [docker-build.yml](docker-build.yml). **Field Agent - Deploy** uses [azure-release.yaml](azure-release.yaml). Both use the shared Mockup Labs templates. The browser image serves HTTP on port 80. The dev ingress is [mockups-field-agent.dev.bms.qwipo.com](https://mockups-field-agent.dev.bms.qwipo.com/). Its values file belongs in the separate `Qwipo B2B/k8s` repository at `bms-chart/dev/mockups-field-agent.yaml`.
+Use the `Mockups Lab` folder in Azure DevOps. Register **Field Delivery Agent - Build** with [docker-build.yml](docker-build.yml) and **Field Delivery Agent - Deploy** with [azure-release.yaml](azure-release.yaml). Set `dev` as the default branch for both definitions when registering them.
 
-The dev branch builds an image tagged `dev-<commit>`. Feature previews use the same Docker builder stage and upload its `dist/` directory to the preview store. On the dev host, previews are served under `/builds/`. Additional environment deployments require a corresponding GitOps values file.
+The build publishes the `mockups-field-delivery-agent` browser image. The release updates the image version in the existing `Qwipo B2B/k8s` manifest at `bms-chart/<environment>/mockups-field-delivery-agent.yaml` and syncs the service. The container listens on port 80.
+
+| Branch | Environment | Configured URL |
+| --- | --- | --- |
+| `dev` | dev | [Dev](https://mockups-field-delivery-agent.dev.bms.qwipo.com/) |
+| `testing` | testing | [Testing](https://mockups-field-delivery-agent.test.bms.qwipo.com/) |
+| `staging` | staging | [Staging](https://mockups-field-delivery-agent.staging.bms.qwipo.com/) |
+| `main` | production | [Production](https://mockups-field-delivery-agent.bms.qwipo.com/) |
+
+The dev image tag is `dev-<commit>`. Main releases use Git tags of the form `field-delivery-agent-v<version>`. Feature builds upload `dist/` to the service’s preview storage. Use the preview URL printed by the build under the dev host’s `/builds/` path.

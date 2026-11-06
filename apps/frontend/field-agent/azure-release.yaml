@@ -1,22 +1,21 @@
 # Release pipeline — field-agent.
 #
-# Azure DevOps pipeline name:  \Mockups Lab\Field Agent - Deploy
-# Demo URL:  https://mockups-field-agent.dev.bms.qwipo.com
+# Azure DevOps pipeline name:  \Mockups Lab\Field Delivery Agent - Deploy
+# Demo URL:  https://mockups-field-delivery-agent.dev.bms.qwipo.com
 #
-# Takes the image built by "Field Agent - Build", rewrites the digest in the
-# GitOps repo (k8s) at bms-chart/<env>/mockups-field-agent.yaml, then syncs the ArgoCD
-# app `<env>-mockups-field-agent-argo-app`. The deploy logic lives in
+# Takes the image built by "Field Delivery Agent - Build", rewrites the digest in the
+# GitOps repo (k8s) at bms-chart/<env>/mockups-field-delivery-agent.yaml, then syncs the ArgoCD
+# app `<env>-mockups-field-delivery-agent-argo-app`. The deploy logic lives in
 # azure-cicd/templates/mockup-release-template.yaml, shared by every mockup.
 #
-# `source:` below is the *display name* of the build pipeline, not the service
-# name — Azure resolves it by name across folders. Rename that pipeline and you
-# must change this string in the same commit or the release stops binding.
+# The build pipeline resource uses its full Azure folder path. Update the
+# resource if you rename or move the build definition.
 #
 # SERVICE_NAME reaches the deploy through the build's artefact, so changing
 # `service_name` needs a fresh BUILD run before any deploy can bind.
 #
 # The k8s ApplicationSet generates the ArgoCD app from the presence of the
-# manifest file, so bms-chart/<env>/mockups-field-agent.yaml must exist for EVERY env
+# manifest file, so bms-chart/<env>/mockups-field-delivery-agent.yaml must exist for EVERY env
 # this can deploy to. The release template exits 1 if it is missing.
 #
 # ── Branch → environment ────────────────────────────────────────────────────
@@ -27,7 +26,7 @@
 #
 #     dev      → dev         testing  → testing
 #     staging  → staging     main     → production
-#     tag field-agent-v*  → production
+#     tag field-delivery-agent-v*  → production
 #
 # `environment: auto` (the default) is what applies that mapping. Picking any
 # other value on a manual run overrides it, which is the escape hatch for
@@ -35,9 +34,9 @@
 #
 # ── Deploying a tag (release or rollback) ───────────────────────────────────
 #
-# Run this pipeline by hand and pick a `field-agent-v<semver>` tag in the run
+# Run this pipeline by hand and pick a `field-delivery-agent-v<semver>` tag in the run
 # dialog's branch/tag selector. No build is involved: the template checks the
-# image `mockups-field-agent:<semver>` exists in the registry and deploys it as-is.
+# image `mockups-field-delivery-agent:<semver>` exists in the registry and deploys it as-is.
 # That is also how a mockup is rolled back — deploy the previous tag.
 #
 # Two things about this that are easy to get wrong:
@@ -71,7 +70,7 @@ parameters:
 resources:
     pipelines:
         - pipeline: buildPipeline
-          source: 'Field Agent - Build'
+          source: '\Mockups Lab\Field Delivery Agent - Build'
           trigger:
               branches:
                   include:
@@ -85,7 +84,7 @@ extends:
     parameters:
         ${{ if ne(parameters.environment, 'auto') }}:
             environment: ${{ parameters.environment }}
-        ${{ elseif or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/tags/field-agent-v')) }}:
+        ${{ elseif or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/tags/field-delivery-agent-v')) }}:
             environment: production
         ${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/testing') }}:
             environment: testing
@@ -93,5 +92,5 @@ extends:
             environment: staging
         ${{ else }}:
             environment: dev
-        service_name: 'mockups-field-agent'
-        tag_prefix: 'field-agent'
+        service_name: 'mockups-field-delivery-agent'
+        tag_prefix: 'field-delivery-agent'

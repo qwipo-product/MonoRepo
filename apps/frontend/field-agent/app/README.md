@@ -8,7 +8,7 @@ It runs two ways from the same code:
 
 | | How | Where |
 |---|---|---|
-| **Browser** | Open the link, no install | [Mockup Labs dev](https://mockups-field-agent.dev.bms.qwipo.com/) |
+| **Browser** | Open the link, no install | [Mockup Labs dev](https://mockups-field-delivery-agent.dev.bms.qwipo.com/) |
 | **Android** | NativeScript build on an emulator or phone | `bun run android` |
 
 This repository is independent of the production BMS / Field Agent code: no production URLs, keys,
