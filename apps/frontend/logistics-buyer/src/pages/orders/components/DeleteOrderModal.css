@@ -1,0 +1,14 @@
+.delete-order-modal-overlay { position: fixed; inset: 0; background: #0009; z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.delete-order-modal { background: #fff; border-radius: 8px; max-width: 512px; width: 100%; border: 1px solid #e5e7eb; padding: 10px; font-family: Inter, sans-serif; box-shadow: 0 10px 25px #00000026; }
+.delete-order-modal .dom-header { padding: 24px 24px 16px; }
+.delete-order-modal .dom-header h3 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.delete-order-modal .dom-body { padding: 0 24px; }
+.delete-order-modal .dom-body p { font-size: 15px; color: #6b7280; line-height: 1.5; margin: 0; }
+.delete-order-modal .dom-body strong { color: #1a1a1a; font-weight: 600; }
+.delete-order-modal .dom-footer { padding: 24px; display: flex; flex-direction: column-reverse; gap: 12px; }
+@media (min-width: 640px) { .delete-order-modal .dom-footer { flex-direction: row; justify-content: flex-end; } }
+.delete-order-modal .dom-footer .btn { height: 40px; padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; }
+.delete-order-modal .dom-footer .btn-secondary { background: #fff; border: 1px solid #d1d5db; color: #333; }
+.delete-order-modal .dom-footer .btn-secondary:hover { background: #f3f4f6; }
+.delete-order-modal .dom-footer .btn-danger { background: #ef4444; border: 1px solid #ef4444; color: #fff; }
+.delete-order-modal .dom-footer .btn-danger:hover { background: #dc2626; border-color: #dc2626; }

@@ -1,0 +1,2 @@
+/* Reports (spec 08 §8) — layout is Bootstrap utility classes; nothing component-specific beyond this. */
+.reports-page { overflow-y: auto; }

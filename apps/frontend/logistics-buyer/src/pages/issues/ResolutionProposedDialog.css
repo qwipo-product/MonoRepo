@@ -1,0 +1,44 @@
+/* app-resolution-proposed-dialog (spec 06 §6.2) — scoped under .resolution-dialog */
+.resolution-dialog { padding: 24px; font-family: Inter, sans-serif; }
+.resolution-dialog .resolution-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.resolution-dialog .resolution-header h2 { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0; }
+.resolution-dialog .resolution-subtitle { font-size: 14px; color: #6b7280; margin: 6px 0 20px; }
+.resolution-dialog .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.resolution-dialog .option-card {
+  border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; cursor: pointer; background: #fff; transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.resolution-dialog .option-card:hover { border-color: #93c5fd; }
+.resolution-dialog .option-card.selected { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 0 0 1px #3b82f6; }
+.resolution-dialog .option-top { display: flex; align-items: flex-start; gap: 12px; }
+.resolution-dialog .option-icon {
+  width: 40px; height: 40px; border-radius: 10px; background: #f0f9ff; color: #0ea5e9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.resolution-dialog .option-icon .material-icons { font-size: 22px; }
+.resolution-dialog .option-text { flex: 1; min-width: 0; }
+.resolution-dialog .option-title { font-size: 16px; font-weight: 600; color: #111827; }
+.resolution-dialog .option-subtitle { font-size: 13px; color: #6b7280; margin-top: 2px; }
+.resolution-dialog .option-amount { font-weight: 700; color: #111827; }
+.resolution-dialog .option-amount:empty { display: none; }
+.resolution-dialog .option-features { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.resolution-dialog .option-features li { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #374151; }
+.resolution-dialog .option-features .material-icons { font-size: 16px; color: #10b981; }
+.resolution-dialog .refund-section { margin-top: 20px; background: #f8fafc; border-radius: 12px; padding: 16px 20px; border: 1px solid #e2e8f0; }
+.resolution-dialog .refund-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.resolution-dialog .refund-icon { width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; }
+.resolution-dialog .refund-title { font-size: 15px; font-weight: 600; color: #111827; }
+.resolution-dialog .refund-subtitle { font-size: 13px; color: #6b7280; }
+.resolution-dialog .amount-input { display: flex; align-items: center; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; max-width: 320px; overflow: hidden; }
+.resolution-dialog .amount-input .currency { padding: 10px 12px; background: #f3f4f6; color: #374151; font-weight: 600; border-right: 1px solid #d1d5db; }
+.resolution-dialog .amount-input input { border: none; outline: none; padding: 10px 12px; font-size: 15px; flex: 1; min-width: 0; font-family: inherit; }
+.resolution-dialog .amount-input:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f633; }
+.resolution-dialog .select-prompt { font-style: italic; color: #6b7280; text-align: center; margin: 20px 0 0; font-size: 14px; }
+.resolution-dialog .resolution-footer { display: flex; justify-content: flex-end; margin-top: 24px; }
+.resolution-dialog .propose-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 200px; background: #10b981; color: #fff; border: none;
+  border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.resolution-dialog .propose-button .material-icons { font-size: 18px; }
+.resolution-dialog .propose-button:hover:not(:disabled) { background: #059669; }
+.resolution-dialog .propose-button:disabled { opacity: .5; cursor: not-allowed; }
+/* dead in the original template */
+.resolution-dialog .reject-button { background: #ef4444; color: #fff; }

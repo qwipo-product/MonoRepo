@@ -1,0 +1,113 @@
+/* Beats (spec 08 §4.3 / §4.8). Scoped under .beats-page. */
+.beats-page .settings-section { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px #0000000d; padding: 24px; margin-bottom: 12px; }
+.beats-page .section-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+.beats-page .section-header h2 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px; }
+.beats-page .section-desc { font-size: 13px; color: #888; margin: 0; }
+.beats-page .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.beats-page .btn-primary { display: inline-flex; align-items: center; gap: 6px; background: #2f54eb; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.beats-page .btn-primary:hover:not(:disabled) { background: #1d39c4; }
+.beats-page .btn-primary:disabled { background: #b7c2f0; cursor: not-allowed; }
+.beats-page .btn-outline { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #333; border: 1px solid #ddd; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.beats-page .btn-outline:hover { border-color: #b8b8b8; background: #f9f9f9; }
+
+.beats-page .search-bar { position: relative; margin-bottom: 16px; }
+.beats-page .search-bar .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; }
+.beats-page .search-input { width: 100%; padding: 12px 40px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #333; }
+.beats-page .search-input:focus { outline: none; border-color: #2f54eb; }
+
+.beats-page .table-container { overflow-x: auto; }
+.beats-page .customers-table { width: 100%; border-collapse: collapse; table-layout: auto; }
+.beats-page .customers-table th { text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; padding: 12px 16px; border-bottom: 1px solid #eee; letter-spacing: .03em; }
+.beats-page .customers-table td { padding: 12px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f3f3f3; overflow-wrap: anywhere; }
+.beats-page .customers-table tbody tr:hover { background: #f9f9f9; }
+.beats-page .beat-name-cell { font-weight: 600; color: #1a1a1a !important; }
+.beats-page .cluster-tag { display: inline-block; background: #e0e7ff; color: #4338ca; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 500; }
+.beats-page .unassigned-text { color: #999; font-size: 13px; }
+.beats-page .action-buttons { display: flex; gap: 8px; }
+.beats-page .edit-btn, .beats-page .delete-btn { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; font-size: 14px; cursor: pointer; }
+.beats-page .edit-btn { color: #212529; }
+.beats-page .delete-btn { color: #dc3545; }
+.beats-page .edit-btn:active, .beats-page .delete-btn:active { border-color: currentColor; }
+
+.beats-page .skeleton-bar { height: 12px; background: #eee; border-radius: 4px; animation: beats-pulse 1.5s ease-in-out infinite; }
+@keyframes beats-pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+
+.beats-page .load-error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px; text-align: center; color: #555; font-size: 14px; }
+.beats-page .load-error i { font-size: 24px; color: #e0a800; }
+.beats-page .load-error p { margin: 0; }
+.beats-page .retry-btn { background: #fff; color: #2f54eb; border: 1px solid #2f54eb; border-radius: 8px; padding: 8px 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.beats-page .retry-btn:hover { background: #f5f8ff; }
+.beats-page .empty-state { text-align: center; padding: 48px; color: #999; font-size: 15px; }
+
+.beats-page .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 24px; padding-top: 16px; font-size: 13px; color: #666; }
+.beats-page .rows-per-page { display: flex; align-items: center; gap: 8px; }
+.beats-page .rows-per-page select { border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 13px; }
+.beats-page .page-nav { display: flex; gap: 8px; }
+.beats-page .page-btn { width: 30px; height: 30px; border: 1px solid #ddd; border-radius: 4px; background: #fff; color: #333; cursor: pointer; }
+.beats-page .page-btn:disabled { color: #ccc; border-color: #eee; cursor: not-allowed; }
+
+/* modals */
+.beats-page .modal-overlay { position: fixed; inset: 0; background: #00000080; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.beats-page .modal-content { width: 520px; max-width: 92%; max-height: 90vh; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px #00000026; display: flex; flex-direction: column; overflow: hidden; }
+.beats-page .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 24px 0; border: none; }
+.beats-page .modal-header.with-border { padding-bottom: 16px; border-bottom: 1px solid #eee; }
+.beats-page .modal-header h3 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.beats-page .title-icon { color: #2f54eb; }
+.beats-page .modal-subtitle { font-size: 13px; color: #888; margin: 4px 0 0; }
+.beats-page .close-btn { background: none; border: none; color: #999; font-size: 16px; cursor: pointer; }
+.beats-page .close-btn:hover { color: #333; }
+.beats-page .modal-body { padding: 20px 24px; overflow-y: auto; }
+.beats-page .form-group { margin-bottom: 18px; }
+.beats-page .form-group > label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 8px; }
+.beats-page .required { color: #dc3545; }
+.beats-page .form-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; font-size: 14px; color: #333; }
+.beats-page .form-input:focus { outline: none; border-color: #2f54eb; }
+.beats-page .form-input.invalid { border-color: #dc3545; }
+.beats-page .field-error { font-size: 13px; color: #dc3545; margin-top: 6px; }
+.beats-page .modal-footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 16px 24px 24px; }
+.beats-page .modal-footer.with-border { border-top: 1px solid #eee; padding-bottom: 16px; }
+.beats-page .modal-footer > * { margin: 0; }
+.beats-page .cancel-btn { background: #fff; border: 1px solid #ddd; color: #666; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+.beats-page .cancel-btn:hover { background: #f5f5f5; }
+.beats-page .save-hint-wrap { display: inline-block; }
+.beats-page .save-hint-wrap:has(.save-btn:disabled) { cursor: not-allowed; }
+.beats-page .save-btn { background: #2f54eb; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.beats-page .save-btn:hover:not(:disabled) { background: #1d39c4; }
+.beats-page .save-btn:disabled { background: #b7c2f0; pointer-events: none; }
+
+/* upload modal */
+.beats-page .upload-modal { width: 820px; max-width: 92%; }
+.beats-page .format-strip { display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #eff4ff; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+.beats-page .format-strip strong { color: #1a1a1a; font-size: 14px; }
+.beats-page .format-strip p { margin: 2px 0 0; font-size: 13px; color: #555; }
+.beats-page .download-tpl-btn { min-width: 210px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #fff; color: #2f54eb; border: 1px solid #c7d2fe; border-radius: 8px; padding: 9px 14px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.beats-page .download-tpl-btn:hover { background: #f5f8ff; }
+.beats-page .upload-area { border: 2px dashed #d1d5db; border-radius: 10px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all .2s; }
+.beats-page .upload-area:hover { border-color: #b6c2f5; background: #fafbff; }
+.beats-page .upload-area.drag-over { border-color: #2f54eb; background: #f5f8ff; }
+.beats-page .upload-icon { font-size: 28px; color: #9aa3b2; margin-bottom: 10px; }
+.beats-page .upload-text { margin: 0 0 4px; font-size: 14px; color: #555; }
+.beats-page .browse-link { color: #2f54eb; font-weight: 500; }
+.beats-page .upload-hint { margin: 0; font-size: 12px; color: #999; }
+.beats-page .file-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 14px; border: 1px solid #eee; border-radius: 8px; font-size: 14px; color: #333; }
+.beats-page .file-row > i { color: #2f54eb; }
+.beats-page .file-name { flex: 1; overflow-wrap: anywhere; }
+.beats-page .remove-file-btn { background: transparent; border: none; color: #dc3545; cursor: pointer; font-size: 14px; }
+.beats-page .upload-banner { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.beats-page .upload-banner.error { background: #fef2f2; color: #dc3545; border: 1px solid #fecaca; }
+.beats-page .preview { margin-top: 16px; }
+.beats-page .preview-head { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; font-size: 13px; }
+.beats-page .preview-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.beats-page .preview-stat { display: inline-flex; align-items: center; gap: 6px; }
+.beats-page .preview-stat.ready { color: #1e7e34; }
+.beats-page .preview-stat.skipped { color: #b45309; }
+.beats-page .preview-table-wrap { max-height: 260px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+.beats-page .preview-table { width: 100%; border-collapse: collapse; }
+.beats-page .preview-table th { position: sticky; top: 0; background: #f9fafb; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; padding: 10px 14px; border-bottom: 1px solid #eee; }
+.beats-page .preview-table td { padding: 10px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #f3f3f3; overflow-wrap: anywhere; }
+.beats-page .row-num { color: #999 !important; }
+.beats-page .preview-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+.beats-page .preview-badge.ready { background: #e6f4ea; color: #1e7e34; }
+.beats-page .preview-badge.duplicate { background: #fef3c7; color: #92400e; }
+.beats-page .preview-badge.invalid { background: #fde8ea; color: #dc3545; }
+.beats-page .preview-reason { font-size: 13px; color: #888; margin-left: 10px; }

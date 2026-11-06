@@ -1,0 +1,5 @@
+/* /settings/store differences from Profile (spec 07 §6). The Business Hours "Edit" button keeps ONLY Bootstrap's `.btn`. */
+.store-settings-page.st-scope .settings-section { box-shadow: 0 2px 4px #0000000d; }
+.store-settings-page.st-scope .section-header { margin-bottom: 24px; }
+.store-settings-page.st-scope .settings-cards { grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 0; }
+.store-settings-page.st-scope .modal-content { max-width: 600px; }

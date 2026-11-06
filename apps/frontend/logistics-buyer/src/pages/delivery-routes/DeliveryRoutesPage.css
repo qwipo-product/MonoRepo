@@ -1,0 +1,93 @@
+/* Screen A — Delivery Planning list (spec 03 §3). Everything scoped under .delivery-routes-page. */
+.delivery-routes-page .mat-card { background: #fff; border-radius: 4px; overflow: hidden; }
+.delivery-routes-page .mat-elevation-z3 { box-shadow: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12); }
+.delivery-routes-page .mat-mdc-table { border-spacing: 0 !important; }
+.delivery-routes-page .mat-mdc-header-row th { background: #fff; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.delivery-routes-page .mat-mdc-row td { border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.delivery-routes-page .dr-sortable { cursor: pointer; user-select: none; }
+.delivery-routes-page .dr-sort-arrow { opacity: 0; color: #4b5563; transition: opacity .15s; }
+.delivery-routes-page .dr-sortable:hover .dr-sort-arrow { opacity: .54; }
+.delivery-routes-page .dr-sort-arrow.active { opacity: 1; }
+.delivery-routes-page .dr-ml7 { margin-left: 7px; }
+
+/* section cards */
+.delivery-routes-page .rfq-card { border-left: 3px solid #7c3aed; }
+.delivery-routes-page .rfq-card .mat-mdc-row:hover td { background: #faf5ff; }
+.delivery-routes-page .self-fleet-card { border-left: 3px solid #2563eb; }
+.delivery-routes-page .self-fleet-card .mat-mdc-row:hover td { background: #f0f7ff; }
+.delivery-routes-page .section-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.delivery-routes-page .rfq-header { background: linear-gradient(135deg, #f5f3ff, #f8fafc); }
+.delivery-routes-page .self-fleet-header { background: linear-gradient(135deg, #eff6ff, #f8fafc); }
+.delivery-routes-page .section-left { display: flex; align-items: center; gap: 12px; }
+.delivery-routes-page .section-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+.delivery-routes-page .rfq-header .section-icon { background: #7c3aed; }
+.delivery-routes-page .self-fleet-header .section-icon { background: #2563eb; }
+.delivery-routes-page .section-header h2 { font-size: 16px; font-weight: 600; color: #1f2937; margin: 0; }
+.delivery-routes-page .section-header p { font-size: 12px; color: #6b7280; margin: 2px 0 0; }
+.delivery-routes-page .section-right { display: flex; align-items: center; gap: 6px; }
+.delivery-routes-page .count-pill { min-width: 28px; height: 28px; border-radius: 14px; padding: 0 8px; color: #fff; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+.delivery-routes-page .rfq-header .count-pill { background: #7c3aed; }
+.delivery-routes-page .self-fleet-header .count-pill { background: #2563eb; }
+.delivery-routes-page .count-label { font-size: 13px; color: #6b7280; }
+
+/* planned status badges */
+.delivery-routes-page .status-generating { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; background: #eff6ff; border-radius: 16px; color: #2563eb; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.delivery-routes-page .status-generating .MuiCircularProgress-root { color: #2563eb; }
+.delivery-routes-page .status-failed { display: inline-flex; align-items: center; padding: 4px 12px; background: #fef2f2; border-radius: 16px; color: #dc2626; font-size: 13px; font-weight: 500; }
+.delivery-routes-page .status-failed i { font-size: 14px; }
+.delivery-routes-page .status-trip-created { display: inline-flex; align-items: center; padding: 4px 12px; background: #ecfdf5; border-radius: 16px; color: #059669; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .2s; }
+.delivery-routes-page .status-trip-created:hover { background: #d1fae5; }
+@keyframes dr-phantom-fade { 0%, 80% { background: #ecfdf5; } 100% { background: transparent; } }
+.delivery-routes-page .phantom-completed td { animation: dr-phantom-fade 5s ease forwards; }
+
+/* quotation loader */
+.delivery-routes-page .quotation-loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.delivery-routes-page .quotation-loader-card { width: 400px; max-width: 90%; background: #fff; border-radius: 12px; padding: 40px 24px; text-align: center; }
+.delivery-routes-page .quotation-loader-icon { position: relative; width: 80px; height: 80px; border-radius: 50%; background: #f0f7ff; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
+.delivery-routes-page .quotation-loader-icon i { font-size: 32px; color: #2563eb; }
+.delivery-routes-page .quotation-loader-ring { position: absolute; inset: 0; border: 3px solid transparent; border-top-color: #2563eb; border-radius: 50%; animation: dr-spin 1s linear infinite; }
+@keyframes dr-spin { to { transform: rotate(360deg); } }
+.delivery-routes-page .quotation-loader-card h2 { font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 8px; }
+.delivery-routes-page .quotation-loader-card p { font-size: 14px; color: #6b7280; margin: 0; }
+
+/* providers modal */
+.delivery-routes-page .providers-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.delivery-routes-page .providers-modal { background: #fff; border-radius: 8px; width: 600px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+.delivery-routes-page .providers-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.delivery-routes-page .providers-header h2 { font-size: 18px; font-weight: 600; color: #111827; margin: 0; }
+.delivery-routes-page .providers-header .route-id { font-size: 14px; color: #6b7280; margin-top: 4px; }
+.delivery-routes-page .providers-header .close-btn { background: none; border: none; color: #9ca3af; font-size: 18px; cursor: pointer; padding: 4px; }
+.delivery-routes-page .providers-header .close-btn:hover { color: #4b5563; }
+.delivery-routes-page .providers-body { max-height: 60vh; overflow-y: auto; }
+.delivery-routes-page .provider-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.delivery-routes-page .provider-info { flex: 1; min-width: 0; }
+.delivery-routes-page .provider-name { font-size: 16px; font-weight: 600; color: #111827; }
+.delivery-routes-page .provider-expire-time { font-size: 14px; color: #ee1b1b; margin: 2px 0; }
+.delivery-routes-page .detail-item { font-size: 13px; color: #4b5563; }
+.delivery-routes-page .provider-price { font-size: 20px; font-weight: 600; color: #111827; margin: 0 24px; }
+.delivery-routes-page .provider-actions { width: 140px; flex-shrink: 0; }
+.delivery-routes-page .select-provider-btn { width: 140px; background: #fff; border: 1px solid #2563eb; color: #2563eb; padding: 8px 0; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.delivery-routes-page .select-provider-btn:hover { background: #eff6ff; }
+.delivery-routes-page .selected-badge { width: 140px; background: #2563eb; color: #fff; padding: 8px 0; border-radius: 6px; font-size: 14px; font-weight: 500; text-align: center; }
+.delivery-routes-page .not-available { width: 140px; background: #f3f4f6; color: #9ca3af; padding: 8px 0; border-radius: 6px; font-size: 14px; font-weight: 500; text-align: center; }
+.delivery-routes-page .no-providers { padding: 40px 20px; text-align: center; color: #6b7280; }
+.delivery-routes-page .no-providers i { font-size: 32px; color: #9ca3af; margin-bottom: 12px; }
+.delivery-routes-page .no-providers p { margin: 0; }
+.delivery-routes-page .providers-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 20px; border-top: 1px solid #e5e7eb; }
+.delivery-routes-page .btn-close-modal { background: #fff; border: 1px solid #d1d5db; color: #374151; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.delivery-routes-page .btn-confirm { background: #2563eb; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.delivery-routes-page .btn-confirm:hover:not(:disabled) { background: #1d4ed8; }
+.delivery-routes-page .btn-confirm:disabled { background: #93c5fd; cursor: not-allowed; }
+
+/* success + batch modals */
+.delivery-routes-page .dr-success-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); z-index: 1100; display: flex; align-items: center; justify-content: center; }
+.delivery-routes-page .dr-success-card { width: 320px; max-width: 90%; background: #fff; border-radius: 12px; padding: 32px 24px; text-align: center; }
+.delivery-routes-page .dr-success-icon { width: 64px; height: 64px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.delivery-routes-page .dr-success-icon i { font-size: 28px; }
+.delivery-routes-page .dr-success-card h2, .delivery-routes-page .dr-batch-card h2 { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 8px; }
+.delivery-routes-page .dr-success-card p, .delivery-routes-page .dr-batch-card p { font-size: 16px; color: #6b7280; margin: 0; }
+.delivery-routes-page .dr-batch-card { position: relative; width: 340px; max-width: 90%; background: #fff; border-radius: 12px; overflow: hidden; }
+.delivery-routes-page .dr-batch-body { padding: 32px 24px 24px; text-align: center; }
+.delivery-routes-page .dr-batch-close { position: absolute; top: 12px; right: 12px; background: none; border: none; color: #9ca3af; font-size: 16px; cursor: pointer; }
+.delivery-routes-page .dr-batch-close:hover { color: #4b5563; }
+.delivery-routes-page .dr-batch-footer { border-top: 1px solid #e5e7eb; padding: 12px; display: flex; justify-content: center; }

@@ -1,0 +1,100 @@
+/* Screen B — Create Delivery Route (spec 03 §4). Scoped under .create-delivery-route-page. */
+.create-delivery-route-page.create-route-container { padding: 16px; background: #f0f4f8; display: flex; flex-direction: column; gap: 12px; font-family: Inter, Arial, sans-serif; min-height: 100%; }
+.create-delivery-route-page .orders-header { display: flex; align-items: center; gap: 12px; background: #fff; padding: 10px 16px; border-radius: 10px; box-shadow: 0 1px 2px #0000000d; }
+.create-delivery-route-page .back-btn { background: #eef2ff; color: #2563eb; border: none; padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.create-delivery-route-page .back-btn i { font-size: 14px; }
+.create-delivery-route-page .back-btn:hover { background: #e0e7ff; transform: translateX(-2px); }
+.create-delivery-route-page .orders-header h1 { font-size: 18px; font-weight: 600; color: #111827; margin: 0; display: flex; align-items: center; gap: 6px; }
+.create-delivery-route-page .orders-header h1 i { color: #2563eb; font-size: 16px; }
+.create-delivery-route-page .route-card { background: #fff; padding: 14px; border-radius: 10px; }
+
+.create-delivery-route-page .route-config-bar { display: flex; gap: 48px; margin-bottom: 24px; flex-wrap: wrap; }
+.create-delivery-route-page .config-item { display: flex; flex-direction: column; gap: 8px; }
+.create-delivery-route-page .config-label { font-size: 16px; font-weight: 600; color: #374151; }
+.create-delivery-route-page .mode-radios { display: flex; gap: 28px; height: 40px; align-items: center; }
+.create-delivery-route-page .mode-radios label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; cursor: pointer; }
+.create-delivery-route-page .mode-radios input { width: 18px; height: 18px; accent-color: #3b82f6; cursor: pointer; }
+
+.create-delivery-route-page .section { margin-bottom: 20px; }
+.create-delivery-route-page .section h2 { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0 0 10px; }
+.create-delivery-route-page .date-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.create-delivery-route-page .date-checkbox { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; color: #4b5563; cursor: pointer; margin: 0; }
+.create-delivery-route-page .date-checkbox input { width: 15px; height: 15px; accent-color: #2563eb; cursor: pointer; }
+.create-delivery-route-page .date-checkbox.checked { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; }
+.create-delivery-route-page .selected-dates { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.create-delivery-route-page .selected-dates-label { font-size: 13px; font-weight: 700; color: #374151; }
+.create-delivery-route-page .date-tag { display: inline-flex; align-items: center; gap: 6px; background: #e0e7ff; border-radius: 4px; font-size: 12px; color: #4338ca; padding: 4px 10px; }
+.create-delivery-route-page .date-tag button { background: none; border: none; padding: 0; color: #4338ca; cursor: pointer; font-size: 11px; }
+
+.create-delivery-route-page .applied-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.create-delivery-route-page .applied-label { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #374151; }
+.create-delivery-route-page .filter-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #d1d5db; border-radius: 14px; font-size: 11px; font-weight: 500; color: #374151; padding: 3px 10px; }
+.create-delivery-route-page .filter-chip i { color: #9ca3af; cursor: pointer; }
+.create-delivery-route-page .filter-chip i:hover { color: #ef4444; }
+.create-delivery-route-page .clear-all-link { color: #dc2626; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+.create-delivery-route-page .orders-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.create-delivery-route-page .select-all-checkbox { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; margin: 0; }
+.create-delivery-route-page .orders-table-container { border: 1px solid #e5e7eb; border-radius: 8px; max-height: 520px; overflow: auto; }
+.create-delivery-route-page .orders-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.create-delivery-route-page .orders-table thead th { position: sticky; top: 0; z-index: 2; background: #f9fafb; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #4b5563; padding: 6px 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; text-align: left; }
+.create-delivery-route-page .orders-table th i { color: #2563eb; margin-right: 4px; }
+.create-delivery-route-page .th-wrap { display: flex; align-items: center; gap: 6px; }
+.create-delivery-route-page .th-wrap.centered { justify-content: center; }
+.create-delivery-route-page .th-content { display: inline-flex; align-items: center; gap: 4px; }
+.create-delivery-route-page .th-content.sortable { cursor: pointer; user-select: none; }
+.create-delivery-route-page .sort-arrow { margin-left: 4px; }
+.create-delivery-route-page .orders-table tbody td { font-size: 12px; color: #111827; padding: 6px 10px; border-bottom: 1px solid #f3f4f6; height: 38px; }
+.create-delivery-route-page .orders-table tbody tr.order-row:hover td { background: #f9fafb; }
+.create-delivery-route-page .select-col { width: 40px; }
+.create-delivery-route-page .beat-filter-btn { position: relative; background: none; border: none; border-radius: 4px; padding: 3px; color: #9ca3af; cursor: pointer; display: inline-flex; align-items: center; }
+.create-delivery-route-page .beat-filter-btn:hover, .create-delivery-route-page .beat-filter-btn.active { color: #2563eb; background: #eef2ff; }
+.create-delivery-route-page .filter-badge { position: absolute; top: -6px; right: -8px; width: 14px; height: 14px; border-radius: 50%; background: #ef4444; color: #fff; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+.create-delivery-route-page .summary-row { display: flex; justify-content: flex-end; gap: 36px; margin-top: 12px; font-size: 14px; }
+.create-delivery-route-page .summary-row .fw-bold { font-size: 15px; }
+.create-delivery-route-page .action-buttons { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px; }
+.create-delivery-route-page .cancel-btn { background: #fff; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 18px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.create-delivery-route-page .confirm-btn { background: #2563eb; border: none; color: #fff; padding: 8px 18px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.create-delivery-route-page .confirm-btn:hover:not(:disabled) { background: #1d4ed8; }
+.create-delivery-route-page .confirm-btn:disabled { background: #93c5fd; opacity: .75; cursor: not-allowed; }
+
+/* filter dropdown */
+.create-delivery-route-page .filter-backdrop { position: fixed; inset: 0; z-index: 1000; background: transparent; }
+.create-delivery-route-page .filter-dropdown { width: 280px; background: #fff; border-radius: 12px; box-shadow: 0 8px 32px #0000001f, 0 2px 6px #0000000f; border: 1px solid #e5e7eb; display: flex; flex-direction: column; }
+.create-delivery-route-page .filter-search { position: relative; padding: 10px; }
+.create-delivery-route-page .filter-search i { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 12px; }
+.create-delivery-route-page .filter-search input { width: 100%; border: 2px solid #e5e7eb; border-radius: 8px; padding: 6px 10px 6px 30px; font-size: 13px; outline: none; }
+.create-delivery-route-page .filter-search input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px #2563eb26; }
+.create-delivery-route-page .filter-list { max-height: 260px; overflow-y: auto; padding: 0 6px 6px; }
+.create-delivery-route-page .filter-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #1e293b; cursor: pointer; margin: 0; }
+.create-delivery-route-page .filter-item input { accent-color: #1e293b; cursor: pointer; }
+.create-delivery-route-page .filter-item:hover { background: #f8fafc; }
+.create-delivery-route-page .select-all-item { background: #eef2ff; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
+.create-delivery-route-page .filter-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #fafbfc; border-top: 1px solid #f0f0f0; border-radius: 0 0 12px 12px; }
+.create-delivery-route-page .filter-count { font-size: 12px; font-weight: 800; color: #1e293b; }
+.create-delivery-route-page .filter-actions { display: flex; gap: 8px; }
+.create-delivery-route-page .filter-clear { background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: #374151; cursor: pointer; }
+.create-delivery-route-page .filter-apply { background: #1e293b; border: none; border-radius: 8px; padding: 5px 14px; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer; }
+.create-delivery-route-page .filter-apply:hover { background: #0f172a; }
+
+/* unassigned-beats modal */
+@keyframes ub-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ub-pop { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
+.create-delivery-route-page .ub-overlay { position: fixed; inset: 0; z-index: 1200; padding: 20px; background: #1118278c; backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; animation: ub-fade .18s ease; }
+.create-delivery-route-page .ub-card { position: relative; width: 560px; max-width: 100%; background: #fff; border-radius: 20px; padding: 36px 40px 28px; text-align: center; animation: ub-pop .22s ease; box-shadow: 0 24px 48px #11182733; }
+.create-delivery-route-page .ub-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #9ca3af; font-size: 16px; cursor: pointer; }
+.create-delivery-route-page .ub-close:hover { color: #4b5563; }
+.create-delivery-route-page .ub-icon { width: 60px; height: 60px; border-radius: 16px; background: linear-gradient(135deg, #fff4e0, #ffe8c2); color: #d97706; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 24px; box-shadow: 0 0 0 6px #f59e0b1a; }
+.create-delivery-route-page .ub-title { font-size: 21px; font-weight: 700; color: #111827; margin: 0 0 10px; }
+.create-delivery-route-page .ub-lead { font-size: 15px; color: #4b5563; margin: 0 0 16px; }
+.create-delivery-route-page .ub-count { font-weight: 700; color: #d97706; }
+.create-delivery-route-page .ub-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 18px; }
+.create-delivery-route-page .ub-chip { border-radius: 999px; padding: 4px 12px; font-size: 12.5px; font-weight: 500; background: #fff7ed; color: #b45309; border: 1px solid #fde3c2; }
+.create-delivery-route-page .ub-chip-more { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }
+.create-delivery-route-page .ub-note { display: flex; gap: 10px; align-items: flex-start; text-align: left; background: #f8fafc; border: 1px solid #eef2f7; border-radius: 12px; padding: 12px 14px; font-size: 13px; color: #475569; margin-bottom: 22px; }
+.create-delivery-route-page .ub-note i { color: #2f54eb; margin-top: 2px; }
+.create-delivery-route-page .ub-actions { display: flex; justify-content: center; gap: 12px; }
+.create-delivery-route-page .ub-ghost { background: #fff; border: 1px solid #e5e7eb; color: #374151; border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.create-delivery-route-page .ub-primary { background: #2f54eb; border: none; color: #fff; border-radius: 10px; padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 16px #2f54eb47; }
+.create-delivery-route-page .ub-primary:hover { background: #1d39c4; }
