@@ -1,0 +1,67 @@
+/* Cluster editor (spec 08 §6.3). Scoped under .cluster-editor-page. */
+.cluster-editor-page .editor-wrap { background: #fff; border-radius: 12px; padding: 24px; }
+.cluster-editor-page .back-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; padding: 0; font-size: 14px; color: #555; cursor: pointer; margin-bottom: 16px; }
+.cluster-editor-page .back-link:hover { color: #2f54eb; }
+.cluster-editor-page .title-block h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin: 0 0 6px; }
+.cluster-editor-page .title-icon { color: #2f54eb; }
+.cluster-editor-page .title-block p { font-size: 13px; color: #888; max-width: 720px; margin: 0 0 20px; }
+.cluster-editor-page .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.cluster-editor-page .form-group > label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 8px; }
+.cluster-editor-page .required { color: #dc3545; }
+.cluster-editor-page .form-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; font-size: 14px; color: #333; }
+.cluster-editor-page .form-input:focus { outline: none; border-color: #2f54eb; }
+.cluster-editor-page .form-input.invalid { border-color: #dc3545; }
+.cluster-editor-page .field-error { font-size: 13px; color: #dc3545; margin-top: 6px; }
+
+.cluster-editor-page .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cluster-editor-page .panel { border: 1px solid #eee; border-radius: 12px; padding: 16px; min-width: 0; }
+.cluster-editor-page .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cluster-editor-page .panel-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.cluster-editor-page .panel-title > i { color: #2f54eb; }
+.cluster-editor-page .count-pill { background: #eef2ff; color: #4338ca; border-radius: 10px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+.cluster-editor-page .link-btn { background: none; border: none; padding: 0; color: #2f54eb; font-size: 13px; font-weight: 500; cursor: pointer; }
+.cluster-editor-page .link-btn:hover { text-decoration: underline; }
+.cluster-editor-page .panel-search { position: relative; margin-bottom: 10px; }
+.cluster-editor-page .panel-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 13px; }
+.cluster-editor-page .panel-search input { width: 100%; padding: 10px 36px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; }
+.cluster-editor-page .panel-search input:focus { outline: none; border-color: #2f54eb; }
+.cluster-editor-page .pick-list { height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
+.cluster-editor-page .pick-item { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 10px 12px; border: 1px solid #f0f0f0; border-radius: 8px; cursor: pointer; margin: 0; flex-shrink: 0; }
+.cluster-editor-page .pick-item:hover:not(.disabled) { background: #fafbff; }
+.cluster-editor-page .pick-item.disabled { opacity: .7; cursor: not-allowed; }
+.cluster-editor-page .pick-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f54eb; flex-shrink: 0; }
+.cluster-editor-page .pick-item.disabled input[type="checkbox"] { cursor: not-allowed; }
+.cluster-editor-page .pick-text { flex: 1; min-width: 0; }
+.cluster-editor-page .pick-name { font-size: 14px; font-weight: 600; color: #1a1a1a; overflow-wrap: anywhere; }
+.cluster-editor-page .pick-kg { font-size: 12px; color: #888; font-weight: 400; margin-left: 8px; }
+.cluster-editor-page .pick-sub { font-size: 12px; color: #888; margin-top: 2px; }
+.cluster-editor-page .pick-badge { flex-shrink: 0; border-radius: 10px; padding: 2px 10px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.cluster-editor-page .pick-badge.available { background: #e6f4ea; color: #1e7e34; }
+.cluster-editor-page .pick-badge.assigned { background: #f1f1f4; color: #888; }
+.cluster-editor-page .pick-badge.inactive { background: #f1f1f4; color: #aaa; }
+.cluster-editor-page .pick-empty { text-align: center; padding: 32px 10px; font-size: 13px; color: #999; }
+.cluster-editor-page .pick-error { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px 10px; text-align: center; font-size: 13px; color: #555; }
+.cluster-editor-page .pick-error i { font-size: 22px; color: #e0a800; }
+.cluster-editor-page .pick-error p { margin: 0; }
+.cluster-editor-page .retry-btn { background: #fff; color: #2f54eb; border: 1px solid #2f54eb; border-radius: 8px; padding: 6px 18px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.cluster-editor-page .pick-item.skeleton { cursor: default; }
+.cluster-editor-page .sk-check { width: 18px; height: 18px; border-radius: 4px; background: #eee; flex-shrink: 0; }
+.cluster-editor-page .sk-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.cluster-editor-page .sk-line, .cluster-editor-page .sk-check { animation: editor-pulse 1.5s ease-in-out infinite; }
+.cluster-editor-page .sk-line { height: 12px; background: #eee; border-radius: 4px; }
+@keyframes editor-pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+
+.cluster-editor-page .editor-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; margin-top: 20px; padding-top: 16px; }
+.cluster-editor-page .footer-summary { font-size: 13px; color: #666; }
+.cluster-editor-page .footer-actions { display: flex; align-items: center; gap: 12px; }
+.cluster-editor-page .cancel-btn { background: #fff; border: 1px solid #ddd; color: #666; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+.cluster-editor-page .cancel-btn:hover { background: #f5f5f5; }
+.cluster-editor-page .save-hint-wrap { display: inline-block; }
+.cluster-editor-page .save-hint-wrap:has(.save-btn:disabled) { cursor: not-allowed; }
+.cluster-editor-page .save-btn { background: #2f54eb; color: #fff; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.cluster-editor-page .save-btn:hover:not(:disabled) { background: #1d39c4; }
+.cluster-editor-page .save-btn:disabled { background: #b7c2f0; pointer-events: none; }
+
+@media (max-width: 900px) {
+  .cluster-editor-page .panels, .cluster-editor-page .name-row { grid-template-columns: 1fr; }
+}

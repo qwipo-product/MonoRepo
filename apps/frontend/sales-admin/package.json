@@ -1,0 +1,20 @@
+{
+  "name": "@mockups/sales-admin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Desktop Sales Admin demo for salesperson planning, task scheduling, attendance and reporting.",
+  "scripts": {
+    "setup": "cd app && bun install --frozen-lockfile",
+    "dev": "bun prepare-index.ts && cd app && bun run ng serve --port 5181",
+    "build": "bun prepare-index.ts && cd app && bun run ng build --configuration production",
+    "preview": "vite preview --port 6181 --strictPort",
+    "typecheck": "cd app && bun run tsc --noEmit -p tsconfig.app.json && bun run tsc --noEmit -p e2e/tsconfig.json",
+    "e2e": "bun prepare-index.ts && cd app && bun run e2e"
+  },
+  "dependencies": {
+    "@mockups/version-badge": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "catalog:"
+  }
+}

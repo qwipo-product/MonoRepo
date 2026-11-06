@@ -1,0 +1,8 @@
+.data-loading-container { display: flex; justify-content: center; align-items: center; padding: 2rem; min-height: 100px; }
+.data-loading-container.overlay { position: absolute; inset: 0; background-color: #fffc; z-index: 1000; min-height: 100%; }
+.loading-content { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.data-loading-container .spinner { width: 60px; height: 60px; margin-bottom: 1rem; }
+.data-loading-container .spinner-circle { width: 100%; height: 100%; border-radius: 50%; border: 4px solid rgba(30, 58, 138, .1); border-top-color: #1e3a8a; animation: dl-spin 1s infinite linear; }
+.loading-text p { font-size: 1rem; color: #333; margin: 0; font-weight: 500; }
+.loading-text small { display: block; color: #666; margin-top: .5rem; font-size: .825rem; }
+@keyframes dl-spin { 0% { transform: rotate(0); } to { transform: rotate(360deg); } }

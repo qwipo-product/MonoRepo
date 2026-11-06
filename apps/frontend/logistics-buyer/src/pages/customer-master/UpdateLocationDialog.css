@@ -1,0 +1,23 @@
+/* <app-update-location-dialog> styles (spec 02 §3.5), scoped under .update-location-dialog */
+.update-location-dialog { position: relative; width: 520px; max-width: calc(100vw - 48px); padding: 24px; background: #fff; border-radius: 12px; box-sizing: border-box; }
+.update-location-dialog .close-btn { position: absolute; top: 16px; right: 16px; opacity: .7; }
+.update-location-dialog .close-btn:hover { opacity: 1; }
+.update-location-dialog .dialog-header { padding-right: 40px; margin-bottom: 16px; }
+.update-location-dialog .dialog-title { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 4px; }
+.update-location-dialog .title-icon { color: #3f51b5; }
+.update-location-dialog .dialog-subtitle { font-size: 14px; color: #6b7280; margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.update-location-dialog .uid-tag { background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.update-location-dialog .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.update-location-dialog .form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.update-location-dialog .form-field.full-width { grid-column: 1 / -1; }
+.update-location-dialog .field-label { font-size: 14px; font-weight: 500; color: #1f2937; }
+.update-location-dialog .required { color: #dc3545; }
+.update-location-dialog .field-input { padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; color: #1f2937; background: #fff; outline: none; font-family: inherit; transition: border-color .15s, box-shadow .15s; }
+.update-location-dialog .field-input:focus { border-color: #3f51b5; box-shadow: 0 0 0 2px #3f51b533; }
+.update-location-dialog textarea.field-input { resize: none; }
+.update-location-dialog .field-input--error,
+.update-location-dialog .field-input--error:focus { border-color: #dc3545; }
+.update-location-dialog .field-error { font-size: 12px; color: #dc3545; }
+.update-location-dialog .cascade-warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+.update-location-dialog .dialog-footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px; }
+.update-location-dialog .dialog-footer .spacer { flex: 1; }

@@ -1,0 +1,57 @@
+/* Screen B-2 — Optimized Delivery Routes modal (spec 03 §5). Scoped under .optimized-routes-modal. */
+.optimized-routes-modal.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: flex; align-items: center; justify-content: center; font-family: Inter, Arial, sans-serif; }
+.optimized-routes-modal .modal-container { background: #fff; border-radius: 8px; width: 1300px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+.optimized-routes-modal .modal-container-wide { width: 95vw; max-width: 1600px; }
+.optimized-routes-modal .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #e5e7eb; }
+.optimized-routes-modal .modal-header h2 { font-size: 18px; font-weight: 600; color: #1f2937; margin: 0; }
+.optimized-routes-modal .close-button { background: none; border: none; color: #6b7280; font-size: 18px; cursor: pointer; }
+.optimized-routes-modal .close-button:hover { color: #1f2937; }
+.optimized-routes-modal .modal-body { padding: 0 24px 24px; overflow-y: auto; flex: 1; }
+.optimized-routes-modal .sub-tabs { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+.optimized-routes-modal .sub-tab-list { display: flex; gap: 4px; }
+.optimized-routes-modal .sub-tab { padding: 6px 16px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; border-radius: 6px; }
+.optimized-routes-modal .sub-tab:hover { color: #374151; background: #f3f4f6; }
+.optimized-routes-modal .sub-tab.active { color: #3b82f6; background: #eff6ff; }
+.optimized-routes-modal .routes-tab { padding-top: 16px; }
+.optimized-routes-modal .summary-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; }
+.optimized-routes-modal .summary-item { background: #fff; border-radius: 6px; padding: 12px; }
+.optimized-routes-modal .summary-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.optimized-routes-modal .summary-value { font-size: 16px; font-weight: 600; color: #1f2937; }
+.optimized-routes-modal .beat-metrics-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+.optimized-routes-modal .beat-metrics-section h3 { font-size: 15px; font-weight: 600; color: #1f2937; margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.optimized-routes-modal .beat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+.optimized-routes-modal .beat-card { position: relative; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; transition: border-color .15s; }
+.optimized-routes-modal .beat-card:hover { border-color: #3b82f6; }
+.optimized-routes-modal .beat-name { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.optimized-routes-modal .beat-points { font-size: 22px; font-weight: 700; color: #1f2937; }
+.optimized-routes-modal .beat-points span { font-size: 13px; font-weight: 500; }
+.optimized-routes-modal .beat-trips { font-size: 12px; font-weight: 500; color: #6b7280; }
+.optimized-routes-modal .beat-trips.multi-trip { color: #d97706; }
+.optimized-routes-modal .beat-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; border-radius: 6px; min-width: 160px; padding: 8px 10px; z-index: 10; font-size: 12px; text-align: left; }
+.optimized-routes-modal .beat-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1f2937; }
+.optimized-routes-modal .beat-tooltip-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.optimized-routes-modal .tt-route { font-weight: 500; }
+.optimized-routes-modal .tt-points { font-weight: 600; color: #fbbf24; white-space: nowrap; }
+.optimized-routes-modal .route-card { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+.optimized-routes-modal .route-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+.optimized-routes-modal .route-title { font-weight: 500; color: #1f2937; }
+.optimized-routes-modal .route-title i { color: #3b82f6; margin-right: 6px; }
+.optimized-routes-modal .route-meta { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.optimized-routes-modal .meta-digital { color: #2563eb; }
+.optimized-routes-modal .meta-amp { color: #6b7280; }
+.optimized-routes-modal .meta-sales { color: #16a34a; }
+.optimized-routes-modal .meta-date { color: #374151; margin-left: 8px; }
+.optimized-routes-modal .route-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+.optimized-routes-modal .stat-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.optimized-routes-modal .stat-value { font-size: 16px; font-weight: 600; color: #1f2937; }
+.optimized-routes-modal .stat-value span { margin-left: 1rem; }
+.optimized-routes-modal .orders-section { background: #f9fafb; padding: 12px 16px; }
+.optimized-routes-modal .orders-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 14px; font-weight: 500; color: #374151; }
+.optimized-routes-modal .customer-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.optimized-routes-modal .customer-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-size: 14px; color: #1f2937; }
+.optimized-routes-modal .customer-row i { color: #9ca3af; margin-right: 6px; }
+.optimized-routes-modal .order-pill { background: #f3f4f6; border-radius: 12px; padding: 2px 10px; font-size: 12px; color: #4b5563; white-space: nowrap; }
+.optimized-routes-modal .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; }
+.optimized-routes-modal .btn-back { background: #fff; border: 1px solid #d1d5db; color: #374151; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.optimized-routes-modal .btn-confirm-routes { background: #3b82f6; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.optimized-routes-modal .btn-confirm-routes:hover { background: #2563eb; }

@@ -1,0 +1,13 @@
+/* CustomerMasterComponent styles (spec 02 §3), scoped under .customer-master-page */
+.customer-master-page .mat-card { background: #fff; border-radius: 12px; overflow: hidden; }
+.customer-master-page .mat-elevation-z3 { box-shadow: 0 3px 3px -2px #0003, 0 3px 4px #00000024, 0 1px 8px #0000001f; }
+.customer-master-page .mat-mdc-table th.text-left,
+.customer-master-page .mat-mdc-table td.text-left { text-align: left; }
+.customer-master-page .mat-mdc-table th { white-space: nowrap; }
+.customer-master-page .mat-mdc-table td { vertical-align: middle; }
+.customer-master-page .address-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.customer-master-page .status-badge.active { background: #d1fae5; color: #065f46; }
+.customer-master-page .status-badge.inactive { background: #fee2e2; color: #991b1b; }
+
+/* mat-snack-bar (M3) look */
+.customer-master-snackbar .MuiSnackbarContent-root { background: #2f3033; color: #f2f0f4; font-size: .875rem; border-radius: 4px; }

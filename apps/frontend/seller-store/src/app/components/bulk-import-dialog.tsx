@@ -108,6 +108,14 @@ export interface BulkImportConfig {
    */
   successToast?: (result: BulkImportValidationResult) => string;
   /**
+   * Column headers for the two identity columns in the error summary
+   * table and the downloadable error report. Defaults to the SKU
+   * importer's labels so every existing caller is unchanged; modules
+   * whose rows aren't SKUs (e.g. Customers (DMS), where a row is a
+   * registration request) override them.
+   */
+  entityColumns?: { codeLabel: string; nameLabel: string };
+  /**
    * Demo-mode simulated processing delay (ms). Defaults to 5 000 so
    * reviewers still see the loader experience without waiting half a
    * minute. Set to 0 in real builds where validate() takes its own
@@ -127,6 +135,8 @@ export function BulkImportDialog({
   onOpenChange: (v: boolean) => void;
   config: BulkImportConfig;
 }) {
+  const codeLabel = config.entityColumns?.codeLabel ?? "SKU Code";
+  const nameLabel = config.entityColumns?.nameLabel ?? "SKU Name";
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<BulkImportValidationResult | null>(null);
@@ -190,8 +200,8 @@ export function BulkImportDialog({
     // on-screen UI only shows a simplified
     // "{SKU Name} | {error count}" summary.
     const header = [
-      "SKU Code",
-      "SKU Name",
+      codeLabel,
+      nameLabel,
       "Column / Field",
       "Value Entered",
       "Validation Message",
@@ -290,7 +300,7 @@ export function BulkImportDialog({
           )}
           {step === "validating" && <ValidatingStep />}
           {step === "importing" && <ImportingStep />}
-          {step === "results" && result && <ResultsStep result={result} />}
+          {step === "results" && result && <ResultsStep result={result} codeLabel={codeLabel} nameLabel={nameLabel} />}
         </div>
 
         <DialogFooter className="px-6 py-3 border-t border-gray-100 gap-2 sm:gap-2 flex-row sm:flex-row justify-end">
@@ -449,7 +459,7 @@ function ImportingStep() {
   );
 }
 
-function ResultsStep({ result }: { result: BulkImportValidationResult }) {
+function ResultsStep({ result, codeLabel, nameLabel }: { result: BulkImportValidationResult; codeLabel: string; nameLabel: string }) {
   return (
     <div className="px-6 py-5 space-y-4">
       {/* Summary header */}
@@ -464,16 +474,8 @@ function ResultsStep({ result }: { result: BulkImportValidationResult }) {
 
       {/* Summary cards — Total / Valid / Invalid */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryCard
-          label="Total Records"
-          value={result.totalRows}
-          tone="neutral"
-        />
-        <SummaryCard
-          label="Valid Records"
-          value={result.validRows}
-          tone="success"
-        />
+        <SummaryCard label="Total Records" value={result.totalRows} tone="neutral" />
+        <SummaryCard label="Valid Records" value={result.validRows} tone="success" />
         <SummaryCard
           label="Invalid Records"
           value={result.invalidRows}
@@ -505,10 +507,10 @@ function ResultsStep({ result }: { result: BulkImportValidationResult }) {
               <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                 <tr>
                   <th className="text-left px-4 py-2 font-semibold text-gray-700 w-44">
-                    SKU Code
+                    {codeLabel}
                   </th>
                   <th className="text-left px-4 py-2 font-semibold text-gray-700">
-                    SKU Name
+                    {nameLabel}
                   </th>
                   <th className="text-right px-4 py-2 font-semibold text-gray-700 w-24">
                     Errors
@@ -517,25 +519,11 @@ function ResultsStep({ result }: { result: BulkImportValidationResult }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {(() => {
-                  // Group errors by row. Show the raw SKU Code and
-                  // SKU Name exactly as the user typed them in the
-                  // file — including blanks (rendered as "—"). We
-                  // DON'T derive a synthetic label like "SKU 12345" or
-                  // "Row 7" for the visible columns, because the spec
-                  // wants the file's own values surfaced. Row number
-                  // is used purely as a grouping key for blank rows.
-                  type Bucket = {
-                    code: string;
-                    name: string;
-                    count: number;
-                  };
+                  type Bucket = { code: string; name: string; count: number };
                   const groups = new Map<string, Bucket>();
                   result.errors.forEach((e) => {
                     const code = e.skuCode?.trim() ?? "";
                     const name = e.skuName?.trim() ?? "";
-                    // Group key: code first, name second, row last so
-                    // even rows with blank SKU Code+Name still bucket
-                    // together per spreadsheet row.
                     const key = code || name || `__row_${e.row}`;
                     const bucket = groups.get(key);
                     if (bucket) {
@@ -546,34 +534,23 @@ function ResultsStep({ result }: { result: BulkImportValidationResult }) {
                       groups.set(key, { code, name, count: 1 });
                     }
                   });
-                  const rows = Array.from(groups.values()).sort(
-                    (a, b) => b.count - a.count,
-                  );
-                  return rows.map((b, i) => (
-                    <tr key={`${b.code}-${b.name}-${i}`} className="hover:bg-gray-50">
-                      <td
-                        className={`px-4 py-2 font-mono truncate max-w-[180px] ${
-                          b.code ? "text-gray-700" : "text-gray-400 italic"
-                        }`}
-                        title={b.code || "Blank in file"}
-                      >
-                        {b.code || "—"}
-                      </td>
-                      <td
-                        className={`px-4 py-2 truncate max-w-[420px] ${
-                          b.name ? "text-gray-900" : "text-gray-400 italic"
-                        }`}
-                        title={b.name || "Blank in file"}
-                      >
-                        {b.name || "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
-                          {b.count}
-                        </span>
-                      </td>
-                    </tr>
-                  ));
+                  return Array.from(groups.values())
+                    .sort((a, b) => b.count - a.count)
+                    .map((b, i) => (
+                      <tr key={`${b.code}-${b.name}-${i}`} className="hover:bg-gray-50">
+                        <td className={`px-4 py-2 font-mono truncate max-w-[180px] ${b.code ? "text-gray-700" : "text-gray-400 italic"}`} title={b.code || "Blank in file"}>
+                          {b.code || "—"}
+                        </td>
+                        <td className={`px-4 py-2 truncate max-w-[420px] ${b.name ? "text-gray-900" : "text-gray-400 italic"}`} title={b.name || "Blank in file"}>
+                          {b.name || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                            {b.count}
+                          </span>
+                        </td>
+                      </tr>
+                    ));
                 })()}
               </tbody>
             </table>

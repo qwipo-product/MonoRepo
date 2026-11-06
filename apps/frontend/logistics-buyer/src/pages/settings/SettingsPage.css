@@ -1,0 +1,34 @@
+/* Settings shell (spec 07 §2.3). Child-page "::ng-deep" rules are reproduced under `.settings-content > *`. */
+.settings-container { padding: 24px; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; align-items: flex-start; }
+.settings-container .settings-header { display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 24px; width: 100%; text-align: left; }
+.settings-container .settings-header h1 { font-size: 24px; font-weight: 600; margin: 0; color: #1f2937; display: flex; align-items: center; gap: 10px; }
+.settings-container .settings-header h1 i { color: #2563eb; }
+.settings-container .settings-header .subtitle { margin: 4px 0 0; color: #6b7280; font-size: 14px; }
+.settings-container .content-container { background: #fff; border-radius: 8px; box-shadow: none; overflow: hidden; margin-bottom: 24px; width: 100%; flex-shrink: 0; }
+.settings-container .tabs { display: flex; background: #fff; border-bottom: 1px solid #e5e7eb; overflow-x: auto; }
+.settings-container .tab-btn { padding: 12px 16px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.settings-container .tab-btn i { font-size: 14px; }
+.settings-container .tab-btn:hover { color: #2563eb; }
+.settings-container .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+.settings-container .settings-content { padding: 24px; background: #fff; width: 100%; display: flex; justify-content: center; }
+
+/* ::ng-deep router-outlet + * … */
+.settings-container .settings-content > * { width: 100%; margin: 0 auto; display: block; }
+.settings-container .settings-content > * .settings-section {
+  margin-left: 0 !important; margin-right: 0 !important; margin-bottom: 12px; text-align: left !important; width: 100% !important;
+  max-width: none !important; float: none !important; display: block !important;
+}
+.settings-container .settings-content > * .profile-content,
+.settings-container .settings-content > * .locations-list { text-align: left !important; }
+.settings-container .settings-content > * .payment-settings-placeholder,
+.settings-container .settings-content > * .user-management-section,
+.settings-container .settings-content > * .coming-soon-container {
+  text-align: center !important; display: flex !important; flex-direction: column !important; align-items: center !important;
+  justify-content: center !important; padding: 40px 20px !important;
+}
+.settings-container .settings-content > * .payment-settings-placeholder h2, .settings-container .settings-content > * .payment-settings-placeholder h3, .settings-container .settings-content > * .payment-settings-placeholder p,
+.settings-container .settings-content > * .user-management-section h2, .settings-container .settings-content > * .user-management-section h3, .settings-container .settings-content > * .user-management-section p,
+.settings-container .settings-content > * .coming-soon-container h2, .settings-container .settings-content > * .coming-soon-container h3, .settings-container .settings-content > * .coming-soon-container p { text-align: center !important; }
+.settings-container .settings-content > * .payment-settings-placeholder .contact-support-btn,
+.settings-container .settings-content > * .user-management-section .contact-support-btn,
+.settings-container .settings-content > * .coming-soon-container .contact-support-btn { margin: 20px auto !important; }

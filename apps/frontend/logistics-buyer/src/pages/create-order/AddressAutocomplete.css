@@ -1,0 +1,21 @@
+/* <app-address-autocomplete> styles (spec 02 §2.3), scoped under .autocomplete-wrapper */
+.autocomplete-wrapper { position: relative; width: 100%; }
+.autocomplete-wrapper .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.autocomplete-wrapper .field-label { font-size: 13px; font-weight: 500; color: #374151; margin: 0; }
+.autocomplete-wrapper .required-indicator { color: #ef4444; }
+.autocomplete-wrapper .provider-toggle { display: flex; gap: 6px; }
+.autocomplete-wrapper .provider-btn { width: 54px; padding: 3px 0; font-size: 11px; font-weight: 500; background: #fff; border: 1px solid #d1d5db; border-radius: 4px; color: #6b7280; cursor: pointer; transition: all .15s; }
+.autocomplete-wrapper .provider-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+.autocomplete-wrapper .provider-hint { font-size: 11px; color: #9ca3af; }
+.autocomplete-wrapper .input-container { position: relative; }
+.autocomplete-wrapper .field-input { width: 100%; padding: 8px 36px 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; color: #111827; outline: none; box-sizing: border-box; transition: border-color .15s, box-shadow .15s; }
+.autocomplete-wrapper .field-input::placeholder { color: #9ca3af; }
+.autocomplete-wrapper .field-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px #3b82f61a; }
+.autocomplete-wrapper .loader { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: autocomplete-spin .6s linear infinite; }
+@keyframes autocomplete-spin { to { transform: rotate(360deg); } }
+.autocomplete-wrapper .suggestions-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px #0000001f; max-height: 240px; overflow-y: auto; z-index: 1000; list-style: none; margin: 0; padding: 4px 0; }
+.autocomplete-wrapper .suggestion-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; cursor: pointer; }
+.autocomplete-wrapper .suggestion-item:hover,
+.autocomplete-wrapper .suggestion-item.active { background: #f0f7ff; }
+.autocomplete-wrapper .suggestion-icon { color: #6b7280; font-size: 13px; margin-top: 2px; }
+.autocomplete-wrapper .suggestion-text { font-size: 13px; color: #374151; line-height: 1.4; }

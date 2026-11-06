@@ -6,6 +6,9 @@ import {
   LayoutGrid,
   AlertOctagon,
   Loader2,
+  Users,
+  FileSpreadsheet,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,6 +24,17 @@ export interface NavItem {
 export const adminNavigation: NavItem[] = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Sellers", href: "/admin/users", icon: Store },
+  { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Generate Report", href: "/admin/reports", icon: FileSpreadsheet },
+  // One dashboard per dark store (see lib/dark-store-data.ts).
+  {
+    name: "Dark Store",
+    icon: Warehouse,
+    subItems: [
+      { name: "KPHB Dashboard", href: "/admin/dark-store/kphb" },
+      { name: "Alwal Dashboard", href: "/admin/dark-store/alwal" },
+    ],
+  },
   { name: "Companies & Brands", href: "/admin/companies", icon: Building2 },
   { name: "Category Master", href: "/admin/categories", icon: LayoutGrid },
   { name: "Connectors", href: "/admin/connectors", icon: Plug },
@@ -52,6 +66,12 @@ export function getAdminPageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/users/add")) return "Add Seller";
   if (pathname.startsWith("/admin/users/")) return "Seller Details";
   if (pathname.startsWith("/admin/users")) return "Sellers";
+  if (pathname.startsWith("/admin/customers/")) return "Customer Details";
+  if (pathname.startsWith("/admin/customers")) return "Customer Database";
+  if (pathname.startsWith("/admin/reports")) return "Generate Report";
+  if (pathname.startsWith("/admin/dark-store/kphb")) return "KPHB Dashboard";
+  if (pathname.startsWith("/admin/dark-store/alwal")) return "Alwal Dashboard";
+  if (pathname.startsWith("/admin/dark-store")) return "Dark Store";
   if (pathname.startsWith("/admin/companies")) return "Companies & Brands";
   if (pathname.startsWith("/admin/categories")) return "Category Master";
   if (pathname.startsWith("/admin/connectors/")) return "Connector Details";
