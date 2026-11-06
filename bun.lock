@@ -179,6 +179,16 @@
         "vite": "catalog:",
       },
     },
+    "apps/frontend/sales-admin": {
+      "name": "@mockups/sales-admin",
+      "version": "0.0.0",
+      "dependencies": {
+        "@mockups/version-badge": "workspace:*",
+      },
+      "devDependencies": {
+        "vite": "catalog:",
+      },
+    },
     "apps/frontend/seller-store": {
       "name": "@mockups/seller-store",
       "version": "0.0.0",
@@ -750,6 +760,8 @@
     "@mockups/rirn": ["@mockups/rirn@workspace:apps/frontend/rirn"],
 
     "@mockups/rirn-retailer": ["@mockups/rirn-retailer@workspace:apps/frontend/rirn-retailer"],
+
+    "@mockups/sales-admin": ["@mockups/sales-admin@workspace:apps/frontend/sales-admin"],
 
     "@mockups/seller-store": ["@mockups/seller-store@workspace:apps/frontend/seller-store"],
 
