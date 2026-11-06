@@ -1,0 +1,25 @@
+/* Screens C & D — Delivery Route Details / Customer Orders (spec 03 §7–§8). Scoped under .route-details-pages. */
+.route-details-pages.create-route-container { padding: 24px; background: #f0f4f8; display: flex; flex-direction: column; gap: 24px; font-family: Inter, Arial, sans-serif; min-height: 100%; }
+.route-details-pages .orders-header { display: flex; align-items: center; gap: 16px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px #0000000d; }
+.route-details-pages .back-btn { background: #eef2ff; color: #2563eb; border: none; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.route-details-pages .back-btn i { font-size: 18px; }
+.route-details-pages .back-btn:hover { background: #e0e7ff; transform: translateX(-2px); }
+.route-details-pages .orders-header h1 { font-size: 24px; font-weight: 600; color: #111827; margin: 0; }
+.route-details-pages .orders-header h1 i { color: #2563eb; }
+.route-details-pages .row { margin-bottom: 0 !important; }
+.route-details-pages .summary-card { transition: transform .2s, box-shadow .2s; overflow: hidden; }
+.route-details-pages .summary-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px #0000001a !important; }
+.route-details-pages .summary-card .card-body { background: #fff; }
+.route-details-pages .icon-container { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.route-details-pages .icon-container i { font-size: 1.5rem; }
+.route-details-pages .mat-card { background: #fff; border-radius: 4px; overflow: hidden; }
+.route-details-pages .mat-elevation-z3 { box-shadow: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12); }
+.route-details-pages .mat-mdc-table { border-spacing: 0 !important; }
+.route-details-pages .mat-mdc-table th { font-weight: 600; color: #4a4f55; white-space: nowrap; border-bottom: 1px solid #e5e7eb; }
+.route-details-pages .mat-mdc-table th i { margin-right: 2px; }
+.route-details-pages .mat-mdc-table td { border-bottom: 1px solid #f1f5f9; }
+.route-details-pages .footer-row td { border-top: 1px solid #e5e7eb; }
+.route-details-pages .btn-link { color: #4b5563; border-radius: 0; }
+.route-details-pages .btn-link.fw-bold { color: #0d6efd; border-bottom-width: 2px !important; }
+.route-details-pages .details-loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.8); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.route-details-pages .details-loading-box { background: #fff; padding: 30px 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,.1); }

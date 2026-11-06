@@ -1,0 +1,4 @@
+/* Payment + Users & Permissions placeholders (spec 07 §8/§9). Only `.settings-section` is effective; the inner
+   classes have no matching rules, so browser/Bootstrap defaults apply (inline 16px icon, Bootstrap h2, native grey button).
+   The shell's deep rules turn the section into a centred flex column (see SettingsPage.css). */
+.coming-soon-page .settings-section { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px #0000000d; padding: 24px; margin-bottom: 24px; }

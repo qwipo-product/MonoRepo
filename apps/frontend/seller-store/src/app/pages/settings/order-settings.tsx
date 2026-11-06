@@ -34,22 +34,42 @@ import { toast } from "sonner";
 import {
   getProcessingTimeHours,
   setProcessingTimeHours,
+  getOrderValueMin,
+  setOrderValueMin,
+  getOrderValueMax,
+  setOrderValueMax,
+  getOrderValueNonBeat,
+  setOrderValueNonBeat,
+  getBeatCutoffTime,
+  setBeatCutoffTime,
 } from "../../lib/order-settings-data";
 
 export function OrderSettings() {
   const navigate = useNavigate();
 
-  // ---- Minimum Order Value ----
-  // Maximum Order Value was retired — sellers wanted just a floor,
-  // no per-order ceiling, so the field plus its state, dirty flag,
-  // error key, and column have all been dropped.
-  const [minOrderAmount, setMinOrderAmount] = useState("1000");
-  const [savedMinOrderAmount, setSavedMinOrderAmount] = useState("1000");
-  const isOrderValueDirty = minOrderAmount !== savedMinOrderAmount;
+  // ---- Order Value — Minimum + optional Maximum ----
+  // Single MOV floor (Minimum) plus an optional ceiling (Maximum).
+  // Orders under the minimum are rejected; the maximum caps a single
+  // order's value when set. Both persist via order-settings-data.
+  const [orderMin, setOrderMinInput] = useState(() => String(getOrderValueMin()));
+  const [orderMax, setOrderMaxInput] = useState(() => String(getOrderValueMax()));
+  // Separate MOV floor for non-beat (off-route) orders.
+  const [orderNonBeat, setOrderNonBeatInput] = useState(() =>
+    String(getOrderValueNonBeat()),
+  );
+  const [savedOrderMin, setSavedOrderMin] = useState(orderMin);
+  const [savedOrderMax, setSavedOrderMax] = useState(orderMax);
+  const [savedOrderNonBeat, setSavedOrderNonBeat] = useState(orderNonBeat);
+  const isOrderValueDirty =
+    orderMin !== savedOrderMin ||
+    orderMax !== savedOrderMax ||
+    orderNonBeat !== savedOrderNonBeat;
   // Inline errors keyed by field — surfaces under the relevant input
   // instead of a toast.
   const [orderValueErrors, setOrderValueErrors] = useState<{
     min?: string;
+    max?: string;
+    nonBeat?: string;
   }>({});
 
   // ---- Order Processing ----
@@ -59,14 +79,18 @@ export function OrderSettings() {
   const [processingTime, setProcessingTime] = useState(() =>
     getProcessingTimeHours(),
   );
-  const [cancellationWindow, setCancellationWindow] = useState("2");
+  // Beat order acceptance cut-off. Default 17:00 per the June review.
+  // Stored as `HH:MM` so it pairs cleanly with `<input type="time">`.
+  const [beatCutoffTime, setBeatCutoffTimeInput] = useState(() =>
+    getBeatCutoffTime(),
+  );
   const [savedProcessing, setSavedProcessing] = useState({
     processingTime: getProcessingTimeHours(),
-    cancellationWindow: "2",
+    beatCutoffTime: getBeatCutoffTime(),
   });
   const isProcessingDirty =
     processingTime !== savedProcessing.processingTime ||
-    cancellationWindow !== savedProcessing.cancellationWindow;
+    beatCutoffTime !== savedProcessing.beatCutoffTime;
 
   // ---- Order Return ----
   // No section Save button — the toggle pop-up commits the change
@@ -85,19 +109,39 @@ export function OrderSettings() {
 
   // ---- Section save handlers ----
   const handleSaveOrderValue = () => {
-    const min = parseFloat(minOrderAmount);
-    if (minOrderAmount.trim() === "" || isNaN(min) || min < 0) {
-      setOrderValueErrors({ min: "Enter a non-negative number" });
+    const min = parseFloat(orderMin);
+    const max = orderMax.trim() === "" ? 0 : parseFloat(orderMax);
+    const nonBeat = orderNonBeat.trim() === "" ? NaN : parseFloat(orderNonBeat);
+    const errs: { min?: string; max?: string; nonBeat?: string } = {};
+    if (orderMin.trim() === "" || isNaN(min) || min < 0) {
+      errs.min = "Enter a non-negative number";
+    }
+    if (orderMax.trim() !== "" && (isNaN(max) || max < 0)) {
+      errs.max = "Enter a non-negative number";
+    } else if (!errs.min && orderMax.trim() !== "" && max > 0 && max < min) {
+      errs.max = "Maximum can't be below the minimum";
+    }
+    if (orderNonBeat.trim() === "" || isNaN(nonBeat) || nonBeat < 0) {
+      errs.nonBeat = "Enter a non-negative number";
+    }
+    if (errs.min || errs.max || errs.nonBeat) {
+      setOrderValueErrors(errs);
       return;
     }
     setOrderValueErrors({});
-    setSavedMinOrderAmount(minOrderAmount);
+    setOrderValueMin(min);
+    setOrderValueMax(max);
+    setOrderValueNonBeat(nonBeat);
+    setSavedOrderMin(orderMin);
+    setSavedOrderMax(orderMax);
+    setSavedOrderNonBeat(orderNonBeat);
     toast.success("Order value saved.");
   };
 
   const handleSaveProcessing = () => {
-    setSavedProcessing({ processingTime, cancellationWindow });
+    setSavedProcessing({ processingTime, beatCutoffTime });
     setProcessingTimeHours(processingTime);
+    setBeatCutoffTime(beatCutoffTime);
     toast.success("Order processing saved.");
   };
 
@@ -156,9 +200,11 @@ export function OrderSettings() {
       <div className="max-w-5xl space-y-3">
         {/* Row 1: Order Value + Processing side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* Order Value — Minimum only. The Maximum column was retired;
-              sellers wanted a floor without an upper cap, so this card
-              now hosts a single field. */}
+          {/* Order Value — Minimum (mandatory floor) + Maximum
+              (optional per-order ceiling). The minimum is the MOV
+              guard for downstream checks; the maximum is "0 = no
+              cap" otherwise it's the hard upper bound on any single
+              order. */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
@@ -177,32 +223,92 @@ export function OrderSettings() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Minimum (₹)</Label>
                 <Input
                   type="number"
-                  placeholder="1000"
-                  value={minOrderAmount}
+                  placeholder="2500"
+                  value={orderMin}
                   onChange={(e) => {
-                    setMinOrderAmount(e.target.value);
-                    if (orderValueErrors.min) setOrderValueErrors({});
+                    setOrderMinInput(e.target.value);
+                    if (orderValueErrors.min)
+                      setOrderValueErrors((prev) => ({ ...prev, min: undefined }));
                   }}
                   className="h-8 text-sm"
                   aria-invalid={!!orderValueErrors.min}
                 />
                 {orderValueErrors.min ? (
-                  <p className="text-[11px] text-red-600">{orderValueErrors.min}</p>
+                  <p className="text-[11px] text-red-600">
+                    {orderValueErrors.min}
+                  </p>
                 ) : (
                   <p className="text-[11px] text-gray-500">
-                    Orders below this aren't accepted.
+                    Orders below this aren&apos;t accepted.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Maximum (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="5000"
+                  value={orderMax}
+                  onChange={(e) => {
+                    setOrderMaxInput(e.target.value);
+                    if (orderValueErrors.max)
+                      setOrderValueErrors((prev) => ({
+                        ...prev,
+                        max: undefined,
+                      }));
+                  }}
+                  className="h-8 text-sm"
+                  aria-invalid={!!orderValueErrors.max}
+                />
+                {orderValueErrors.max ? (
+                  <p className="text-[11px] text-red-600">
+                    {orderValueErrors.max}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-gray-500">
+                    Optional cap per order.
+                  </p>
+                )}
+              </div>
+              {/* Non-Beat MOV — the minimum applied to off-route
+                  (non-beat) orders, kept distinct from the standard
+                  Minimum above. Full-width row of its own. */}
+              <div className="space-y-1 col-span-2">
+                <Label className="text-xs">Non-Beat MOV (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="5000"
+                  value={orderNonBeat}
+                  onChange={(e) => {
+                    setOrderNonBeatInput(e.target.value);
+                    if (orderValueErrors.nonBeat)
+                      setOrderValueErrors((prev) => ({
+                        ...prev,
+                        nonBeat: undefined,
+                      }));
+                  }}
+                  className="h-8 text-sm"
+                  aria-invalid={!!orderValueErrors.nonBeat}
+                />
+                {orderValueErrors.nonBeat ? (
+                  <p className="text-[11px] text-red-600">
+                    {orderValueErrors.nonBeat}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-gray-500">
+                    Minimum order value for non-beat (off-route) orders.
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Processing — Default Processing Time + Cancellation Window */}
+          {/* Processing — Default Processing Time + Order Acceptance Time */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
@@ -221,7 +327,7 @@ export function OrderSettings() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0 grid grid-cols-2 gap-3">
+            <CardContent className="pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Processing Time</Label>
                 <Select value={processingTime} onValueChange={setProcessingTime}>
@@ -241,22 +347,15 @@ export function OrderSettings() {
                 </p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Cancellation Window</Label>
-                <Select value={cancellationWindow} onValueChange={setCancellationWindow}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 hour</SelectItem>
-                    <SelectItem value="2">2 hours</SelectItem>
-                    <SelectItem value="4">4 hours</SelectItem>
-                    <SelectItem value="6">6 hours</SelectItem>
-                    <SelectItem value="12">12 hours</SelectItem>
-                    <SelectItem value="24">24 hours</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">Order Acceptance Time</Label>
+                <Input
+                  type="time"
+                  value={beatCutoffTime}
+                  onChange={(e) => setBeatCutoffTimeInput(e.target.value)}
+                  className="h-8 text-sm"
+                />
                 <p className="text-[11px] text-gray-500">
-                  Customer's cancellation window after placing.
+                  Orders received after this roll to the next delivery cycle.
                 </p>
               </div>
             </CardContent>

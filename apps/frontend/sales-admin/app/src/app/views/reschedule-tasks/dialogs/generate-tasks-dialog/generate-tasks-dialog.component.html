@@ -1,0 +1,128 @@
+<div class="wizard-header">
+  <h2 class="card-title text-violet m-0">Reschedule Tasks</h2>
+  <mat-icon class="closeicon" (click)="dialogRef.close()">close</mat-icon>
+</div>
+
+<div class="wizard-progress">
+  <div class="wizard-steps">
+    <button
+      type="button"
+      class="wizard-step"
+      *ngFor="let label of steps; let i = index"
+      [class.active]="i === step"
+      [class.done]="i < step"
+      [disabled]="i > step"
+      (click)="goTo(i)"
+    >
+      <span class="wizard-step-number">
+        <mat-icon *ngIf="i < step">check</mat-icon>
+        <ng-container *ngIf="i >= step">{{ i + 1 }}</ng-container>
+      </span>
+      <span class="wizard-step-label">{{ label }}</span>
+    </button>
+  </div>
+  <mat-progress-bar mode="determinate" [value]="((step + 1) / steps.length) * 100"></mat-progress-bar>
+</div>
+
+<div class="wizard-body">
+  <!-- 1. Pick a day for each set -->
+  <ng-container *ngIf="step === 0">
+    <div class="step-heading">
+      <h3 class="step-title">1. Pick a day for each set</h3>
+      <div class="pick-actions">
+        <button mat-raised-button type="button" color="primary" [disabled]="tooManySets" (click)="autoPick()">Auto-pick days</button>
+        <button mat-stroked-button type="button" (click)="resetPicks()">Current days</button>
+        <button mat-stroked-button type="button" [disabled]="!pickedCount" (click)="clearPicks()">Clear</button>
+      </div>
+    </div>
+    <p class="step-error" *ngIf="tooManySets">
+      {{ sets.length }} sets but only {{ visitDays.length }} visit days (Sundays are skipped). Close this and pick a wider date
+      range.
+    </p>
+
+    <div class="pick-grid-scroll">
+      <div class="pick-grid" [style.grid-template-columns]="gridColumns">
+        <div class="grid-corner"></div>
+        <div class="day-header" *ngFor="let day of visitDays">
+          <div class="day-name">{{ day.date | date: 'd EEE' }}</div>
+          <div class="day-delivery">Delivery {{ day.deliveryDate | date: 'd EEE' }}</div>
+        </div>
+
+        <ng-container *ngFor="let set of sets">
+          <div class="set-header">
+            <div class="set-name">Set {{ set.index + 1 }}</div>
+            <a href="" class="set-shops-link" (click)="openShops($event, set)">{{ set.shops.length }} shops</a>
+            <div class="set-current">Now {{ set.currentDate | date: 'd EEE' }}</div>
+          </div>
+          <div
+            *ngFor="let day of visitDays"
+            class="day-cell"
+            role="button"
+            tabindex="0"
+            [class.best]="isBest(set, day)"
+            [class.picked]="isPicked(set, day)"
+            [class.taken]="!!takenBy(set, day)"
+            [attr.aria-pressed]="isPicked(set, day)"
+            [attr.title]="takenBy(set, day) ? 'Picked for Set ' + (takenBy(set, day)!.index + 1) : null"
+            (click)="pick(set, day)"
+            (keydown.enter)="pick(set, day)"
+            (keydown.space)="$event.preventDefault(); pick(set, day)"
+          >
+            <ng-container *ngIf="set.cells[day.key] as cell">
+              <div class="cell-companies">
+                <div class="company-row" *ngFor="let company of cell.companies | slice: 0 : 2">
+                  <span class="company-dot" [style.background-color]="company.color"></span>
+                  <span class="company-name">{{ company.name }}</span>
+                  <span class="company-count">{{ company.count }}</span>
+                </div>
+                <div class="no-delivery" *ngIf="!cell.companies.length">No next-day delivery</div>
+                <button type="button" class="more-link" *ngIf="cell.companies.length > 2" (click)="openCompanies($event, set, day)">
+                  +{{ cell.companies.length - 2 }} more
+                </button>
+              </div>
+              <div class="cell-footer">
+                <span class="cell-covered">{{ cell.coveredShops }} of {{ set.shops.length }} shops</span>
+                <span class="current-tag" *ngIf="isCurrent(set, day)">Now</span>
+                <mat-icon class="picked-icon" *ngIf="isPicked(set, day)">check_circle</mat-icon>
+                <mat-icon class="best-star" *ngIf="isBest(set, day)">star</mat-icon>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- 2. Schedule -->
+  <ng-container *ngIf="step === 1">
+    <h3 class="step-title">2. Schedule</h3>
+
+    <div class="schedule-plan">
+      <div class="schedule-plan-name">
+        {{ data.salesPerson.name }}
+        <span class="schedule-plan-area">· {{ data.salesPerson.areaName }} · {{ sets.length }} {{ sets.length === 1 ? 'set' : 'sets' }}</span>
+      </div>
+      <div class="schedule-cards">
+        <div class="schedule-card" *ngFor="let row of scheduleRows" [class.empty]="!row.set">
+          <div class="schedule-day">{{ row.day.date | date: 'd EEE' }}</div>
+          <ng-container *ngIf="row.set && row.cell; else noVisit">
+            <a href="" class="schedule-set schedule-set-link" (click)="openShops($event, row.set, row.day)">Set {{ row.set.index + 1 }}</a>
+            <div class="schedule-shops">{{ row.cell.coveredShops }} of {{ row.set.shops.length }} shops</div>
+            <div class="schedule-repeat" *ngIf="row.set.currentKey !== row.day.key">Moved from {{ row.set.currentDate | date: 'd EEE' }}</div>
+          </ng-container>
+          <ng-template #noVisit>
+            <div class="schedule-set">No visit</div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<div class="wizard-footer">
+  <button mat-stroked-button type="button" *ngIf="step > 0" (click)="back()">Back</button>
+  <span class="wizard-footer-spacer"></span>
+  <span class="wizard-footer-hint" *ngIf="nextHint">{{ nextHint }}</span>
+  <button mat-raised-button color="primary" type="button" *ngIf="step === 0" [disabled]="!canGoNext" (click)="next()">Next</button>
+  <button mat-raised-button color="primary" type="button" *ngIf="step === 1" (click)="assignSchedule()">Assign schedule</button>
+</div>

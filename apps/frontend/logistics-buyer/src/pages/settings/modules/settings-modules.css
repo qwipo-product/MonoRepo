@@ -1,0 +1,134 @@
+/* Shared Store Timings + Warehouse Locations styles (spec 07 §5.3) — scoped under `.st-scope`
+   (root class added by ProfilePage, StoreSettingsPage and AddressesPage). Page differences live in each page's CSS. */
+
+/* ---------------------------------------------------------------- sections */
+.st-scope .settings-section { background: #fff; border-radius: 8px; box-shadow: 0 0 10px #00000014; padding: 24px; width: 100%; margin-bottom: 24px; }
+.st-scope .section-header { margin: 0; }
+.st-scope .section-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #333; }
+.st-scope .section-header p { color: #666; font-size: 14px; margin: 0; }
+
+/* ---------------------------------------------------------------- summary cards */
+.st-scope .settings-cards { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 24px; }
+.st-scope .settings-card { display: flex; align-items: center; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+.st-scope .settings-card:hover { border-color: #ddd; box-shadow: 0 2px 8px #0000000d; }
+.st-scope .card-icon { width: 48px; height: 48px; border-radius: 50%; background: #f0f7ff; margin-right: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.st-scope .card-icon i { font-size: 20px; color: #4a90e2; }
+.st-scope .card-content { flex: 1; }
+.st-scope .card-content h3 { font-size: 16px; font-weight: 600; margin: 0 0 4px; color: #333; }
+.st-scope .card-content p { font-size: 13px; color: #666; margin: 0; }
+.st-scope .edit-btn { background: transparent; color: #4a90e2; border: 1px solid #4a90e2; border-radius: 4px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.st-scope .edit-btn:hover { background: #4a90e2; color: #fff; }
+.st-scope .edit-btn i { margin-right: 4px; }
+
+/* ---------------------------------------------------------------- modal frame */
+.st-scope .modal-overlay { position: fixed; inset: 0; background: #00000080; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.st-scope .modal-content { background: #fff; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 12px #00000026; }
+.st-scope .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #eee; }
+.st-scope .modal-title { display: flex; align-items: center; }
+.st-scope .modal-title i { font-size: 20px; color: #4a90e2; margin-right: 12px; }
+.st-scope .modal-title h3 { font-size: 18px; font-weight: 600; margin: 0; color: #333; }
+.st-scope .close-btn { background: none; border: none; font-size: 16px; color: #999; cursor: pointer; }
+.st-scope .close-btn:hover { color: #333; }
+.st-scope .modal-body { padding: 24px; }
+.st-scope .modal-body .error-message { display: flex; align-items: center; background: #e74c3c1a; color: #e74c3c; padding: 10px 12px; border-radius: 4px; margin-bottom: 16px; }
+.st-scope .modal-body .error-message i { margin-right: 8px; }
+.st-scope .pb-11 { padding-bottom: 11px; }
+.st-scope .modal-footer { display: flex; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid #eee; }
+.st-scope .modal-footer .btn { padding: 10px 20px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.st-scope .modal-footer .cancel-btn { background: transparent; color: #666; border: 1px solid #ddd; margin-right: 12px; }
+.st-scope .modal-footer .cancel-btn:hover { background: #f5f5f5; }
+.st-scope .modal-footer .save-btn { background: #4a90e2; color: #fff; border: none; }
+.st-scope .modal-footer .save-btn:hover { background: #3a7bc8; }
+.st-scope .modal-footer .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+/* ---------------------------------------------------------------- business hours */
+.st-scope .time-setting { margin-bottom: 24px; }
+.st-scope .time-label { display: flex; align-items: center; margin-bottom: 12px; }
+.st-scope .time-label i { color: #4a90e2; margin-right: 8px; }
+.st-scope .time-label span { font-size: 14px; font-weight: 500; color: #555; }
+.st-scope .time-label .required { color: #e74c3c; margin-left: 4px; }
+.st-scope .time-inputs { display: flex; align-items: center; }
+.st-scope .time-select { position: relative; width: 80px; }
+.st-scope .time-select select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; appearance: none; -webkit-appearance: none; font-size: 14px; background: #fff; }
+.st-scope .time-select i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none; }
+.st-scope .time-separator { margin: 0 12px; font-size: 18px; font-weight: 500; color: #555; }
+.st-scope .days-label { display: flex; align-items: center; margin-bottom: 12px; }
+.st-scope .days-label i { color: #4a90e2; margin-right: 8px; }
+.st-scope .days-label span { font-size: 14px; font-weight: 500; color: #555; }
+.st-scope .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.st-scope .day-checkbox { display: flex; align-items: center; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; margin: 0; }
+.st-scope .day-checkbox input { display: none; }
+.st-scope .day-checkbox i { display: none; color: #fff; margin-right: 8px; font-size: 12px; }
+.st-scope .day-checkbox span { font-size: 13px; color: #555; }
+.st-scope .day-checkbox .status { margin-left: auto; font-size: 11px; color: #e74c3c; }
+.st-scope .day-checkbox.selected { background: #4a90e2; border-color: #4a90e2; }
+.st-scope .day-checkbox.selected i { display: inline-block; }
+.st-scope .day-checkbox.selected span { color: #fff; }
+.st-scope .day-checkbox.selected .status { display: none; }
+
+/* ---------------------------------------------------------------- non-operating days */
+.st-scope .add-holiday { display: flex; margin-bottom: 24px; }
+.st-scope .holiday-date-picker { position: relative; flex: 1; margin-right: 12px; }
+.st-scope .date-input-container { position: relative; }
+.st-scope .date-input-container input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; cursor: pointer; }
+.st-scope .date-input-container i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none; }
+.st-scope .datepicker { position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px #0000001a; z-index: 10; margin-top: 4px; }
+.st-scope .datepicker-header { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+.st-scope .month-nav { background: none; border: none; color: #4a90e2; font-size: 14px; cursor: pointer; }
+.st-scope .month-nav:hover { color: #3a7bc8; }
+.st-scope .current-month { font-size: 14px; font-weight: 500; color: #333; }
+.st-scope .weekdays, .st-scope .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px 12px; }
+.st-scope .weekdays { border-bottom: 1px solid #eee; }
+.st-scope .weekday { font-size: 12px; color: #999; text-align: center; }
+.st-scope .calendar-day { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #999; cursor: pointer; border-radius: 50%; margin: 2px; }
+.st-scope .calendar-day.in-month { color: #333; }
+.st-scope .calendar-day.today { background: #f0f7ff; color: #4a90e2; }
+.st-scope .calendar-day.selected { background: #4a90e2; color: #fff; }
+.st-scope .calendar-day.past { color: #ccc; cursor: not-allowed; text-decoration: line-through; opacity: .6; }
+.st-scope .calendar-day:hover:not(.past) { background: #f5f5f5; }
+.st-scope .add-btn { background: #4a90e2; color: #fff; border: none; border-radius: 4px; padding: 0 16px; font-size: 14px; white-space: nowrap; cursor: pointer; }
+.st-scope .add-btn:hover { background: #3a7bc8; }
+.st-scope .add-btn:disabled { background: #ccc; cursor: not-allowed; }
+.st-scope .add-btn i { margin-right: 4px; }
+.st-scope .holidays-list h4 { font-size: 16px; font-weight: 500; margin: 0 0 12px; color: #333; }
+.st-scope .holiday-items { border: 1px solid #eee; border-radius: 4px; max-height: 240px; overflow-y: auto; }
+.st-scope .holiday-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; }
+.st-scope .holiday-item:last-child { border-bottom: none; }
+.st-scope .holiday-date { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 4px; }
+.st-scope .holiday-description { font-size: 13px; color: #666; }
+.st-scope .remove-btn { background: none; border: none; color: #e74c3c; font-size: 14px; cursor: pointer; }
+.st-scope .remove-btn:hover { color: #c0392b; }
+.st-scope .no-holidays { padding: 16px; text-align: center; color: #999; font-size: 14px; }
+
+/* ---------------------------------------------------------------- warehouse locations */
+.st-scope .section-header-with-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.st-scope .add-address-btn { background: #2563eb; color: #fff; border: none; border-radius: 4px; padding: 10px 16px; font-size: 14px; font-weight: 500; display: flex; align-items: center; cursor: pointer; }
+.st-scope .add-address-btn:hover { background: #1d4ed8; }
+.st-scope .add-address-btn i { margin-right: 8px; }
+.st-scope .locations-list { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
+.st-scope .location-card { background: #f9fafb; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; border: 1px solid #e5e7eb; }
+.st-scope .location-card:hover { box-shadow: 0 4px 8px #0000000d; }
+.st-scope .location-content { flex: 1; }
+.st-scope .location-name { font-weight: 600; font-size: 16px; color: #333; margin-bottom: 8px; }
+.st-scope .location-address { color: #666; font-size: 14px; margin-bottom: 16px; line-height: 1.4; }
+.st-scope .location-actions { display: flex; align-items: center; }
+.st-scope .default-address-badge { display: inline-block; background: #e6f7ff; color: #2563eb; font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 4px; border: none; cursor: default; }
+.st-scope .set-default-btn { background: transparent; color: #2563eb; font-size: 14px; font-weight: 500; padding: 0; border: none; cursor: pointer; }
+.st-scope .set-default-btn:hover { color: #1d4ed8; text-decoration: underline; }
+.st-scope .delete-btn { background: transparent; color: #ef4444; border: none; border-radius: 4px; padding: 8px; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-left: 10px; cursor: pointer; }
+.st-scope .delete-btn:hover { background: #fee2e2; color: #b91c1c; }
+
+/* Add Warehouse Location form */
+.st-scope .form-row { display: flex; flex-wrap: wrap; margin: 0 -10px; }
+.st-scope .form-row .form-group { padding: 0 10px; }
+.st-scope .form-group { margin-bottom: 20px; }
+.st-scope .form-group.half-width { width: 50%; }
+.st-scope .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #555; }
+.st-scope .form-group .required { color: #e74c3c; }
+.st-scope .form-group input, .st-scope .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+.st-scope .form-group input:focus, .st-scope .form-group textarea:focus { border-color: #4a90e2; outline: none; }
+.st-scope .form-group input::placeholder, .st-scope .form-group textarea::placeholder { color: #aaa; }
+.st-scope .form-group textarea { resize: vertical; min-height: 80px; }
+.st-scope .form-group input.ng-invalid.ng-touched, .st-scope .form-group textarea.ng-invalid.ng-touched { border-color: #e74c3c; }
+/* inherits the flex / pink background from `.modal-body .error-message` (as-built) */
+.st-scope .modal-body .form-group .error-message { color: #e74c3c; font-size: 12px; margin-top: 5px; font-weight: 500; }
