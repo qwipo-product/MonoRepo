@@ -65,6 +65,7 @@ For an unmatched request, use the specified scope. Do not add a screen change wi
 | --- | --- | --- | --- |
 | `qwipo-buyer-paytm-app` | 5175 | 6175 | Mobile |
 | `seller-store` | 5174 | 6174 | Desktop |
+| `field-agent` | 5179 | 6179 | NativeScript and Angular browser renderer |
 | `rirn` | 5173 | 6173 | Desktop |
 | `rirn-retailer` | 5176 | 6176 | Mobile |
 | `qwipo-analytics` | 5177 | 6177 | Mobile kit in a desktop layout |

@@ -28,6 +28,13 @@
         "typescript": "catalog:",
       },
     },
+    "apps/frontend/field-agent": {
+      "name": "@mockups/field-agent",
+      "version": "0.0.0",
+      "devDependencies": {
+        "vite": "catalog:",
+      },
+    },
     "apps/frontend/qwipo-analytics": {
       "name": "@mockups/qwipo-analytics",
       "version": "0.0.0",
@@ -659,6 +666,8 @@
     "@mockups/design-tokens": ["@mockups/design-tokens@workspace:packages/design-tokens"],
 
     "@mockups/eslint-config": ["@mockups/eslint-config@workspace:packages/eslint-config"],
+
+    "@mockups/field-agent": ["@mockups/field-agent@workspace:apps/frontend/field-agent"],
 
     "@mockups/i18n": ["@mockups/i18n@workspace:packages/i18n"],
 

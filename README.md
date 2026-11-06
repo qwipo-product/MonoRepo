@@ -37,6 +37,7 @@ Use one of these commands:
 | `bun dev` | Start all application development servers. |
 | `bun dev --filter=@mockups/qwipo-buyer-paytm-app` | Start Buyer/Paytm. |
 | `bun dev --filter=@mockups/seller-store` | Start Seller Store. |
+| `bun dev --filter=@mockups/field-agent` | Start Field Agent. |
 | `bun run check --continue --ui=stream` | Run lint, type checks, and builds. |
 | `bun run build` | Build all applications and component catalogs. |
 
@@ -51,6 +52,7 @@ Use that URL only on a permitted network.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `http://localhost:5175` | 6175 | [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md) |
 | Seller Store | `http://localhost:5174` | 6174 | [Seller README](apps/frontend/seller-store/README.md) |
+| Field Agent | `http://localhost:5179` | 6179 | [Field Agent README](apps/frontend/field-agent/README.md) |
 | RIRN Console | `http://localhost:5173` | 6173 | [RIRN README](apps/frontend/rirn/README.md) |
 | RIRN Retailer | `http://localhost:5176` | 6176 | [Retailer README](apps/frontend/rirn-retailer/README.md) |
 | Qwipo Analytics | `http://localhost:5177` | 6177 | [Analytics README](apps/frontend/qwipo-analytics/README.md) |
@@ -171,6 +173,7 @@ Use [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) for diagnosis.
 | --- | --- | --- | --- |
 | Buyer/Paytm | `mockups-buyer-app` | Buyer App - Build | Buyer App - Deploy |
 | Seller Store | `mockups-seller-store` | Seller Store - Build | Seller Store - Deploy |
+| Field Agent | `mockups-field-agent` | Field Agent - Build | Field Agent - Deploy |
 | RIRN Console | `mockups-rirn-company` | RIRN Company - Build | RIRN Company - Deploy |
 | RIRN Retailer | `mockups-rirn-retailer` | RIRN Retailer - Build | RIRN Retailer - Deploy |
 | Qwipo Analytics | `mockups-analytics` | Analytics - Build | Analytics - Deploy |
