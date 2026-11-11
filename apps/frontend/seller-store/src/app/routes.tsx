@@ -1,6 +1,19 @@
-import { createHashRouter } from "react-router";
+import { createHashRouter, Navigate } from "react-router";
 import { RootLayout } from "./components/root-layout";
 import { ProtectedRoute } from "./components/protected-route";
+import { CatalogAdminLogin } from "./pages/catalog-admin/login";
+import { CatalogAdminLayout } from "./pages/catalog-admin/layout";
+import { CatalogAdminDashboard } from "./pages/catalog-admin/dashboard";
+import { CatalogAdminRequests } from "./pages/catalog-admin/requests";
+import { CatalogAdminCatalog } from "./pages/catalog-admin/catalog";
+import { CatalogAdminSkuForm } from "./pages/catalog-admin/sku-form";
+import { CatalogAdminBrandManagers } from "./pages/catalog-admin/brand-managers";
+import { BrandManagerCompanies } from "./pages/catalog-admin/my-company";
+import { BrandManagerCatalog } from "./pages/brand-manager/catalog";
+import { BrandManagerDashboard } from "./pages/brand-manager/dashboard";
+import { BrandManagerRequests } from "./pages/brand-manager/requests";
+import { useAuth } from "./lib/auth-context";
+import { MyRequests } from "./pages/products/my-requests";
 import { Dashboard } from "./pages/dashboard";
 import { DashboardCompany } from "./pages/dashboard-company";
 import { Inventory } from "./pages/inventory";
@@ -10,6 +23,8 @@ import { Customers } from "./pages/customers/legacy-list";
 import { CustomerDetail } from "./pages/customers/legacy-detail";
 import { CustomersDemo } from "./pages/customers/list";
 import { CustomerDemoDetail } from "./pages/customers/detail";
+import { CustomersDms } from "./pages/customers-dms/list";
+import { CustomerDmsDetail } from "./pages/customers-dms/detail";
 import { Profile } from "./pages/profile";
 import { Connectors } from "./pages/connectors/list";
 import { ConnectorDetail } from "./pages/connectors/detail";
@@ -31,7 +46,6 @@ import { OffersDemo } from "./pages/offers/offers-demo";
 import { CreateScheme } from "./pages/offers/create-scheme";
 import { StoreSettings } from "./pages/settings/store-settings";
 import { OrderSettings } from "./pages/settings/order-settings";
-import { ShippingSettings } from "./pages/settings/shipping-settings";
 import { PaymentSettings } from "./pages/settings/payment-settings";
 import { CustomerSettings } from "./pages/settings/customer-settings";
 import { CommunicationSettings } from "./pages/settings/communication-settings";
@@ -48,14 +62,59 @@ import { AdminActiveSellers } from "./pages/admin/active-sellers";
 import { AdminSellerDetail } from "./pages/admin/seller-detail";
 import { AdminAddUser } from "./pages/admin/add-user";
 import { AdminConnectors } from "./pages/admin/connectors";
+import { AdminCustomers } from "./pages/admin/customers";
+import { AdminCustomerDetail } from "./pages/admin/customer-detail";
+import { AdminServiceabilityReport } from "./pages/admin/serviceability-report";
+import { AdminDarkStoreDashboard } from "./pages/admin/dark-store-dashboard";
 import { AdminCompanies } from "./pages/admin/companies";
 import { AdminCategories } from "./pages/admin/categories";
 import { ErrorScreensDemo } from "./pages/demos/error-screens";
 import { LoadingScreensDemo } from "./pages/demos/loading-screens";
 
-// Hash routing (#/orders/123), not real paths: preview builds are served from
-// /builds/<branch>/<sha>/ on the host, where no path fallback exists.
+function CatalogAdminIndex() {
+  const { user } = useAuth();
+  if (user?.role === "brand-manager") return <BrandManagerDashboard />;
+  return <CatalogAdminDashboard />;
+}
+
+// Same index logic used for the RootLayout-integrated catalog portal at /catalog-portal.
+function CatalogPortalIndex() {
+  const { user } = useAuth();
+  if (user?.role === "brand-manager") return <BrandManagerDashboard />;
+  return <CatalogAdminDashboard />;
+}
+
 export const router = createHashRouter([
+  // Catalog Admin Portal — separate login + standalone layout
+  {
+    path: "/catalog-admin/login",
+    Component: CatalogAdminLogin,
+  },
+  // Brand Manager login redirects to the shared portal login
+  {
+    path: "/brand-manager/login",
+    element: <Navigate to="/catalog-admin/login" replace />,
+  },
+  {
+    path: "/catalog-admin",
+    element: (
+      <ProtectedRoute allow={["catalog-admin", "brand-manager"]}>
+        <CatalogAdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, Component: CatalogAdminIndex },
+      { path: "requests", Component: CatalogAdminRequests },
+      { path: "catalog", Component: CatalogAdminCatalog },
+      { path: "catalog/create", Component: CatalogAdminSkuForm },
+      { path: "catalog/:skuId", Component: CatalogAdminSkuForm },
+      { path: "companies", Component: AdminCompanies },
+      { path: "my-company", Component: BrandManagerCompanies },
+      { path: "brand-managers", Component: CatalogAdminBrandManagers },
+      { path: "my-catalog", Component: BrandManagerCatalog },
+      { path: "my-requests", Component: BrandManagerRequests },
+    ],
+  },
   {
     path: "/login",
     Component: Login,
@@ -91,6 +150,13 @@ export const router = createHashRouter([
       { path: "users/add", Component: AdminAddUser },
       { path: "users/:sellerId", Component: AdminSellerDetail },
       { path: "users/:sellerId/connectors/:connectorId", Component: ConnectorDetail },
+      // Customer Database — uploaded roster + per-customer serviceability
+      { path: "customers", Component: AdminCustomers },
+      { path: "customers/:customerId", Component: AdminCustomerDetail },
+      // Generate Report — customer × beat serviceability export
+      { path: "reports", Component: AdminServiceabilityReport },
+      // Dark Store — zone coverage dashboard per store
+      { path: "dark-store/:storeId", Component: AdminDarkStoreDashboard },
       // Admin Connectors
       { path: "connectors", Component: AdminConnectors },
       { path: "connectors/:connectorId", Component: ConnectorDetail },
@@ -98,6 +164,8 @@ export const router = createHashRouter([
       { path: "companies", Component: AdminCompanies },
       // Category Master — hierarchical taxonomy (37 ONDC roots + add/sub)
       { path: "categories", Component: AdminCategories },
+      // Charges & Fees — logistics fee is configured per SELLER from a tile +
+      // dialog on the Manage Seller "Charges & Fees" tab (no standalone route).
       // Error Screens demo gallery — only surfaced in the empty-mode
       // sidebar but routable for both admin paths.
       { path: "error-screens", Component: ErrorScreensDemo },
@@ -110,16 +178,18 @@ export const router = createHashRouter([
       { path: "sellers/:sellerId/connectors/:connectorId", Component: ConnectorDetail },
     ],
   },
-  // Seller subtree — seller-only
+  // Seller subtree — sellers, catalog-admins, and brand-managers all share
+  // the RootLayout shell. Role-specific nav is injected in root-layout.tsx.
   {
     path: "/",
     element: (
-      <ProtectedRoute allow="seller">
+      <ProtectedRoute allow={["seller", "catalog-admin", "brand-manager"]}>
         <RootLayout />
       </ProtectedRoute>
     ),
     children: [
       { index: true, Component: Dashboard },
+      { path: "products/my-requests", Component: MyRequests },
       // Per-company drill-down — opens from the company table on the
       // Dashboard. Carries the dashboard's date range via the query
       // string so the window survives the navigation.
@@ -149,6 +219,12 @@ export const router = createHashRouter([
       { path: "customers/:customerId", Component: CustomerDemoDetail },
       // Legacy approval flow — kept for reference under the empty-
       // mode "Customers 2" sidebar entry.
+      // New Onboarding — new-customer requests from the buyer
+      // app, downloaded and handed to the company to create in its
+      // DMS. Mounted on its own path so the live /customers module is
+      // untouched.
+      { path: "new-onboarding", Component: CustomersDms },
+      { path: "new-onboarding/:customerId", Component: CustomerDmsDetail },
       { path: "customers-demo", Component: Customers },
       { path: "customers-demo/:customerId", Component: CustomerDetail },
       { path: "profile", Component: Profile },
@@ -159,7 +235,7 @@ export const router = createHashRouter([
       { path: "settings", Component: Settings },
       { path: "settings/store", Component: StoreSettings },
       { path: "settings/order", Component: OrderSettings },
-      { path: "settings/shipping", Component: ShippingSettings },
+      { path: "settings/shipping", element: <Navigate to="/settings" replace /> },
       { path: "settings/payment", Component: PaymentSettings },
       { path: "settings/customer", Component: CustomerSettings },
       { path: "settings/communication", Component: CommunicationSettings },
@@ -175,6 +251,19 @@ export const router = createHashRouter([
       { path: "error-screens", Component: ErrorScreensDemo },
       // Loading Screens demo gallery — same empty-mode-only treatment.
       { path: "loading-screens", Component: LoadingScreensDemo },
+      // Catalog Portal — catalog-admin and brand-manager roles integrated
+      // into the main RootLayout shell. Pages are re-used from the
+      // standalone /catalog-admin portal; the separate portal stays intact.
+      { path: "catalog-portal", Component: CatalogPortalIndex },
+      { path: "catalog-portal/requests", Component: CatalogAdminRequests },
+      { path: "catalog-portal/catalog", Component: CatalogAdminCatalog },
+      { path: "catalog-portal/catalog/create", Component: CatalogAdminSkuForm },
+      { path: "catalog-portal/catalog/:skuId", Component: CatalogAdminSkuForm },
+      { path: "catalog-portal/companies", Component: AdminCompanies },
+      { path: "catalog-portal/my-company", Component: BrandManagerCompanies },
+      { path: "catalog-portal/brand-managers", Component: CatalogAdminBrandManagers },
+      { path: "catalog-portal/my-catalog", Component: BrandManagerCatalog },
+      { path: "catalog-portal/my-requests", Component: BrandManagerRequests },
     ],
   },
 ]);

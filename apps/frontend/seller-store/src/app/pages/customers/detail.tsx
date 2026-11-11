@@ -25,14 +25,9 @@ import {
   DialogTitle,
 } from "@mockups/web-ui";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@mockups/web-ui";
-import {
   ArrowLeft,
   MapPin,
+  MapPinned,
   User as UserIcon,
   CheckCircle2,
   Navigation,
@@ -44,18 +39,21 @@ import {
   Route,
   Lock,
   Store,
+  Home,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDemoCustomerById,
+  setDemoCustomerStatus,
   setDemoCompanyStatus,
+  effectiveCompanyStatus,
   subscribeToDemoCustomers,
+  getCustomerAddresses,
+  getPrimaryAddress,
+  getAddressServiceability,
   type DemoCustomer,
 } from "../../lib/customers-demo-data";
-import {
-  findBeatForCustomer,
-  subscribeToServiceabilityBeats,
-} from "../../lib/serviceability-data";
+import { subscribeToServiceabilityBeats } from "../../lib/serviceability-data";
 
 export function CustomerDemoDetail() {
   const { customerId } = useParams();
@@ -69,14 +67,9 @@ export function CustomerDemoDetail() {
   // ourselves below).
   useEffect(() => {
     if (!customerId) return;
-    // The unsubscribe returns a boolean (Set.delete); React's cleanup must
-    // return void, so swallow it.
-    const unsubscribe = subscribeToDemoCustomers(() => {
+    return subscribeToDemoCustomers(() => {
       setCustomer(getDemoCustomerById(customerId) ?? null);
     });
-    return () => {
-      unsubscribe();
-    };
   }, [customerId]);
 
   // Re-render when the serviceability admin changes a bit — the
@@ -89,38 +82,80 @@ export function CustomerDemoDetail() {
     return subscribeToServiceabilityBeats(() => setBeatsRev((n) => n + 1));
   }, []);
 
-  // Block / Unblock confirmation — Block lives on a per-company link
-  // now (a customer can be Active for one brand and Blocked for
-  // another), so we track the target companyId alongside the action.
-  const [pendingBlockToggle, setPendingBlockToggle] = useState<{
-    action: "block" | "unblock";
-    companyId: string;
-  } | null>(null);
-
-  const pendingBlockCompany = customer?.companies.find(
-    (co) => co.companyId === pendingBlockToggle?.companyId,
+  // Multi-address support — a customer can have several delivery
+  // addresses, each mapping into its own beats (different company set
+  // and/or delivery days per location). The selector below drives the
+  // address details, the per-address serviceability table, and the map.
+  const addresses = customer ? getCustomerAddresses(customer) : [];
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
   );
+  // Keep the selection valid as the customer / address list changes;
+  // default to the primary address.
+  useEffect(() => {
+    if (!customer) return;
+    const list = getCustomerAddresses(customer);
+    setSelectedAddressId((prev) =>
+      prev && list.some((a) => a.id === prev)
+        ? prev
+        : getPrimaryAddress(customer).id,
+    );
+  }, [customer]);
+  const selectedAddress =
+    addresses.find((a) => a.id === selectedAddressId) ?? addresses[0] ?? null;
+  const addressServiceability =
+    customer && selectedAddress
+      ? getAddressServiceability(customer, selectedAddress)
+      : { served: [], unserved: [] };
+
+  // Block / Unblock confirmation. Two levels:
+  //   • customer → master switch, blocks/unblocks the whole customer.
+  //   • company  → per-company link (only while the customer is Active).
+  const [pendingBlockToggle, setPendingBlockToggle] = useState<
+    | { kind: "customer"; action: "block" | "unblock" }
+    | { kind: "company"; action: "block" | "unblock"; companyId: string }
+    | null
+  >(null);
+
+  const pendingBlockCompany =
+    pendingBlockToggle?.kind === "company"
+      ? customer?.companies.find(
+          (co) => co.companyId === pendingBlockToggle.companyId,
+        )
+      : undefined;
 
   const handleConfirmBlockToggle = () => {
-    if (!customer || !pendingBlockToggle || !pendingBlockCompany) return;
-    if (pendingBlockToggle.action === "block") {
-      setDemoCompanyStatus(
-        customer.customerId,
-        pendingBlockToggle.companyId,
-        "Blocked",
-      );
-      toast.success(
-        `${customer.businessName} blocked for ${pendingBlockCompany.companyName} — no new orders against this brand until you unblock.`,
-      );
-    } else {
-      setDemoCompanyStatus(
-        customer.customerId,
-        pendingBlockToggle.companyId,
-        "Active",
-      );
-      toast.success(
-        `${customer.businessName} unblocked for ${pendingBlockCompany.companyName}.`,
-      );
+    if (!customer || !pendingBlockToggle) return;
+    if (pendingBlockToggle.kind === "customer") {
+      if (pendingBlockToggle.action === "block") {
+        setDemoCustomerStatus(customer.customerId, "Blocked");
+        toast.success(
+          `${customer.businessName} blocked — no new orders until you unblock this customer.`,
+        );
+      } else {
+        setDemoCustomerStatus(customer.customerId, "Active");
+        toast.success(`${customer.businessName} unblocked.`);
+      }
+    } else if (pendingBlockCompany) {
+      if (pendingBlockToggle.action === "block") {
+        setDemoCompanyStatus(
+          customer.customerId,
+          pendingBlockToggle.companyId,
+          "Blocked",
+        );
+        toast.success(
+          `${customer.businessName} blocked for ${pendingBlockCompany.companyName}.`,
+        );
+      } else {
+        setDemoCompanyStatus(
+          customer.customerId,
+          pendingBlockToggle.companyId,
+          "Active",
+        );
+        toast.success(
+          `${customer.businessName} unblocked for ${pendingBlockCompany.companyName}.`,
+        );
+      }
     }
     setPendingBlockToggle(null);
   };
@@ -148,24 +183,27 @@ export function CustomerDemoDetail() {
     );
   }
 
-  // Embedded OpenStreetMap iframe centred on the customer's coords; the
+  // Embedded OpenStreetMap iframe centred on the SELECTED address; the
   // overlay link redirects to Google Maps (same pattern as the canonical
   // detail page so seller muscle memory stays consistent).
+  const mapAddress = selectedAddress ?? getPrimaryAddress(customer);
   const latDelta = 0.01;
   const lonDelta = 0.01;
-  const bbox = `${customer.longitude - lonDelta},${customer.latitude - latDelta},${customer.longitude + lonDelta},${customer.latitude + latDelta}`;
+  const bbox = `${mapAddress.longitude - lonDelta},${mapAddress.latitude - latDelta},${mapAddress.longitude + lonDelta},${mapAddress.latitude + latDelta}`;
   const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
     bbox,
-  )}&layer=mapnik&marker=${customer.latitude},${customer.longitude}`;
-  const openInMapsUrl = `https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`;
+  )}&layer=mapnik&marker=${mapAddress.latitude},${mapAddress.longitude}`;
+  const openInMapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapAddress.latitude},${mapAddress.longitude}`;
+
+  // Customer-level block status (defaults to Active for legacy records).
+  const isBlocked = (customer.status ?? "Active") === "Blocked";
 
   return (
     <div className="p-4 space-y-3 bg-gray-50 min-h-full">
-      {/* Header — store name + owner + phone. Customer-level Active /
-          Blocked badge is gone; status is now per-company and surfaced
-          in the Linked Companies card below, where Block / Unblock
-          also lives. The header still rolls up the company statuses
-          so the seller has an at-a-glance signal. */}
+      {/* Header — store name + owner + phone, with a customer-level
+          Active / Blocked badge and a Block / Unblock action on the
+          right. Blocking a customer stops new orders across every
+          company they buy from. */}
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
@@ -180,41 +218,47 @@ export function CustomerDemoDetail() {
             <h1 className="text-xl font-bold text-gray-900 truncate">
               {customer.customerName}
             </h1>
-            {(() => {
-              const activeCount = customer.companies.filter(
-                (co) => co.status === "Active",
-              ).length;
-              const blockedCount = customer.companies.length - activeCount;
-              if (blockedCount === 0) {
-                return (
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Active
-                  </Badge>
-                );
-              }
-              if (activeCount === 0) {
-                return (
-                  <Badge className="bg-red-50 text-red-700 border-red-200 gap-1">
-                    <Ban className="h-3 w-3" />
-                    Blocked
-                  </Badge>
-                );
-              }
-              return (
-                <Badge
-                  className="bg-amber-50 text-amber-700 border-amber-200 gap-1"
-                  title={`${activeCount} active · ${blockedCount} blocked`}
-                >
-                  Mixed ({activeCount}/{customer.companies.length})
-                </Badge>
-              );
-            })()}
+            {isBlocked ? (
+              <Badge className="bg-red-50 text-red-700 border-red-200 gap-1">
+                <Ban className="h-3 w-3" />
+                Blocked
+              </Badge>
+            ) : (
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Active
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-gray-600 truncate">
             {customer.businessName} · {customer.mobile}
           </p>
         </div>
+        {/* Block / Unblock this customer (master switch) */}
+        {isBlocked ? (
+          <Button
+            size="sm"
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 shrink-0"
+            onClick={() =>
+              setPendingBlockToggle({ kind: "customer", action: "unblock" })
+            }
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Unblock
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-red-300 text-red-700 hover:bg-red-50 shrink-0"
+            onClick={() =>
+              setPendingBlockToggle({ kind: "customer", action: "block" })
+            }
+          >
+            <Ban className="h-4 w-4" />
+            Block
+          </Button>
+        )}
       </div>
 
       {/* Main Content Grid — left column (details) + right column (map),
@@ -262,49 +306,179 @@ export function CustomerDemoDetail() {
             </CardContent>
           </Card>
 
-          {/* Address Details */}
+          {/* Addresses — a customer can have several delivery locations.
+              The selector switches the address details, the per-address
+              serviceability table, and the map on the right. Different
+              addresses fall in different beats, so the company set and
+              delivery days shown below change per address. */}
           <Card>
             <CardHeader className="py-2.5 px-4 border-b border-gray-100">
               <CardTitle className="text-sm flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-green-600" />
-                Address Details
+                Addresses ({addresses.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-2.5">
-              {customer.fullAddress && (
-                <div>
-                  <p className="text-[11px] text-gray-500">Full Address</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {customer.fullAddress}
-                  </p>
+            <CardContent className="p-4 space-y-3">
+              {/* Address selector — one chip per address. Hidden when
+                  the customer has a single address (nothing to switch). */}
+              {addresses.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {addresses.map((a) => {
+                    const active = a.id === selectedAddress?.id;
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setSelectedAddressId(a.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                          active
+                            ? "border-green-500 bg-green-50 text-green-800 ring-1 ring-green-200"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {a.isPrimary ? (
+                          <Home className="h-3.5 w-3.5" />
+                        ) : (
+                          <MapPinned className="h-3.5 w-3.5" />
+                        )}
+                        {a.label}
+                        {a.isPrimary && (
+                          <Badge className="bg-green-600 text-white h-4 px-1 text-[9px] ml-0.5">
+                            Primary
+                          </Badge>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-              <div className="grid grid-cols-5 gap-x-3 gap-y-2">
-                <div>
-                  <p className="text-[11px] text-gray-500">City</p>
-                  <p className="text-sm text-gray-900">{customer.city}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-500">State</p>
-                  <p className="text-sm text-gray-900">{customer.state}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-500">Pincode</p>
-                  <p className="text-sm text-gray-900">{customer.pincode}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-500">Latitude</p>
-                  <p className="text-xs font-mono text-gray-900">
-                    {customer.latitude}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-500">Longitude</p>
-                  <p className="text-xs font-mono text-gray-900">
-                    {customer.longitude}
-                  </p>
-                </div>
-              </div>
+
+              {selectedAddress && (
+                <>
+                  {selectedAddress.fullAddress && (
+                    <div>
+                      <p className="text-[11px] text-gray-500">
+                        {selectedAddress.label}
+                        {selectedAddress.isPrimary ? " · Primary" : ""}
+                      </p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedAddress.fullAddress}
+                      </p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-5 gap-x-3 gap-y-2">
+                    <div>
+                      <p className="text-[11px] text-gray-500">City</p>
+                      <p className="text-sm text-gray-900">
+                        {selectedAddress.city}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">State</p>
+                      <p className="text-sm text-gray-900">
+                        {selectedAddress.state}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Pincode</p>
+                      <p className="text-sm text-gray-900">
+                        {selectedAddress.pincode}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Latitude</p>
+                      <p className="text-xs font-mono text-gray-900">
+                        {selectedAddress.latitude}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Longitude</p>
+                      <p className="text-xs font-mono text-gray-900">
+                        {selectedAddress.longitude}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Delivery serviceability at THIS address — company ×
+                      beat × days, resolved live from the serviceability
+                      polygons for this location. */}
+                  <div className="pt-1">
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-gray-500 flex items-center gap-1.5 mb-1.5">
+                      <Route className="h-3.5 w-3.5 text-gray-400" />
+                      Delivery serviceability at {selectedAddress.label}
+                    </p>
+                    {addressServiceability.served.length === 0 ? (
+                      <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                        No company delivers to this address yet. Configure a
+                        serviceability polygon covering it in Admin → Seller →
+                        Serviceability.
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-2 px-3 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-gray-500 bg-gray-50/60 border-b border-gray-100">
+                          <span>Company</span>
+                          <span>Beat</span>
+                          <span>Beat Days</span>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                          {addressServiceability.served.flatMap((co) =>
+                            co.beats.map((beat) => (
+                              <div
+                                key={`${co.companyId}-${beat.id}`}
+                                className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-2 px-3 py-2 items-center"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <div className="bg-blue-100 text-blue-700 p-0.5 rounded shrink-0">
+                                    <Building2 className="h-3 w-3" />
+                                  </div>
+                                  <span className="text-xs font-medium text-gray-900 truncate">
+                                    {co.companyName}
+                                  </span>
+                                  {effectiveCompanyStatus(customer, co) ===
+                                    "Blocked" && (
+                                    <Badge className="bg-red-50 text-red-700 border-red-200 h-4 px-1 text-[9px]">
+                                      Blocked
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <Route className="h-3 w-3 text-gray-400 shrink-0" />
+                                  <span className="text-xs text-gray-800 truncate">
+                                    {beat.beatName}
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {beat.deliveryDays.map((day) => (
+                                    <Badge
+                                      key={day}
+                                      className="gap-1 bg-blue-50 text-blue-700 border-blue-200 font-medium text-[10px] h-5"
+                                    >
+                                      <CalendarClock className="h-2.5 w-2.5" />
+                                      {day}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )),
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {addressServiceability.unserved.length > 0 && (
+                      <p className="text-[11px] text-gray-500 mt-1.5 flex items-start gap-1">
+                        <Lock className="h-3 w-3 mt-0.5 shrink-0 text-gray-400" />
+                        Not served at this address:{" "}
+                        <span className="text-gray-700">
+                          {addressServiceability.unserved
+                            .map((co) => co.companyName)
+                            .join(", ")}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -340,13 +514,12 @@ export function CustomerDemoDetail() {
             </CardContent>
           </Card>
 
-          {/* Linked Companies — one panel per company. Header carries
-              the company name, status, and Block / Unblock; the body
-              underneath lists every (Beat Name, Delivery Day) the
-              customer is mapped to for that company. A single company
-              with multiple delivery days renders as multiple rows in
-              its panel (e.g. ITC delivers Monday for KPHB and
-              Wednesday for SR Nagar). */}
+          {/* Linked Companies — per-company Block / Unblock. While the
+              customer is blocked at the header level, every company shows
+              as Blocked and the per-company controls are disabled (the
+              customer-level block overrides them). Unblock the customer to
+              manage companies individually. The per-address beat +
+              delivery-day mapping lives in the Addresses card above. */}
           <Card>
             <CardHeader className="py-2.5 px-4 border-b border-gray-100">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -354,7 +527,7 @@ export function CustomerDemoDetail() {
                 Linked Companies ({customer.companies.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-4 space-y-2.5">
               {customer.companies.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-2">
                   No companies linked to this customer yet.
@@ -362,170 +535,100 @@ export function CustomerDemoDetail() {
               ) : (
                 <>
                   {customer.companies.map((co) => {
-                    // Seller-side rule: each customer sits on ONE
-                    // beat per company — the beat its location maps
-                    // into. A beat can serve multiple delivery days,
-                    // and the customer inherits all of them, but the
-                    // row count stays at one per company.
-                    const beat = findBeatForCustomer(
-                      {
-                        customerId: customer.customerId,
-                        city: customer.city,
-                        area: customer.area,
-                        pincode: customer.pincode,
-                        serviceabilityOverrides:
-                          customer.serviceabilityOverrides,
-                      },
-                      co.companyId,
-                    );
-                    const uniqueDayCount = beat?.deliveryDays.length ?? 0;
+                    const effStatus = effectiveCompanyStatus(customer, co);
                     return (
                       <div
                         key={co.companyId}
-                        className={`rounded-lg border ${
-                          co.status === "Active"
+                        className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
+                          effStatus === "Active"
                             ? "border-gray-200"
                             : "border-red-100 bg-red-50/30"
-                        } overflow-hidden`}
+                        }`}
                       >
-                        {/* Company header — Company name on the left,
-                            status badge + action button on the right. */}
-                        <div className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 border-b border-gray-100">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="bg-blue-100 text-blue-700 p-1 rounded">
-                              <Building2 className="h-3.5 w-3.5" />
-                            </div>
-                            <p className="text-sm font-semibold text-gray-900 truncate">
-                              {co.companyName}
-                            </p>
-                            {beat && uniqueDayCount > 0 && (
-                              <Badge className="bg-blue-50 text-blue-700 border-blue-200 h-5 px-1.5 text-[10px]">
-                                {uniqueDayCount} delivery day
-                                {uniqueDayCount === 1 ? "" : "s"}
-                              </Badge>
-                            )}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="bg-blue-100 text-blue-700 p-1 rounded">
+                            <Building2 className="h-3.5 w-3.5" />
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {co.status === "Active" ? (
-                              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Active
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-red-50 text-red-700 border-red-200 gap-1">
-                                <Ban className="h-3 w-3" />
-                                Blocked
-                              </Badge>
-                            )}
-                            {co.status === "Active" ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 gap-1 border-red-300 text-red-700 hover:bg-red-50"
-                                onClick={() =>
-                                  setPendingBlockToggle({
-                                    action: "block",
-                                    companyId: co.companyId,
-                                  })
-                                }
-                              >
-                                <Ban className="h-3.5 w-3.5" />
-                                Block
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() =>
-                                  setPendingBlockToggle({
-                                    action: "unblock",
-                                    companyId: co.companyId,
-                                  })
-                                }
-                              >
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Unblock
-                              </Button>
-                            )}
-                          </div>
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {co.companyName}
+                          </p>
                         </div>
-
-                        {/* Beats body — ONE beat per (customer × company)
-                            on the seller side. The beat name sits on
-                            the left, the delivery day chips it carries
-                            sit on the right (one beat can serve N
-                            days). When no polygon covers this
-                            customer for the company, show the empty
-                            state. */}
-                        {!beat ? (
-                          <div className="px-3 py-3 flex items-center gap-2 text-xs text-gray-500">
-                            <Lock className="h-3.5 w-3.5 text-gray-400" />
-                            No serviceability polygon covers this
-                            customer for {co.companyName}. Configure one
-                            in Admin → Seller → Serviceability.
-                          </div>
-                        ) : (
-                          <div className="divide-y divide-gray-100">
-                            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-3 px-3 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-gray-500 bg-gray-50/60">
-                              <span>Beat Name</span>
-                              <span>Delivery Days</span>
-                            </div>
-                            <div
-                              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-3 px-3 py-2 items-center"
+                        <div className="flex items-center gap-2 shrink-0">
+                          {effStatus === "Active" ? (
+                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-50 text-red-700 border-red-200 gap-1">
+                              <Ban className="h-3 w-3" />
+                              Blocked
+                            </Badge>
+                          )}
+                          {co.status === "Active" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1 border-red-300 text-red-700 hover:bg-red-50"
+                              disabled={isBlocked}
+                              title={
+                                isBlocked
+                                  ? "Customer is blocked — unblock the customer to manage companies individually"
+                                  : undefined
+                              }
+                              onClick={() =>
+                                setPendingBlockToggle({
+                                  kind: "company",
+                                  action: "block",
+                                  companyId: co.companyId,
+                                })
+                              }
                             >
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <Route className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                                <span className="text-sm font-medium text-gray-900 truncate">
-                                  {beat.beatName}
-                                </span>
-                                {beat.polygonFileName && (
-                                  <span
-                                    title={`Polygon: ${beat.polygonFileName}`}
-                                    className="text-emerald-600 shrink-0"
-                                  >
-                                    <MapPin className="h-3 w-3" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {beat.deliveryDays.map((day) => (
-                                  <TooltipProvider
-                                    key={day}
-                                    delayDuration={150}
-                                  >
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="w-fit cursor-help">
-                                          <Badge className="gap-1 bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                                            <CalendarClock className="h-3 w-3" />
-                                            {day}
-                                            <Lock className="h-2.5 w-2.5 ml-0.5 opacity-60" />
-                                          </Badge>
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="max-w-xs text-xs">
-                                        Read-only — change this
-                                        beat&apos;s delivery days in
-                                        Admin → Seller →
-                                        Serviceability.
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                              <Ban className="h-3.5 w-3.5" />
+                              Block
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700"
+                              disabled={isBlocked}
+                              title={
+                                isBlocked
+                                  ? "Customer is blocked — unblock the customer to manage companies individually"
+                                  : undefined
+                              }
+                              onClick={() =>
+                                setPendingBlockToggle({
+                                  kind: "company",
+                                  action: "unblock",
+                                  companyId: co.companyId,
+                                })
+                              }
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Unblock
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                   <p className="text-[11px] text-gray-500 pt-1">
-                    Status and Block / Unblock are tracked per company.
-                    Each company shows the <b>one beat</b> the
-                    customer&apos;s location maps into — that beat can
-                    carry multiple delivery days (e.g. KPHB 1 served
-                    Mon &amp; Tue). To re-route a customer or shift days,
-                    edit the polygons in Admin → Seller → Serviceability.
+                    {isBlocked ? (
+                      <>
+                        This customer is <b>blocked</b> at the customer level, so
+                        every company is blocked. Unblock the customer above to
+                        manage companies individually.
+                      </>
+                    ) : (
+                      <>
+                        Block / Unblock a single company here, or use the{" "}
+                        <b>Block</b> button in the header to block the whole
+                        customer. The <b>beat and delivery days</b> each company
+                        delivers on are resolved per address — see the Addresses
+                        card above.
+                      </>
+                    )}
                   </p>
                 </>
               )}
@@ -581,14 +684,17 @@ export function CustomerDemoDetail() {
                   </span>
                 </a>
               </div>
-              {/* Compact address + coords strip below the map */}
+              {/* Compact address + coords strip below the map — reflects
+                  the selected address. */}
               <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs gap-3">
                 <span className="text-gray-700 truncate">
                   <MapPin className="inline h-3.5 w-3.5 text-gray-500 mr-1" />
-                  {customer.area}, {customer.city} — {customer.pincode}
+                  {mapAddress.label} · {mapAddress.area}, {mapAddress.city} —{" "}
+                  {mapAddress.pincode}
                 </span>
                 <span className="font-mono text-gray-500 shrink-0">
-                  {customer.latitude.toFixed(4)}, {customer.longitude.toFixed(4)}
+                  {mapAddress.latitude.toFixed(4)},{" "}
+                  {mapAddress.longitude.toFixed(4)}
                 </span>
               </div>
             </CardContent>
@@ -596,74 +702,95 @@ export function CustomerDemoDetail() {
         </div>
       </div>
 
-      {/* Block / Unblock confirmation — scoped to a single company link
-          so the seller acknowledges the per-brand consequence. Block
-          stops new orders against that brand only; other brands the
-          customer buys from are unaffected. */}
+      {/* Block / Unblock confirmation — customer level (master switch) or
+          per-company, driven by pendingBlockToggle.kind. */}
       <Dialog
         open={pendingBlockToggle !== null}
         onOpenChange={(o) => !o && setPendingBlockToggle(null)}
       >
         <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {pendingBlockToggle?.action === "block" ? (
-                <>
-                  <Ban className="h-5 w-5 text-red-600" />
-                  Block for {pendingBlockCompany?.companyName}?
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  Unblock for {pendingBlockCompany?.companyName}?
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {pendingBlockToggle?.action === "block"
-                ? `${customer.businessName} won't be able to place new orders for ${pendingBlockCompany?.companyName} until you manually unblock. Orders against other linked companies are not affected.`
-                : `${customer.businessName} will be able to place orders for ${pendingBlockCompany?.companyName} again immediately.`}
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={
-              pendingBlockToggle?.action === "block"
-                ? "bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900"
-                : "bg-emerald-50 border border-emerald-200 rounded-md p-3 text-xs text-emerald-900"
-            }
-          >
-            {pendingBlockToggle?.action === "block" ? (
+          {(() => {
+            if (!pendingBlockToggle) return null;
+            const isBlock = pendingBlockToggle.action === "block";
+            const isCustomer = pendingBlockToggle.kind === "customer";
+            const scopeName = isCustomer
+              ? "this customer"
+              : pendingBlockCompany?.companyName ?? "this company";
+            const title = isBlock
+              ? isCustomer
+                ? "Block this customer?"
+                : `Block for ${scopeName}?`
+              : isCustomer
+                ? "Unblock this customer?"
+                : `Unblock for ${scopeName}?`;
+            const description = isBlock
+              ? isCustomer
+                ? `${customer.businessName} won't be able to place new orders for any of their linked companies until you manually unblock this customer.`
+                : `${customer.businessName} won't be able to place new orders for ${scopeName} until you unblock. Orders against their other linked companies are not affected.`
+              : isCustomer
+                ? `${customer.businessName} will be able to place orders again immediately, across all their linked companies.`
+                : `${customer.businessName} will be able to place orders for ${scopeName} again immediately.`;
+            const confirmLabel = isBlock
+              ? isCustomer
+                ? "Yes, block this customer"
+                : "Yes, block for this company"
+              : isCustomer
+                ? "Yes, unblock this customer"
+                : "Yes, unblock for this company";
+            return (
               <>
-                <b>Heads up:</b> there is no auto-unblock — you'll need to
-                come back here and reverse this manually.
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {isBlock ? (
+                      <Ban className="h-5 w-5 text-red-600" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    )}
+                    {title}
+                  </DialogTitle>
+                  <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
+                <div
+                  className={
+                    isBlock
+                      ? "bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900"
+                      : "bg-emerald-50 border border-emerald-200 rounded-md p-3 text-xs text-emerald-900"
+                  }
+                >
+                  {isBlock ? (
+                    <>
+                      <b>Heads up:</b> there is no auto-unblock — you'll need to
+                      come back here and reverse this manually.
+                    </>
+                  ) : (
+                    <>
+                      The customer will see your storefront as available
+                      {isCustomer ? "" : " for this company"} the next time they
+                      check in.
+                    </>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPendingBlockToggle(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmBlockToggle}
+                    className={
+                      isBlock
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    }
+                  >
+                    {confirmLabel}
+                  </Button>
+                </DialogFooter>
               </>
-            ) : (
-              <>
-                The customer will see your storefront as available for
-                this brand the next time they check in.
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPendingBlockToggle(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmBlockToggle}
-              className={
-                pendingBlockToggle?.action === "block"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
-              }
-            >
-              {pendingBlockToggle?.action === "block"
-                ? "Yes, block for this company"
-                : "Yes, unblock for this company"}
-            </Button>
-          </DialogFooter>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

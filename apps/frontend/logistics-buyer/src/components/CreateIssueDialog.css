@@ -1,0 +1,52 @@
+/* app-create-issue-dialog (spec 00 §14.4) — scoped under .issue-dialog-container */
+.issue-dialog-container .dialog-wrapper { display: flex; flex-direction: column; max-height: 90vh; font-family: Inter, sans-serif; }
+@media (max-height: 600px) { .issue-dialog-container .dialog-wrapper { max-height: 95vh; } }
+.issue-dialog-container .dialog-header { background: #1a73e8; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+.issue-dialog-container .dialog-title { color: #fff; font-size: 24px; font-weight: 500; margin: 0; }
+.issue-dialog-container .close-btn {
+  background: transparent; border: none; color: #fff; font-size: 18px; width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .2s;
+}
+.issue-dialog-container .close-btn:hover { background: rgba(255, 255, 255, .15); }
+.issue-dialog-container .form-content { padding: 24px; background: #fff; overflow-y: auto; max-height: calc(90vh - 120px); }
+.issue-dialog-container .form-content::-webkit-scrollbar { width: 6px; }
+.issue-dialog-container .form-content::-webkit-scrollbar-track { background: #f1f1f1; }
+.issue-dialog-container .form-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+.issue-dialog-container .form-group { margin-bottom: 20px; }
+.issue-dialog-container .form-group label { display: block; font-size: 18px; font-weight: 500; color: #333; margin-bottom: 12px; }
+.issue-dialog-container .required { color: #f44336; }
+.issue-dialog-container select,
+.issue-dialog-container input,
+.issue-dialog-container textarea {
+  width: 100%; box-sizing: border-box; padding: 12px 16px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; color: #333; font-family: inherit; outline: none; background: #fff;
+}
+.issue-dialog-container select:focus,
+.issue-dialog-container input:focus,
+.issue-dialog-container textarea:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, .2); }
+.issue-dialog-container select {
+  height: 44px; border-color: #d1d1d1; appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231a73e8' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+}
+.issue-dialog-container select:disabled { background-color: #f5f5f5; color: #999; cursor: not-allowed; }
+.issue-dialog-container input { height: 44px; }
+.issue-dialog-container textarea { min-height: 100px; resize: vertical; }
+.issue-dialog-container .char-counter { font-size: 12px; color: #666; text-align: right; margin-top: 4px; }
+.issue-dialog-container .selection-confirmation { margin-top: 10px; background: #e8f5e8; border: 1px solid #4caf50; color: #2e7d32; font-size: 13px; border-radius: 4px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.issue-dialog-container .selection-confirmation i { color: #4caf50; }
+.issue-dialog-container .dialog-actions {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 16px; padding: 16px 24px; background: #f8f9fa; border-top: 1px solid #eaeaea; flex-shrink: 0;
+}
+.issue-dialog-container .cancel-btn,
+.issue-dialog-container .create-btn { padding: 10px 20px; border-radius: 4px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background .2s; }
+.issue-dialog-container .cancel-btn { background: #f0f0f0; color: #333; }
+.issue-dialog-container .cancel-btn:hover { background: #e0e0e0; }
+.issue-dialog-container .create-btn { background: #1a73e8; color: #fff; }
+.issue-dialog-container .create-btn:hover:not(:disabled) { background: #1565c0; }
+.issue-dialog-container .create-btn:disabled { background: #b3d4fc; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .issue-dialog-container .form-content { padding: 16px; }
+  .issue-dialog-container .dialog-actions { flex-direction: column; }
+  .issue-dialog-container .cancel-btn,
+  .issue-dialog-container .create-btn { width: 100%; justify-content: center; }
+}

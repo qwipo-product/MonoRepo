@@ -1,0 +1,66 @@
+/* Single / multi trip map modals + route info panel (spec 04 §7). Scoped under .trip-maps. */
+.trip-maps.map-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.trip-maps .map-modal-content { background: #fff; border-radius: 8px; width: 95%; height: 90%; max-width: 1800px; box-shadow: 0 4px 20px #0003; display: flex; flex-direction: column; overflow: hidden; }
+.trip-maps .map-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+.trip-maps .map-modal-header h3 { margin: 0; font-size: 18px; color: #333; font-weight: 500; }
+.trip-maps .map-close-btn { background: none; border: none; font-size: 24px; color: #666; cursor: pointer; line-height: 1; padding: 0 4px; }
+.trip-maps .map-close-btn:hover { color: #333; }
+.trip-maps .map-modal-body { flex: 1; display: flex; flex-direction: row; min-height: 0; }
+.trip-maps .map-area { position: relative; flex: 1; min-width: 0; }
+.trip-maps .map-canvas { width: 100%; height: 100%; }
+.trip-maps .map-view-toggle { position: absolute; top: 8px; left: 8px; z-index: 1000; display: flex; gap: 12px; align-items: center; background: #fffffff2; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 12px; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); font-size: 12px; color: #374151; }
+.trip-maps .map-view-toggle label { display: inline-flex; align-items: center; gap: 4px; margin: 0; cursor: pointer; }
+.trip-maps .map-view-toggle input { margin: 0; accent-color: #2563eb; }
+
+/* route info panel */
+.trip-maps .trip-route-info-panel { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid #e5e7eb; overflow-y: auto; }
+.trip-maps .rip-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 40px 16px; font-size: 13px; color: #666; }
+.trip-maps .rip-spinner { width: 32px; height: 32px; border: 3px solid #f3f3f3; border-top-color: #4f46e5; border-radius: 50%; animation: rip-spin 1s linear infinite; }
+@keyframes rip-spin { to { transform: rotate(360deg); } }
+.trip-maps .rip-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px; text-align: center; font-size: 13px; color: #9ca3af; }
+.trip-maps .rip-empty i { font-size: 24px; color: #d1d5db; }
+.trip-maps .rip-section { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; }
+.trip-maps .rip-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.trip-maps .rip-title { font-size: 14px; font-weight: bold; color: #1a1a2e; }
+.trip-maps .direction-badge { font-size: 10px; font-weight: 600; color: #6366f1; background: #eef2ff; border-radius: 999px; padding: 2px 8px; margin-left: auto; white-space: nowrap; }
+.trip-maps .rip-line { font-size: 11px; color: #666; line-height: 1.6; }
+.trip-maps .rip-kpi { background: #f8fafc; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+.trip-maps .rip-kpi-row { display: flex; align-items: center; justify-content: space-between; }
+.trip-maps .rip-kpi-label { font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: .3px; }
+.trip-maps .rip-kpi-value { font-size: 14px; font-weight: 700; color: #333; }
+.trip-maps .rip-kpi-value.na { color: #9ca3af; }
+.trip-maps .rip-toggle, .trip-maps .route-toggle { background: none; border: none; padding: 0; font-size: 10px; font-weight: 600; color: #6366f1; cursor: pointer; }
+.trip-maps .rip-toggle:hover, .trip-maps .route-toggle:hover { color: #4f46e5; }
+.trip-maps .rip-expanded { margin-top: 8px; }
+.trip-maps .rip-explanation { font-size: 10px; color: #666; font-style: italic; line-height: 1.5; margin-bottom: 6px; }
+.trip-maps .coherence-box { background: #fff7ed; border-left: 3px solid #f59e0b; border-radius: 4px; padding: 8px 10px; font-size: 10px; color: #78350f; margin-top: 6px; }
+.trip-maps .coherence-summary { font-weight: bold; color: #78350f; margin-bottom: 4px; }
+.trip-maps .coherence-details { margin: 0 0 4px; padding-left: 16px; }
+.trip-maps .coherence-details li { margin-bottom: 2px; }
+.trip-maps .coherence-footer { font-style: italic; color: #a16207; }
+.trip-maps .coherence-ok { font-size: 11px; color: #16a34a; margin-top: 6px; }
+.trip-maps .rip-beats-title { font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.trip-maps .rip-beat-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.trip-maps .rip-beat-tag { background: #f3f4f6; border-left: 3px solid #6366f1; border-radius: 4px; padding: 3px 8px; font-size: 10px; color: #555; }
+.trip-maps .rip-no-beats { font-size: 11px; color: #9ca3af; }
+
+/* multi-trip sidebar */
+.trip-maps .multi-trip-sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid #e5e7eb; overflow-y: auto; }
+.trip-maps .show-all-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px 16px; border: none; background: #1a1a2e; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.trip-maps .show-all-btn i { font-size: 14px; }
+.trip-maps .show-all-btn:hover { background: #2a2a4e; }
+.trip-maps .show-all-btn.active { background: #3b82f6; }
+.trip-maps .route-item { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.trip-maps .route-item:hover { background: #f5f5ff; }
+.trip-maps .route-item.active { background: #eef2ff; }
+.trip-maps .route-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.trip-maps .route-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.trip-maps .route-trip-number { font-size: 14px; font-weight: bold; color: #1a1a2e; }
+.trip-maps .route-item-details { font-size: 11px; color: #666; padding-left: 20px; line-height: 1.6; }
+.trip-maps .route-kpi { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-radius: 4px; padding: 4px 8px; margin: 6px 0 4px 20px; }
+.trip-maps .route-kpi-label { font-size: 10px; text-transform: uppercase; color: #888; }
+.trip-maps .route-kpi-value { font-size: 12px; font-weight: 700; color: #333; }
+.trip-maps .route-toggle { margin-left: 20px; }
+.trip-maps .route-expanded { padding-left: 20px; margin-top: 6px; }
+.trip-maps .route-beats { margin-top: 6px; }
+.trip-maps .route-beat-tag { background: #f3f4f6; border-left: 3px solid #6366f1; border-radius: 4px; padding: 3px 8px; font-size: 10px; color: #555; margin-bottom: 4px; }

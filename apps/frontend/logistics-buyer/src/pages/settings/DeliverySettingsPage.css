@@ -1,0 +1,114 @@
+/* Delivery Settings (spec 08 §3.4). Scoped under .delivery-settings-page. */
+.delivery-settings-page .settings-section { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px #0000000d; padding: 24px; margin-bottom: 12px; }
+.delivery-settings-page .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; }
+.delivery-settings-page .section-header h2 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.delivery-settings-page .header-actions { display: flex; align-items: center; gap: 10px; }
+.delivery-settings-page .section-title-group { display: flex; align-items: center; gap: 14px; }
+.delivery-settings-page .section-subtitle { font-size: 13px; color: #888; margin: 4px 0 0; }
+.delivery-settings-page .section-subtitle strong { color: #555; font-weight: 600; }
+
+.delivery-settings-page .save-config-btn { display: inline-flex; align-items: center; gap: 6px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.delivery-settings-page .save-config-btn:hover:not(:disabled) { background: #2d2d44; }
+.delivery-settings-page .save-config-btn:disabled { background: #ccc; cursor: not-allowed; }
+.delivery-settings-page .reset-btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #ddd; border-radius: 8px; color: #666; font-size: 13px; padding: 8px 16px; cursor: pointer; white-space: nowrap; }
+.delivery-settings-page .reset-btn:hover { background: #f9f9f9; }
+
+.delivery-settings-page .config-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.delivery-settings-page .config-card { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #eee; border-radius: 10px; transition: border-color .2s; }
+.delivery-settings-page .config-card:hover { border-color: #d0d0d0; }
+.delivery-settings-page .config-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 10px; background: #f0f0ff; display: flex; align-items: center; justify-content: center; }
+.delivery-settings-page .config-icon i { color: #4a4a8a; font-size: 16px; }
+.delivery-settings-page .config-details { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.delivery-settings-page .config-label { font-size: 14px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.delivery-settings-page .config-hint { font-size: 12px; color: #999; margin-top: 2px; }
+.delivery-settings-page .config-input-wrap { display: flex; align-items: center; gap: 8px; }
+.delivery-settings-page .config-input { width: 100px; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 8px; text-align: center; font-weight: 600; font-size: 14px; background: #fafafa; -moz-appearance: textfield; appearance: textfield; }
+.delivery-settings-page .config-input::-webkit-outer-spin-button, .delivery-settings-page .config-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.delivery-settings-page .config-input:focus { outline: none; border-color: #4a90e2; }
+.delivery-settings-page .config-unit { font-size: 13px; color: #888; }
+
+.delivery-settings-page .route-engine-card { grid-column: 1 / -1; align-items: flex-start; }
+.delivery-settings-page .route-engine-options { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.delivery-settings-page .route-engine-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 8px; cursor: pointer; margin: 0; transition: all .2s; }
+.delivery-settings-page .route-engine-option input { margin-top: 3px; accent-color: #4f46e5; }
+.delivery-settings-page .route-engine-option.selected { border-color: #4f46e5; background: #f5f5ff; }
+.delivery-settings-page .route-engine-option-title { display: flex; align-items: center; gap: 8px; }
+.delivery-settings-page .route-engine-option-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.delivery-settings-page .route-engine-option.selected .route-engine-option-name { color: #4f46e5; }
+.delivery-settings-page .route-engine-default-badge { font-size: 11px; font-weight: 600; color: #1a7f37; background: #e6f4ea; border-radius: 10px; padding: 2px 8px; }
+.delivery-settings-page .route-engine-option-desc { font-size: 12px; color: #777; margin: 4px 0 0; line-height: 1.5; }
+
+/* OTP toggles */
+.delivery-settings-page .otp-toggle-wrap { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.delivery-settings-page .otp-status-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+.delivery-settings-page .otp-status-label.enabled { color: #1e7e34; }
+.delivery-settings-page .otp-status-label.disabled { color: #999; }
+.delivery-settings-page .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #1e7e34; display: inline-block; }
+.delivery-settings-page .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; }
+.delivery-settings-page .toggle-switch input { opacity: 0; width: 0; height: 0; }
+.delivery-settings-page .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 24px; transition: .3s; }
+.delivery-settings-page .toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+.delivery-settings-page .toggle-switch input:checked + .toggle-slider { background: #4a6cf7; }
+.delivery-settings-page .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ONDC */
+.delivery-settings-page .ondc-config-section .section-header { margin-bottom: 0; }
+.delivery-settings-page .ondc-header-actions { display: flex; align-items: center; gap: 10px; }
+.delivery-settings-page .ondc-select-wrap { position: relative; width: 200px; }
+.delivery-settings-page .ondc-category-select { width: 100%; padding: 8px 32px 8px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; background: #fafafa; appearance: none; -webkit-appearance: none; cursor: pointer; }
+.delivery-settings-page .ondc-category-select:focus { outline: none; border-color: #4a90e2; }
+.delivery-settings-page .ondc-select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #888; pointer-events: none; }
+
+/* Logistics */
+.delivery-settings-page .logistics-mode-radios { display: flex; gap: 32px; }
+.delivery-settings-page .logistics-mode-option { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #333; cursor: pointer; margin: 0; }
+.delivery-settings-page .logistics-mode-option input { width: 18px; height: 18px; accent-color: #4a90e2; cursor: pointer; }
+
+/* Exclusions */
+.delivery-settings-page .add-customer-btn { display: inline-flex; align-items: center; gap: 6px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.delivery-settings-page .add-customer-btn:hover { background: #2d2d44; }
+.delivery-settings-page .table-container { overflow-x: auto; }
+.delivery-settings-page .customers-table { width: 100%; border-collapse: collapse; }
+.delivery-settings-page .customers-table th { text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; padding: 12px 16px; border-bottom: 1px solid #eee; letter-spacing: .03em; }
+.delivery-settings-page .customers-table td { padding: 12px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f3f3f3; }
+.delivery-settings-page .customers-table tbody tr:hover { background: #f9f9f9; }
+.delivery-settings-page .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+.delivery-settings-page .status-badge.active { color: #1e7e34; background: #e6f4ea; }
+.delivery-settings-page .status-badge.inactive { color: #dc3545; background: #fde8ea; }
+.delivery-settings-page .action-buttons { display: flex; gap: 8px; }
+.delivery-settings-page .edit-btn, .delivery-settings-page .delete-btn { background: transparent; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; }
+.delivery-settings-page .edit-btn { color: #4a90e2; }
+.delivery-settings-page .delete-btn { color: #dc3545; }
+.delivery-settings-page .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 24px; padding-top: 16px; font-size: 13px; color: #666; }
+.delivery-settings-page .rows-per-page { display: flex; align-items: center; gap: 8px; }
+.delivery-settings-page .rows-per-page select { border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 13px; }
+.delivery-settings-page .page-nav { display: flex; gap: 8px; }
+.delivery-settings-page .page-btn { width: 30px; height: 30px; border: 1px solid #ddd; border-radius: 4px; background: #fff; color: #333; cursor: pointer; }
+.delivery-settings-page .page-btn:disabled { color: #ccc; border-color: #eee; cursor: not-allowed; }
+.delivery-settings-page .empty-state { text-align: center; padding: 60px; color: #999; font-size: 15px; }
+
+/* Add / Edit exclusion modal */
+.delivery-settings-page .modal-overlay { position: fixed; inset: 0; background: #00000080; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.delivery-settings-page .modal-content { width: 500px; max-width: 90%; background: #fff; border-radius: 12px; box-shadow: 0 8px 30px #00000026; }
+.delivery-settings-page .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #eee; }
+.delivery-settings-page .modal-header h3 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.delivery-settings-page .close-btn { background: none; border: none; color: #999; font-size: 16px; cursor: pointer; }
+.delivery-settings-page .close-btn:hover { color: #333; }
+.delivery-settings-page .modal-body { padding: 24px; }
+.delivery-settings-page .form-group { margin-bottom: 20px; }
+.delivery-settings-page .form-group > label { display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 8px; }
+.delivery-settings-page .required { color: #dc3545; }
+.delivery-settings-page .form-input { width: 100%; border: none; background-color: #f5f5f5; padding: 12px 16px; border-radius: 8px; font-size: 14px; color: #333; }
+.delivery-settings-page .form-input:focus { outline: 2px solid #e0e0ff; box-shadow: none; }
+.delivery-settings-page .form-input.form-select { appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 12px 10px; }
+.delivery-settings-page .radio-group { display: flex; gap: 24px; }
+.delivery-settings-page .radio-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333; cursor: pointer; margin: 0; }
+.delivery-settings-page .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #eee; }
+.delivery-settings-page .modal-footer > * { margin: 0; }
+.delivery-settings-page .cancel-btn { background: #fff; border: 1px solid #ddd; color: #666; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+.delivery-settings-page .cancel-btn:hover { background: #f5f5f5; }
+.delivery-settings-page .save-btn { background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.delivery-settings-page .save-btn:hover:not(:disabled) { background: #2d2d44; }
+.delivery-settings-page .save-btn:disabled { background: #ccc; cursor: not-allowed; }

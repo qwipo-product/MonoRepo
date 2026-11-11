@@ -1,0 +1,45 @@
+{
+  "name": "@mockups/logistics-buyer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Logistics Buyer console for orders, customers, route planning and delivery trips using synthetic data.",
+  "scripts": {
+    "dev": "vite --port 5180 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 6180 --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo .vite *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@emotion/react": "catalog:",
+    "@emotion/styled": "catalog:",
+    "@mockups/version-badge": "workspace:*",
+    "@mockups/web-tokens": "workspace:*",
+    "@mui/material": "catalog:",
+    "@mui/x-date-pickers": "catalog:",
+    "dayjs": "catalog:",
+    "leaflet": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-leaflet": "catalog:",
+    "react-router": "catalog:",
+    "sweetalert2": "catalog:",
+    "xlsx": "catalog:"
+  },
+  "devDependencies": {
+    "@mockups/eslint-config": "workspace:*",
+    "@mockups/tsconfig": "workspace:*",
+    "@tailwindcss/vite": "catalog:",
+    "@types/leaflet": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "eslint": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

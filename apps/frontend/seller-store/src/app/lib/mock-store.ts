@@ -1,6 +1,9 @@
-// localStorage-backed mock store for admin flow (pending requests, active sellers,
+﻿// localStorage-backed mock store for admin flow (pending requests, active sellers,
 // seller KYC, permissions, connectors config, managed companies).
 // Phase 1 is UI-only, so everything is client-side.
+
+import type { DeliveryDay } from "./customers-data";
+import type { CommercialFeeConfig } from "./admin-catalog";
 
 export type RequestStatus = "pending" | "approved" | "rejected";
 
@@ -103,16 +106,87 @@ export interface SellerPermissions {
   update: boolean;
 }
 
+/** How the seller operates for ONE linked company. Chosen while
+ *  linking the company; each linked company carries its own mode. */
+export type OperationMode = "distributor" | "wholesaler";
+
+/**
+ * Who may order from this company on the buyer side. Only meaningful
+ * for DISTRIBUTOR mappings — a distributor company can require the
+ * customer to hold a DMS registration (company-specific customer ID)
+ * before the catalogue unlocks. Wholesaler mappings never restrict.
+ *
+ *  - "all-customers"    any customer can purchase (default)
+ *  - "registered-only"  only customers registered in the company's DMS
+ *                       can purchase
+ */
+export type PurchaseEligibility = "all-customers" | "registered-only";
+
 /** Selection of company + (optionally) specific brands for the seller.
  *  Empty `brandIds` means "all brands of that company". Companies/brands
  *  reference the admin-catalog data (src/app/lib/admin-catalog.ts). */
 export interface CompanyBrandSelection {
   companyId: string;
   brandIds: string[];
+  /** Distributor or Wholesaler for THIS company. Legacy records that
+   *  predate the field are treated as "distributor". */
+  operationMode?: OperationMode;
+  /** Purchase gate for THIS company — mandatory for distributor
+   *  mappings, chosen at tag time. Legacy records (and wholesaler
+   *  mappings, where it's meaningless) are treated as "all-customers". */
+  purchaseEligibility?: PurchaseEligibility;
+  /** When true, all SKUs for this company and its brands are auto-synced to the seller's MySKU list. */
+  syncSkusToMySku?: boolean;
+  /** Seller-level override of the company's commercial fee, for THIS company
+   *  only. When set, it takes precedence over Company.commercialFee for this
+   *  seller; the company-level config itself is left untouched. Absent means
+   *  the seller inherits the company-level commercial fee. */
+  commercialFeeOverride?: CommercialFeeConfig;
 }
 
-/** Seller business type. Wholesaler is reserved for Phase 2. */
-export type SellerType = "distributor" | "wholesaler";
+/** Seller business type — no longer chosen manually. Calculated from
+ *  the operation modes of the linked companies: all distributor →
+ *  "distributor", all wholesaler → "wholesaler", a mix → "hybrid". */
+export type SellerType = "distributor" | "wholesaler" | "hybrid";
+
+/**
+ * Calculate the seller type from company mappings. Sellers with no
+ * linked companies fall back to their stored type (legacy records) or
+ * "distributor".
+ */
+export function deriveSellerType(
+  seller: Pick<Seller, "companyBrandSelections" | "sellerType">,
+): SellerType {
+  const selections = seller.companyBrandSelections ?? [];
+  if (selections.length === 0) return seller.sellerType ?? "distributor";
+  const hasDistributor = selections.some(
+    (s) => (s.operationMode ?? "distributor") === "distributor",
+  );
+  const hasWholesaler = selections.some(
+    (s) => s.operationMode === "wholesaler",
+  );
+  if (hasDistributor && hasWholesaler) return "hybrid";
+  return hasWholesaler ? "wholesaler" : "distributor";
+}
+
+/** One wholesaler delivery polygon. A seller can hold SEVERAL — e.g.
+ *  one zone for Monday, another for Tuesday — but none is company-
+ *  specific: every polygon applies to EVERY company mapped as
+ *  Wholesaler, including companies linked later. */
+export interface WholesalerPolygon {
+  id: string;
+  fileName: string;
+  data?: unknown;
+  updatedAt: string; // ISO
+  /** Beat name for this zone — same idea as a distributor beat, but
+   *  unique per SELLER (not per company), since a wholesale zone is
+   *  never company-specific. Optional only so zones saved before beat
+   *  names existed still load; the dialog requires one on every save. */
+  beatName?: string;
+  /** Days this zone is served on — picked in the Add Wholesale Beat
+   *  dialog (beat name + days + polygon; no company). */
+  deliveryDays?: DeliveryDay[];
+}
 
 export interface Seller {
   id: string;
@@ -120,7 +194,10 @@ export interface Seller {
   email: string;
   phone: string;
   businessName: string;
-  /** Business type — defaults to "distributor" in Phase 1. */
+  /** Business type — CALCULATED from linked-company operation modes
+   *  (see deriveSellerType). Kept on the record so list surfaces don't
+   *  recompute, and as the fallback for sellers with no linked
+   *  companies. Never edited manually. */
   sellerType?: SellerType;
   city: string;
   /** Structured address fields captured during seller creation. PIN drives
@@ -142,12 +219,16 @@ export interface Seller {
   managedCompanies: string[]; // legacy Qwipo company ids
   /** Companies & brands attached to this seller (added via Add Seller flow) */
   companyBrandSelections?: CompanyBrandSelection[];
+  /** Legacy single polygon — superseded by wholesalerPolygons; kept
+   *  so records saved before the multi-polygon change still load. */
+  wholesalerPolygon?: WholesalerPolygon | null;
+  /** Day-wise wholesaler zones. Each applies to ALL wholesaler-mode
+   *  companies; uploaded from the Delivery Beats – Wholesaler section. */
+  wholesalerPolygons?: WholesalerPolygon[];
   approvedAt?: string;
 }
 
 const REQUESTS_KEY = "qwipo.mock.requests";
-// Bumped to v5 — older v4 records were seeded before the sellerType field
-// existed; v5 forces a re-seed so Manage Seller shows the business type.
 const SELLERS_KEY = "qwipo.mock.sellers.v5";
 
 // ---- Default factory helpers ----
@@ -504,7 +585,19 @@ export function getSellerById(id: string): Seller | undefined {
 
 export function getSellerByEmail(email: string): Seller | undefined {
   const normalized = email.trim().toLowerCase();
-  return getSellers().find((s) => s.email.toLowerCase() === normalized);
+  if (!normalized) return undefined;
+  return getSellers().find(
+    (s) => (s.email ?? "").trim().toLowerCase() === normalized,
+  );
+}
+
+/** Mobile numbers are login identifiers too, so lookups compare bare digits. */
+export function getSellerByPhone(phone: string): Seller | undefined {
+  const normalized = phone.replace(/\D/g, "").slice(-10);
+  if (normalized.length !== 10) return undefined;
+  return getSellers().find(
+    (s) => (s.phone ?? "").replace(/\D/g, "").slice(-10) === normalized,
+  );
 }
 
 function writeSeller(id: string, update: (s: Seller) => Seller): Seller | null {
@@ -614,7 +707,67 @@ export function updateCompanyBrandSelections(
   id: string,
   selections: CompanyBrandSelection[],
 ): Seller | null {
-  return writeSeller(id, (s) => ({ ...s, companyBrandSelections: selections }));
+  // Seller type follows the company mappings automatically — every
+  // write recalculates it so the profile never needs manual upkeep.
+  return writeSeller(id, (s) => {
+    const next = { ...s, companyBrandSelections: selections };
+    return { ...next, sellerType: deriveSellerType(next) };
+  });
+}
+
+// ---- Wholesaler serviceability polygons (day-wise, seller-wide) ----
+
+/** Read a seller's wholesaler zones, folding a legacy single-polygon
+ *  record (pre multi-polygon) into the array shape. */
+export function getSellerWholesalerPolygons(
+  seller: Pick<Seller, "wholesalerPolygon" | "wholesalerPolygons">,
+): WholesalerPolygon[] {
+  if (seller.wholesalerPolygons) return seller.wholesalerPolygons;
+  if (seller.wholesalerPolygon)
+    return [{ id: "wp-legacy", ...seller.wholesalerPolygon }];
+  return [];
+}
+
+export function makeWholesalerPolygonId(): string {
+  return `wp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Add or replace one wholesaler polygon (matched by id). Clears the
+ *  legacy single-polygon field by migrating it into the array first. */
+export function upsertSellerWholesalerPolygon(
+  id: string,
+  polygon: WholesalerPolygon,
+): Seller | null {
+  return writeSeller(id, (s) => {
+    const list = getSellerWholesalerPolygons(s);
+    const exists = list.some((p) => p.id === polygon.id);
+    const next = exists
+      ? list.map((p) => (p.id === polygon.id ? polygon : p))
+      : [...list, polygon];
+    return { ...s, wholesalerPolygon: null, wholesalerPolygons: next };
+  });
+}
+
+export function removeSellerWholesalerPolygon(
+  id: string,
+  polygonId: string,
+): Seller | null {
+  return writeSeller(id, (s) => ({
+    ...s,
+    wholesalerPolygon: null,
+    wholesalerPolygons: getSellerWholesalerPolygons(s).filter(
+      (p) => p.id !== polygonId,
+    ),
+  }));
+}
+
+/** Delete every wholesaler zone — the card-level trash action. */
+export function clearSellerWholesalerPolygons(id: string): Seller | null {
+  return writeSeller(id, (s) => ({
+    ...s,
+    wholesalerPolygon: null,
+    wholesalerPolygons: [],
+  }));
 }
 
 // Toggle a seller's active flag. Inactive sellers cannot log in or have new
@@ -630,7 +783,6 @@ export function addSeller(input: {
   email?: string;
   phone: string;
   businessName: string;
-  sellerType?: SellerType;
   city: string;
   pinCode?: string;
   state?: string;
@@ -654,7 +806,11 @@ export function addSeller(input: {
     fullAddress: input.fullAddress,
     imageUrl: input.imageUrl ?? null,
     isActive: true,
-    sellerType: input.sellerType ?? "distributor",
+    // Never chosen manually — calculated from the linked companies'
+    // operation modes.
+    sellerType: deriveSellerType({
+      companyBrandSelections: input.companyBrandSelections,
+    }),
     kyc: { status: "not_started" },
     connectors: {
       bizom: { status: "not_connected", config: emptyBizomConfig() },
@@ -690,7 +846,28 @@ export function applyDataMode(mode: "demo" | "empty") {
       localStorage.setItem(SELLERS_KEY, JSON.stringify([]));
     } else {
       localStorage.setItem(REQUESTS_KEY, JSON.stringify(SEED_REQUESTS));
-      localStorage.setItem(SELLERS_KEY, JSON.stringify(SEED_SELLERS));
+      // Demo mode restores the seeded roster, but sellers added through
+      // Add Seller (or an approved request) are the operator's own data —
+      // carry them over. Without this, a seller created in one session is
+      // wiped by the very next login, and the mobile / email ID captured
+      // on that record would stop resolving at sign-in.
+      const seededIds = new Set(SEED_SELLERS.map((s) => s.id));
+      let created: Seller[] = [];
+      try {
+        const raw = localStorage.getItem(SELLERS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as Seller[];
+          if (Array.isArray(parsed)) {
+            created = parsed.filter((s) => s && !seededIds.has(s.id));
+          }
+        }
+      } catch {
+        /* unreadable roster — fall back to the plain seed */
+      }
+      localStorage.setItem(
+        SELLERS_KEY,
+        JSON.stringify([...created, ...SEED_SELLERS]),
+      );
     }
   } catch {
     /* localStorage may be unavailable in SSR — silent no-op */
