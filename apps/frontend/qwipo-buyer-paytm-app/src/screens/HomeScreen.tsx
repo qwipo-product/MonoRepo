@@ -464,7 +464,12 @@ function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => 
       <div {...railProps} className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg">
         {banners.map((b, j) => (
           <button key={j} onClick={onOpen} aria-label="Open offers" className="w-full shrink-0 snap-start">
-            <img src={encodeURI(b)} alt="" className="h-40 w-full object-cover" />
+            {/* The artwork is 2:1, so the slot is too. A fixed height held the
+                banner at 160px however wide the rail got, which on a tablet
+                left a letterbox roughly five times wider than it was tall and
+                threw most of the picture away. Height now follows width, the
+                way the category tiles already work. */}
+            <img src={encodeURI(b)} alt="" className="aspect-[2/1] w-full object-cover" />
           </button>
         ))}
       </div>
