@@ -58,8 +58,12 @@ export const DISTRIBUTOR_DELIVERY: Record<string, DistributorDelivery> = {
 };
 
 /** What the cart calls the cross-dock store when it stands in for the sellers
- *  behind it. The buyer orders from distributors; the goods arrive as one. */
-export const CDS_NAME = 'CDS Partners';
+ *  behind it. The buyer orders from distributors; the goods arrive as one.
+ *
+ *  Named for the retailer, not for us: "CDS Partners" described the
+ *  distributors on the far side of an arrangement the shop has no reason to
+ *  know about. "Qwipo CDS Hub" at least says it is a place, and ours. */
+export const CDS_NAME = 'Qwipo CDS Hub';
 
 /** The minimum the cross-dock store ships on.
 
