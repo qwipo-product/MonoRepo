@@ -34,6 +34,12 @@ export const DISTRIBUTORS: Distributor[] = [
   { id: 'd5', logo: './brand-logos/MTR.png', title: 'MTR Masala', name: 'Balaji Distributors' },
   { id: 'd6', logo: './brand-logos/Double Horse.png', title: 'Double Horse', name: 'Vijaya Traders' },
   { id: 'd7', logo: './brand-logos/Tata.png', title: 'Tata Salt & Tea', name: 'Tata Consumer Products' },
+  /* Cross-dock distributors. They carry brands the bigger distributors carry
+     too — which is the point: four small orders become one delivery. */
+  { id: 'd8', logo: './brand-logos/GRB.png', title: 'GRB Sweets', name: 'Lakshmi Agencies' },
+  { id: 'd9', logo: './brand-logos/Eastern.png', title: 'Eastern Masala', name: 'Venkateswara Traders' },
+  { id: 'd10', logo: './brand-logos/Madhur.png', title: 'Madhur Sugar', name: 'Nandi Distributors' },
+  { id: 'd11', logo: './brand-logos/Cycle.png', title: 'Cycle Agarbatti', name: 'Godavari Agencies' },
 ];
 
 export const DIST_CATEGORIES: HomeCategory[] = [

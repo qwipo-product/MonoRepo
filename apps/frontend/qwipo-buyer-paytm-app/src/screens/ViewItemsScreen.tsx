@@ -16,11 +16,14 @@ export function ViewItemsScreen({
   seller,
   onBack,
   onAddMore,
+  onAddMoreFrom,
   onItemTap,
 }: {
   seller: CartSeller;
   onBack: () => void;
   onAddMore: () => void;
+  /** Add more from one named cross-dock distributor, from its own divider. */
+  onAddMoreFrom?: (seller: string) => void;
   onItemTap: (productId: string) => void;
 }) {
   const [rawItems, setItems] = useState(seller.items);
@@ -38,6 +41,20 @@ export function ViewItemsScreen({
     (s, i) => s + Math.max(0, (i.product.mrp - i.product.price) * i.quantity),
     0
   );
+  /* Which seller each line belongs to, and where the list changes hands.
+     The cart hands over `groups` already in order, so walking their lengths
+     gives both answers without re-grouping the lines here. */
+  const groups = seller.groups ?? [];
+  const sellerOf = (idx: number): string => {
+    let n = 0;
+    for (const g of groups) {
+      n += g.items.length;
+      if (idx < n) return g.seller;
+    }
+    return seller.name;
+  };
+  const dividerBefore = (idx: number): boolean => idx === 0 || sellerOf(idx) !== sellerOf(idx - 1);
+
   const met = subtotal >= seller.mov;
   const remaining = Math.max(0, seller.mov - subtotal);
   // MOW — recomputed live from the remaining items.
@@ -87,9 +104,14 @@ export function ViewItemsScreen({
           {savings > 0 && (
             <span className="text-xs font-medium text-success-foreground">You save {formatInr(savings)}</span>
           )}
-          <Button size="sm" variant="secondary" onClick={onAddMore}>
-            <Plus size={14} /> Add more
-          </Button>
+          {/* A cross-dock card has four catalogues behind it, so "Add more"
+              sits on each seller's own divider below rather than up here,
+              where it could not say which seller it meant. */}
+          {!seller.cds && (
+            <Button size="sm" variant="secondary" onClick={onAddMore}>
+              <Plus size={14} /> Add more
+            </Button>
+          )}
         </div>
       </div>
 
@@ -125,8 +147,22 @@ export function ViewItemsScreen({
           />
         ) : (
           items.map((item, idx) => (
+            <div key={`${item.product.id}-${idx}`}>
+            {/* On a cross-dock card the lines arrive grouped by seller, so a
+                divider goes in wherever the seller changes. The buyer is still
+                buying from distributors — the store only consolidates — and
+                "Add more" belongs to the seller it sits under. */}
+            {seller.cds && dividerBefore(idx) && (
+              <div className={`flex items-center justify-between gap-3 ${idx === 0 ? 'pb-2' : 'pb-2 pt-4'}`}>
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                  {sellerOf(idx)}
+                </span>
+                <Button size="sm" variant="secondary" onClick={() => onAddMoreFrom?.(sellerOf(idx))}>
+                  <Plus size={14} /> Add more
+                </Button>
+              </div>
+            )}
             <div
-              key={`${item.product.id}-${idx}`}
               className="relative flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
             >
               <button
@@ -182,6 +218,7 @@ export function ViewItemsScreen({
                   />
                 </div>
               </div>
+            </div>
             </div>
           ))
         )}

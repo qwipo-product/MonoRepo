@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, SearchX } from 'lucide-react';
 import { EmptyState, SegmentedControl } from '@mockups/ui';
 import type { ScreenId } from '../review/screenIndex';
 import type { Navigate } from '../nav';
 import { BrandTile } from '../components/BrandTile';
 import { deliveryFooter } from '../components/DeliveryFooter';
+import { facetsForSeller } from '../data/sellerFacets';
+import { deliveryRank, isCdsSeller } from '../data/delivery';
 import { SearchField } from '../components/SearchField';
 import type { HomeCategory, HomeBrand, Distributor } from '../data/home';
 import { useEmptyable } from '../review/demoState';
@@ -32,6 +34,7 @@ export function SellerBrowseScreen({
   productListId = 'listing',
   initialTab,
   onTabChange,
+  promo,
   onBack,
   onNavigate,
 }: {
@@ -48,6 +51,8 @@ export function SellerBrowseScreen({
   /** Reports the tab the buyer switched to, so Back can return them to it —
    *  the screen's own tab state is invisible to the navigator otherwise. */
   onTabChange?: (t: BrowseTab) => void;
+  /** Optional card pinned above the list on every tab (DMS-registration entry). */
+  promo?: ReactNode;
   onBack: () => void;
   onNavigate: Navigate;
 }) {
@@ -66,7 +71,21 @@ export function SellerBrowseScreen({
 
   const catList = useMemo(() => (q ? categories.filter((c) => c.name.toLowerCase().includes(q)) : categories), [q, categories]);
   const brandList = useMemo(() => (q ? brands.filter((b) => b.name.toLowerCase().includes(q)) : brands), [q, brands]);
-  const sellerList = useMemo(() => (q ? sellers.filter((d) => d.name.toLowerCase().includes(q)) : sellers), [q, sellers]);
+  /* Soonest delivery first. A buyer scanning this list is choosing who can
+     get goods to the shop quickest, so the sellers who deliver tomorrow lead
+     it and the ones waiting on a weekly round fall to the bottom. Ties keep
+     the catalogue's own order, so the list never shuffles between renders. */
+  const sellerList = useMemo(() => {
+    const matched = q ? sellers.filter((d) => d.name.toLowerCase().includes(q)) : sellers;
+    return matched
+      .map((d, i) => ({ d, i, rank: deliveryRank(d.name), cds: isCdsSeller(d.name) }))
+      /* Among sellers who deliver equally soon, the cross-dock ones lead. Both
+         say tomorrow, but a CDS seller is on a daily collection that is the
+         point of the arrangement, while the others say tomorrow only because
+         no delivery terms were ever set for them and that is the default. */
+      .sort((a, b) => a.rank - b.rank || Number(b.cds) - Number(a.cds) || a.i - b.i)
+      .map((x) => x.d);
+  }, [q, sellers]);
 
   const active = useEmptyable<HomeCategory | HomeBrand | Distributor>(
     tab === 'categories' ? catList : tab === 'brands' ? brandList : sellerList
@@ -109,6 +128,7 @@ export function SellerBrowseScreen({
       {/* Keyed by tab: the panel animates in on a switch, and the list
           starts at the top rather than at the last tab's scroll offset. */}
       <div key={tab} className="no-scrollbar animate-screen flex-1 overflow-y-auto bg-background-subtle p-4">
+        {promo && <div className="mb-4">{promo}</div>}
         {active.length === 0 ? (
           <EmptyState
             icon={<SearchX strokeWidth={1.75} />}
@@ -153,7 +173,13 @@ export function SellerBrowseScreen({
           </div>
         ) : (
           <div className="space-y-3">
-            {sellerList.map((d) => (
+            {sellerList.map((d) => {
+              /* This seller's own book, not the catalogue's. The tab used to
+                 print the screen-wide brand list against every card, so all
+                 of them claimed the same brands and the same count, and
+                 opening one showed something else. */
+              const facets = facetsForSeller(d.name);
+              return (
               <div key={d.id} className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <button
                   onClick={() => onNavigate('storefront', { distributor: d })}
@@ -163,7 +189,9 @@ export function SellerBrowseScreen({
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
                     {d.name}
                   </span>
-                  <span className="shrink-0 text-xs text-foreground-secondary">{brands.length} brands</span>
+                  <span className="shrink-0 text-xs text-foreground-secondary">
+                    {facets.brands.length} brands
+                  </span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-foreground-secondary" />
                 </button>
                 {/* delivery day(s) + the MOV for each — the same quiet rows the
@@ -180,7 +208,7 @@ export function SellerBrowseScreen({
                     that brand's list scoped to THIS seller, since that's the
                     list the buyer means from inside a seller's card */}
                 <div className="no-scrollbar flex gap-2.5 overflow-x-auto border-t border-border px-3 py-2.5">
-                  {brands.map((b) => (
+                  {facets.brands.map((b) => (
                     <BrandTile
                       key={b.id}
                       name={b.name}
@@ -200,7 +228,8 @@ export function SellerBrowseScreen({
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

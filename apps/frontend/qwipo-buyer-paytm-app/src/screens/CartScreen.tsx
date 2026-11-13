@@ -26,7 +26,8 @@ export function CartScreen({
   onBack: () => void;
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
-  onAddMore: (sellerId: string) => void;
+  /** The card's seller, so a cross-dock card can ask which one. */
+  onAddMore: (seller: CartSeller | null) => void;
   /** Opens one SKU's selling-units sheet from a seller card's strip. */
   onItemTap?: (productId: string) => void;
 }) {
@@ -63,7 +64,7 @@ export function CartScreen({
             icon={<ShoppingCart strokeWidth={1.75} />}
             title="Your cart is empty"
             description="Add products from a distributor or wholesaler to see them here."
-            action={<Button onClick={() => onAddMore('')}>Browse products</Button>}
+            action={<Button onClick={() => onAddMore(null)}>Browse products</Button>}
           />
         </div>
       ) : (
@@ -74,7 +75,7 @@ export function CartScreen({
                 key={s.id}
                 seller={s}
                 onViewItems={() => onViewItems(s.id)}
-                onAddMore={() => onAddMore(s.id)}
+                onAddMore={() => onAddMore(s)}
                 onItemTap={onItemTap}
               />
             ))}
@@ -237,20 +238,31 @@ function SellerCard({
           {/* A beat day is the day the van is in the area, not a promise the
               goods arrive that morning — so it carries the window the seller
               actually works to, counted from that day. A "Tomorrow" slot
-              means tomorrow and needs nothing said. */}
+              means tomorrow and needs nothing said.
+
+              The cross-dock store has no choice to offer: the 3PL collects
+              daily and the store packs the same night, so it is tomorrow or
+              nothing. A control with one option in it reads as a decision the
+              buyer has to make, so the day is simply stated. */}
           <div className="mb-1.5 flex items-baseline justify-between gap-2">
             <span className="shrink-0 text-xs text-foreground-secondary">Delivery by</span>
-            {isBeatDay(win) && (
+            {!seller.cds && isBeatDay(win) && (
               <span className="min-w-0 text-right text-xs font-medium text-foreground-secondary">
                 {BEAT_WINDOW_NOTE}
               </span>
             )}
           </div>
-          <SegmentedControl
-            options={seller.windows.map((w) => ({ value: w, label: w }))}
-            value={win}
-            onChange={setWin}
-          />
+          {seller.cds ? (
+            <div className="rounded-md bg-muted px-3 py-2 text-sm font-medium text-foreground">
+              {seller.windows[0]}
+            </div>
+          ) : (
+            <SegmentedControl
+              options={seller.windows.map((w) => ({ value: w, label: w }))}
+              value={win}
+              onChange={setWin}
+            />
+          )}
         </div>
 
         {/* actions — same two slots on every card (View items · Add more) */}
