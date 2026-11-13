@@ -10,28 +10,37 @@ import type { CartItem, CartSeller } from '../data/cart';
 export function OrderItemsSheet({
   open,
   seller,
+  cdsSeller,
   onClose,
 }: {
   open: boolean;
   seller: CartSeller | null;
+  /** One cross-dock distributor inside the card, when the buyer asked for
+   *  that seller's lines rather than the whole consolidated order. */
+  cdsSeller?: string | null;
   onClose: () => void;
 }) {
   if (!seller) return <Sheet open={false} onClose={onClose} />;
+
+  const group = cdsSeller ? seller.groups?.find((g) => g.seller === cdsSeller) : undefined;
+  const title = group ? group.seller : seller.name;
+  const items = group ? group.items : seller.items;
+  const total = group ? group.subtotal : seller.subtotal;
 
   return (
     <Sheet
       open={open}
       onClose={onClose}
       icon={<ShoppingBag size={18} />}
-      title={seller.name}
-      subtitle={`${seller.items.length} ${seller.items.length === 1 ? 'item' : 'items'} in this order`}
+      title={title}
+      subtitle={`${items.length} ${items.length === 1 ? 'item' : 'items'} in this order`}
       footer={
         <div className="flex items-center gap-3">
           <div>
             <div className="text-2xs font-medium uppercase tracking-wide text-foreground-secondary">
               Order total
             </div>
-            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(seller.subtotal)}</div>
+            <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(total)}</div>
           </div>
           <Button className="flex-1" onClick={onClose}>
             Close
@@ -40,7 +49,7 @@ export function OrderItemsSheet({
       }
     >
       <div className="space-y-2.5">
-        {seller.items.map((item, idx) => (
+        {items.map((item, idx) => (
           <ItemRow key={`${item.product.id}-${idx}`} item={item} />
         ))}
       </div>

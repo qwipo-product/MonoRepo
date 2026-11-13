@@ -22,7 +22,9 @@ export function OrderSummaryScreen({
   cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onPlaceOrder: () => void;
-  onViewItems: (sellerId: string) => void;
+  /** Opens the items sheet. With a second argument, scoped to one cross-dock
+   *  distributor inside that card rather than the whole card. */
+  onViewItems: (sellerId: string, cdsSeller?: string) => void;
 }) {
   const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
@@ -46,7 +48,12 @@ export function OrderSummaryScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {sellers.map((s) => (
-          <SellerBill key={s.id} seller={s} onViewItems={() => onViewItems(s.id)} />
+          <SellerBill
+            key={s.id}
+            seller={s}
+            onViewItems={() => onViewItems(s.id)}
+            onViewSellerItems={(name) => onViewItems(s.id, name)}
+          />
         ))}
 
         {/* Bill details */}
@@ -116,7 +123,16 @@ export function OrderSummaryScreen({
   );
 }
 
-function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: () => void }) {
+function SellerBill({
+  seller,
+  onViewItems,
+  onViewSellerItems,
+}: {
+  seller: CartSeller;
+  onViewItems: () => void;
+  /** Open one cross-dock distributor's lines, rather than the whole card's. */
+  onViewSellerItems?: (sellerName: string) => void;
+}) {
   // One fixed-height summary line — brands capped so the card never grows.
   const brands = [...new Set(seller.items.map((i) => brandOf(i.product.shortName)))];
   const CAP = 3;
@@ -144,16 +160,44 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
         </div>
       </div>
 
-      {/* brand summary — single line, capped */}
-      <div className="mt-2.5 flex items-center justify-between gap-3 rounded-md bg-background-subtle p-2.5">
-        <span className="min-w-0 truncate text-xs text-foreground">{summary}</span>
-        <button
-          onClick={onViewItems}
-          className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
-        >
-          View items
-        </button>
-      </div>
+      {/* What is in the order. For one seller that is a capped list of brands;
+          for the cross-dock store it is the distributors themselves, one line
+          each with its own way in. Naming the brands there would bury the
+          thing the buyer is checking before they pay — that every distributor
+          they shopped is actually in this delivery. */}
+      {seller.cds && seller.groups ? (
+        <div className="mt-2.5 overflow-hidden rounded-md bg-background-subtle">
+          {seller.groups.map((g, i) => (
+            <div
+              key={g.seller}
+              className={`flex items-center justify-between gap-3 p-2.5 ${i > 0 ? 'border-t border-border' : ''}`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium text-foreground">{g.seller}</span>
+                <span className="block text-2xs text-foreground-secondary">
+                  {g.items.length} {g.items.length === 1 ? 'product' : 'products'} · {formatInr(g.subtotal)}
+                </span>
+              </span>
+              <button
+                onClick={() => onViewSellerItems?.(g.seller)}
+                className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
+              >
+                View items
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-md bg-background-subtle p-2.5">
+          <span className="min-w-0 truncate text-xs text-foreground">{summary}</span>
+          <button
+            onClick={onViewItems}
+            className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
+          >
+            View items
+          </button>
+        </div>
+      )}
 
       {/* delivery window — a beat day is the day the van is in the area, not
           the hour the goods arrive, so it carries the window the seller works
@@ -164,7 +208,7 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
           <span className="text-foreground-secondary">Delivery by</span>
           <span className="font-semibold text-foreground">{seller.windows[0]}</span>
         </div>
-        {isBeatDay(seller.windows[0]) && (
+        {!seller.cds && isBeatDay(seller.windows[0]) && (
           <div className="mt-0.5 text-right text-xs font-medium text-foreground-secondary">
             {BEAT_WINDOW_NOTE}
           </div>
