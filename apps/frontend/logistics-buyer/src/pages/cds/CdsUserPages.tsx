@@ -7,7 +7,7 @@ import { cdsApi, type CollectionRow, type MyOtp, type OrderRow, type ReturnRow }
 import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
 import type { CollectionStatus, ReturnStatus, TripType } from '../../cds/types';
 import { RecentPlans } from './ScPlanningPages';
-import { AssignFields, askText, Badge, Card, confirm, DateSlot, Empty, ErrorBox, fmtDate, fmtDateTime, KpiStrip, kg, Loading, money, PageHead, Pager, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
+import { AssignFields, askText, Badge, Card, confirm, DateSlot, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, KpiStrip, kg, Loading, money, PageHead, Pager, RowActions, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
 
 /** OTPs sent to this CDS — the CDS User reads them out to the delivery person at the handover. */
 function MyOtps({ purposes, title }: { purposes: string[]; title: string }) {
@@ -38,7 +38,7 @@ function Incoming({ type, title }: { type: TripType; title: string }) {
   const { data } = useLoad(() => cdsApi.incoming(type), [type]);
   const active = (data ?? []).filter((x) => x.stopStatus === 'PENDING' && !['CANCELLED'].includes(x.status));
   return (
-    <Card title={<><i className={`fas ${TRIP_TYPE[type].icon} text-primary me-2`} />{title}</>}>
+    <Card title={<><i className={`fas ${TRIP_TYPE[type].icon} text-primary me-2`} />{title} <small className="ms-2">{TRIP_TYPE[type].label} · {TRIP_TYPE[type].direction}</small></>}>
       <Table head={['Trip', 'Planned', 'Delivery person', 'Vehicle', type === 'CDS_DELIVERY' ? 'Orders' : 'Returns', 'Units', 'Trip status']} empty={!active.length && <Empty icon="fa-check" text="Nothing on the way right now" />}>
         {active.map((x) => (
           <tr key={x.tripId} className="mat-mdc-row" role="link" style={{ cursor: 'pointer' }} onClick={() => navigate(`/cds/trips/${x.tripId}`)}>
@@ -61,26 +61,30 @@ export function GrnPage() {
   const [distributorId, setDist] = useState('');
   const [search, setSearch] = useState('');
   const [pageNumber, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const pending = useLoad(() => cdsApi.searchGrns({ status: 'PENDING', pageSize: 1 }), []);
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchGrns({ status: tab, distributorId, search, pageNumber, pageSize: 12 }), [tab, distributorId, search, pageNumber]);
+  const { data, error, loading, reload } = useLoad(() => cdsApi.searchGrns({ status: tab, distributorId, search, pageNumber, pageSize }), [tab, distributorId, search, pageNumber, pageSize]);
   return (
     <div className="cds-page">
-      <PageHead icon="fa-clipboard-check" title="GRN (Goods Received Note)" subtitle="Orders handed over at your CDS, verified distributor-wise. Generating the GRN makes the orders ready for retailer delivery." />
+      <PageHead icon="fa-clipboard-check" title="GRN (Goods Received Note)" subtitle="Verify the orders handed over at your CDS, distributor-wise." />
       <KpiStrip />
       <MyOtps purposes={['CDS_HANDOVER']} title="Handover OTPs for your CDS" />
       <Incoming type="CDS_DELIVERY" title="Incoming CDS deliveries" />
       <Tabs value={tab} onChange={(v) => { setTab(v); setPage(1); }} tabs={[{ id: 'PENDING', label: 'Pending verification', icon: 'fa-hourglass-half', count: pending.data?.total }, { id: 'COMPLETED', label: 'GRN history', icon: 'fa-list' }]} />
-      <div className="cds-filters">
-        <select aria-label="Distributor" className="form-select form-select-sm" value={distributorId} onChange={(e) => { setDist(e.target.value); setPage(1); }}>
-          <option value="">All distributors</option>{meta.data?.distributors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-        <input className="form-control form-control-sm search" placeholder="Search GRN, distributor, trip, order…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-      </div>
+      <FilterBar
+        title="GRN Filters"
+        search={search}
+        onSearch={(v) => { setSearch(v); setPage(1); }}
+        placeholder="Search GRN, distributor, trip, order…"
+        fields={[{ key: 'distributorId', label: 'Distributor', type: 'select', allLabel: 'All', options: (meta.data?.distributors ?? []).map((d) => ({ value: d.id, label: d.name })) }]}
+        values={{ distributorId }}
+        onApply={(v) => { setDist(v.distributorId); setPage(1); }}
+      />
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : (
           <>
-            <Table head={['GRN', 'Distributor', 'CDS delivery trip', 'Pickup trip', 'Orders', 'Dispatched', 'Received', 'Status', tab === 'PENDING' ? 'Handed over' : 'Generated', '']}
+            <Table head={['GRN', 'Distributor', 'CDS delivery trip', 'Pickup trip', 'Orders', 'Dispatched', 'Received', 'Status', tab === 'PENDING' ? 'Handed over' : 'Generated', 'Actions']}
               empty={!data?.rows.length && <Empty icon={tab === 'PENDING' ? 'fa-check-double' : 'fa-inbox'} text={tab === 'PENDING' ? 'Nothing waiting for verification' : 'No GRNs yet'} />}>
               {data?.rows.map((g) => (
                 <tr key={g.id} className={`mat-mdc-row${g.issues ? ' warn' : ''}`}>
@@ -89,11 +93,16 @@ export function GrnPage() {
                   <td className={g.received < g.dispatched ? 'text-danger fw-bold' : ''}>{g.received}</td>
                   <td><Badge meta={GRN_STATUS[g.status]} /></td>
                   <td className="small">{fmtDateTime(tab === 'PENDING' ? g.createdAt : g.completedAt)}</td>
-                  <td className="text-end"><button className="btn btn-sm btn-outline-primary" onClick={() => navigate(`/cds/grn/${g.id}`)}>{g.status === 'PENDING' ? 'Verify' : 'View'}</button></td>
+                  <td>
+                    <div className="d-inline-flex align-items-center gap-1">
+                      <RowActions onView={() => navigate(`/cds/grn/${g.id}`)} />
+                      {g.status === 'PENDING' && <button className="btn btn-sm btn-success text-nowrap" onClick={() => navigate(`/cds/grn/${g.id}`)}>Verify</button>}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </Table>
-            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={data.pageSize} onPage={setPage} />}
+            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
           </>
         )}
       </Card>
@@ -252,6 +261,7 @@ export function DeliveryPlanningPage() {
 
 const COL_TABS: CollectionStatus[] = ['WITH_DELIVERY_PERSON', 'RECEIVED_BY_CDS', 'HANDED_TO_QWIPO', 'SETTLED'];
 export function CollectionsPage() {
+  const navigate = useNavigate();
   const meta = useMeta();
   const { busy, run } = useAction();
   const [tab, setTab] = useState<CollectionStatus>('WITH_DELIVERY_PERSON');
@@ -283,22 +293,20 @@ export function CollectionsPage() {
   };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-indian-rupee-sign" title="Collections & Payments" subtitle="Manual flow: delivery person collects at delivery → hands the money to the CDS → CDS hands it to Qwipo (SNP) → Qwipo settles." />
+      <PageHead icon="fa-indian-rupee-sign" title="Collections & Payments" subtitle="Delivery person → your CDS → Qwipo (SNP) → settled.">
+        {tab === 'WITH_DELIVERY_PERSON' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void receive()}><i className="fas fa-hand-holding-dollar me-1" />Receive from Delivery Person</button>}
+        {tab === 'RECEIVED_BY_CDS' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void handover()}><i className="fas fa-building-columns me-1" />Hand Over to Qwipo (SNP)</button>}
+        {tab === 'HANDED_TO_QWIPO' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void settle()}><i className="fas fa-check-double me-1" />Record Settlement</button>}
+      </PageHead>
       <div className="cds-note mb-3"><i className="fas fa-circle-info mt-1" /><div>Qwipo (SNP) settles manually with {meta.data?.settlementParties.join(', ')}. No payment gateway is used — record references for each step.</div></div>
       <Tabs value={tab} onChange={(v) => { setTab(v); setSel(new Set()); }} tabs={COL_TABS.map((s, i) => ({ id: s, label: COLLECTION_STATUS[s].label, count: counts.data?.[i].total }))} />
-      <div className="cds-filters">
-        <input className="form-control form-control-sm search" placeholder="Search collection, order, retailer, delivery person…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <span className="small text-muted">Selected {chosen.length} · {total(chosen, (c) => c.cdsReceivedAmount ?? c.amount)}</span>
-        <div className="ms-auto d-flex gap-2">
-          {tab === 'WITH_DELIVERY_PERSON' && <button className="btn btn-sm btn-primary" disabled={busy || !chosen.length} onClick={() => void receive()}><i className="fas fa-hand-holding-dollar me-1" />Receive from delivery person</button>}
-          {tab === 'RECEIVED_BY_CDS' && <button className="btn btn-sm btn-primary" disabled={busy || !chosen.length} onClick={() => void handover()}><i className="fas fa-building-columns me-1" />Hand over to Qwipo (SNP)</button>}
-          {tab === 'HANDED_TO_QWIPO' && <button className="btn btn-sm btn-primary" disabled={busy || !chosen.length} onClick={() => void settle()}><i className="fas fa-check-double me-1" />Record settlement</button>}
-        </div>
-      </div>
+      <FilterBar search={search} onSearch={setSearch} placeholder="Search collection, order, retailer, delivery person…">
+        {tab !== 'SETTLED' && <span className="text-muted">Selected {chosen.length} · {total(chosen, (c) => c.cdsReceivedAmount ?? c.amount)}</span>}
+      </FilterBar>
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : (
-          <Table head={[tab === 'SETTLED' ? '' : <input key="a" type="checkbox" className="form-check-input" aria-label="Select all" checked={!!rows.length && chosen.length === rows.length} onChange={() => setSel(chosen.length === rows.length ? new Set() : new Set(rows.map((c) => c.id)))} />, 'Collection', 'Collected', 'Order / retailer', 'Delivery person', 'Trip', 'Mode', 'Due', 'Collected', 'Received by CDS', 'References', 'Status']}
+          <Table head={[tab === 'SETTLED' ? '' : <input key="a" type="checkbox" className="form-check-input" aria-label="Select all" checked={!!rows.length && chosen.length === rows.length} onChange={() => setSel(chosen.length === rows.length ? new Set() : new Set(rows.map((c) => c.id)))} />, 'Collection', 'Collected', 'Order / retailer', 'Delivery person', 'Trip', 'Mode', 'Due', 'Collected', 'Received by CDS', 'References', 'Status', 'Actions']}
             empty={!rows.length && <Empty text="Nothing here" />}>
             {rows.map((c) => (
               <tr key={c.id} className={`mat-mdc-row${sel.has(c.id) ? ' selected' : ''}${c.mismatchNote ? ' warn' : ''}`}>
@@ -310,6 +318,7 @@ export function CollectionsPage() {
                 <td className="small">{c.cdsReceivedAmount !== null ? money(c.cdsReceivedAmount) : '—'}{c.mismatchNote && <div className="text-danger text-xs">{c.mismatchNote}</div>}</td>
                 <td className="small">{c.qwipoHandoverRef ?? '—'}{c.settlementRef && <div className="text-muted text-xs">{c.settlementRef}</div>}</td>
                 <td><Badge meta={COLLECTION_STATUS[c.status]} /></td>
+                <td><RowActions onView={() => navigate(`/cds/orders/${c.orderId}`)} items={[{ label: 'View order', icon: 'fa-box', onClick: () => navigate(`/cds/orders/${c.orderId}`) }, { label: 'View trip', icon: 'fa-route', onClick: () => navigate(`/cds/trips/${c.tripId}`) }]} /></td>
               </tr>
             ))}
           </Table>
@@ -331,38 +340,48 @@ export function ReturnsPage() {
   const [tab, setTab] = useState<'open' | 'cds' | 'back' | 'all'>('open');
   const [search, setSearch] = useState('');
   const [pageNumber, setPage] = useState(1);
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchReturns({ statuses: RET_FILTER[tab], search, pageNumber, pageSize: 12 }), [tab, search, pageNumber]);
+  const [pageSize, setPageSize] = useState(15);
+  const { data, error, loading, reload } = useLoad(() => cdsApi.searchReturns({ statuses: RET_FILTER[tab], search, pageNumber, pageSize }), [tab, search, pageNumber, pageSize]);
   const cancel = async (r: ReturnRow) => {
     const reason = await askText(`Cancel ${r.returnNo}?`, 'Reason', 'Cancel return', true);
     if (reason && (await run(() => cdsApi.cancelReturn(r.id, reason), 'Return cancelled'))) reload();
   };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-rotate-left" title="Returns" subtitle="Retailer → CDS → Distributor. Returns are collected on retailer delivery trips, verified at your CDS and sent back by the Service Centre.">
-        <button className="btn btn-sm btn-primary" onClick={() => navigate('/cds/orders?initiate=1')}><i className="fas fa-plus me-1" />Initiate return from an order</button>
+      <PageHead icon="fa-rotate-left" title="Returns" subtitle="Track retailer returns: retailer → your CDS → distributor.">
+        <button className="btn btn-sm btn-primary" onClick={() => navigate('/cds/orders?initiate=1')}><i className="fas fa-plus me-1" />Initiate Return</button>
       </PageHead>
       <MyOtps purposes={['CDS_RETURN_PICKUP', 'RETURN_HANDOVER_CDS', 'CDS_ORDER_PICKUP']} title="Pickup / handover OTPs for your CDS" />
       <Incoming type="CDS_RETURN" title="Service Centre return pickups from your CDS" />
       <Tabs value={tab} onChange={(v) => { setTab(v); setPage(1); }} tabs={[{ id: 'open', label: 'With retailer / on the way' }, { id: 'cds', label: 'At your CDS' }, { id: 'back', label: 'Back to seller' }, { id: 'all', label: 'All' }]} />
-      <div className="cds-filters"><input className="form-control form-control-sm search" placeholder="Search return, order, retailer…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} /></div>
+      <FilterBar search={search} onSearch={(v) => { setSearch(v); setPage(1); }} placeholder="Search return, order, retailer…" />
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : (
           <>
-            <Table head={['Return', 'Order', 'Retailer', 'Distributor', 'Items · reason · condition', 'Requested', 'Picked', 'Accepted', 'Rejected', 'Status', '']} empty={!data?.rows.length && <Empty text="No returns" />}>
+            <Table head={['Return', 'Order', 'Retailer', 'Distributor', 'Products · reason', 'Return Value', 'Requested', 'Picked', 'Accepted', 'Rejected', 'Status', 'Actions']} empty={!data?.rows.length && <Empty text="No returns" />}>
               {data?.rows.map((r) => (
                 <tr key={r.id} className="mat-mdc-row">
                   <td className="fw-semibold">{r.returnNo}<div className="text-muted text-xs">{fmtDate(r.createdAt)}</div></td>
                   <td><a role="button" className="text-primary" onClick={() => navigate(`/cds/orders/${r.orderId}`)}>{r.orderNo}</a></td>
                   <td className="small">{r.retailerName}</td><td className="small">{r.distributorName}</td>
-                  <td className="small">{r.lines.map((l) => `${l.name} · ${l.reason} · ${l.condition.toLowerCase()}`).join('; ')}</td>
+                  <td className="small">{r.lines.map((l) => <div key={l.sku}>{l.name} × {l.qty} <span className="text-muted">· {l.reason}</span></div>)}</td>
+                  <td className="small">{money(sumOf(r.lines, (l) => l.qty * l.unitPrice))}</td>
                   <td>{sumOf(r.lines, (l) => l.qty)}</td><td>{sumOf(r.lines, (l) => l.pickedQty ?? 0)}</td><td>{sumOf(r.lines, (l) => l.acceptedQty ?? 0)}</td><td>{sumOf(r.lines, (l) => l.rejectedQty ?? 0)}</td>
                   <td><Badge meta={RETURN_STATUS[r.status]} /></td>
-                  <td>{r.status === 'RETURN_INITIATED' && !r.retailerTripId && <button className="btn btn-sm btn-link text-danger" disabled={busy} onClick={() => void cancel(r)}>Cancel</button>}</td>
+                  <td>
+                    <RowActions
+                      onView={() => navigate(`/cds/orders/${r.orderId}`)}
+                      items={[
+                        { label: 'View order', icon: 'fa-box', onClick: () => navigate(`/cds/orders/${r.orderId}`) },
+                        { label: 'Cancel return', icon: 'fa-circle-xmark', tone: 'danger', hidden: busy || r.status !== 'RETURN_INITIATED' || !!r.retailerTripId, onClick: () => void cancel(r) },
+                      ]}
+                    />
+                  </td>
                 </tr>
               ))}
             </Table>
-            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={data.pageSize} onPage={setPage} />}
+            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
           </>
         )}
       </Card>
@@ -379,12 +398,12 @@ export function RetailersPage() {
   const rows = (data ?? []).filter((r) => !search || `${r.name} ${r.ownerName} ${r.phone} ${r.locality}`.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="cds-page">
-      <PageHead icon="fa-users" title="Retailers" subtitle="Retailers served by your CDS (by locality), with their orders, deliveries, returns and collections." />
-      <div className="cds-filters"><input className="form-control form-control-sm search" placeholder="Search retailer, owner, phone, locality…" value={search} onChange={(e) => setSearch(e.target.value)} /><span className="small text-muted">{rows.length} retailer(s)</span></div>
+      <PageHead icon="fa-users" title="Retailers" subtitle="Retailers served by your CDS, with their orders, returns and collections." />
+      <FilterBar search={search} onSearch={setSearch} placeholder="Search retailer, owner, phone, locality…"><span className="text-muted">{rows.length} retailer(s)</span></FilterBar>
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : (
-          <Table head={['Retailer', 'Owner · phone', 'Address', 'Orders', 'Open', 'Delivered value', 'Returns', 'Collected', 'Last order']} empty={!rows.length && <Empty text="No retailers" />}>
+          <Table head={['Retailer', 'Owner · phone', 'Address', 'Orders', 'Open', 'Delivered value', 'Returns', 'Collected', 'Last order', 'Actions']} empty={!rows.length && <Empty text="No retailers" />}>
             {rows.map((r) => (
               <tr key={r.id} className="mat-mdc-row" role="link" style={{ cursor: r.orders ? 'pointer' : 'default' }} onClick={() => r.orders && navigate(`/cds/orders?retailer=${r.id}`)}>
                 <td className="fw-semibold">{r.name}<div className="text-muted text-xs">{r.code}</div></td>
@@ -392,6 +411,7 @@ export function RetailersPage() {
                 <td className="small">{r.address}<div className="text-muted text-xs">{r.locality}</div></td>
                 <td>{r.orders}</td><td>{r.openOrders}</td><td className="small">{money(r.deliveredValue)}</td><td>{r.returns}</td><td className="small">{money(r.collected)}</td>
                 <td className="small">{fmtDate(r.lastOrder)}</td>
+                <td>{r.orders > 0 && <RowActions onView={() => navigate(`/cds/orders?retailer=${r.id}`)} items={[{ label: 'View orders', icon: 'fa-box', onClick: () => navigate(`/cds/orders?retailer=${r.id}`) }]} />}</td>
               </tr>
             ))}
           </Table>

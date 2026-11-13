@@ -1,7 +1,7 @@
 // CDS business rules. Pure: works on a CdsState object and a clock (no app / mock-server imports), so the same
 // code runs behind the API (src/mock/routes/cds.ts), in the demo seed and in Node unit tests.
 // Every status change goes through the flow tables in ./status.ts; every pickup / handover goes through an OTP.
-import { routeMetrics, round2, sequenceStops } from './planning.ts';
+import { routeMetrics, round2, sequenceStops, serviceStoreFor } from './planning.ts';
 import { ACTIVE_TRIP, ORDER_FLOW, RETURN_FLOW, STOP_ACTION, TRIP_FLOW, TRIP_TYPE } from './status.ts';
 import type {
   CdsOrder, CdsState, CdsStore, Collection, DeliveryPerson, Distributor, Grn, ItemCondition, OrderStatus, OtpTxn, PartyType, Plan,
@@ -9,7 +9,7 @@ import type {
 } from './types.ts';
 
 /** Bump when the demo data changes: stored CDS data of an older version is rebuilt on next use. */
-export const CDS_STATE_VERSION = 3;
+export const CDS_STATE_VERSION = 6;
 
 export class CdsError extends Error {
   status: number;
@@ -126,9 +126,9 @@ export class CdsEngine {
     if (!x) throw notFound(`Collection ${id} not found`);
     return x;
   }
-  /** CDS store that serves a retailer's locality. */
-  storeFor(locality: string): CdsStore | null {
-    return this.s.stores.find((v) => v.active && v.localities.includes(locality)) ?? null;
+  /** CDS store whose service area polygon holds the retailer's location (nearest when areas overlap). */
+  storeFor(r: { lat: number; lng: number; locality?: string }): CdsStore | null {
+    return serviceStoreFor(this.s.stores, r);
   }
   cdsUserOf(storeId: string) {
     return this.s.users.find((u) => u.role === 'CDS_USER' && u.active && u.cdsStoreIds.includes(storeId)) ?? null;
@@ -167,8 +167,8 @@ export class CdsEngine {
     if (dup) return dup;
     this.distributor(input.distributorId);
     const r = this.retailer(input.retailerId);
-    const store = this.storeFor(r.locality);
-    if (!store) throw bad(`Retailer locality ${r.locality} is not served by any CDS store — use 3PL delivery`);
+    const store = this.storeFor(r);
+    if (!store) throw bad(`${r.name} (${r.locality}) is not served by any CDS store: the location is outside every CDS service area — use 3PL delivery`);
     if (!input.lines?.length || input.lines.some((l) => !isQty(l.qty) || l.qty === 0)) throw bad('Every order line needs a quantity of at least 1');
     const lines = input.lines.map((l) => ({
       sku: l.sku, name: l.name, qty: l.qty, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg,

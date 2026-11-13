@@ -2,7 +2,8 @@
 // Service Centre and CDS fleets) plus four days of operations replayed through the real CdsEngine — including
 // the OTP checkpoints — so every record obeys the same rules as live actions. Pure (no app imports).
 import { CdsEngine, CDS_STATE_VERSION, localDay, type SkuLine, type StopInput } from './engine.ts';
-import type { CdsState, Retailer, TripStop } from './types.ts';
+import { serviceStoreFor } from './planning.ts';
+import type { CdsState, CdsStore, Retailer, TripStop } from './types.ts';
 
 export interface SeedRetailer { id: string; code: string; name: string; ownerName: string; phone: string; address: string; locality: string; lat: number; lng: number }
 export interface SeedProduct { name: string; price: number; weightKg: number; category: string }
@@ -39,10 +40,10 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
   const upl = fleet('cds-upl', 'TS08UP00', [['Three Wheeler', 400], ['Pickup', 750], ['Mini Truck', 1500]], ['Prasad Varma', 'Anil Kumar', 'Suresh Babu'], 7702012201);
   const kkp = fleet('cds-kkp', 'TS09KK00', [['Three Wheeler', 400], ['Pickup', 750], ['Mini Truck', 1500]], ['Shiva Prasad', 'Arjun Rao', 'Sandeep Yadav'], 7702013201);
   const dsn = fleet('cds-dsn', 'TS10DS00', [['Three Wheeler', 400], ['Pickup', 750], ['Mini Truck', 1500]], ['Mahesh Babu', 'Ravi Shankar', 'Sai Teja'], 7702014201);
-  const stores = [
-    { id: 'cds-upl', code: 'CDS-UPL', name: 'CDS Uppal', address: 'Survey 41, IDA Uppal Phase 2, Hyderabad 500039', lat: 17.3995, lng: 78.5548, localities: ['Uppal', 'Boduppal', 'Tarnaka', 'Secunderabad'], managerName: 'Rajesh Kumar', managerPhone: '9100000002', active: true },
-    { id: 'cds-kkp', code: 'CDS-KKP', name: 'CDS Kukatpally', address: 'Plot 7, Balanagar Industrial Area, Hyderabad 500037', lat: 17.4762, lng: 78.4321, localities: ['Kukatpally', 'Moosapet', 'Ameerpet', 'Begumpet', 'Mehdipatnam', 'Tolichowki'], managerName: 'Lakshmi Prasanna', managerPhone: '9100000003', active: true },
-    { id: 'cds-dsn', code: 'CDS-DSN', name: 'CDS Dilsukhnagar', address: '16-11-740, Moosarambagh, Dilsukhnagar, Hyderabad 500036', lat: 17.3721, lng: 78.5103, localities: ['Dilsukhnagar', 'Kothapet', 'LB Nagar', 'Saroornagar'], managerName: 'Venkat Rao', managerPhone: '9100000004', active: true },
+  const stores: CdsStore[] = [
+    { id: 'cds-upl', code: 'CDS-UPL', name: 'CDS Uppal', address: 'Survey 41, IDA Uppal Phase 2, Hyderabad 500039', lat: 17.3995, lng: 78.5548, localities: ['Uppal', 'Boduppal', 'Tarnaka', 'Secunderabad'], polygon: [[17.458, 78.482], [17.462, 78.54], [17.44, 78.6], [17.39, 78.598], [17.388, 78.53], [17.42, 78.482]], managerName: 'Rajesh Kumar', managerPhone: '9100000002', active: true },
+    { id: 'cds-kkp', code: 'CDS-KKP', name: 'CDS Kukatpally', address: 'Plot 7, Balanagar Industrial Area, Hyderabad 500037', lat: 17.4762, lng: 78.4321, localities: ['Kukatpally', 'Moosapet', 'Ameerpet', 'Begumpet', 'Mehdipatnam', 'Tolichowki'], polygon: [[17.515, 78.38], [17.515, 78.44], [17.462, 78.48], [17.415, 78.48], [17.378, 78.455], [17.378, 78.398], [17.43, 78.38]], managerName: 'Lakshmi Prasanna', managerPhone: '9100000003', active: true },
+    { id: 'cds-dsn', code: 'CDS-DSN', name: 'CDS Dilsukhnagar', address: '16-11-740, Moosarambagh, Dilsukhnagar, Hyderabad 500036', lat: 17.3721, lng: 78.5103, localities: ['Dilsukhnagar', 'Kothapet', 'LB Nagar', 'Saroornagar'], polygon: [[17.386, 78.505], [17.386, 78.566], [17.34, 78.568], [17.333, 78.545], [17.338, 78.505]], managerName: 'Venkat Rao', managerPhone: '9100000004', active: true },
   ];
   return {
     version: CDS_STATE_VERSION,
@@ -58,7 +59,7 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
       { id: 'dst-05', code: 'DST-05', name: 'Charminar Beverages', contactName: 'Abdul Kareem', phone: '9848011105', address: '12-1-44, Mehdipatnam, Hyderabad', lat: 17.3962, lng: 78.4381 },
       { id: 'dst-06', code: 'DST-06', name: 'Telangana Staples Co.', contactName: 'Ravi Teja', phone: '9848011106', address: 'Plot 21, LB Nagar Ring Road, Hyderabad', lat: 17.3481, lng: 78.5498 },
     ],
-    // all retailers of the customer master; CDS stores serve the ones in their localities
+    // all retailers of the customer master; each CDS store serves the ones inside its service area polygon
     retailers: retailers as Retailer[],
     users: [
       { id: 'usr-sc', name: 'Service Centre Admin', mobile: '9100000001', email: 'service.centre@cds.example', role: 'SERVICE_CENTRE', cdsStoreIds: stores.map((s) => s.id), active: true },
@@ -104,7 +105,7 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
 
   // ---------------------------------------------------------------- helpers
   let ref = 51000;
-  const pool = (store: string) => s.retailers.filter((r) => s.stores.find((x) => x.id === store)!.localities.includes(r.locality));
+  const pool = (store: string) => s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === store);
   const place = (dist: string, store: string) => {
     const range = skus.filter((k) => ASSORTMENT[dist].includes(k.category));
     const m = new Map<string, number>();
@@ -247,6 +248,9 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   runAll(p2.pickupTrip.id);
   runAll(p2.cdsDeliveryTrip!.id);
   completeGrns(false);
+  // Seller Store orders confirmed late on day -2 — still waiting for a pickup plan (older order date in Pickup Planning).
+  t = Math.max(t, at(-2, 17));
+  ['dst-01', 'dst-06'].forEach((d) => { place(d, 'cds-upl'); place(d, 'cds-kkp'); });
   t = at(-2, 18);
   STORES.forEach((st) => deliveryPlan(st, day(-1), ready(st), initiate(st, 2)));
   const rp1 = received().length ? returnPlan(received(), day(-1)) : null;
@@ -274,6 +278,9 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
     tick(20);
     e.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) }, USER[g.cdsStoreId]);
   });
+  // Seller Store orders confirmed on day -1 evening — waiting for a pickup plan.
+  t = Math.max(t, at(-1, 17));
+  ['dst-02', 'dst-03', 'dst-04', 'dst-05'].forEach((d, i) => place(d, STORES[i % 3]));
   // planning for today, done yesterday evening (next-day rule)
   t = at(-1, 18);
   const todayTrips = STORES.map((st) => deliveryPlan(st, day(0), ready(st).slice(0, 2), initiate(st, 1))); // the rest stay Ready for Delivery
@@ -282,6 +289,9 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   // ---------------------------------------------------------------- today: live trips and planning queues
   t = Math.min(at(0, 7), Math.max(at(0, 0) + 60000, now.getTime() - 3 * 3600000));
   if (todayTrips[0]) runRetailerTrip(todayTrips[0].id, ['full'], false, 2); // loaded at the CDS, first retailer delivered
+  // Kukatpally: two retailers delivered (cash still with the delivery person); Dilsukhnagar: loaded, not yet delivered
+  if (todayTrips[1]) runRetailerTrip(todayTrips[1].id, ['full', 'full'], false, 3);
+  if (todayTrips[2]) runRetailerTrip(todayTrips[2].id, [], false, 1);
   if (rp2) {
     e.startTrip(rp2.id, DP);
     stop(rp2.id, 0); // returns loaded at the first CDS
@@ -291,9 +301,14 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   const p4 = pickupPlan(fresh.filter((o) => ['dst-02', 'dst-03'].includes(o.distributorId)).slice(0, 4).map((o) => o.id), day(0), true);
   e.startTrip(p4.pickupTrip.id, DP);
   stop(p4.pickupTrip.id, 0);
-  // a pickup done without a CDS leg → waits in Deliver to CDS
-  const p5 = pickupPlan(fresh.filter((o) => o.distributorId === 'dst-05').slice(0, 2).map((o) => o.id), day(0), false);
+  // a pickup done; its CDS delivery trip is assigned and waits to start
+  const p5 = pickupPlan(fresh.filter((o) => o.distributorId === 'dst-05').slice(0, 2).map((o) => o.id), day(0), true);
   runAll(p5.pickupTrip.id);
+  // picked up and on the way to the CDS stores: first CDS handover done, the others in transit
+  const p6 = pickupPlan(fresh.filter((o) => o.distributorId === 'dst-04').slice(0, 3).map((o) => o.id), day(0), true);
+  runAll(p6.pickupTrip.id);
+  e.startTrip(p6.cdsDeliveryTrip!.id, DP);
+  stop(p6.cdsDeliveryTrip!.id, 0);
   // Qwipo (SNP) settled the earliest handovers
   STORES.slice(0, 2).forEach((st) => {
     const h = collectionsOf(st, 'HANDED_TO_QWIPO');

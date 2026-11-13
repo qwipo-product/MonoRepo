@@ -1,5 +1,5 @@
 // CDS sign-in — separate from the Logistics Buyer login (own session, own users and roles), same look.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { cdsApi, cdsAuth, cdsErrorText } from '../../api/services/cds.service';
 import { CDS_DEMO_USERS } from '../../cds/seed';
@@ -16,6 +16,38 @@ function pagesOf(url: string): CdsPage[] {
     ['/cds/grn', ['cu-grn']], ['/cds/delivery-planning', ['cu-delivery']], ['/cds/collections', ['cu-collections']], ['/cds/returns', ['cu-returns']], ['/cds/retailers', ['cu-retailers']],
   ];
   return map.find(([p]) => path.startsWith(p))?.[1] ?? [];
+}
+
+/** Six OTP digit boxes, like the app's Verification Code screen (type, paste, Backspace moves back). */
+function OtpBoxes({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? '');
+  const put = (start: number, text: string) => {
+    const clean = text.replace(/\D/g, '');
+    if (!clean) return;
+    const next = [...digits];
+    for (let k = 0; k < clean.length && start + k < 6; k++) next[start + k] = clean[k];
+    onChange(next.join('').slice(0, 6));
+    refs.current[Math.min(5, start + clean.length)]?.focus();
+  };
+  const onKey = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Backspace') return;
+    e.preventDefault();
+    const next = [...digits];
+    if (next[i]) next[i] = '';
+    else if (i > 0) { next[i - 1] = ''; refs.current[i - 1]?.focus(); }
+    onChange(next.join(''));
+  };
+  return (
+    <div className="otp-inputs">
+      {digits.map((d, i) => (
+        <input key={i} ref={(el) => { refs.current[i] = el; }} type="text" inputMode="numeric" maxLength={i === 0 ? 6 : 1} autoFocus={i === 0}
+          autoComplete={i === 0 ? 'one-time-code' : undefined} aria-label={`Digit ${i + 1}`} value={d}
+          onChange={(e) => put(i, e.target.value.slice(-6))} onKeyDown={(e) => onKey(i, e)}
+          onPaste={(e) => { e.preventDefault(); put(i, e.clipboardData.getData('text')); }} />
+      ))}
+    </div>
+  );
 }
 
 export default function CdsLoginPage() {
@@ -99,13 +131,7 @@ export default function CdsLoginPage() {
             <>
               <p className="subtitle">Enter the 6-digit OTP sent to +91 {mobile}</p>
               <form noValidate onSubmit={verify}>
-                <div className="input-group">
-                  <label htmlFor="cds-otp">OTP</label>
-                  <div className="mobile-input">
-                    <input id="cds-otp" inputMode="numeric" maxLength={6} placeholder="Enter OTP" value={otp} autoFocus
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} />
-                  </div>
-                </div>
+                <OtpBoxes value={otp} onChange={setOtp} />
                 <button type="submit" className="auth-btn" disabled={busy || otp.length !== 6}>{busy ? 'Verifying…' : 'Verify & Sign In'}</button>
               </form>
               <div className="register"><p><a href="#" onClick={(e) => { e.preventDefault(); setStep('mobile'); setOtp(''); setError(''); }}>Change number</a></p></div>

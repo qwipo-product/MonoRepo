@@ -6,7 +6,8 @@ import Swal from 'sweetalert2';
 import { cdsApi, type StopView, type TripView } from '../../api/services/cds.service';
 import { COLLECTION_STATUS, ORDER_STATUS, OTP_STATUS, RETURN_STATUS, STOP_ACTION, TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
 import type { TripStatus, TripType } from '../../cds/types';
-import { alertError, askText, Badge, Card, confirm, Empty, ErrorBox, fmtDate, fmtDateTime, kg, Loading, money, PageHead, Pager, Table, Tabs, toast, useAction, useCdsSession, useLoad, useMeta } from './ui';
+import { RouteMap, RouteMapDialog, mapStops } from './RouteMap';
+import { alertError, askText, Badge, Card, confirm, DetailHead, DetailTabs, downloadCsv, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, InfoGrid, InfoSection, kg, Loading, money, PageHead, Pager, RowActions, Table, Tabs, toast, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
 
 const SC_TABS: TripType[] = ['DISTRIBUTOR_PICKUP', 'CDS_DELIVERY', 'CDS_RETURN'];
 const FILTERS: Record<string, TripStatus[]> = { active: ['PLANNED', 'ASSIGNED', 'STARTED', 'IN_PROGRESS'], done: ['COMPLETED', 'PARTIALLY_COMPLETED'], cancelled: ['CANCELLED'], all: [] };
@@ -20,23 +21,39 @@ export default function TripsPage() {
   const [search, setSearch] = useState('');
   const [date, setDate] = useState('');
   const [pageNumber, setPage] = useState(1);
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchTrips({ types: [tab], statuses: FILTERS[filter], search, date: date || undefined, pageNumber, pageSize: 12 }), [tab, filter, search, date, pageNumber]);
+  const [pageSize, setPageSize] = useState(15);
+  const { busy, run } = useAction();
+  const [map, setMap] = useState<TripView | null>(null);
+  const { data, error, loading, reload } = useLoad(() => cdsApi.searchTrips({ types: [tab], statuses: FILTERS[filter], search, date: date || undefined, pageNumber, pageSize }), [tab, filter, search, date, pageNumber, pageSize]);
+  const fields: FilterField[] = [
+    { key: 'status', label: 'Status', type: 'select', options: [{ value: 'active', label: 'Active' }, { value: 'done', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' }, { value: 'all', label: 'All' }] },
+    { key: 'date', label: 'Planned Date', type: 'date' },
+  ];
+  const cancel = async (t: TripView) => {
+    const r = await askText(`Cancel ${t.tripNo}?`, 'Cancellation reason', 'Cancel trip', true);
+    if (r && (await run(() => cdsApi.cancelTrip(t.id, r), 'Trip cancelled'))) reload();
+  };
+  const download = (t: TripView) => downloadCsv(t.tripNo, [{ key: 'seq', label: 'Stop' }, { key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }, { key: 'verifiedAt', label: 'OTP verified at' }],
+    t.stops.map((s, i) => ({ seq: i + 1, name: s.name, status: STOP_LABEL[s.status], verifiedAt: s.verifiedAt ? fmtDateTime(s.verifiedAt) : '' })));
   return (
     <div className="cds-page">
-      <PageHead icon="fa-paper-plane" title="Trips" subtitle={sc ? 'Distributor pickup, CDS delivery and CDS return trips run by the Service Centre.' : 'Retailer-wise delivery trips of your CDS — order pickup at the CDS, retailer deliveries, returns.'} />
-      {sc && <Tabs value={tab} onChange={(t) => { setParams({ tab: t }); setPage(1); }} tabs={SC_TABS.map((t) => ({ id: t, label: `${TRIP_TYPE[t].label}s`, icon: TRIP_TYPE[t].icon }))} />}
-      <div className="cds-filters">
-        <select aria-label="Trip status" className="form-select form-select-sm" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }}>
-          <option value="active">Active</option><option value="done">Completed</option><option value="cancelled">Cancelled</option><option value="all">All</option>
-        </select>
-        <input type="date" aria-label="Planned date" className="form-control form-control-sm" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} />
-        <input className="form-control form-control-sm search" placeholder="Search trip, delivery person, vehicle, stop…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-      </div>
+      <PageHead icon="fa-paper-plane" title="Trips" subtitle={sc ? 'Track distributor pickup, CDS delivery and CDS return trips.' : 'Track your Retailer Delivery Trips (CDS to Retailer).'} />
+      {sc && <Tabs value={tab} onChange={(t) => { setParams({ tab: t }); setPage(1); }} tabs={SC_TABS.map((t) => ({ id: t, label: `${TRIP_TYPE[t].label}s`, sub: TRIP_TYPE[t].direction, icon: TRIP_TYPE[t].icon }))} />}
+      <FilterBar
+        title="Trip Filters"
+        search={search}
+        onSearch={(v) => { setSearch(v); setPage(1); }}
+        placeholder="Search trip, delivery person, vehicle, stop…"
+        fields={fields}
+        values={{ status: filter, date }}
+        defaults={{ status: 'active', date: '' }}
+        onApply={(v) => { setFilter(v.status || 'active'); setDate(v.date); setPage(1); }}
+      />
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : (
           <>
-            <Table head={['Trip ID', 'Planned', 'Delivery person', 'Vehicle', 'Stops', 'OTP verified', 'Load', 'Status', 'Created', 'Completed']} empty={!data?.rows.length && <Empty text="No trips" />}>
+            <Table head={['Trip ID', 'Planned', 'Delivery person', 'Vehicle', 'Stops', 'OTP verified', 'Load', 'Status', 'Created', 'Completed', 'Actions']} empty={!data?.rows.length && <Empty text="No trips" />}>
               {data?.rows.map((t: TripView) => (
                 <tr key={t.id} className="mat-mdc-row" role="link" style={{ cursor: 'pointer' }} onClick={() => navigate(`/cds/trips/${t.id}`)}>
                   <td className="fw-semibold text-primary">{t.tripNo}<div className="text-muted text-xs">{TRIP_TYPE[t.type].direction}</div></td>
@@ -49,13 +66,25 @@ export default function TripsPage() {
                   <td><Badge meta={TRIP_STATUS[t.status]} /></td>
                   <td className="small">{fmtDateTime(t.createdAt)}</td>
                   <td className="small">{fmtDateTime(t.completedAt)}</td>
+                  <td>
+                    <RowActions
+                      onView={() => navigate(`/cds/trips/${t.id}`)}
+                      items={[
+                        { label: 'View details', icon: 'fa-eye', onClick: () => navigate(`/cds/trips/${t.id}`) },
+                        { label: 'Map view', icon: 'fa-map-location-dot', onClick: () => setMap(t) },
+                        { label: 'Download stops', icon: 'fa-download', tone: 'success', onClick: () => download(t) },
+                        { label: 'Cancel trip', icon: 'fa-circle-xmark', tone: 'danger', hidden: busy || !['ASSIGNED', 'STARTED'].includes(t.status) || !t.stops.every((s) => s.status === 'PENDING'), onClick: () => void cancel(t) },
+                      ]}
+                    />
+                  </td>
                 </tr>
               ))}
             </Table>
-            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={data.pageSize} onPage={setPage} />}
+            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
           </>
         )}
       </Card>
+      {map && <RouteMapDialog title={`${map.tripNo} · Map View`} subtitle={`${TRIP_TYPE[map.type].label} (${TRIP_TYPE[map.type].direction}) · ${fmtDate(map.plannedDate)} · ${map.deliveryPersonName}`} stops={mapStops(map.stops)} onClose={() => setMap(null)} />}
     </div>
   );
 }
@@ -70,6 +99,8 @@ export function TripDetailsPage() {
   const { busy, run } = useAction();
   const { data, error, loading, reload } = useLoad(() => cdsApi.trip(id), [id]);
   const [openStop, setOpenStop] = useState<string | null>(null);
+  const [tab, setTab] = useState<'summary' | 'stops' | 'orders' | 'history' | ''>('');
+  const [showMap, setShowMap] = useState(false);
   const t = data?.trip;
   useEffect(() => {
     if (t && !openStop) setOpenStop(t.stops.find((s) => s.status === 'PENDING')?.id ?? null);
@@ -78,47 +109,80 @@ export function TripDetailsPage() {
   if (loading && !data) return <div className="cds-page"><Loading /></div>;
   if (!t || !data) return null;
   const running = ['STARTED', 'IN_PROGRESS'].includes(t.status);
+  // A running trip opens on its stops (that is where the work is); others open on the summary.
+  const view = tab || (running && data.canRun ? 'stops' : 'summary');
+  const done = t.stops.filter((s) => s.status !== 'PENDING').length;
+  const verified = t.stops.filter((s) => s.verifiedAt).length;
   const start = async () => {
     const early = t.plannedDate > new Date().toISOString().slice(0, 10);
     if (!(await confirm(`Start ${t.tripNo}?`, early ? `This trip is planned for ${fmtDate(t.plannedDate)}. Start it now?` : `${t.deliveryPersonName} starts the trip in the Delivery Partner App.`, 'Start trip'))) return;
-    if (await run(() => cdsApi.startTrip(t.id), 'Trip started')) reload();
+    if (await run(() => cdsApi.startTrip(t.id), 'Trip started')) { reload(); setTab('stops'); }
   };
   const cancel = async () => {
     const r = await askText(`Cancel ${t.tripNo}?`, 'Cancellation reason', 'Cancel trip', true);
     if (r && (await run(() => cdsApi.cancelTrip(t.id, r), 'Trip cancelled'))) reload();
   };
-  const back = sc ? { label: 'Trips', to: `/cds/trips?tab=${t.type}` } : { label: 'Trips', to: '/cds/trips' };
+  const back = !data.canRun ? '/cds/grn' : sc ? `/cds/trips?tab=${t.type}` : '/cds/trips';
   return (
     <div className="cds-page">
-      <PageHead icon={TRIP_TYPE[t.type].icon} title={t.tripNo} crumb={data.canRun ? back : { label: 'GRN', to: '/cds/grn' }}
-        subtitle={<>{TRIP_TYPE[t.type].label} · {TRIP_TYPE[t.type].direction} · <Badge meta={TRIP_STATUS[t.status]} /></>}>
-        <button className="btn btn-sm btn-outline-secondary" onClick={reload}><i className="fas fa-rotate me-1" />Refresh</button>
-        {data.canRun && t.status === 'ASSIGNED' && <button className="btn btn-sm btn-primary" disabled={busy} onClick={() => void start()}><i className="fas fa-play me-1" />Start Trip</button>}
-        {data.canRun && ['ASSIGNED', 'STARTED'].includes(t.status) && t.stops.every((s) => s.status === 'PENDING') && <button className="btn btn-sm btn-outline-danger" disabled={busy} onClick={() => void cancel()}>Cancel Trip</button>}
-      </PageHead>
+      <DetailHead icon={TRIP_TYPE[t.type].icon} title={t.tripNo} back={back} subtitle={<>{TRIP_TYPE[t.type].label} <span className="cds-route-chip"><i className="fas fa-route me-1" />{TRIP_TYPE[t.type].direction}</span> <Badge meta={TRIP_STATUS[t.status]} /></>}>
+        <button className="btn btn-outline-primary d-flex align-items-center text-nowrap" onClick={() => setShowMap(true)}><i className="fas fa-map-location-dot me-2" />Map View</button>
+        {data.canRun && t.status === 'ASSIGNED' && <button className="btn btn-primary d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void start()}><i className="fas fa-play me-2" />Start Trip</button>}
+        {data.canRun && ['ASSIGNED', 'STARTED'].includes(t.status) && t.stops.every((s) => s.status === 'PENDING') && <button className="btn btn-outline-danger d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void cancel()}><i className="fas fa-circle-xmark me-2" />Cancel Trip</button>}
+      </DetailHead>
       {t.status === 'CANCELLED' && <div className="cds-note warn mb-3"><i className="fas fa-ban mt-1" />Cancelled: {t.cancelReason}</div>}
-      {data.canRun && t.status === 'ASSIGNED' && <div className="cds-note mb-3"><i className="fas fa-circle-info mt-1" />The delivery person starts the trip in the Delivery Partner App. You can start it here on their behalf to record the handovers.</div>}
-      {!data.canRun && <div className="cds-note mb-3"><i className="fas fa-eye mt-1" />View only — this trip is run by the CDS Service Centre. Handover OTPs for your store are shown on your GRN and Returns pages.</div>}
-      <div className="cds-grid-2">
-        <div>
-          <Card title={<><i className="fas fa-map-signs text-primary me-2" />Stops</>} extra={<small>{t.distanceKm} km · ~{t.etaMinutes} min · {kg(t.loadKg)}</small>}>
+      {!data.canRun && <div className="cds-note mb-3"><i className="fas fa-eye mt-1" />View only. The CDS Service Centre runs this trip.</div>}
+      {showMap && <RouteMapDialog title={`${t.tripNo} · Map View`} subtitle={`${TRIP_TYPE[t.type].label} (${TRIP_TYPE[t.type].direction}) · ${t.distanceKm} km · ~${t.etaMinutes} min · ${done}/${t.stops.length} stops done`} stops={mapStops(t.stops)} onClose={() => setShowMap(false)} />}
+      <DetailTabs value={view} onChange={setTab} tabs={[
+        { id: 'summary', label: 'Summary', icon: 'fa-info-circle' },
+        { id: 'stops', label: 'Stops', icon: 'fa-location-dot', count: t.stops.length },
+        { id: 'orders', label: 'Orders', icon: 'fa-box', count: data.orders.length + data.returns.length },
+        { id: 'history', label: 'History', icon: 'fa-clock-rotate-left' },
+      ]}>
+        {view === 'summary' && (
+          <InfoGrid>
+            <InfoSection icon="fa-route" title="Route Overview" rows={[
+              ['fa-tag', 'Trip Type', TRIP_TYPE[t.type].label],
+              ['fa-route', 'Route', TRIP_TYPE[t.type].direction],
+              ['fa-calendar', 'Planned', `${fmtDate(t.plannedDate)} · ${t.slot}`],
+              ['fa-road', 'Distance', `${t.distanceKm} km · ~${t.etaMinutes} min`],
+              ['fa-weight-hanging', 'Load', `${kg(t.loadKg)} · ${t.units} units`],
+            ]} />
+            <InfoSection icon="fa-id-card" title="Resource Details" rows={[
+              ['fa-user', 'Delivery Person', t.deliveryPersonName],
+              ['fa-phone', 'Contact Number', t.deliveryPersonPhone],
+              ['fa-truck', 'Vehicle', `${t.vehicleRegNo} · ${t.vehicleType}`],
+            ]} />
+            <InfoSection icon="fa-list-check" title="Trip Progress" rows={[
+              ['fa-location-dot', 'Stops Done', `${done} / ${t.stops.length}`],
+              ['fa-key', 'OTP Verified', `${verified} / ${t.stops.length}`],
+              ['fa-play', 'Started', t.startedAt ? fmtDateTime(t.startedAt) : '—'],
+              ['fa-flag-checkered', 'Closed', t.completedAt ? fmtDateTime(t.completedAt) : ''],
+            ]} />
+            <div className="cds-info" style={{ gridColumn: '1 / -1' }}>
+              <h3><i className="fas fa-map-location-dot" />Route Map</h3>
+              <RouteMap stops={mapStops(t.stops)} height={320} />
+            </div>
+          </InfoGrid>
+        )}
+        {view === 'stops' && (
+          <div className="cds-plain">
+            {data.canRun && t.status === 'ASSIGNED' && <div className="cds-note m-3"><i className="fas fa-circle-info mt-1" />Start the trip to record the stops.</div>}
             {t.stops.map((s) => (
               <div key={s.id}>
                 <div className="cds-stop" role="button" onClick={() => setOpenStop(openStop === s.id ? null : s.id)}>
                   <div className={`num ${stopTone(s)}`}>{s.seq}</div>
                   <div className="flex-grow-1 small">
                     <div className="fw-semibold">{STOP_ACTION[s.action].label} · {s.name}</div>
-                    <div className="text-muted">{s.address}{s.phone ? ` · ${s.phone}` : ''}</div>
-                    <div className="text-xs mt-1"><i className="fas fa-key me-1 text-muted" />OTP between {STOP_ACTION[s.action].otpBetween}
-                      {s.verifiedAt && <span className="text-success ms-2"><i className="fas fa-shield-halved me-1" />verified {fmtDateTime(s.verifiedAt)} by {s.verifiedBy}</span>}
-                      {!s.verifiedAt && s.otp && s.status === 'PENDING' && <span className="ms-2"><Badge meta={OTP_STATUS[s.otp.status]} /> to {s.otp.sentToName}</span>}
-                    </div>
+                    <div className="text-muted">{s.address}</div>
+                    {s.verifiedAt && <div className="text-success text-xs mt-1"><i className="fas fa-shield-halved me-1" />OTP verified {fmtDateTime(s.verifiedAt)}</div>}
                     {s.failReason && <div className="text-danger text-xs">{s.status === 'FAILED' ? 'Failed' : 'Note'}: {s.failReason}</div>}
                   </div>
                   <div className="text-end small">
                     <span className={`cds-badge ${s.status === 'DONE' ? 'green' : s.status === 'FAILED' ? 'red' : s.status === 'PARTIAL' ? 'amber' : 'grey'}`}>{STOP_LABEL[s.status]}</span>
                     <div className="text-muted text-xs mt-1">{s.lines.reduce((a, l) => a + (l.actualQty ?? 0), 0)}/{s.lines.reduce((a, l) => a + l.plannedQty, 0)} units</div>
                   </div>
+                  <i className={`fas fa-chevron-${openStop === s.id ? 'up' : 'down'} text-muted small ms-2 mt-1`} />
                 </div>
                 {openStop === s.id && (
                   <div className="px-3 pb-3">
@@ -130,63 +194,55 @@ export function TripDetailsPage() {
                 )}
               </div>
             ))}
-          </Card>
-          <Card title={<><i className="fas fa-key text-primary me-2" />OTP verification history</>}>
-            <Table head={['Checkpoint', 'Sent to', 'Sent', 'Attempts', 'Status', 'Verified']} empty={!data.otps.length && <Empty text="No OTPs yet" />}>
-              {data.otps.map((o) => (
+          </div>
+        )}
+        {view === 'orders' && (
+          <>
+            <Table head={['Order', t.type === 'RETAILER_DELIVERY' ? 'Retailer' : 'Distributor → CDS', 'Status', 'Actions']} empty={!data.orders.length && <Empty text="No orders on this trip" />}>
+              {data.orders.map((o) => (
                 <tr key={o.id} className="mat-mdc-row">
-                  <td className="small">{STOP_ACTION[o.purpose].label}</td>
-                  <td className="small">{o.sentToName}<div className="text-muted text-xs">+91 {o.sentToPhone}</div></td>
-                  <td className="small">{fmtDateTime(o.createdAt)}<div className="text-muted text-xs">expires {fmtDateTime(o.expiresAt)}</div></td>
-                  <td>{o.attempts}</td><td><Badge meta={OTP_STATUS[o.status]} /></td>
-                  <td className="small">{o.verifiedAt ? <>{fmtDateTime(o.verifiedAt)}<div className="text-muted text-xs">{o.verifiedBy}</div></> : '—'}</td>
+                  <td className="fw-semibold text-primary">{o.orderNo}</td>
+                  <td className="small">{t.type === 'RETAILER_DELIVERY' ? o.retailerName : `${o.distributorName} → ${o.storeName}`}</td>
+                  <td><Badge meta={ORDER_STATUS[o.status]} /></td>
+                  <td><RowActions onView={() => navigate(`/cds/orders/${o.id}`)} /></td>
                 </tr>
               ))}
             </Table>
-          </Card>
-        </div>
-        <div>
-          <Card title={<><i className="fas fa-circle-info text-primary me-2" />Trip</>}>
-            <dl className="cds-dl">
-              <dt>Trip type</dt><dd>{TRIP_TYPE[t.type].label}</dd>
-              <dt>Run by</dt><dd>{t.ownerName}</dd>
-              <dt>Planned</dt><dd>{fmtDate(t.plannedDate)} · {t.slot}</dd>
-              <dt>Delivery person</dt><dd>{t.deliveryPersonName} · {t.deliveryPersonPhone}</dd>
-              <dt>Vehicle</dt><dd>{t.vehicleRegNo} · {t.vehicleType} · {t.capacityKg} kg</dd>
-              <dt>Created</dt><dd>{fmtDateTime(t.createdAt)} · {t.createdBy}</dd>
-              {t.startedAt && <><dt>Started</dt><dd>{fmtDateTime(t.startedAt)}</dd></>}
-              {t.completedAt && <><dt>Closed</dt><dd>{fmtDateTime(t.completedAt)}</dd></>}
-            </dl>
-          </Card>
-          {data.orders.length > 0 && (
-            <Card title={<><i className="fas fa-box text-primary me-2" />Orders ({data.orders.length})</>}>
-              <div className="p-2 small">
-                {data.orders.map((o) => (
-                  <div key={o.id} className="d-flex justify-content-between align-items-center py-1 border-bottom">
-                    <span><a role="button" className="text-primary fw-semibold" onClick={() => navigate(`/cds/orders/${o.id}`)}>{o.orderNo}</a> · {t.type === 'RETAILER_DELIVERY' ? o.retailerName : `${o.distributorName} → ${o.storeName}`}</span>
-                    <Badge meta={ORDER_STATUS[o.status]} />
-                  </div>
-                ))}
+            {data.returns.length > 0 && (
+              <div className="mt-3">
+                <Table head={['Return', 'Order', 'Status']}>
+                  {data.returns.map((r) => <tr key={r.id} className="mat-mdc-row"><td className="fw-semibold">{r.returnNo}</td><td className="small">{r.orderNo}</td><td><Badge meta={RETURN_STATUS[r.status]} /></td></tr>)}
+                </Table>
               </div>
-            </Card>
-          )}
-          {data.returns.length > 0 && (
-            <Card title={<><i className="fas fa-rotate-left text-primary me-2" />Returns ({data.returns.length})</>}>
-              <div className="p-2 small">{data.returns.map((r) => <div key={r.id} className="d-flex justify-content-between py-1 border-bottom"><span>{r.returnNo} · {r.orderNo}</span><Badge meta={RETURN_STATUS[r.status]} /></div>)}</div>
-            </Card>
-          )}
-          {data.collections.length > 0 && (
-            <Card title={<><i className="fas fa-indian-rupee-sign text-primary me-2" />Collections</>}>
-              <div className="p-2 small">{data.collections.map((c) => <div key={c.id} className="d-flex justify-content-between py-1 border-bottom"><span>{c.orderNo} · {money(c.amount)} {c.mode}</span><Badge meta={COLLECTION_STATUS[c.status]} /></div>)}</div>
-            </Card>
-          )}
-          <Card title={<><i className="fas fa-clock-rotate-left text-primary me-2" />Status history</>}>
-            <ul className="cds-timeline">
-              {[...t.history].reverse().map((h, k) => <li key={k}><div className="fw-semibold">{TRIP_STATUS[h.to as TripStatus]?.label ?? h.to}</div><div className="when">{fmtDateTime(h.at)} · {h.by}</div>{h.note && <div className="text-muted">{h.note}</div>}</li>)}
-            </ul>
-          </Card>
-        </div>
-      </div>
+            )}
+            {data.collections.length > 0 && (
+              <div className="mt-3">
+                <Table head={['Order', 'Amount', 'Mode', 'Status']}>
+                  {data.collections.map((c) => <tr key={c.id} className="mat-mdc-row"><td className="fw-semibold">{c.orderNo}</td><td>{money(c.amount)}</td><td className="small">{c.mode}</td><td><Badge meta={COLLECTION_STATUS[c.status]} /></td></tr>)}
+                </Table>
+              </div>
+            )}
+          </>
+        )}
+        {view === 'history' && (
+          <div className="cds-info-grid">
+            <div className="cds-info">
+              <h3><i className="fas fa-clock-rotate-left" />Status History</h3>
+              <ul className="cds-timeline">
+                {[...t.history].reverse().map((h, k) => <li key={k}><div className="fw-semibold">{TRIP_STATUS[h.to as TripStatus]?.label ?? h.to}</div><div className="when">{fmtDateTime(h.at)} · {h.by}</div>{h.note && <div className="text-muted">{h.note}</div>}</li>)}
+              </ul>
+            </div>
+            <div className="cds-info">
+              <h3><i className="fas fa-key" />OTP Checks</h3>
+              {!data.otps.length ? <div className="text-muted small py-2">No OTPs yet</div> : (
+                <ul className="cds-timeline">
+                  {data.otps.map((o) => <li key={o.id}><div className="fw-semibold">{STOP_ACTION[o.purpose].label} <Badge meta={OTP_STATUS[o.status]} /></div><div className="when">{o.sentToName} · {fmtDateTime(o.verifiedAt ?? o.createdAt)}</div></li>)}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </DetailTabs>
     </div>
   );
 }
@@ -194,7 +250,7 @@ export function TripDetailsPage() {
 function StopLines({ stop }: { stop: StopView }) {
   const handover = stop.action === 'RETURN_HANDOVER_CDS';
   return (
-    <Table head={['Order / return', 'Item', 'Planned', 'Actual', ...(handover ? ['Accepted', 'Rejected'] : [])]}>
+    <Table head={['Order / return', 'Item', 'Planned Qty', 'Actual Qty', ...(handover ? ['Accepted', 'Rejected'] : [])]}>
       {stop.lines.map((l, i) => (
         <tr key={i} className="mat-mdc-row">
           <td className="small">{l.returnId ? 'Return' : 'Order'}</td><td className="small">{l.name}</td><td>{l.plannedQty}</td>
@@ -240,7 +296,7 @@ function StopAction({ tripId, stop, orders, onDone }: { tripId: string; stop: St
   return (
     <div className="border rounded p-3 bg-light">
       <div className="small fw-semibold mb-2">{STOP_ACTION[stop.action].verb} — confirm quantities, then verify the OTP from {stop.partyType === 'CDS' ? 'the CDS User' : stop.partyType === 'RETAILER' ? 'the retailer' : 'the seller / distributor'}</div>
-      <Table head={['Item', 'Planned', handover ? 'Received' : 'Actual', ...(handover ? ['Accepted', 'Rejected'] : [])]}>
+      <Table head={['Item', 'Planned Qty', handover ? 'Received' : 'Actual Qty', ...(handover ? ['Accepted', 'Rejected'] : [])]}>
         {stop.lines.map((l, i) => (
           <tr key={i} className="mat-mdc-row">
             <td className="small">{l.name}<div className="text-muted text-xs">{l.returnId ? 'Return' : orders.find((o) => o.id === l.orderId)?.orderNo}</div></td>

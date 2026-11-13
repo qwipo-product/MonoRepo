@@ -1,11 +1,12 @@
 // CDS shell: the existing sidebar / top-bar layout with a role-based menu. Each role sees (and can open) only its
 // own modules; the API checks the same role and the CDS store on every call.
 import { Suspense, useEffect, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router';
 import DataLoading from '../../components/DataLoading';
 import { cdsApi, cdsAuth } from '../../api/services/cds.service';
 import type { CdsPage } from '../../cds/types';
-import { useCdsSession, useMeta } from './ui';
+import { alertError, refreshMeta, useCdsSession, useMeta } from './ui';
 import '../../layout/Layout.css';
 import './cds.css';
 
@@ -14,7 +15,6 @@ const MENU: Record<'SERVICE_CENTRE' | 'CDS_USER', MenuItem[]> = {
   SERVICE_CENTRE: [
     { page: 'sc-orders', to: '/cds/orders', icon: 'fa-box', label: 'Orders' },
     { page: 'sc-pickup', to: '/cds/pickup-planning', icon: 'fa-truck-ramp-box', label: 'Pickup Planning' },
-    { page: 'sc-deliver', to: '/cds/deliver-to-cds', icon: 'fa-warehouse', label: 'Deliver to CDS' },
     { page: 'sc-returns', to: '/cds/return-planning', icon: 'fa-rotate-left', label: 'Return Planning' },
     { page: 'sc-trips', to: '/cds/trips', icon: 'fa-paper-plane', label: 'Trips' },
     { page: 'sc-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports' },
@@ -74,6 +74,18 @@ export default function CdsLayout() {
     cdsAuth.clear(true);
     navigate('/cds/login', { replace: true });
   };
+  const resetDemo = async () => {
+    setMenuOpen(false);
+    const ok = await Swal.fire({ icon: 'warning', title: 'Reset demo data?', text: 'Orders, plans, trips, GRNs, returns and collections go back to the starting demo data. You stay signed in.', showCancelButton: true, confirmButtonText: 'Reset', confirmButtonColor: '#1e3a8a', reverseButtons: true });
+    if (!ok.isConfirmed) return;
+    try {
+      await cdsApi.resetDemo();
+      refreshMeta();
+      window.location.reload();
+    } catch (e) {
+      void alertError(e);
+    }
+  };
   return (
     <div className="layout-container">
       <aside className={`sidebar cds-sidebar${open ? '' : ' collapsed'}`}>
@@ -101,6 +113,7 @@ export default function CdsLayout() {
               <i className="fas fa-user" />
               <div className={`user-menu${menuOpen ? ' show' : ''}`}>
                 <div className="user-info"><span className="user-name">{user.name}</span><span className="user-email">{roleLabel} · +91 {user.mobile}</span></div>
+                <a className="menu-item" href="#" onClick={(e) => { e.preventDefault(); void resetDemo(); }}><i className="fas fa-rotate" /> Reset demo data</a>
                 <a className="menu-item sign-out" href="#" onClick={(e) => { e.preventDefault(); void signOut(); }}><i className="fas fa-sign-out-alt" /> Sign Out</a>
               </div>
             </div>

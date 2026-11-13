@@ -1,15 +1,18 @@
 // Reports (both roles), Settings (Service Centre: OTP rules + fleet), Reports & Settings (CDS User: reports + own fleet
-// and store), CDS Stores (Service Centre).
-import { useState } from 'react';
+// and store), CDS Stores (Service Centre). Same layout as the app's Reports and Settings screens.
+import { useRef, useState, type ReactNode } from 'react';
 import Swal from 'sweetalert2';
 import { cdsApi } from '../../api/services/cds.service';
 import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS } from '../../cds/status';
-import { Card, confirm, downloadCsv, Empty, ErrorBox, KpiStrip, Loading, PageHead, refreshMeta, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
+import { ringAreaKm2 } from '../../cds/planning';
+import { CoverageMap, OUTSIDE_COLOR, PolygonEditorDialog, STORE_COLORS } from './RouteMap';
+import { Card, confirm, downloadCsv, Empty, ErrorBox, FilterBar, fmtDate, InfoSection, Loading, PageHead, refreshMeta, RowActions, SectionCard, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
 
 const STATUS_OPTIONS: Record<string, Record<string, { label: string }>> = {
   'trips-': TRIP_STATUS, grn: GRN_STATUS, 'delivery-status': ORDER_STATUS, returns: RETURN_STATUS, collections: COLLECTION_STATUS,
 };
 
+/** Report form (report, dates, filters, Clear Filters / Download) and a preview of the rows. */
 function Reports() {
   const meta = useMeta();
   const { sc } = useCdsSession();
@@ -22,45 +25,43 @@ function Reports() {
   const statuses = STATUS_OPTIONS[Object.keys(STATUS_OPTIONS).find((k) => rid.startsWith(k)) ?? ''] ?? {};
   const retailers = useLoad(() => (!sc ? cdsApi.retailers() : Promise.resolve([])), [sc]);
   const set = (p: Record<string, string>) => setF((x) => ({ ...x, ...p }));
+  const has = (k: string) => !!current?.filters.includes(k);
+  const select = (key: string, label: string, all: string, options: { id: string; name: string }[]) => (
+    <div>
+      <label htmlFor={`rf-${key}`}>{label}</label>
+      <select id={`rf-${key}`} className="form-select form-select-sm" value={f[key] ?? ''} onChange={(e) => set({ [key]: e.target.value })}>
+        <option value="">{all}</option>{options.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+      </select>
+    </div>
+  );
   return (
     <>
-      <KpiStrip />
-      <div className="d-flex flex-wrap gap-2 mb-3">
-        {list.map((r) => <button key={r.id} className={`btn btn-sm ${r.id === rid ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => { setId(r.id); setF({}); }}>{r.title}</button>)}
-      </div>
-      {current && (
-        <div className="cds-filters">
-          {current.filters.includes('from') && <input type="date" aria-label="From date" className="form-control form-control-sm" value={f.from ?? ''} onChange={(e) => set({ from: e.target.value })} />}
-          {current.filters.includes('to') && <input type="date" aria-label="To date" className="form-control form-control-sm" value={f.to ?? ''} onChange={(e) => set({ to: e.target.value })} />}
-          {current.filters.includes('cdsStoreId') && sc && (
-            <select aria-label="CDS store" className="form-select form-select-sm" value={f.cdsStoreId ?? ''} onChange={(e) => set({ cdsStoreId: e.target.value })}>
-              <option value="">All CDS stores</option>{meta.data?.stores.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+      <Card title={<><i className="fas fa-file-lines text-primary me-2" />Report</>}>
+        <div className="cds-report-form">
+          <div>
+            <label htmlFor="rf-report">Report</label>
+            <select id="rf-report" className="form-select form-select-sm" value={rid} onChange={(e) => { setId(e.target.value); setF({}); }}>
+              {list.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
             </select>
-          )}
-          {current.filters.includes('distributorId') && (
-            <select aria-label="Distributor" className="form-select form-select-sm" value={f.distributorId ?? ''} onChange={(e) => set({ distributorId: e.target.value })}>
-              <option value="">All distributors</option>{meta.data?.distributors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            </select>
-          )}
-          {current.filters.includes('retailerId') && !sc && (
-            <select aria-label="Retailer" className="form-select form-select-sm" value={f.retailerId ?? ''} onChange={(e) => set({ retailerId: e.target.value })}>
-              <option value="">All retailers</option>{retailers.data?.filter((r) => r.orders).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            </select>
-          )}
-          {current.filters.includes('status') && (
-            <select aria-label="Status" className="form-select form-select-sm" value={f.status ?? ''} onChange={(e) => set({ status: e.target.value })}>
-              <option value="">All statuses</option>{Object.entries(statuses).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-          )}
-          <button className="btn btn-sm btn-outline-secondary ms-auto" disabled={!data?.rows.length} onClick={() => data && downloadCsv(data.id, data.columns, data.rows)}><i className="fas fa-file-csv me-1" />Export CSV</button>
+          </div>
+          {has('from') && <div><label htmlFor="rf-from">From Date</label><input id="rf-from" type="date" className="form-control form-control-sm" value={f.from ?? ''} onChange={(e) => set({ from: e.target.value })} /></div>}
+          {has('to') && <div><label htmlFor="rf-to">To Date</label><input id="rf-to" type="date" className="form-control form-control-sm" value={f.to ?? ''} onChange={(e) => set({ to: e.target.value })} /></div>}
+          {has('cdsStoreId') && sc && select('cdsStoreId', 'CDS Store', 'All CDS stores', meta.data?.stores ?? [])}
+          {has('distributorId') && select('distributorId', 'Distributor', 'All distributors', meta.data?.distributors ?? [])}
+          {has('retailerId') && !sc && select('retailerId', 'Retailer', 'All retailers', (retailers.data ?? []).filter((r) => r.orders))}
+          {has('status') && select('status', 'Status', 'All statuses', Object.entries(statuses).map(([k, v]) => ({ id: k, name: v.label })))}
         </div>
-      )}
-      <Card title={data?.title} extra={data && <small>{data.rows.length} row(s)</small>}>
+        <div className="cds-report-actions">
+          <button className="btn btn-sm btn-outline-secondary" disabled={!Object.values(f).some(Boolean)} onClick={() => setF({})}>Clear Filters</button>
+          <button className="btn btn-sm btn-primary" disabled={!data?.rows.length} onClick={() => data && downloadCsv(data.id, data.columns, data.rows)}><i className="fas fa-download me-1" />Download</button>
+        </div>
+      </Card>
+      <Card title={data?.title ?? 'Preview'} extra={data && <small>{data.rows.length} row(s)</small>}>
         {error && <ErrorBox text={error} onRetry={reload} />}
         {loading && !data ? <Loading /> : data && (
           <Table head={data.columns.map((c) => c.label)} empty={!data.rows.length && <Empty text="No data for these filters" />}>
-            {data.rows.map((r, i) => <tr key={i} className="mat-mdc-row">{data.columns.map((c) => <td key={c.key} className={`small${c.align === 'end' ? ' text-end' : ''}`}>{r[c.key]}</td>)}</tr>)}
-            {data.totals && <tr className="mat-mdc-row cds-retailer-row">{data.columns.map((c, i) => <td key={c.key} className={c.align === 'end' ? 'text-end' : ''}>{i === 0 ? 'Total' : data.totals?.[c.key] ?? ''}</td>)}</tr>}
+            {data.rows.map((r, i) => <tr key={i} className="mat-mdc-row">{data.columns.map((c) => <td key={c.key} className="small">{r[c.key]}</td>)}</tr>)}
+            {data.totals && <tr className="mat-mdc-row cds-retailer-row">{data.columns.map((c, i) => <td key={c.key}>{i === 0 ? 'Total' : data.totals?.[c.key] ?? ''}</td>)}</tr>}
           </Table>
         )}
       </Card>
@@ -71,12 +72,12 @@ function Reports() {
 export function ReportsPage() {
   const { sc } = useCdsSession();
   const [tab, setTab] = useState<'reports' | 'settings'>('reports');
-  if (sc) return <div className="cds-page"><PageHead icon="fa-chart-bar" title="Reports" subtitle="Operational reports across your CDS stores, from live records." /><Reports /></div>;
+  if (sc) return <div className="cds-page"><PageHead icon="fa-chart-bar" title="Reports" subtitle="Download reports across your CDS stores." /><Reports /></div>;
   return (
     <div className="cds-page">
-      <PageHead icon="fa-chart-bar" title="Reports & Settings" subtitle="Your CDS store's operational reports, and its delivery persons and vehicles." />
+      <PageHead icon="fa-chart-bar" title="Reports & Settings" subtitle="Your CDS store's reports, delivery persons and vehicles." />
       <Tabs value={tab} onChange={setTab} tabs={[{ id: 'reports', label: 'Reports', icon: 'fa-chart-bar' }, { id: 'settings', label: 'Settings', icon: 'fa-cog' }]} />
-      {tab === 'reports' ? <Reports /> : <><StoreProfile /><Fleet /></>}
+      {tab === 'reports' ? <Reports /> : <><StoreProfile /><div className="row g-3"><div className="col-lg-6"><Fleet show="vehicles" /></div><div className="col-lg-6"><Fleet show="persons" /></div></div></>}
     </div>
   );
 }
@@ -86,19 +87,19 @@ function StoreProfile() {
   const meta = useMeta();
   const st = meta.data?.stores.find((x) => x.id === store);
   return (
-    <Card title={<><i className="fas fa-store text-primary me-2" />Store & profile</>}>
-      <dl className="cds-dl">
-        <dt>CDS store</dt><dd>{st?.name} ({st?.code})</dd>
-        <dt>Address</dt><dd>{st?.address}</dd>
-        <dt>Serves</dt><dd>{st?.localities.join(', ')}</dd>
-        <dt>Signed in as</dt><dd>{user?.name} · +91 {user?.mobile}</dd>
-        <dt>OTP rules</dt><dd>Valid {meta.data?.settings.otpExpiryMinutes} min · {meta.data?.settings.otpMaxAttempts} attempts (set by the Service Centre)</dd>
-      </dl>
-    </Card>
+    <div className="mb-3">
+      <InfoSection icon="fa-store" title="Store & Profile" rows={[
+        ['fa-warehouse', 'CDS Store', `${st?.name ?? ''} (${st?.code ?? ''})`],
+        ['fa-location-dot', 'Address', st?.address],
+        ['fa-user', 'Signed in as', `${user?.name ?? ''} · +91 ${user?.mobile ?? ''}`],
+        ['fa-key', 'OTP Rules', `${meta.data?.settings.otpExpiryMinutes} min · ${meta.data?.settings.otpMaxAttempts} attempts`],
+      ]} />
+    </div>
   );
 }
 
-function Fleet() {
+/** Vehicles or delivery persons, with Add and an Active switch. */
+function Fleet({ show }: { show: 'vehicles' | 'persons' }) {
   const { busy, run } = useAction();
   const { data, error, loading, reload } = useLoad(() => cdsApi.fleet(), []);
   const toggle = async (kind: 'vehicles' | 'persons', id: string, active: boolean) => { if (await run(() => cdsApi.setFleetActive(kind, id, active), active ? 'Activated' : 'Deactivated')) reload(); };
@@ -120,31 +121,28 @@ function Fleet() {
   };
   if (error) return <ErrorBox text={error} onRetry={reload} />;
   if (loading && !data) return <Loading />;
-  return (
-    <div className="row g-3">
-      <div className="col-lg-6">
-        <Card title={<><i className="fas fa-truck text-primary me-2" />Vehicles</>} extra={<button className="btn btn-sm btn-outline-primary" onClick={() => void addVehicle()}><i className="fas fa-plus me-1" />Add</button>}>
-          <Table head={['Registration', 'Type', 'Capacity', 'Active']}>
-            {data?.vehicles.map((v) => <tr key={v.id} className="mat-mdc-row"><td className="fw-semibold">{v.regNo}</td><td className="small">{v.type}</td><td className="small">{v.capacityKg} kg</td>
-              <td><div className="form-check form-switch m-0"><input className="form-check-input" type="checkbox" aria-label={`Active ${v.regNo}`} disabled={busy} checked={v.active} onChange={(e) => void toggle('vehicles', v.id, e.target.checked)} /></div></td></tr>)}
-          </Table>
-        </Card>
-      </div>
-      <div className="col-lg-6">
-        <Card title={<><i className="fas fa-id-badge text-primary me-2" />Delivery persons</>} extra={<button className="btn btn-sm btn-outline-primary" onClick={() => void addPerson()}><i className="fas fa-plus me-1" />Add</button>}>
-          <Table head={['Name', 'Mobile', 'Active']}>
-            {data?.deliveryPersons.map((p) => <tr key={p.id} className="mat-mdc-row"><td className="fw-semibold">{p.name}</td><td className="small">{p.phone}</td>
-              <td><div className="form-check form-switch m-0"><input className="form-check-input" type="checkbox" aria-label={`Active ${p.name}`} disabled={busy} checked={p.active} onChange={(e) => void toggle('persons', p.id, e.target.checked)} /></div></td></tr>)}
-          </Table>
-        </Card>
-      </div>
-    </div>
+  const sw = (label: string, on: boolean, change: (v: boolean) => void) => (
+    <div className="form-check form-switch m-0 d-inline-block"><input className="form-check-input" type="checkbox" aria-label={label} disabled={busy} checked={on} onChange={(e) => change(e.target.checked)} /></div>
+  );
+  return show === 'vehicles' ? (
+    <Card title={<><i className="fas fa-truck text-primary me-2" />Vehicles <small>({data?.vehicles.length})</small></>} extra={<button className="btn btn-sm btn-primary" onClick={() => void addVehicle()}><i className="fas fa-plus me-1" />Add Vehicle</button>}>
+      <Table head={['Registration', 'Type', 'Capacity', 'Active']}>
+        {data?.vehicles.map((v) => <tr key={v.id} className="mat-mdc-row"><td className="fw-semibold">{v.regNo}</td><td className="small">{v.type}</td><td className="small">{v.capacityKg} kg</td><td>{sw(`Active ${v.regNo}`, v.active, (x) => void toggle('vehicles', v.id, x))}</td></tr>)}
+      </Table>
+    </Card>
+  ) : (
+    <Card title={<><i className="fas fa-id-badge text-primary me-2" />Delivery Persons <small>({data?.deliveryPersons.length})</small></>} extra={<button className="btn btn-sm btn-primary" onClick={() => void addPerson()}><i className="fas fa-plus me-1" />Add Delivery Person</button>}>
+      <Table head={['Name', 'Mobile', 'Active']}>
+        {data?.deliveryPersons.map((p) => <tr key={p.id} className="mat-mdc-row"><td className="fw-semibold">{p.name}</td><td className="small">{p.phone}</td><td>{sw(`Active ${p.name}`, p.active, (x) => void toggle('persons', p.id, x))}</td></tr>)}
+      </Table>
+    </Card>
   );
 }
 
 export function SettingsPage() {
   const meta = useMeta();
   const { busy, run } = useAction();
+  const [tab, setTab] = useState<'otp' | 'vehicles' | 'persons'>('otp');
   const s = meta.data?.settings;
   const [x, setX] = useState<{ otpExpiryMinutes?: number; otpMaxAttempts?: number; nextDayPlanning?: boolean }>({});
   const v = { ...s, ...x };
@@ -155,19 +153,37 @@ export function SettingsPage() {
       meta.reload();
     }
   };
+  const tile = (icon: string, title: string, desc: string, control: ReactNode) => (
+    <div className="cds-tile">
+      <div className="tile-icon"><i className={`fas ${icon}`} /></div>
+      <div className="tile-text"><div className="tile-title">{title}</div><div className="tile-desc">{desc}</div></div>
+      {control}
+    </div>
+  );
   return (
     <div className="cds-page">
-      <PageHead icon="fa-cog" title="Settings" subtitle="OTP rules for every pickup / handover, planning rules, and the Service Centre fleet." />
-      <Card title={<><i className="fas fa-key text-primary me-2" />OTP & planning rules</>}>
-        <div className="p-3 row g-3 small">
-          <div className="col-md-3"><label className="form-label fw-medium">OTP valid for (minutes)</label><input type="number" min={2} max={60} className="form-control form-control-sm" value={v.otpExpiryMinutes ?? ''} onChange={(e) => setX((p) => ({ ...p, otpExpiryMinutes: Number(e.target.value) }))} /></div>
-          <div className="col-md-3"><label className="form-label fw-medium">Wrong attempts before lock</label><input type="number" min={1} max={10} className="form-control form-control-sm" value={v.otpMaxAttempts ?? ''} onChange={(e) => setX((p) => ({ ...p, otpMaxAttempts: Number(e.target.value) }))} /></div>
-          <div className="col-md-4 d-flex align-items-end"><div className="form-check form-switch"><input id="nd" className="form-check-input" type="checkbox" checked={!!v.nextDayPlanning} onChange={(e) => setX((p) => ({ ...p, nextDayPlanning: e.target.checked }))} /><label htmlFor="nd" className="form-check-label">Retailer delivery and return plans for the next day only</label></div></div>
-          <div className="col-md-2 d-flex align-items-end"><button className="btn btn-sm btn-primary w-100" disabled={busy || !Object.keys(x).length} onClick={() => void save()}>Save</button></div>
-          <div className="col-12 text-muted">OTP checkpoints: distributor pickup · handover to CDS · order pickup at CDS · retailer delivery · return collection · return handover to CDS · return pickup at CDS · return handover to seller. A used OTP cannot be reused.</div>
-        </div>
-      </Card>
-      <Fleet />
+      <PageHead icon="fa-cog" title="Settings" subtitle="OTP rules and the Service Centre fleet." />
+      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'otp', label: 'OTP Rules', icon: 'fa-key' }, { id: 'vehicles', label: 'Vehicles', icon: 'fa-truck' }, { id: 'persons', label: 'Delivery Persons', icon: 'fa-id-badge' }]} />
+      {tab === 'vehicles' && <Fleet show="vehicles" />}
+      {tab === 'persons' && <Fleet show="persons" />}
+      {tab === 'otp' && (
+        <Card>
+          <div className="p-4">
+            <div className="cds-settings-head">
+              <h2>OTP & Planning Rules</h2>
+              <div className="d-flex gap-2">
+                <button className="btn btn-sm btn-outline-secondary" disabled={busy || !Object.keys(x).length} onClick={() => setX({})}><i className="fas fa-rotate-left me-1" />Undo Changes</button>
+                <button className="btn btn-sm btn-primary" disabled={busy || !Object.keys(x).length} onClick={() => void save()}><i className="fas fa-floppy-disk me-1" />Save</button>
+              </div>
+            </div>
+            <div className="cds-tiles">
+              {tile('fa-clock', 'OTP Validity', 'Time an OTP stays valid', <><input type="number" min={2} max={60} aria-label="OTP validity in minutes" className="form-control form-control-sm" value={v.otpExpiryMinutes ?? ''} onChange={(e) => setX((p) => ({ ...p, otpExpiryMinutes: Number(e.target.value) }))} /><span className="unit">minutes</span></>)}
+              {tile('fa-lock', 'Wrong Attempts', 'Wrong OTPs before the OTP locks', <><input type="number" min={1} max={10} aria-label="Wrong attempts before lock" className="form-control form-control-sm" value={v.otpMaxAttempts ?? ''} onChange={(e) => setX((p) => ({ ...p, otpMaxAttempts: Number(e.target.value) }))} /><span className="unit">attempts</span></>)}
+              {tile('fa-calendar-day', 'Next-day Planning', 'Retailer delivery and return plans for the next day only', <div className="form-check form-switch m-0"><input className="form-check-input" type="checkbox" aria-label="Next-day planning" checked={!!v.nextDayPlanning} onChange={(e) => setX((p) => ({ ...p, nextDayPlanning: e.target.checked }))} /></div>)}
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -175,6 +191,19 @@ export function SettingsPage() {
 export function StoresPage() {
   const { busy, run } = useAction();
   const { data, error, loading, reload } = useLoad(() => cdsApi.stores(), []);
+  const coverage = useLoad(() => cdsApi.coverage(), []);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [focus, setFocus] = useState<string | null>(null);
+  const [listStore, setListStore] = useState<string>('');
+  const [listQ, setListQ] = useState('');
+  const mapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const stores = data ?? [];
+  const retailers = coverage.data ?? [];
+  const countOf = (id: string | null) => retailers.filter((r) => r.storeId === id).length;
+  const color = (id: string) => STORE_COLORS[Math.max(0, stores.findIndex((s) => s.id === id)) % STORE_COLORS.length];
+  const matches = q.trim().length < 2 ? [] : retailers.filter((r) => `${r.name} ${r.phone} ${r.code} ${r.locality}`.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 8);
   const edit = async (id: string, name: string, phone: string) => {
     const r = await Swal.fire({
       title: 'Store manager', html: `<input id="m-name" class="swal2-input" placeholder="Manager name" value="${name}"><input id="m-phone" class="swal2-input" placeholder="Phone" value="${phone}">`,
@@ -185,37 +214,121 @@ export function StoresPage() {
   };
   const toggle = async (id: string, name: string, active: boolean) => {
     if (!active && !(await confirm(`Deactivate ${name}?`, 'No new orders or plans can be sent to it.', 'Deactivate'))) return;
-    if (await run(() => cdsApi.updateStore(id, { active }), active ? 'Store activated' : 'Store deactivated')) { refreshMeta(); reload(); }
+    if (await run(() => cdsApi.updateStore(id, { active }), active ? 'Store activated' : 'Store deactivated')) { refreshMeta(); reload(); coverage.reload(); }
   };
+  const saveArea = async (id: string, polygon: [number, number][]) => {
+    if (await run(() => cdsApi.updateStore(id, { polygon }), 'Service area saved')) { setEditing(null); refreshMeta(); reload(); coverage.reload(); }
+  };
+  const editingStore = stores.find((s) => s.id === editing);
+  const tabStore = listStore || stores[0]?.id || '';
+  const listed = retailers
+    .filter((r) => (tabStore === 'outside' ? !r.storeId : r.storeId === tabStore))
+    .filter((r) => !listQ.trim() || `${r.name} ${r.ownerName} ${r.phone} ${r.locality} ${r.code}`.toLowerCase().includes(listQ.trim().toLowerCase()))
+    .sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name));
+  const showRetailers = (id: string) => { setListStore(id); setListQ(''); setTimeout(() => listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); };
+  const locate = (id: string) => { setFocus(id); mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-store" title="CDS Stores" subtitle="CDS stores operated through the Service Centre — serviceability, CDS User, and live operations." />
-      {error && <ErrorBox text={error} onRetry={reload} />}
+      <PageHead icon="fa-store" title="CDS Stores" subtitle="CDS stores and their service areas. A retailer inside a service area is served by that CDS store." />
+      {(error || coverage.error) && <ErrorBox text={error || coverage.error} onRetry={() => { reload(); coverage.reload(); }} />}
       {loading && !data ? <Loading /> : (
-        <div className="row g-3">
-          {data?.map((st) => (
-            <div key={st.id} className="col-xl-4 col-lg-6">
-              <Card title={<><i className="fas fa-warehouse text-primary me-2" />{st.name} <small>{st.code}</small></>} extra={<span className={`cds-badge ${st.active ? 'green' : 'grey'}`}>{st.active ? 'Active' : 'Inactive'}</span>}>
-                <dl className="cds-dl">
-                  <dt>Address</dt><dd>{st.address}</dd>
-                  <dt>Serves</dt><dd>{st.localities.join(', ')}</dd>
-                  <dt>Manager</dt><dd>{st.managerName} · {st.managerPhone}</dd>
-                  <dt>CDS User</dt><dd>{st.user ? `${st.user.name} · +91 ${st.user.mobile}` : '—'}</dd>
-                  <dt>Fleet</dt><dd>{st.vehicles} vehicle(s) · {st.deliveryPersons} delivery person(s)</dd>
-                </dl>
-                <div className="d-flex flex-wrap gap-3 px-3 pb-3 small">
-                  {[['Incoming', st.incoming], ['GRN pending', st.grnPending], ['Ready', st.ready], ['Out for delivery', st.outForDelivery], ['Delivered', st.delivered], ['Returns at CDS', st.returnsAtCds]].map(([l, n]) => (
-                    <div key={l as string}><div className="text-muted text-xs">{l}</div><div className="fs-5 fw-bold">{n}</div></div>
+        <>
+          <div ref={mapRef} />
+          <SectionCard icon="fa-draw-polygon" tone="teal" title="Service Areas" subtitle="Retailers inside a CDS area go to that CDS store. Outside every area → 3PL." count={retailers.length - countOf(null)} countLabel={`of ${retailers.length} retailers covered`}>
+            <div className="cds-coverage">
+              <div className="cds-area-side">
+                <ul className="cds-legend">
+                  {stores.map((s) => (
+                    <li key={s.id} role="button" title="Show the retailers of this CDS store" onClick={() => showRetailers(s.id)}><span className="swatch" style={{ background: color(s.id) }} />{s.name}{!s.active && <span className="text-muted small">(inactive)</span>}<span className="num">{countOf(s.id)}</span></li>
                   ))}
+                  <li role="button" title="Show the retailers outside every CDS area" onClick={() => showRetailers('outside')}><span className="swatch" style={{ background: OUTSIDE_COLOR }} />Outside every area (3PL)<span className="num">{countOf(null)}</span></li>
+                </ul>
+                <div>
+                  <label className="form-label fw-semibold small mb-1" htmlFor="chk-ret">Check a retailer</label>
+                  <div className="cds-search w-100"><i className="fas fa-search" /><input id="chk-ret" className="form-control form-control-sm" placeholder="Name, phone or locality" value={q} onChange={(e) => { setQ(e.target.value); setFocus(null); }} /></div>
                 </div>
-                <div className="d-flex gap-2 px-3 pb-3">
-                  <button className="btn btn-sm btn-outline-primary" disabled={busy} onClick={() => void edit(st.id, st.managerName, st.managerPhone)}>Edit manager</button>
-                  <button className={`btn btn-sm ${st.active ? 'btn-outline-danger' : 'btn-outline-success'}`} disabled={busy} onClick={() => void toggle(st.id, st.name, !st.active)}>{st.active ? 'Deactivate' : 'Activate'}</button>
-                </div>
-              </Card>
+                {q.trim().length >= 2 && (
+                  !matches.length ? <div className="text-muted small">No retailer found</div> : (
+                    <ul className="cds-check-results">
+                      {matches.map((r) => {
+                        const st = stores.find((s) => s.id === r.storeId);
+                        return (
+                          <li key={r.id} className={focus === r.id ? 'on' : ''} onClick={() => setFocus(r.id)}>
+                            <div className="fw-semibold">{r.name}</div>
+                            <div className="text-muted text-xs">{r.locality} · {r.phone}</div>
+                            <div className="verdict" style={{ color: st ? color(st.id) : '#dc2626' }}>
+                              <i className={`fas ${st ? 'fa-circle-check' : 'fa-circle-xmark'} me-1`} />{st ? `Inside ${st.name}` : 'Outside every CDS area → 3PL'}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )
+                )}
+              </div>
+              {coverage.loading && !coverage.data ? <Loading /> : <CoverageMap stores={stores} retailers={retailers} focusId={focus} />}
             </div>
-          ))}
-        </div>
+          </SectionCard>
+          <div className="cds-info-grid">
+            {stores.map((st) => (
+              <InfoSection key={st.id} icon="fa-warehouse" title={st.name} rows={[
+                ['fa-circle-info', 'Status', <span key="s" className={`cds-badge ${st.active ? 'green' : 'grey'}`}>{st.active ? 'Active' : 'Inactive'}</span>],
+                ['fa-draw-polygon', 'Service Area', <span key="a"><span className="cds-legend-dot" style={{ background: color(st.id) }} />{ringAreaKm2(st.polygon)} km² · {countOf(st.id)} retailers</span>],
+                ['fa-user-tie', 'Manager', `${st.managerName} · ${st.managerPhone}`],
+                ['fa-location-dot', 'Areas', st.localities.join(', ')],
+                ['fa-truck', 'Fleet', `${st.vehicles} vehicles · ${st.deliveryPersons} persons`],
+              ]}>
+                <div className="cds-store-stats">
+                  {([['Incoming', st.incoming], ['GRN Pending', st.grnPending], ['Ready', st.ready], ['Returns', st.returnsAtCds]] as [string, number][]).map(([l, n]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}
+                </div>
+                <div className="d-flex justify-content-between align-items-center mt-2">
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button className="btn btn-sm btn-outline-primary" disabled={!coverage.data} onClick={() => showRetailers(st.id)}><i className="fas fa-users me-1" />Retailers ({countOf(st.id)})</button>
+                    <button className="btn btn-sm btn-outline-primary" disabled={busy || !coverage.data} onClick={() => setEditing(st.id)}><i className="fas fa-draw-polygon me-1" />Edit service area</button>
+                  </div>
+                  <RowActions items={[
+                    { label: 'Edit service area', icon: 'fa-draw-polygon', onClick: () => setEditing(st.id), hidden: busy || !coverage.data },
+                    { label: 'Edit manager', icon: 'fa-pen', onClick: () => void edit(st.id, st.managerName, st.managerPhone), hidden: busy },
+                    st.active
+                      ? { label: 'Deactivate store', icon: 'fa-ban', tone: 'danger', onClick: () => void toggle(st.id, st.name, false), hidden: busy }
+                      : { label: 'Activate store', icon: 'fa-circle-check', tone: 'success', onClick: () => void toggle(st.id, st.name, true), hidden: busy },
+                  ]} />
+                </div>
+              </InfoSection>
+            ))}
+          </div>
+          <div ref={listRef} className="mt-3" />
+          <SectionCard icon="fa-users" title="Retailers by CDS Store" subtitle="Retailers inside each CDS store's service area" count={listed.length} countLabel="retailers">
+            <div className="px-3 pt-3">
+              <Tabs value={tabStore} onChange={(v) => { setListStore(v); setListQ(''); }} tabs={[
+                ...stores.map((s) => ({ id: s.id, label: s.name, icon: 'fa-warehouse', count: countOf(s.id) })),
+                { id: 'outside', label: 'Outside (3PL)', icon: 'fa-circle-xmark', count: countOf(null) },
+              ]} />
+              <FilterBar search={listQ} onSearch={setListQ} placeholder="Search retailer, owner, phone, locality…">
+                {tabStore === 'outside'
+                  ? <span className="text-muted"><i className="fas fa-circle-info me-1" />Outside every CDS service area. Orders go by 3PL.</span>
+                  : <span className="text-muted"><span className="cds-legend-dot" style={{ background: color(tabStore) }} />Inside the {stores.find((s) => s.id === tabStore)?.name} service area</span>}
+              </FilterBar>
+            </div>
+            <Table head={['Retailer', 'Owner · Phone', 'Locality', 'Address', 'Orders', 'Open', 'Last Order', 'Actions']} empty={!listed.length && <Empty icon="fa-users" text={listQ ? 'No retailer matches the search' : 'No retailers here'} />}>
+              {listed.map((r) => (
+                <tr key={r.id} className="mat-mdc-row">
+                  <td className="fw-semibold">{r.name}<div className="text-muted text-xs fw-normal">{r.code}</div></td>
+                  <td className="small">{r.ownerName}<div className="text-muted text-xs">{r.phone}</div></td>
+                  <td className="small">{r.locality}</td>
+                  <td className="small">{r.address}</td>
+                  <td>{r.orders}</td><td>{r.openOrders}</td>
+                  <td className="small">{r.lastOrder ? fmtDate(r.lastOrder) : '—'}</td>
+                  <td><RowActions onView={() => locate(r.id)} items={[{ label: 'Show on map', icon: 'fa-map-location-dot', onClick: () => locate(r.id) }]} /></td>
+                </tr>
+              ))}
+            </Table>
+          </SectionCard>
+        </>
+      )}
+      {editingStore && (
+        <PolygonEditorDialog store={editingStore} others={stores.filter((s) => s.id !== editingStore.id)} retailers={retailers} busy={busy}
+          onSave={(ring) => void saveArea(editingStore.id, ring)} onClose={() => setEditing(null)} />
       )}
     </div>
   );

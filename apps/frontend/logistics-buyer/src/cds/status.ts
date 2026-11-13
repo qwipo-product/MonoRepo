@@ -55,11 +55,12 @@ export const TRIP_FLOW: Record<TripStatus, TripStatus[]> = {
 };
 export const ACTIVE_TRIP: TripStatus[] = ['PLANNED', 'ASSIGNED', 'STARTED', 'IN_PROGRESS'];
 
+/** `direction` is the trip's start → end, shown under the trip type everywhere (one wording per type). */
 export const TRIP_TYPE: Record<TripType, { label: string; prefix: string; direction: string; icon: string }> = {
-  DISTRIBUTOR_PICKUP: { label: 'Distributor Pickup Trip', prefix: 'DPT', direction: 'Distributors → vehicle', icon: 'fa-truck-ramp-box' },
-  CDS_DELIVERY: { label: 'CDS Delivery Trip', prefix: 'CDT', direction: 'Vehicle → CDS stores', icon: 'fa-warehouse' },
-  CDS_RETURN: { label: 'CDS Return Trip', prefix: 'CRT', direction: 'CDS stores → Distributors', icon: 'fa-rotate-left' },
-  RETAILER_DELIVERY: { label: 'Retailer Delivery Trip', prefix: 'RDT', direction: 'CDS → Retailers', icon: 'fa-truck-fast' },
+  DISTRIBUTOR_PICKUP: { label: 'Distributor Pickup Trip', prefix: 'DPT', direction: 'CDS to Distributor', icon: 'fa-truck-ramp-box' },
+  CDS_DELIVERY: { label: 'CDS Delivery Trip', prefix: 'CDT', direction: 'Distributor to CDS', icon: 'fa-warehouse' },
+  CDS_RETURN: { label: 'CDS Return Trip', prefix: 'CRT', direction: 'CDS to Seller', icon: 'fa-rotate-left' },
+  RETAILER_DELIVERY: { label: 'Retailer Delivery Trip', prefix: 'RDT', direction: 'CDS to Retailer', icon: 'fa-truck-fast' },
 };
 
 /** Each stop action = one OTP checkpoint. `otpTo` receives the OTP; the delivery person enters it. */

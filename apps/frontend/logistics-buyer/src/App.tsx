@@ -46,8 +46,9 @@ const CdsHome = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ defaul
 const CdsOrders = lazy(() => import('./pages/cds/OrdersPage'));
 const CdsOrderDetails = lazy(() => import('./pages/cds/OrdersPage').then((m) => ({ default: m.OrderDetailsPage })));
 const CdsPickupPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.PickupPlanningPage })));
-const CdsDeliverToCds = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.DeliverToCdsPage })));
+const CdsCreatePickupPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreatePickupPlanPage })));
 const CdsReturnPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.ReturnPlanningPage })));
+const CdsCreateReturnPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreateReturnPlanPage })));
 const CdsTrips = lazy(() => import('./pages/cds/TripsPage'));
 const CdsTripDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripDetailsPage })));
 const CdsReports = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.ReportsPage })));
@@ -86,8 +87,11 @@ export default function App() {
               <Route path="orders" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrders /></RequireCds>} />
               <Route path="orders/:id" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrderDetails /></RequireCds>} />
               <Route path="pickup-planning" element={<RequireCds page={'sc-pickup'}><CdsPickupPlanning /></RequireCds>} />
-              <Route path="deliver-to-cds" element={<RequireCds page={'sc-deliver'}><CdsDeliverToCds /></RequireCds>} />
+              <Route path="pickup-planning/create" element={<RequireCds page={'sc-pickup'}><CdsCreatePickupPlan /></RequireCds>} />
+              {/* Deliver to CDS is created with each pickup plan; its trips are in Trips › CDS Delivery Trips. */}
+              <Route path="deliver-to-cds" element={<Navigate to="/cds/trips?tab=CDS_DELIVERY" replace />} />
               <Route path="return-planning" element={<RequireCds page={'sc-returns'}><CdsReturnPlanning /></RequireCds>} />
+              <Route path="return-planning/create" element={<RequireCds page={'sc-returns'}><CdsCreateReturnPlan /></RequireCds>} />
               <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsTrips /></RequireCds>} />
               <Route path="trips/:id" element={<CdsTripDetails />} />
               <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsReports /></RequireCds>} />

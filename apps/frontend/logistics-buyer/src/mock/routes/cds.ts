@@ -16,6 +16,7 @@ import { CDS_STATE_VERSION, CdsEngine, CdsError, localDay, type StopInput } from
 import { buildReport, REPORTS, summary, type ReportFilters } from '../../cds/reports';
 import { ACTIVE_TRIP, STOP_ACTION } from '../../cds/status';
 import { buildCdsState } from '../../cds/seed';
+import { serviceStoreFor } from '../../cds/planning';
 import { RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripType } from '../../cds/types';
 import { seedInputs } from '../extensions/cds';
 
@@ -168,6 +169,18 @@ route('GET', SVC, '/cds/meta', (req) => {
     tomorrow: e.tomorrow(),
   };
 });
+/** Demo only: rebuilds the CDS demo data (LBNP data is not touched). Signed-in CDS sessions are kept. */
+route('POST', SVC, '/cds/demo/reset', (req) => {
+  sessionUser(req);
+  const d = db();
+  const sessions = (d.ext.cds as CdsState).sessions;
+  const { retailers, products } = seedInputs(d);
+  d.ext.cds = buildCdsState(retailers, products);
+  (d.ext.cds as CdsState).sessions = sessions;
+  persist();
+  return { reset: true };
+});
+
 route('GET', SVC, '/cds/summary', (req) => {
   const u = sessionUser(req);
   return summary(cdsState(), u.role, u.cdsStoreIds);
@@ -467,7 +480,7 @@ route('GET', SVC, '/cds/retailers', (req) => {
   const u = need(req, 'cu-retailers');
   const s = cdsState();
   const st = s.stores.find((x) => x.id === myStore(u))!;
-  return s.retailers.filter((r) => st.localities.includes(r.locality)).map((r) => {
+  return s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === st.id).map((r) => {
     const os = s.orders.filter((o) => o.retailerId === r.id && o.cdsStoreId === st.id);
     return {
       ...r, orders: os.length, openOrders: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status)).length,
@@ -477,6 +490,21 @@ route('GET', SVC, '/cds/retailers', (req) => {
       lastOrder: os.map((o) => o.confirmedAt).sort().reverse()[0] ?? null,
     };
   }).sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name));
+});
+
+/** Service Centre: every retailer with the CDS store whose service area holds it (null → outside every area → 3PL). */
+route('GET', SVC, '/cds/coverage', (req) => {
+  need(req, 'sc-stores');
+  const s = cdsState();
+  return s.retailers.map((r) => {
+    const os = s.orders.filter((o) => o.retailerId === r.id);
+    return {
+      id: r.id, code: r.code, name: r.name, ownerName: r.ownerName, phone: r.phone, locality: r.locality, address: r.address, lat: r.lat, lng: r.lng,
+      storeId: serviceStoreFor(s.stores, r)?.id ?? null,
+      orders: os.length, openOrders: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status)).length,
+      lastOrder: os.map((o) => o.confirmedAt).sort().reverse()[0] ?? null,
+    };
+  });
 });
 
 route('GET', SVC, '/cds/stores', (req) => {
@@ -510,6 +538,12 @@ route('PUT', SVC, '/cds/stores/:id', (req) => {
     if (b.managerPhone !== undefined) {
       if (!/^[6-9]\d{9}$/.test(String(b.managerPhone))) throw new CdsError(400, 'Enter a valid 10-digit phone number');
       st.managerPhone = String(b.managerPhone);
+    }
+    if (b.polygon !== undefined) {
+      const ring = b.polygon as unknown;
+      const ok = Array.isArray(ring) && ring.length >= 3 && ring.length <= 60 && ring.every((p) => Array.isArray(p) && p.length === 2 && Math.abs(Number(p[0]) - 17.4) < 1 && Math.abs(Number(p[1]) - 78.5) < 1);
+      if (!ok) throw new CdsError(400, 'Draw the service area with at least 3 points on the map');
+      st.polygon = (ring as [number, number][]).map(([la, ln]) => [Math.round(Number(la) * 1e6) / 1e6, Math.round(Number(ln) * 1e6) / 1e6]);
     }
     if (b.active !== undefined) {
       if (!b.active && e.s.orders.some((o) => o.cdsStoreId === st.id && !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status))) throw new CdsError(409, `${st.name} has open orders; it cannot be deactivated`);

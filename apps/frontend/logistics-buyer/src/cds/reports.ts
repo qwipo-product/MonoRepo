@@ -10,9 +10,9 @@ export const REPORTS: Record<CdsRole, { id: string; title: string; filters: (key
   SERVICE_CENTRE: [
     { id: 'distributor-pickups', title: 'Distributor-wise pickups', filters: ['from', 'to', 'distributorId'] },
     { id: 'cds-incoming', title: 'CDS-wise incoming orders', filters: ['from', 'to', 'cdsStoreId'] },
-    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor pickup trips', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_DELIVERY', title: 'CDS delivery trips', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_RETURN', title: 'CDS return trips', filters: ['from', 'to', 'status'] },
+    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor Pickup Trips (CDS to Distributor)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-CDS_DELIVERY', title: 'CDS Delivery Trips (Distributor to CDS)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-CDS_RETURN', title: 'CDS Return Trips (CDS to Seller)', filters: ['from', 'to', 'status'] },
     { id: 'pending-ops', title: 'Pending pickup & delivery operations', filters: ['cdsStoreId'] },
     { id: 'return-quantities', title: 'Return quantities', filters: ['from', 'to', 'cdsStoreId', 'distributorId'] },
     { id: 'trip-completion', title: 'Trip completion', filters: ['from', 'to'] },
@@ -47,7 +47,7 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
     const trips = s.trips.filter((t) => t.type === type && inRange(t.plannedDate, f) && (!f.status || t.status === f.status))
       .filter((t) => (t.owner === 'SC' ? t.stops.some((x) => x.partyType !== 'CDS' || storeOk(x.partyId)) || type === 'DISTRIBUTOR_PICKUP' : storeOk(t.owner)));
     return {
-      id, title: `${TRIP_TYPE[type].label}s`,
+      id, title: `${TRIP_TYPE[type].label}s (${TRIP_TYPE[type].direction})`,
       columns: [C('tripNo', 'Trip ID'), C('date', 'Planned date'), C('status', 'Status'), C('dp', 'Delivery person'), C('vehicle', 'Vehicle'), C('stops', 'Stops', 'end'), C('done', 'Stops done', 'end'), C('otps', 'OTP verified', 'end'), C('units', 'Units planned', 'end'), C('handed', 'Units handed over', 'end'), C('completed', 'Completed at')],
       rows: trips.map((t) => ({
         tripNo: t.tripNo, date: t.plannedDate, status: TRIP_STATUS[t.status].label, dp: t.deliveryPersonName, vehicle: t.vehicleRegNo, stops: t.stops.length,
@@ -200,8 +200,8 @@ export function summary(s: CdsState, role: CdsRole, stores: string[]) {
     const tr = (ty: TripType) => s.trips.filter((t) => t.type === ty && ACTIVE_TRIP.includes(t.status)).length;
     return [
       { key: 'confirmed', label: 'Orders to plan for pickup', value: n(['CONFIRMED']), tone: 'amber', to: '/cds/pickup-planning' },
-      { key: 'picked', label: 'Picked up, awaiting CDS delivery', value: os.filter((o) => o.status === 'PICKED_UP' && !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status))).length, tone: 'purple', to: '/cds/deliver-to-cds' },
-      { key: 'transit', label: 'In transit to CDS', value: n(['IN_TRANSIT_TO_CDS']), tone: 'blue', to: '/cds/deliver-to-cds' },
+      { key: 'picked', label: 'Picked up, awaiting CDS delivery', value: os.filter((o) => o.status === 'PICKED_UP' && !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status))).length, tone: 'purple', to: '/cds/trips?tab=CDS_DELIVERY' },
+      { key: 'transit', label: 'In transit to CDS', value: n(['IN_TRANSIT_TO_CDS']), tone: 'purple', to: '/cds/trips?tab=CDS_DELIVERY' },
       { key: 'pickupTrips', label: 'Active pickup trips', value: tr('DISTRIBUTOR_PICKUP'), tone: 'blue', to: '/cds/trips?tab=DISTRIBUTOR_PICKUP' },
       { key: 'cdsTrips', label: 'Active CDS delivery trips', value: tr('CDS_DELIVERY'), tone: 'blue', to: '/cds/trips?tab=CDS_DELIVERY' },
       { key: 'returnTrips', label: 'Active CDS return trips', value: tr('CDS_RETURN'), tone: 'blue', to: '/cds/trips?tab=CDS_RETURN' },

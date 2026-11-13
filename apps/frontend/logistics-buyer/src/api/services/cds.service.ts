@@ -100,6 +100,7 @@ export type GrnRow = Grn & { distributorName: string; cdsTripNo: string; pickupT
 export type CollectionRow = Collection & { retailerName: string };
 export interface Resources { vehicles: (Vehicle & { available: boolean; busyTripNo: string | null })[]; deliveryPersons: (DeliveryPerson & { available: boolean; busyTripNo: string | null })[] }
 export interface Meta { stores: CdsStore[]; allStores: CdsStore[]; distributors: Distributor[]; settings: CdsSettings; returnReasons: string[]; settlementParties: string[]; reports: { id: string; title: string; filters: string[] }[]; today: string; tomorrow: string }
+export interface CoverageRetailer { id: string; code: string; name: string; ownerName: string; phone: string; locality: string; address: string; lat: number; lng: number; storeId: string | null; orders: number; openOrders: number; lastOrder: string | null }
 export interface Kpi { key: string; label: string; value: number; tone: string; to: string }
 export interface Incoming { tripId: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string; deliveryPersonName: string; deliveryPersonPhone: string; vehicleRegNo: string; stopStatus: string; verifiedAt: string | null; units: number; handled: number; orders: number; returns: number }
 export type MyOtp = OtpTxn & { deliveryPersonName: string; vehicleRegNo: string; label: string };
@@ -113,6 +114,8 @@ export const cdsApi = {
   logout: () => call('POST', '/cds/auth/logout'),
   meta: () => call<Meta>('GET', '/cds/meta'),
   summary: () => call<Kpi[]>('GET', '/cds/summary'),
+  /** Demo: rebuild the CDS demo data. */
+  resetDemo: () => call<{ reset: boolean }>('POST', '/cds/demo/reset'),
   report: (id: string, f: Record<string, string>) => call<Report>('GET', `/cds/reports/${id}`, undefined, f),
   resources: (date: string) => call<Resources>('GET', '/cds/resources', undefined, { date }),
 
@@ -154,7 +157,8 @@ export const cdsApi = {
 
   retailers: () => call<(Retailer & { orders: number; openOrders: number; deliveredValue: number; returns: number; collected: number; lastOrder: string | null })[]>('GET', '/cds/retailers'),
   stores: () => call<(CdsStore & { user: { name: string; mobile: string; active: boolean } | null; incoming: number; grnPending: number; ready: number; outForDelivery: number; delivered: number; returnsAtCds: number; vehicles: number; deliveryPersons: number })[]>('GET', '/cds/stores'),
-  updateStore: (id: string, b: Partial<Pick<CdsStore, 'managerName' | 'managerPhone' | 'active'>>) => call<CdsStore>('PUT', `/cds/stores/${id}`, b),
+  coverage: () => call<CoverageRetailer[]>('GET', '/cds/coverage'),
+  updateStore: (id: string, b: Partial<Pick<CdsStore, 'managerName' | 'managerPhone' | 'active' | 'polygon'>>) => call<CdsStore>('PUT', `/cds/stores/${id}`, b),
   fleet: () => call<{ vehicles: Vehicle[]; deliveryPersons: DeliveryPerson[]; settings: CdsSettings }>('GET', '/cds/fleet'),
   setFleetActive: (kind: 'vehicles' | 'persons', id: string, active: boolean) => call('POST', `/cds/fleet/${kind}/${id}/active`, { active }),
   addVehicle: (b: { regNo: string; type: string; capacityKg: number }) => call<Vehicle>('POST', '/cds/fleet/vehicles', b),

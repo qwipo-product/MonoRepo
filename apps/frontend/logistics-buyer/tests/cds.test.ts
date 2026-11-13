@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CdsEngine, CdsError, localDay, type SkuLine } from '../src/cds/engine.ts';
 import { buildCdsMasters, buildCdsState } from '../src/cds/seed.ts';
+import { pointInPolygon, ringAreaKm2, serviceStoreFor } from '../src/cds/planning.ts';
 import type { CdsState } from '../src/cds/types.ts';
 import { products, retailers } from './fixtures.ts';
 
@@ -52,6 +53,28 @@ test('1. allocation: CDS orders go to the store serving the retailer; unserved a
   assert.equal(o.status, 'CONFIRMED');
   assert.equal(e.allocateCdsOrder({ sellerOrderRef: 'T-1', distributorId: 'dst-01', retailerId: RT.upl, lines: [sku(0, 9)] }).id, o.id);
   throwsCds(() => order('dst-01', RT.none, [sku(0, 1)]), /not served by any CDS/);
+});
+
+test('1b. allocation by service area polygon: inside → that CDS; outside every area → 3PL; an edited polygon changes new allocations; overlap → nearest', () => {
+  const { s, order } = setup();
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.4058, lng: 78.5591 })?.id, 'cds-upl'); // Uppal
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.4948, lng: 78.3996 })?.id, 'cds-kkp'); // Kukatpally
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.3457, lng: 78.5522 })?.id, 'cds-dsn'); // LB Nagar
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.3258, lng: 78.56 }), null); // Vanasthalipuram — no CDS
+  assert.ok(pointInPolygon({ lat: 17.42, lng: 78.482 }, s.stores[0].polygon), 'a point on the edge is inside');
+  // The Service Centre widens CDS Dilsukhnagar to cover Vanasthalipuram → new orders there are allocated to it.
+  const dsn = s.stores.find((x) => x.id === 'cds-dsn')!;
+  dsn.polygon = [[17.386, 78.505], [17.386, 78.575], [17.31, 78.575], [17.31, 78.505]];
+  assert.equal(order('dst-01', RT.none, [sku(0, 1)]).cdsStoreId, 'cds-dsn');
+  // Overlapping areas: the nearest CDS store wins.
+  const upl = s.stores.find((x) => x.id === 'cds-upl')!;
+  upl.polygon = [[17.46, 78.48], [17.46, 78.61], [17.30, 78.61], [17.30, 78.48]];
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.37, lng: 78.52 })?.id, 'cds-dsn');
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.41, lng: 78.56 })?.id, 'cds-upl');
+  // An inactive store serves nobody.
+  dsn.active = false;
+  assert.equal(serviceStoreFor(s.stores, { lat: 17.37, lng: 78.52 })?.id, 'cds-upl');
+  assert.ok(ringAreaKm2(s.stores[1].polygon) > 10);
 });
 
 test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every pickup and handover, distributor-wise GRN', () => {

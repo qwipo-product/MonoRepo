@@ -43,8 +43,10 @@ export interface CdsStore {
   address: string;
   lat: number;
   lng: number;
-  /** Serviceability: retailer localities this CDS delivers to. */
+  /** Area names shown for the store (labels; the service area polygon decides allocation). */
   localities: string[];
+  /** Service area: retailers inside this polygon ([lat, lng] points) are served by this CDS store. */
+  polygon: [number, number][];
   managerName: string;
   managerPhone: string;
   active: boolean;

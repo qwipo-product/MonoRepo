@@ -64,3 +64,43 @@ export function routeMetrics(path: GeoPoint[], serviceStops: number) {
 }
 
 export const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// ---------------------------------------------------------------- CDS service areas (polygons)
+
+/** A polygon ring as [lat, lng] points (closed implicitly). */
+export type Ring = [number, number][];
+
+/** Ray casting: is the point inside the ring? Points on an edge count as inside. */
+export function pointInPolygon(p: GeoPoint, ring: Ring): boolean {
+  if (!ring || ring.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [yi, xi] = ring[i];
+    const [yj, xj] = ring[j];
+    if ((xi - p.lng) * (yj - p.lat) === (xj - p.lng) * (yi - p.lat) && Math.min(xi, xj) <= p.lng && p.lng <= Math.max(xi, xj) && Math.min(yi, yj) <= p.lat && p.lat <= Math.max(yi, yj)) return true;
+    if (yi > p.lat !== yj > p.lat && p.lng < ((xj - xi) * (p.lat - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Area of a ring in km² (local flat approximation — fine for city-sized areas). */
+export function ringAreaKm2(ring: Ring): number {
+  if (!ring || ring.length < 3) return 0;
+  const lat0 = (ring.reduce((a, [la]) => a + la, 0) / ring.length) * (Math.PI / 180);
+  const kx = 111.32 * Math.cos(lat0);
+  const ky = 110.57;
+  let s = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) s += ring[j][1] * kx * ring[i][0] * ky - ring[i][1] * kx * ring[j][0] * ky;
+  return Math.round(Math.abs(s / 2) * 10) / 10;
+}
+
+/**
+ * The CDS store whose service area holds the retailer: active stores whose polygon contains the point; when
+ * polygons overlap, the nearest store. A store without a polygon falls back to its locality list. null → not
+ * served by any CDS (3PL).
+ */
+export function serviceStoreFor<S extends GeoPoint & { id: string; active: boolean; polygon?: Ring; localities?: string[] }>(stores: S[], r: GeoPoint & { locality?: string }): S | null {
+  const hits = stores.filter((s) => s.active && (s.polygon && s.polygon.length >= 3 ? pointInPolygon(r, s.polygon) : !!r.locality && !!s.localities?.includes(r.locality)));
+  if (hits.length <= 1) return hits[0] ?? null;
+  return hits.reduce((a, b) => (haversineKm(r, a) <= haversineKm(r, b) ? a : b));
+}
