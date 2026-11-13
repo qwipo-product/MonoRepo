@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } 
 import { Link, useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
 import { authService, authStore } from '../../api/services/auth.service';
+import { homeFor } from '../../profiles';
 import './auth.css';
 
 const OTP_SECONDS = 600;
@@ -35,7 +36,7 @@ export default function OtpPage() {
 
   useEffect(() => {
     if (authService.isAuthenticated()) {
-      navigate('/orders');
+      navigate(homeFor(authService.getCurrentUser()));
       return;
     }
     startTimer();
@@ -109,7 +110,7 @@ export default function OtpPage() {
       await authService.verifyOtp(mobile, digits.join(''));
       Swal.close();
       await Swal.fire({ icon: 'success', title: 'Success!', text: 'OTP verified successfully!', showConfirmButton: false, timer: 1500 });
-      navigate('/orders');
+      navigate(homeFor(authService.getCurrentUser()));
     } catch (e: any) {
       console.error('OTP verification failed:', e);
       setDigits(['', '', '', '', '', '']);

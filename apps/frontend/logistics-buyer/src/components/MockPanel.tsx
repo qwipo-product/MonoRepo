@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
+import { signInAs } from '../demo/demoSignIn';
+import { useAuth } from '../hooks/useAuth';
+import { profileOf, PROFILE_LIST, type ProfileKey } from '../profiles';
 import { getControls, setControls, subscribeControls, type MockControls } from '../mock/controls';
 import { resetDb } from '../mock/db';
 import { expireAccessToken, revokeSession } from '../mock/routes/core';
@@ -14,6 +18,22 @@ export default function MockPanel() {
   const [open, setOpen] = useState(false);
   const [c, setC] = useState<MockControls>(getControls());
   useEffect(() => subscribeControls(setC), []);
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const current = isAuthenticated ? profileOf(user).key : '';
+  const [switching, setSwitching] = useState(false);
+
+  /** Demo users: switch straight to another user and open their home. */
+  const switchUser = async (key: ProfileKey) => {
+    setSwitching(true);
+    try {
+      navigate(await signInAs(key));
+    } catch (e: any) {
+      Swal.fire({ icon: 'error', title: 'Could not switch user', text: e?.message || 'Please try again.', confirmButtonText: 'OK' });
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   const reset = async () => {
     const r = await Swal.fire({ icon: 'warning', title: 'Reset synthetic data?', text: 'All orders, trips, routes, beats and settings you changed will be regenerated.', showCancelButton: true, confirmButtonText: 'Reset' });
@@ -32,6 +52,22 @@ export default function MockPanel() {
             <button className="btn btn-sm text-white" onClick={() => setOpen(false)} aria-label="Close"><i className="fas fa-times" /></button>
           </div>
           <div className="card-body">
+            <label className="form-label mb-1" htmlFor="mock-demo-user">Demo user</label>
+            <select
+              id="mock-demo-user"
+              className="form-select form-select-sm mb-3"
+              value={current}
+              disabled={switching}
+              onChange={(e) => e.target.value && switchUser(e.target.value as ProfileKey)}
+            >
+              {!current && <option value="">Not signed in</option>}
+              {PROFILE_LIST.map((p) => (
+                <option key={p.key} value={p.key}>
+                  {p.label} · {p.mobile}
+                </option>
+              ))}
+            </select>
+
             <label className="form-label mb-1">Latency: {c.latencyMs} ms</label>
             <input type="range" className="form-range" min={0} max={3000} step={100} value={c.latencyMs} onChange={(e) => setControls({ latencyMs: Number(e.target.value) })} />
 
@@ -51,11 +87,15 @@ export default function MockPanel() {
             </div>
             <input className="form-control form-control-sm mt-2" placeholder="Error message" value={c.failMessage} onChange={(e) => setControls({ failMessage: e.target.value })} />
 
-            <label className="form-label mb-1 mt-2">Buyer type</label>
-            <select className="form-select form-select-sm" defaultValue={isDarkStoreDemo() ? 'DARKSTORE' : 'SELF_3PL'} onChange={(e) => { setDarkStoreDemo(e.target.value === 'DARKSTORE'); window.location.reload(); }}>
-              <option value="SELF_3PL">SELF_3PL (default)</option>
-              <option value="DARKSTORE">DARKSTORE (Trips bulk seller actions)</option>
-            </select>
+            {current !== 'SERVICE_CENTRE' && current !== 'CROSS_DOCK_STORE' && (
+              <>
+                <label className="form-label mb-1 mt-2">Buyer type (Logistics Tech)</label>
+                <select className="form-select form-select-sm" defaultValue={isDarkStoreDemo() ? 'DARKSTORE' : 'SELF_3PL'} onChange={(e) => { setDarkStoreDemo(e.target.value === 'DARKSTORE'); window.location.reload(); }}>
+                  <option value="SELF_3PL">SELF_3PL (default)</option>
+                  <option value="DARKSTORE">DARKSTORE (Trips bulk seller actions)</option>
+                </select>
+              </>
+            )}
 
             <label className="form-label mb-1 mt-2">Mock OTP</label>
             <input className="form-control form-control-sm" maxLength={6} value={c.otp} onChange={(e) => setControls({ otp: e.target.value.replace(/\D/g, '') })} />

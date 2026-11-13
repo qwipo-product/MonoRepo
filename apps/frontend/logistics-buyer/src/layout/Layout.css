@@ -11,6 +11,14 @@
 .toggle-btn:hover { background: rgba(255, 255, 255, .2); }
 .toggle-btn i { font-size: 14px; }
 .nav-menu { display: flex; flex-direction: column; padding: 24px 0; }
+/* Cross-dock users only: which demo user is signed in. */
+.profile-chip { display: flex; align-items: center; gap: 12px; margin: 16px 12px 0; padding: 10px 12px; border-radius: 8px; background: rgba(255, 255, 255, .12); white-space: nowrap; }
+.profile-chip i { font-size: 18px; min-width: 22px; text-align: center; }
+.profile-chip span { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.profile-chip strong { font-size: 14px; font-weight: 600; }
+.profile-chip small { font-size: 11px; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
+.sidebar.collapsed .profile-chip { justify-content: center; margin: 16px 8px 0; padding: 10px 0; }
+.sidebar-header + .profile-chip + .nav-menu { padding-top: 12px; }
 .nav-item { display: flex; align-items: center; gap: 16px; padding: 14px 24px; color: rgba(255, 255, 255, .85); text-decoration: none; font-size: 18px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; transition: all .3s; }
 .nav-item i { font-size: 22px; min-width: 30px; text-align: center; }
 .nav-item span { font-size: 16px; font-weight: 500; }

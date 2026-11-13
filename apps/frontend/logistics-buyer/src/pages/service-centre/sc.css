@@ -1,0 +1,112 @@
+/* Service Centre screens. Matches the Logistics Buyer look (Orders stat cards, Bootstrap, white cards on #f8f9fa). */
+.sc-page { padding: 0 16px 24px; }
+
+/* tones */
+.sc-tone--amber { background: #fef3c7; color: #92400e; }
+.sc-tone--blue { background: #dbeafe; color: #1e40af; }
+.sc-tone--indigo { background: #e0e7ff; color: #3730a3; }
+.sc-tone--green { background: #d1fae5; color: #065f46; }
+.sc-tone--grey { background: #f3f4f6; color: #4b5563; }
+.sc-tone--red { background: #fee2e2; color: #b91c1c; }
+.sc-tone--purple { background: #f3e8ff; color: #6b21a8; }
+
+.sc-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; line-height: 1.5; }
+.sc-pill--amber { background: #fef3c7; color: #92400e; }
+.sc-pill--blue { background: #dbeafe; color: #1e40af; }
+.sc-pill--indigo { background: #e0e7ff; color: #3730a3; }
+.sc-pill--green { background: #d1fae5; color: #065f46; }
+.sc-pill--grey { background: #f3f4f6; color: #4b5563; }
+.sc-pill--red { background: #fee2e2; color: #b91c1c; }
+.sc-pill--purple { background: #f3e8ff; color: #6b21a8; }
+
+/* stat cards */
+.sc-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 1100px) { .sc-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 576px) { .sc-stats { grid-template-columns: 1fr; } }
+.sc-stat { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 16px; background: #fff; border: 1px solid transparent; border-radius: 12px; box-shadow: 0 1px 3px #0000000f; text-align: left; width: 100%; }
+.sc-stat--clickable { cursor: pointer; transition: box-shadow .2s, transform .2s, border-color .2s; }
+.sc-stat--clickable:hover { box-shadow: 0 4px 12px #0000001f; transform: translateY(-1px); }
+.sc-stat--clickable:focus-visible { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px #2563eb33; }
+.sc-stat--active { border-color: #2563eb; }
+.sc-stat-label { font-size: 14px; color: #6b7280; }
+.sc-stat-value { font-size: 24px; font-weight: 700; color: #111827; line-height: 1.2; }
+.sc-stat-sub { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+.sc-stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+
+/* cards, tables */
+.sc-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px #0000000f; }
+.sc-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f0f1f3; flex-wrap: wrap; }
+.sc-card-title { font-size: 15px; font-weight: 600; color: #111827; margin: 0; }
+.sc-card-body { padding: 16px; }
+.sc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sc-table th { font-size: 12px; font-weight: 600; color: #4a4f55; text-transform: uppercase; letter-spacing: .3px; padding: 10px 12px; background: #f9fafb; border-bottom: 1px solid #eef0f2; white-space: nowrap; text-align: left; }
+.sc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #333; vertical-align: middle; }
+.sc-table tbody tr:last-child td { border-bottom: 0; }
+.sc-table tbody tr:hover td { background: #fafbff; }
+.sc-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sc-table .nowrap { white-space: nowrap; }
+.sc-table .muted { color: #6b7280; font-size: 12px; }
+.sc-group-row td { background: #f5f7ff !important; font-weight: 600; color: #1e3a8a; }
+.sc-link { background: none; border: 0; padding: 0; color: #2563eb; font-weight: 500; text-decoration: none; cursor: pointer; }
+.sc-link:hover { text-decoration: underline; }
+
+/* segmented tabs */
+.sc-tabs { display: inline-flex; background: #eef1f6; border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.sc-tab { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #4b5563; white-space: nowrap; }
+.sc-tab:hover { color: #111827; }
+.sc-tab--active { background: #fff; color: #1e3a8a; box-shadow: 0 1px 2px #0000001a; }
+.sc-tab .sc-count { margin-left: 6px; font-size: 11px; padding: 1px 6px; border-radius: 999px; background: #e5e7eb; color: #374151; }
+.sc-tab--active .sc-count { background: #dbeafe; color: #1e40af; }
+
+/* empty / error */
+.sc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 36px 16px; color: #374151; text-align: center; }
+.sc-empty > i { font-size: 28px; color: #9ca3af; margin-bottom: 4px; }
+
+/* vehicle load */
+.sc-loadbar { height: 8px; background: #eef0f3; border-radius: 999px; overflow: hidden; }
+.sc-loadbar-fill { height: 100%; background: #2563eb; border-radius: 999px; transition: width .2s; }
+.sc-loadbar-fill--high { background: #d97706; }
+.sc-loadbar-fill--over { background: #dc2626; }
+
+/* map */
+.sc-map { height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; }
+.sc-map .leaflet-container { height: 100%; width: 100%; font: inherit; }
+.sc-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #4b5563; }
+.sc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sc-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.sc-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+
+/* planning */
+.sc-plan { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .sc-plan { grid-template-columns: 1fr; } }
+.sc-plan-side { position: sticky; top: 0; }
+.sc-vehicle { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; font-size: 13px; }
+.sc-vehicle input { margin-top: 3px !important; }
+.sc-vehicle:hover { border-color: #93c5fd; }
+.sc-vehicle--on { border-color: #2563eb; background: #f5f8ff; }
+.sc-vehicle--busy { cursor: not-allowed; opacity: .65; background: #fafafa; }
+.sc-stops { list-style: none; padding: 0; margin: 0; position: relative; }
+.sc-stops::before { content: ''; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 2px; background: #e5e7eb; }
+.sc-stop { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; position: relative; }
+.sc-stop-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; position: relative; z-index: 1; border: 2px solid #fff; }
+.sc-stop--yard .sc-stop-dot { background: #1e3a8a; color: #fff; font-size: 11px; }
+.sc-pick { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
+.sc-pick:last-child { border-bottom: 0; }
+.sc-pick--on { background: #f8faff; }
+.sc-pick input { margin-top: 4px; }
+.sc-pick-orders { margin: 8px 0 0; padding: 0; list-style: none; }
+.sc-pick-orders li { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+.sc-pick-orders li label { display: flex; align-items: center; gap: 8px; flex: 1; cursor: pointer; }
+
+/* chart tooltip */
+.sc-tooltip { position: absolute; transform: translateX(-50%); min-width: 150px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 6px 16px #0000001f; padding: 8px 10px; font-size: 12px; color: #374151; pointer-events: none; z-index: 2; }
+
+/* small bits */
+.sc-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 12px; background: #f3f4f6; color: #374151; white-space: nowrap; }
+.sc-chip--cds { background: #ecfdf5; color: #065f46; }
+.sc-kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 13px; }
+.sc-kv dt { color: #6b7280; font-weight: 400; }
+.sc-kv dd { margin: 0; color: #111827; font-weight: 500; }
+.sc-search { position: relative; min-width: 260px; }
+.sc-search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; }
+.sc-search input { padding-left: 30px; }

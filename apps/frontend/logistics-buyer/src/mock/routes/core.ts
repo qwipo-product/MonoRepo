@@ -5,10 +5,29 @@
 //   9111111111 → /otp/send HTTP 503 { error: { message: "OTP service unavailable" } }
 //   9222222222 → /otp/send 200 { data: { success: false, message: "Too many requests" } } (UI shows generic text)
 //   any other valid number → OTP sent; the OTP is the "Mock OTP" in the mock controls panel (default 123456)
+//
+// Demo users (src/profiles.ts): 9876543211 signs in as the Service Centre and 9876543212 as the Cross Dock Store.
+// Every other valid number signs in as the seeded distributor (Logistics Tech), exactly as before.
 import { db, nowIso, persist, uuid } from '../db';
 import { getControls } from '../controls';
 import { MockError, RawResponse, route, setTokenValidator } from '../server';
-import type { DbAddress } from '../types';
+import type { DbAddress, DbBuyer } from '../types';
+import { PROFILE_LIST, profileForId, profileForMobile, type DemoProfile } from '../../profiles';
+
+/** Buyer record of a cross-dock demo user. These users are fixed, so nothing about them is persisted. */
+function profileBuyer(p: DemoProfile): DbBuyer {
+  const d = db();
+  return {
+    ...d.buyer,
+    id: p.id,
+    name: p.userName,
+    businessName: p.businessName,
+    mobileNumber: p.mobile,
+    email: '',
+    gstNumber: '',
+    buyerType: p.buyerType,
+  };
+}
 
 const AUTH = 'logistics-auth-svc';
 const BUYER = 'logistics-buyer-svc';
@@ -52,10 +71,29 @@ route('POST', AUTH, '/otp/verify', (req) => {
     throw new MockError(400, 'Invalid OTP', { message: 'Invalid OTP', details: 'Request failed with status code 400' });
   }
   const d = db();
-  d.buyer.mobileNumber = String(phoneNumber);
+  const profile = profileForMobile(String(phoneNumber));
   const a = authState();
   a.token = newToken('access');
   a.refreshToken = newToken('refresh');
+  if (profile.key !== 'LOGISTICS_TECH') {
+    // Cross-dock users see none of the distributor's pages, so they carry no distributor permissions.
+    persist();
+    return {
+      success: true,
+      verified: true,
+      user: {
+        id: profile.id,
+        name: profile.userName,
+        email: '',
+        mobileNumber: profile.mobile,
+        businessName: profile.businessName,
+        profile: profile.key,
+        permissions: [],
+        auth: { token: a.token, refreshToken: a.refreshToken },
+      },
+    };
+  }
+  d.buyer.mobileNumber = String(phoneNumber);
   persist();
   return {
     success: true,
@@ -65,6 +103,7 @@ route('POST', AUTH, '/otp/verify', (req) => {
       name: d.buyer.name,
       email: d.buyer.email,
       mobileNumber: d.buyer.mobileNumber,
+      profile: profile.key,
       permissions: d.permissions,
       auth: { token: a.token, refreshToken: a.refreshToken },
     },
@@ -80,9 +119,11 @@ route('POST', AUTH, '/users/refresh_token', (req) => {
   return { token: a.token, refreshToken: a.refreshToken };
 });
 
-route('GET', AUTH, '/users/:id', () => {
+route('GET', AUTH, '/users/:id', (req) => {
   const d = db();
   const a = authState();
+  const profile = profileForId(req.params.id);
+  if (profile) return { user: { ...profileBuyer(profile), profile: profile.key, permissions: [], auth: { token: a.token, refreshToken: a.refreshToken } } };
   return { user: { ...d.buyer, permissions: d.permissions, auth: { token: a.token, refreshToken: a.refreshToken } } };
 });
 
@@ -95,7 +136,8 @@ route('GET', BUYER, '/buyer/verify/:mobile', (req) => {
 route('POST', BUYER, '/buyer', (req) => {
   const d = db();
   const b = req.body || {};
-  if (b.mobileNumber && b.mobileNumber === d.buyer.mobileNumber) {
+  const taken = b.mobileNumber && (b.mobileNumber === d.buyer.mobileNumber || PROFILE_LIST.some((p) => p.mobile === b.mobileNumber));
+  if (taken) {
     throw new MockError(409, 'Buyer with this mobile number already exists', { message: 'Buyer with this mobile number already exists' });
   }
   d.ext.registrations = [...(d.ext.registrations || []), { ...b, id: uuid(), createdAt: nowIso() }];
@@ -103,7 +145,10 @@ route('POST', BUYER, '/buyer', (req) => {
   return { id: uuid(), ...b };
 });
 
-route('GET', BUYER, '/buyer/:id', () => db().buyer);
+route('GET', BUYER, '/buyer/:id', (req) => {
+  const profile = profileForId(req.params.id);
+  return profile ? profileBuyer(profile) : db().buyer;
+});
 
 route('PUT', BUYER, '/buyer', (req) => {
   const d = db();

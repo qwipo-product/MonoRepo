@@ -1,0 +1,6 @@
+.phase1-page { max-width: 960px; }
+.phase1-badge { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; color: #92400e; background: #fef3c7; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+.phase1-heading { font-size: 15px; font-weight: 600; color: #111827; margin: 0 0 10px; }
+.phase1-list { padding-left: 20px; color: #374151; font-size: 14px; }
+.phase1-list li + li { margin-top: 6px; }
+.phase1-status { display: inline-block; font-size: 13px; font-weight: 500; color: #1e3a8a; background: #e0e7ff; border-radius: 6px; padding: 3px 10px; }

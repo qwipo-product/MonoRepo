@@ -1,6 +1,7 @@
 // Port of the original AuthService + AuthStore + permission model (docs/specs/00-shell-auth-shared.md §5, §20).
 import { getConfig } from '../config';
 import { http, setRefreshHandler, setTokenProvider } from '../http';
+import type { ProfileKey } from '../../profiles';
 
 export type RawPermission =
   | string
@@ -23,6 +24,9 @@ export interface StoredUser {
   mobile: string;
   role: '';
   permissions: RawPermission[];
+  /** Demo profile (src/profiles.ts). Missing on sessions saved before profiles existed → Logistics Tech. */
+  profile?: ProfileKey;
+  businessName?: string;
 }
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'import' | 'export';
@@ -163,7 +167,7 @@ class AuthService {
     if (res.success && res.data?.success && res.data?.verified) {
       const u = res.data.user;
       this.handleAuthResponse({
-        user: { id: u.id, name: u.name, email: u.email, mobile: u.mobileNumber, role: '', permissions: u.permissions },
+        user: { id: u.id, name: u.name, email: u.email, mobile: u.mobileNumber, role: '', permissions: u.permissions, profile: u.profile, businessName: u.businessName },
         token: u.auth.token,
         refreshToken: u.auth.refreshToken,
         permissions: u.permissions,

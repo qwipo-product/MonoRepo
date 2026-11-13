@@ -119,7 +119,7 @@ const RETAILERS = [
 const OWNER_NAMES = ['Ramesh', 'Suresh', 'Venkat', 'Srinivas', 'Lakshmi', 'Anil', 'Prasad', 'Kiran', 'Madhavi', 'Raju', 'Naresh', 'Swathi', 'Mahesh', 'Bhaskar', 'Padma', 'Ravi'];
 const STREETS = ['Main Road', 'Gandhi Nagar Road', 'Bus Stop Road', 'Temple Street', 'Market Road', 'Colony Road', 'Cross Road', 'Ring Road'];
 
-const PRODUCTS: Omit<DbProduct, 'id' | 'imageUrl'>[] = [
+export const PRODUCTS: Omit<DbProduct, 'id' | 'imageUrl'>[] = [
   { name: 'Sunvita Refined Sunflower Oil, 1 Ltr Pouch', mrp: 215, sellingPrice: 167.5, weightKg: 0.91, upc: 10, gstPercentage: 5, hsnCode: '15121110', category: 'Edible Oil', packageType: 'Pouch', uom: 'kg' },
   { name: 'Sunvita Refined Sunflower Oil, 500 Ml Pouch', mrp: 126, sellingPrice: 84, weightKg: 0.46, upc: 20, gstPercentage: 5, hsnCode: '15121110', category: 'Edible Oil', packageType: 'Pouch', uom: 'kg' },
   { name: 'Goldleaf Groundnut Oil, 1 Ltr Pouch', mrp: 220, sellingPrice: 168, weightKg: 0.91, upc: 10, gstPercentage: 5, hsnCode: '15081000', category: 'Edible Oil', packageType: 'Pouch', uom: 'kg' },

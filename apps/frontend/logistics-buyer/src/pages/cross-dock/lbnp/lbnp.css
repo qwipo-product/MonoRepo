@@ -1,0 +1,15 @@
+/* Small additions to the cloned LBNP pages (header actions, stop actions, OTP panel, GRN inputs). */
+.trip-details-container .lb-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.trip-details-container .lb-stop-action { margin-top: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.trip-details-container .lb-stop-action input { width: 92px; }
+.lb-otp-panel { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; background: #fff; border: 1px solid #c7d2fe; border-left-width: 1px; border-radius: 12px; padding: 14px 18px; margin: 0 0 16px; box-shadow: 0 1px 2px #0000000d; }
+.lb-otp-panel.done { border-color: #bbf7d0; background: #f0fdf4; }
+.lb-otp-code { font-size: 28px; font-weight: 700; letter-spacing: 6px; color: #1e3a8a; background: #eef2ff; border-radius: 10px; padding: 4px 14px; font-variant-numeric: tabular-nums; }
+.lb-otp-text { flex: 1; min-width: 220px; font-size: 13px; color: #374151; }
+.lb-otp-text strong { display: block; font-size: 15px; color: #111827; margin-bottom: 2px; }
+.lb-qty-input { width: 84px; text-align: center; }
+.lb-diff-short { color: #dc2626; font-weight: 600; }
+.lb-diff-extra { color: #d97706; font-weight: 600; }
+.lb-diff-ok { color: #16a34a; font-weight: 600; }
+.lb-grn-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; background: #fff; border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px #0000000d; font-size: 13px; }
+.lb-chip { display: inline-block; padding: 2px 8px; border-radius: 6px; background: #f3f4f6; color: #374151; font-size: 12px; margin: 1px 2px; white-space: nowrap; }

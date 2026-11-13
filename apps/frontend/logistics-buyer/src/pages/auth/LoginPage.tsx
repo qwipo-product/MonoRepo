@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
 import { authService, authStore } from '../../api/services/auth.service';
 import { buyerService } from '../../api/services/buyer.service';
+import { signInAs } from '../../demo/demoSignIn';
+import { homeFor, PROFILE_LIST, type ProfileKey } from '../../profiles';
 import './auth.css';
 
 const PATTERN = /^[6-9][0-9]{9}$/;
@@ -14,10 +16,24 @@ export default function LoginPage() {
   const [dirty, setDirty] = useState(false);
   const [touched, setTouched] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [demoBusy, setDemoBusy] = useState<ProfileKey | null>(null);
 
   useEffect(() => {
-    if (authService.isAuthenticated()) navigate('/orders');
+    if (authService.isAuthenticated()) navigate(homeFor(authService.getCurrentUser()));
   }, [navigate]);
+
+  /** Demo users (not in the original): sign in with one click and open that user's home. */
+  const demoSignIn = async (key: ProfileKey) => {
+    setDemoBusy(key);
+    try {
+      navigate(await signInAs(key));
+    } catch (e: any) {
+      console.error('Demo sign-in failed', e);
+      Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'Could not sign in. Please try again.', confirmButtonText: 'OK' });
+    } finally {
+      setDemoBusy(null);
+    }
+  };
 
   const required = !mobile;
   const patternErr = !!mobile && !PATTERN.test(mobile);
@@ -107,6 +123,30 @@ export default function LoginPage() {
             <button type="submit" className="auth-btn" disabled={invalid}>Continue</button>
           </form>
           {errorMessage && <div className="auth-error-message">{errorMessage}</div>}
+          <div className="demo-users">
+            <div className="demo-users-divider"><span>or sign in as a demo user</span></div>
+            {PROFILE_LIST.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className="demo-user"
+                onClick={() => demoSignIn(p.key)}
+                disabled={demoBusy !== null}
+                aria-label={`Sign in as ${p.label}, ${p.businessName}, mobile ${p.mobile}`}
+              >
+                <span className="demo-user-icon">
+                  <i className={`fas ${demoBusy === p.key ? 'fa-spinner fa-spin' : p.icon}`} />
+                </span>
+                <span className="demo-user-text">
+                  <span className="demo-user-title">
+                    <strong>{p.label}</strong>
+                    <span className="demo-user-mobile">{p.mobile}</span>
+                  </span>
+                  <small>{p.tagline}</small>
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="register">
             <p>
               Don't have an account? <Link to="/auth/register">Register</Link>

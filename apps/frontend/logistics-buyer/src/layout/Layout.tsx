@@ -1,8 +1,9 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Fragment, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { authService } from '../api/services/auth.service';
 import { useAuth } from '../hooks/useAuth';
 import DataLoading from '../components/DataLoading';
+import { profileOf } from '../profiles';
 import { sidebarService } from './sidebarService';
 import './Layout.css';
 
@@ -16,9 +17,14 @@ function activeMenu(url: string) {
   return '';
 }
 
-/** Port of LayoutComponent (spec 00 §11). The menu is intentionally NOT permission-gated (faithful). */
+/**
+ * Port of LayoutComponent (spec 00 §11). The menu is intentionally NOT permission-gated (faithful).
+ * Logistics Tech keeps the original menu; the two cross-dock users get their own menu (src/profiles.ts).
+ */
 export default function Layout() {
   const { user } = useAuth();
+  const profile = profileOf(user);
+  const crossDock = profile.key !== 'LOGISTICS_TECH';
   const location = useLocation();
   const [open, setOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,13 +78,30 @@ export default function Layout() {
             <i className={`fas ${open ? 'fa-chevron-left' : 'fa-chevron-right'}`} />
           </button>
         </div>
-        <nav className="nav-menu">
-          {item('/orders', 'fa-box', 'Orders', active === 'orders')}
-          {item('/delivery-routes', 'fa-truck', 'Delivery Planning', active === 'delivery')}
-          {item('/trips', 'fa-paper-plane', 'Trips', active === 'trips')}
-          {item('/reports', 'fa-chart-bar', 'Reports', active === 'reports')}
-          {item('/customer-master', 'fa-users', 'Customers')}
-          {item('/settings', 'fa-cog', 'Settings')}
+        {crossDock && (
+          <div className="profile-chip" title={`${profile.label} · ${user?.businessName ?? profile.businessName}`}>
+            <i className={`fas ${profile.icon}`} />
+            {open && (
+              <span>
+                <strong>{profile.label}</strong>
+                <small>{user?.businessName ?? profile.businessName}</small>
+              </span>
+            )}
+          </div>
+        )}
+        <nav className="nav-menu" aria-label={`${profile.label} menu`}>
+          {crossDock ? (
+            profile.menu.map((m) => <Fragment key={m.to}>{item(m.to, m.icon, m.label)}</Fragment>)
+          ) : (
+            <>
+              {item('/orders', 'fa-box', 'Orders', active === 'orders')}
+              {item('/delivery-routes', 'fa-truck', 'Delivery Planning', active === 'delivery')}
+              {item('/trips', 'fa-paper-plane', 'Trips', active === 'trips')}
+              {item('/reports', 'fa-chart-bar', 'Reports', active === 'reports')}
+              {item('/customer-master', 'fa-users', 'Customers')}
+              {item('/settings', 'fa-cog', 'Settings')}
+            </>
+          )}
         </nav>
       </aside>
       <main className="main-content">
@@ -102,7 +125,7 @@ export default function Layout() {
                 {user && (
                   <div className="user-info">
                     <span className="user-name">{user.name}</span>
-                    <span className="user-email">{user.email}</span>
+                    <span className="user-email">{crossDock ? (user.businessName ?? profile.businessName) : user.email}</span>
                   </div>
                 )}
                 <a
