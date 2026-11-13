@@ -51,8 +51,8 @@ export function route(method: string, service: string, pattern: string, handler:
   routes.push({ method: method.toUpperCase(), service, regex, keys, handler, pattern });
 }
 
-/** Paths that never require a token (auth + public lookups). */
-const PUBLIC = [/^\/auth\//, /^\/otp\//, /^\/buyer\/verify\//, /^\/buyer$/, /^\/users\/refresh_token/];
+/** Paths that never require a token (auth + public lookups). The CDS API (/cds/*) checks its own CDS session. */
+const PUBLIC = [/^\/cds\//, /^\/auth\//, /^\/otp\//, /^\/buyer\/verify\//, /^\/buyer$/, /^\/users\/refresh_token/];
 
 let tokenValidator: (token: string) => boolean = () => true;
 /** Core routes register this so expired/revoked access tokens get a 401 (exercises the refresh flow). */

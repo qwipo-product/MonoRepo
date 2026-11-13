@@ -38,6 +38,28 @@ const CategorySequencePage = lazy(() => import('./pages/settings/CategorySequenc
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'));
 const SseTestPage = lazy(() => import('./pages/SseTestPage'));
 
+// CDS (Cross Dock Store) Management — separate sign-in and role-based screens under /cds (src/pages/cds).
+const CdsLoginPage = lazy(() => import('./pages/cds/CdsLoginPage'));
+const CdsLayout = lazy(() => import('./pages/cds/CdsLayout'));
+const RequireCds = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.RequireCds })));
+const CdsHome = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.CdsHome })));
+const CdsOrders = lazy(() => import('./pages/cds/OrdersPage'));
+const CdsOrderDetails = lazy(() => import('./pages/cds/OrdersPage').then((m) => ({ default: m.OrderDetailsPage })));
+const CdsPickupPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.PickupPlanningPage })));
+const CdsDeliverToCds = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.DeliverToCdsPage })));
+const CdsReturnPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.ReturnPlanningPage })));
+const CdsTrips = lazy(() => import('./pages/cds/TripsPage'));
+const CdsTripDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripDetailsPage })));
+const CdsReports = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.ReportsPage })));
+const CdsSettings = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.SettingsPage })));
+const CdsStores = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.StoresPage })));
+const CdsGrn = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.GrnPage })));
+const CdsGrnDetails = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.GrnDetailsPage })));
+const CdsDeliveryPlanning = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.DeliveryPlanningPage })));
+const CdsCollections = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.CollectionsPage })));
+const CdsReturns = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.ReturnsPage })));
+const CdsRetailers = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.RetailersPage })));
+
 /** Route table mirrors the original exactly (spec 00 §4.1). Unknown URLs render nothing (no wildcard route). */
 export default function App() {
   const navigate = useNavigate();
@@ -57,6 +79,29 @@ export default function App() {
             <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
           </Route>
           <Route index element={<Navigate to="/orders" replace />} />
+          <Route path="/cds/login" element={<CdsLoginPage />} />
+          <Route path="/cds" element={<RequireCds />}>
+            <Route element={<CdsLayout />}>
+              <Route index element={<CdsHome />} />
+              <Route path="orders" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrders /></RequireCds>} />
+              <Route path="orders/:id" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrderDetails /></RequireCds>} />
+              <Route path="pickup-planning" element={<RequireCds page={'sc-pickup'}><CdsPickupPlanning /></RequireCds>} />
+              <Route path="deliver-to-cds" element={<RequireCds page={'sc-deliver'}><CdsDeliverToCds /></RequireCds>} />
+              <Route path="return-planning" element={<RequireCds page={'sc-returns'}><CdsReturnPlanning /></RequireCds>} />
+              <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsTrips /></RequireCds>} />
+              <Route path="trips/:id" element={<CdsTripDetails />} />
+              <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsReports /></RequireCds>} />
+              <Route path="settings" element={<RequireCds page={'sc-settings'}><CdsSettings /></RequireCds>} />
+              <Route path="stores" element={<RequireCds page={'sc-stores'}><CdsStores /></RequireCds>} />
+              <Route path="grn" element={<RequireCds page={'cu-grn'}><CdsGrn /></RequireCds>} />
+              <Route path="grn/:id" element={<RequireCds page={'cu-grn'}><CdsGrnDetails /></RequireCds>} />
+              <Route path="delivery-planning" element={<RequireCds page={'cu-delivery'}><CdsDeliveryPlanning /></RequireCds>} />
+              <Route path="collections" element={<RequireCds page={'cu-collections'}><CdsCollections /></RequireCds>} />
+              <Route path="returns" element={<RequireCds page={'cu-returns'}><CdsReturns /></RequireCds>} />
+              <Route path="retailers" element={<RequireCds page={'cu-retailers'}><CdsRetailers /></RequireCds>} />
+              <Route path="*" element={<CdsHome />} />
+            </Route>
+          </Route>
           <Route element={<RequireAuth />}>
             <Route element={<Layout />}>
               <Route element={<RequireAuth requiredPage="orders" />}>

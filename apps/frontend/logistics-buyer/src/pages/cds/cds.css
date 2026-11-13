@@ -1,0 +1,85 @@
+/* CDS screens — reuse the app's look (Bootstrap + mat-card / mat-mdc-table classes); only CDS-specific bits here. */
+.cds-page { padding: 1rem 1.25rem; background: #f5f7fa; min-height: 100%; }
+.cds-page .mat-card { background: #fff; border-radius: 8px; overflow: hidden; }
+.cds-page .mat-elevation-z3 { box-shadow: 0 3px 3px -2px rgba(0,0,0,.2), 0 3px 4px 0 rgba(0,0,0,.14), 0 1px 8px 0 rgba(0,0,0,.12); }
+.cds-page .mat-mdc-row td { vertical-align: middle; }
+.cds-page .mat-mdc-row:hover td { background: #f8fafc; }
+.cds-page .mat-mdc-row.selected td { background: #eff6ff; }
+.cds-page .mat-mdc-row.warn td { background: #fff7ed; }
+.cds-head { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem; }
+.cds-head h1 { font-size: 1.6rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: .5rem; }
+.cds-head h1 i { color: #005cbb; font-size: 1.2rem; }
+.cds-head p { margin: .15rem 0 0; color: #6c757d; font-size: .85rem; }
+.cds-head .crumb { font-size: .8rem; color: #6c757d; margin-bottom: .25rem; }
+.cds-head .crumb a { color: #005cbb; text-decoration: none; cursor: pointer; }
+
+.cds-tabs { display: flex; gap: .25rem; border-bottom: 1px solid #dee2e6; margin-bottom: 1rem; flex-wrap: wrap; }
+.cds-tab { border: none; background: none; padding: .6rem 1rem; font-size: .9rem; font-weight: 500; color: #495057; border-bottom: 3px solid transparent; display: flex; gap: .45rem; align-items: center; }
+.cds-tab.active { color: #1e3a8a; border-bottom-color: #2563eb; }
+.cds-tab .count { background: #e9ecef; color: #495057; border-radius: 10px; padding: 0 .5rem; font-size: .72rem; }
+.cds-tab.active .count { background: #dbeafe; color: #1e40af; }
+
+.cds-badge { display: inline-block; padding: .3rem .65rem; border-radius: 10px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+.cds-badge.grey { background: #f1f3f5; color: #495057; }
+.cds-badge.blue { background: #dbeafe; color: #1e40af; }
+.cds-badge.amber { background: #fef3c7; color: #92400e; }
+.cds-badge.green { background: #d1fae5; color: #065f46; }
+.cds-badge.red { background: #fee2e2; color: #b91c1c; }
+.cds-badge.purple { background: #ede9fe; color: #5b21b6; }
+.cds-badge.teal { background: #ccfbf1; color: #0f766e; }
+
+.cds-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .9rem; margin-bottom: 1.25rem; }
+.cds-kpi { background: #fff; border-radius: 10px; padding: 1rem 1.1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid #2563eb; cursor: default; }
+.cds-kpi.link { cursor: pointer; }
+.cds-kpi.link:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+.cds-kpi .label { font-size: .78rem; color: #6c757d; font-weight: 500; display: flex; gap: .4rem; align-items: center; }
+.cds-kpi .value { font-size: 1.7rem; font-weight: 700; color: #1f2937; line-height: 1.2; margin-top: .25rem; }
+.cds-kpi .hint { font-size: .72rem; color: #94a3b8; }
+.cds-kpi.green { border-left-color: #10b981; } .cds-kpi.amber { border-left-color: #f59e0b; } .cds-kpi.red { border-left-color: #ef4444; }
+.cds-kpi.purple { border-left-color: #8b5cf6; } .cds-kpi.teal { border-left-color: #14b8a6; } .cds-kpi.grey { border-left-color: #94a3b8; }
+
+.cds-section-title { font-size: .95rem; font-weight: 600; color: #1f2937; padding: .75rem 1rem; border-bottom: 1px solid #eef0f3; display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.cds-section-title small { color: #6c757d; font-weight: 400; }
+.cds-empty { text-align: center; padding: 2.5rem 1rem; color: #6c757d; }
+.cds-empty i { font-size: 2rem; color: #adb5bd; display: block; margin-bottom: .6rem; }
+.cds-filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: .75rem; }
+.cds-filters .form-control, .cds-filters .form-select { max-width: 220px; font-size: .85rem; }
+.cds-filters .search { max-width: 280px; }
+.cds-qty { width: 84px; text-align: right; }
+.cds-grid-2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 1rem; align-items: start; }
+@media (max-width: 1100px) { .cds-grid-2 { grid-template-columns: 1fr; } }
+.cds-dl { display: grid; grid-template-columns: 140px 1fr; gap: .35rem .75rem; font-size: .85rem; padding: .9rem 1rem; }
+.cds-dl dt { color: #6c757d; font-weight: 500; }
+.cds-dl dd { margin: 0; color: #212529; }
+.cds-timeline { list-style: none; margin: 0; padding: .75rem 1rem; font-size: .82rem; }
+.cds-timeline li { position: relative; padding: 0 0 .7rem 1.1rem; border-left: 2px solid #e2e8f0; margin-left: .3rem; }
+.cds-timeline li::before { content: ''; position: absolute; left: -6px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: #2563eb; }
+.cds-timeline .when { color: #94a3b8; font-size: .74rem; }
+.cds-stop { display: flex; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid #f1f5f9; align-items: flex-start; }
+.cds-stop .num { width: 28px; height: 28px; border-radius: 50%; background: #e0e7ff; color: #3730a3; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex-shrink: 0; }
+.cds-stop .num.done { background: #d1fae5; color: #065f46; } .cds-stop .num.fail { background: #fee2e2; color: #b91c1c; } .cds-stop .num.partial { background: #fef3c7; color: #92400e; }
+.cds-note { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: .6rem .85rem; font-size: .82rem; display: flex; gap: .5rem; align-items: flex-start; }
+.cds-note.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.cds-load { height: 8px; border-radius: 4px; background: #e9ecef; overflow: hidden; }
+.cds-load > div { height: 100%; background: #10b981; }
+.cds-load.over > div { background: #ef4444; }
+.cds-retailer-row td { background: #f8fafc !important; font-weight: 600 !important; color: #1e3a8a !important; font-size: .8rem !important; }
+.cds-loc-select { min-width: 200px; font-size: .85rem; }
+.nav-group-label { color: rgba(255,255,255,.5); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; padding: 14px 24px 4px; white-space: nowrap; }
+.nav-item.sub { padding: 10px 24px 10px 40px; font-size: 15px; }
+.nav-item.sub i { font-size: 16px; min-width: 22px; }
+.nav-item.sub span { font-size: 14px; }
+.sidebar.collapsed .nav-item.sub { padding: 10px 24px; }
+.cds-role-chip { background: #eef2ff; color: #3730a3; border-radius: 12px; padding: .2rem .65rem; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.cds-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 4px; border: 1px solid #dee2e6; }
+.text-xs { font-size: .75rem; }
+
+/* Wide tables scroll inside their card (the shared .table-responsive hides overflow). */
+.cds-page .table-responsive { overflow-x: auto; overflow-y: visible; border-radius: 0; }
+.cds-page .mat-mdc-table th { white-space: nowrap; }
+/* CDS sidebar: a little wider, and long module names wrap instead of being cut off. */
+.sidebar.cds-sidebar { width: 272px; }
+.sidebar.cds-sidebar.collapsed { width: 70px; }
+.cds-sidebar .nav-item { white-space: normal; }
+.cds-sidebar .nav-item span { line-height: 1.3; }
+.cds-sidebar .nav-group-label { white-space: normal; }
