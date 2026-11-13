@@ -1,0 +1,70 @@
+/* Global styles mirrored from the original app's styles.css (Angular Material M3 azure theme + overrides). */
+:root {
+  --mat-sys-primary: #005cbb;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-surface: #faf9fd;
+  --mat-sys-outline: #74777f;
+  --mat-sys-outline-variant: #c4c6d0;
+  --brand-navy: #1e3a8a;
+  --brand-blue: #2563eb;
+  --sidebar-bg: #1e3a8a;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; background: #f5f7fa; }
+
+.material-icons, .material-icons-outlined { font-size: 24px; line-height: 1; vertical-align: middle; }
+
+/* status badge */
+.status-badge { display: inline-block; width: 130px; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 500; text-align: center; white-space: nowrap; }
+.status-badge.ready-for-planning { background-color: #fef3c7; color: #92400e; }
+.status-badge.in-planning { background-color: #dbeafe; color: #1e40af; }
+.status-badge.trip-assigned { background-color: #d1fae5; color: #065f46; }
+.status-badge.in-transit { background-color: #dbeafe; color: #1e40af; }
+.status-badge.delivered { background-color: #d1fae5; color: #065f46; }
+.status-badge.partial-delivery { background-color: #dbeafe; color: #1e40af; }
+.status-badge.cancelled { background-color: #dbeafe; color: #1e40af; }
+.status-badge.discarded { background-color: #dbeafe; color: #1e40af; }
+.status-badge.completed { background-color: #d1fae5; color: #065f46; }
+.status-badge.in-progress { background-color: #dbeafe; color: #1e40af; }
+.status-badge.returned { background-color: #ffb6c1; color: #e3342f; }
+.status-badge.partial-return { background-color: #ffb6c1; color: #e3342f; }
+.status-badge.pending { background-color: #fef3c7; color: #92400e; }
+.status-badge.offline-delivery { background-color: #fce7f3; color: #9d174d; }
+.status-badge.partialreturn { background-color: #ffb6c1; color: #e3342f; }
+.status-badge.partialdelivered { background-color: #ffb6c1; color: #e3342f; }
+.status-badge.NEXT_DAY { background-color: #ebf5ff; color: #0070cf; }
+.status-badge.SAME_DAY { background-color: #fff9e6; color: #ad7403; }
+.status-badge.sales { background-color: #fef3c7; color: #92400e; }
+.status-badge.digital { background-color: #dbeafe; color: #1e40af; }
+
+.mat-mdc-paginator { background-color: transparent !important; font-size: .8rem; }
+.card { background-color: #f8f9fa; }
+.card-body { background-color: #fff; }
+.cursor-pointer { cursor: pointer; }
+.fs-smallest { font-size: .7rem !important; }
+
+/* mat-table look-alike (used with <table className="mat-mdc-table">) */
+.table-responsive { min-width: 100%; border-radius: 8px; overflow: hidden; }
+.table-responsive .mat-mdc-table { width: 100% !important; background-color: #fff; }
+.mat-mdc-table { border-collapse: separate !important; border-spacing: 0 4px !important; border-radius: 8px !important; overflow: hidden !important; width: 100%; background: #fff; }
+.mat-mdc-table .mat-mdc-row td, .mat-mdc-table .mat-mdc-row th, .mat-mdc-table .mat-mdc-header-row th {
+  border-bottom-width: 1px !important; border-bottom-style: solid !important; border-bottom-color: #dee2e6 !important; padding: 8px 12px;
+}
+.mat-mdc-table .mat-mdc-row td { color: #333 !important; font-weight: 500 !important; font-size: 13px; }
+.mat-mdc-table .mat-mdc-header-row th { font-weight: 600 !important; color: #4a4f55 !important; letter-spacing: .3px !important; font-size: 12px; }
+.mat-mdc-row, .mat-mdc-header-row { min-height: 40px !important; }
+
+/* error-fix dialog */
+.error-fix-dialog-panel .MuiDialog-paper { border-radius: 6px !important; overflow: hidden !important; }
+.error-fix-dialog-panel .next-btn { background-color: #2463eb !important; color: #fff !important; }
+.error-fix-dialog-panel .tab-btn.active { background-color: #2463eb !important; color: #fff !important; }
+.error-fix-dialog-panel .tab-btn.active .tab-count { background: #fff3 !important; color: #fff !important; }
+
+.input-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; padding: 0; border: none; background: transparent; color: #212529bf; font-size: 13px; cursor: pointer; }
+
+/* SweetAlert2 above MUI dialogs */
+.swal2-container { z-index: 2000 !important; }
+
+/* Mock dev panel */
+.mock-fab { position: fixed; right: 16px; bottom: 16px; z-index: 1900; }

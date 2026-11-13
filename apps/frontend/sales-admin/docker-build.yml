@@ -1,0 +1,69 @@
+# Build pipeline — sales-admin (Angular SPA behind nginx).
+#
+# Registered in Azure DevOps as:  \Mockups Lab\Sales Admin - Build
+# "Sales Admin - Deploy" binds to that exact display name via
+# `resources.pipelines.source`, so renaming this pipeline breaks the release.
+# Rename both or neither.
+#
+# Thin on purpose: the build logic — and the versioning model — lives in
+# azure-cicd/templates/mockup-docker-template.yaml, shared by every mockup.
+# Read that file's header for how versions and tags work.
+#
+# Auto-triggered. The product team pushes a branch and the mockup redeploys;
+# nobody should have to know a pipeline exists. The branch decides the
+# environment — see azure-release.yaml for the mapping.
+#
+# ── Versions ─────────────────────────────────────────────────────────────────
+#
+#     main       → next semver from the `sales-admin-v*` git tags; the tag
+#                  `sales-admin-v<semver>` is pushed, the image is <semver>
+#     other      → <branch>-<sha>, no git tag
+#     dev/*, feature/* → PREVIEW: no image, the built site is uploaded to the
+#                  qwipo-mockups Space and served at
+#                  https://mockups-sales-admin.dev.bms.qwipo.com/builds/<branch>/<sha>/
+#
+# `bump` only matters on main. An auto-triggered run always takes patch; run
+# the pipeline by hand and pick minor/major for a bigger step.
+#
+# The tag prefix below is a literal, on purpose. Regenerating with a different
+# --service changes it and forks the tag lineage — pass --tag-prefix to keep
+# the old one across a rename.
+#
+# `packages/**` is in the path filter because a change to a shared package
+# changes this app's output. That means one commit to packages/ rebuilds every
+# mockup, which is correct and is why these builds are kept cheap.
+
+trigger:
+    branches:
+        include:
+            - main
+            - dev
+            - testing
+            - staging
+            - dev/*
+            - feature/*
+    paths:
+        include:
+            - 'apps/frontend/sales-admin/**'
+            - 'packages/**'
+            - 'turbo.json'
+            - 'package.json'
+            - 'bun.lock'
+
+parameters:
+    - name: bump
+      displayName: Semver bump (main only; auto-triggered runs always patch)
+      type: string
+      default: patch
+      values:
+          - patch
+          - minor
+          - major
+
+extends:
+    template: /azure-cicd/templates/mockup-docker-template.yaml
+    parameters:
+        service_name: 'mockups-sales-admin'
+        tag_prefix: 'sales-admin'
+        dockerfile: apps/frontend/sales-admin/Dockerfile
+        bump: ${{ parameters.bump }}

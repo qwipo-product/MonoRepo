@@ -48,6 +48,7 @@ import { UpdateSheet } from './sheets/UpdateSheet';
 import { PromoBannersSheet } from './sheets/PromoBannersSheet';
 import { CartAlertsSheet } from './sheets/CartAlertsSheet';
 import { OrderItemsSheet } from './sheets/OrderItemsSheet';
+import { CdsSellerSheet } from './sheets/CdsSellerSheet';
 import { SplashScreen } from './screens/auth/SplashScreen';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import { OtpScreen } from './screens/auth/OtpScreen';
@@ -162,6 +163,8 @@ function fallbackBack(id: ScreenId): ScreenId {
   if (id === 'checkout' || id === 'view-items') return 'cart';
   if (id === 'otp') return 'login';
   if (id === 'order-details') return 'my-orders';
+  if (id === 'dms-partners') return 'distributors-list';
+  if (id === 'dms-register') return 'dms-partners';
   if (id === 'storefront') return 'listing';
   if (id === 'sub:delivery-company') return 'sub:delivery-schedule';
   if (id === 'dms-partners') return 'distributors-list';
@@ -217,6 +220,11 @@ export default function App() {
   const [updateRequired, setUpdateRequired] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
   const [orderItemsOpen, setOrderItemsOpen] = useState(false);
+  /* A cross-dock card carries four distributors. These two say which one the
+     buyer singled out — for the items sheet on the order summary, and for the
+     "add more" picker in the cart. */
+  const [cdsItemsSeller, setCdsItemsSeller] = useState<string | null>(null);
+  const [cdsPickerOpen, setCdsPickerOpen] = useState(false);
   // Live quantities from the Product List / Reorder screens — starts empty,
   // so the cart opens with nothing in it; the buyer adding a quantity there
   // is the only thing that ever puts something in the cart. Single source of
@@ -781,7 +789,9 @@ export default function App() {
               setViewSellerId(sellerId);
               go('view-items');
             }}
-            onAddMore={() => go('listing')}
+            onAddMore={(seller) =>
+              seller?.cds ? setCdsPickerOpen(true) : go('listing')
+            }
             /* Which sheet depends on the catalogue the line came from — a
                wholesale line is priced by vendor, so it opens the vendor
                sheet rather than the distributor one. */
@@ -796,6 +806,9 @@ export default function App() {
             seller={viewSeller}
             onBack={goBack}
             onAddMore={() => go('listing')}
+            onAddMoreFrom={(name) =>
+              go('listing', { applied: [{ type: 'distributor', value: name }] })
+            }
             onItemTap={(productId) => setSheetId(productId)}
           />
         ) : (
@@ -807,8 +820,9 @@ export default function App() {
             cart={CART}
             onBack={goBack}
             onPlaceOrder={() => go('order-confirmation')}
-            onViewItems={(sellerId) => {
+            onViewItems={(sellerId, cdsSeller) => {
               setViewSellerId(sellerId);
+              setCdsItemsSeller(cdsSeller ?? null);
               setOrderItemsOpen(true);
             }}
           />
@@ -1115,6 +1129,7 @@ export default function App() {
           <OrderItemsSheet
             open={orderItemsOpen}
             seller={viewSeller}
+            cdsSeller={cdsItemsSeller}
             onClose={() => setOrderItemsOpen(false)}
           />
 
@@ -1134,6 +1149,17 @@ export default function App() {
               />
             ) : null;
           })()}
+          {/* Which cross-dock distributor to add from. The cart cannot answer
+              it for the buyer: the card is four catalogues, not one. */}
+          <CdsSellerSheet
+            open={cdsPickerOpen}
+            groups={CART.sellers.find((x) => x.cds)?.groups ?? []}
+            onClose={() => setCdsPickerOpen(false)}
+            onPick={(name) => {
+              setCdsPickerOpen(false);
+              go('listing', { applied: [{ type: 'distributor', value: name }] });
+            }}
+          />
         </div>
         </div>
       </main>

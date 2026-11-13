@@ -1,0 +1,22 @@
+/* Trip Order Details (spec 05 §2.3). Scoped under .trip-order-details. */
+.trip-order-details.order-details-container { padding: 24px; background: #f0f4f8; display: flex; flex-direction: column; gap: 24px; font-family: Inter, Arial, sans-serif; }
+.trip-order-details .orders-header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px #0000000d; }
+.trip-order-details .back-btn { background: #eef2ff; color: #2563eb; padding: 10px; border-radius: 8px; border: none; cursor: pointer; transition: background .2s, transform .2s; display: inline-flex; align-items: center; justify-content: center; }
+.trip-order-details .back-btn:hover { background: #e0e7ff; transform: translateX(-2px); }
+.trip-order-details .back-btn i { font-size: 18px; }
+.trip-order-details .orders-header h1 { font-size: 24px; font-weight: 600; color: #111827; margin: 0 0 4px; }
+.trip-order-details .orders-header h1 i { color: #2563eb; }
+.trip-order-details .row.mb-4 { margin-bottom: 0 !important; }
+.trip-order-details .summary-card { transition: transform .2s, box-shadow .2s; }
+.trip-order-details .summary-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px #0000001a !important; }
+.trip-order-details .icon-container { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.trip-order-details .icon-container i { font-size: 1.5rem; }
+.trip-order-details .card-footer .small i { margin-right: 2px; }
+.trip-order-details .mat-card { background: #fff; border-radius: 8px; overflow: hidden; }
+.trip-order-details .mat-elevation-z3 { box-shadow: 0 3px 3px -2px rgba(0, 0, 0, .2), 0 3px 4px 0 rgba(0, 0, 0, .14), 0 1px 8px 0 rgba(0, 0, 0, .12); }
+.trip-order-details .mat-elevation-z1 { box-shadow: 0 2px 1px -1px rgba(0, 0, 0, .2), 0 1px 1px 0 rgba(0, 0, 0, .14), 0 1px 3px 0 rgba(0, 0, 0, .12); }
+.trip-order-details .mat-card-title { font-size: 18px; font-weight: 500; padding-left: 16px; padding-right: 16px; color: #1f2937; }
+.trip-order-details .mat-card-header { border-bottom: 1px solid #eee; }
+.trip-order-details .mat-mdc-table th { white-space: nowrap; }
+.trip-order-details .mat-mdc-table tfoot td { padding: 8px 12px; border-top: 1px solid #dee2e6; background: #f8f9fa; font-size: 13px; }
+.trip-order-details .products-table td, .trip-order-details .products-table th { white-space: nowrap; }

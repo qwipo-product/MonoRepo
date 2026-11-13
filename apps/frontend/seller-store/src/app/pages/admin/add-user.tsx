@@ -23,13 +23,26 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { type Company, getCompanies, revokeImage, subscribeToCompanies } from "../../lib/admin-catalog";
-import { addSeller } from "../../lib/mock-store";
+import {
+  addSeller,
+  getSellerByEmail,
+  getSellerByPhone,
+  type OperationMode,
+  type PurchaseEligibility,
+} from "../../lib/mock-store";
+import { isValidEmail, isValidMobile } from "../../lib/auth-credentials";
+import { Checkbox } from "@mockups/web-ui";
 import { ImageUploader } from "@mockups/web-ui";
 import { CompanyComboBox } from "../../components/company-combobox";
 
 interface SellerCompanySelection {
   companyId: string;
   brandIds: string[]; // empty array means "all brands of this company"
+  operationMode: OperationMode;
+  /** Mandatory for distributor rows; ignored for wholesaler rows.
+   *  Defaults to "all-customers" — anyone can order. */
+  purchaseEligibility: PurchaseEligibility;
+  syncSkus: boolean;
 }
 
 export function AdminAddUser() {
@@ -38,13 +51,11 @@ export function AdminAddUser() {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  // Login identifier #2. The seller can sign in with either the mobile number
+  // above or this email ID — the OTP is delivered to whichever they use — so
+  // both are mandatory and both have to be unique across the roster.
+  const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
-  // Phase 1 only allows "distributor". Wholesaler is rendered as disabled
-  // so the operator can see it's coming, but defaults / persists as
-  // distributor.
-  const [sellerType, setSellerType] = useState<"distributor" | "wholesaler">(
-    "distributor",
-  );
   // Structured address — captured during creation so serviceability and other
   // location-aware modules can reuse the seller's coordinates and pin.
   const [pinCode, setPinCode] = useState("");
@@ -127,6 +138,7 @@ export function AdminAddUser() {
   type FieldErrors = Partial<Record<
     | "fullName"
     | "phone"
+    | "email"
     | "businessName"
     | "pinCode"
     | "latitude"
@@ -144,7 +156,8 @@ export function AdminAddUser() {
   // checks in handleSave — the handler still runs full validation.
   const isFormShapeValid = () => {
     if (!fullName.trim()) return false;
-    if (!phone.trim()) return false;
+    if (!isValidMobile(phone)) return false;
+    if (!isValidEmail(email)) return false;
     if (!businessName.trim()) return false;
     if (!/^\d{6}$/.test(pinCode.trim())) return false;
     if (!city.trim() || !state.trim()) return false;
@@ -169,7 +182,13 @@ export function AdminAddUser() {
   const [companies, setCompanies] = useState<Company[]>(getCompanies());
   useEffect(() => subscribeToCompanies(() => setCompanies([...getCompanies()])), []);
   const [selections, setSelections] = useState<SellerCompanySelection[]>([
-    { companyId: "", brandIds: [] },
+    {
+      companyId: "",
+      brandIds: [],
+      operationMode: "distributor",
+      purchaseEligibility: "all-customers",
+      syncSkus: true,
+    },
   ]);
 
   // ---- Selection helpers ----
@@ -179,7 +198,16 @@ export function AdminAddUser() {
   );
 
   const addCompanyRow = () => {
-    setSelections((prev) => [...prev, { companyId: "", brandIds: [] }]);
+    setSelections((prev) => [
+      ...prev,
+      {
+        companyId: "",
+        brandIds: [],
+        operationMode: "distributor",
+        purchaseEligibility: "all-customers",
+        syncSkus: true,
+      },
+    ]);
   };
 
   const removeCompanyRow = (idx: number) => {
@@ -188,9 +216,34 @@ export function AdminAddUser() {
 
   const setCompanyForRow = (idx: number, companyId: string) => {
     setSelections((prev) =>
-      prev.map((s, i) => (i === idx ? { companyId, brandIds: [] } : s)),
+      prev.map((s, i) =>
+        i === idx
+          ? {
+              companyId,
+              brandIds: [],
+              operationMode: s.operationMode,
+              purchaseEligibility: s.purchaseEligibility,
+              syncSkus: true,
+            }
+          : s,
+      ),
     );
     clearError("companies");
+  };
+
+  const setOperationModeForRow = (idx: number, operationMode: OperationMode) => {
+    setSelections((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, operationMode } : s)),
+    );
+  };
+
+  const setPurchaseEligibilityForRow = (
+    idx: number,
+    purchaseEligibility: PurchaseEligibility,
+  ) => {
+    setSelections((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, purchaseEligibility } : s)),
+    );
   };
 
   const toggleBrandForRow = (idx: number, brandId: string) => {
@@ -234,9 +287,22 @@ export function AdminAddUser() {
     if (!fullName.trim()) next.fullName = "Full Name is required.";
     if (!phone.trim()) {
       next.phone = "Mobile Number is required.";
-    } else if (!/^\d{10}$/.test(phone.trim())) {
+    } else if (!isValidMobile(phone)) {
       next.phone = "Please enter a valid 10-digit mobile number.";
+    } else if (getSellerByPhone(phone)) {
+      // Both identifiers sign the seller in, so a duplicate would make the
+      // login ambiguous. Block it at creation instead.
+      next.phone = "This mobile number is already registered to another seller.";
     }
+
+    if (!email.trim()) {
+      next.email = "Email ID is required.";
+    } else if (!isValidEmail(email)) {
+      next.email = "Please enter a valid email ID (e.g. name@company.com).";
+    } else if (getSellerByEmail(email)) {
+      next.email = "This email ID is already registered to another seller.";
+    }
+
     if (!businessName.trim()) next.businessName = "Business Name is required.";
 
     if (!pinCode.trim()) {
@@ -293,8 +359,10 @@ export function AdminAddUser() {
       addSeller({
         name: fullName.trim(),
         phone: phone.trim(),
+        // Stored lower-cased so the email login lookup is a plain equality
+        // check regardless of how the seller types it.
+        email: email.trim().toLowerCase(),
         businessName: businessName.trim(),
-        sellerType,
         city: city.trim(),
         state: state.trim(),
         pinCode: pinCode.trim(),
@@ -308,6 +376,14 @@ export function AdminAddUser() {
         companyBrandSelections: completeRows.map((r) => ({
           companyId: r.companyId,
           brandIds: r.brandIds,
+          operationMode: r.operationMode,
+          // Purchase gate only applies to distributor mappings —
+          // wholesaler rows normalise to the open default.
+          purchaseEligibility:
+            r.operationMode === "distributor"
+              ? r.purchaseEligibility
+              : "all-customers",
+          syncSkusToMySku: r.syncSkus,
         })),
       });
       setIsSaving(false);
@@ -403,8 +479,35 @@ export function AdminAddUser() {
                     placeholder="+91 98765 43210"
                     aria-invalid={!!errors.phone}
                   />
-                  {errors.phone && (
+                  {errors.phone ? (
                     <p className="text-[11px] text-red-600">{errors.phone}</p>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">
+                      Used to sign in — OTP is sent over SMS.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Email ID <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearError("email");
+                    }}
+                    placeholder="name@company.com"
+                    aria-invalid={!!errors.email}
+                  />
+                  {errors.email ? (
+                    <p className="text-[11px] text-red-600">{errors.email}</p>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">
+                      Also a sign-in ID — the seller can log in with this email
+                      and verify the OTP sent to it.
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -424,31 +527,9 @@ export function AdminAddUser() {
                     <p className="text-[11px] text-red-600">{errors.businessName}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    Seller Type <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={sellerType}
-                    onValueChange={(v) =>
-                      setSellerType(v as "distributor" | "wholesaler")
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="distributor">Distributor</SelectItem>
-                      <SelectItem value="wholesaler" disabled>
-                        Wholesaler (coming in Phase 2)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-gray-500">
-                    Phase 1 supports distributors only. Wholesaler is reserved
-                    for a later phase.
-                  </p>
-                </div>
+                {/* Seller Type field removed — it's derived from the
+                    Operation Mode of the companies linked below, so
+                    there's nothing to show or pick here. */}
                 {/* Structured address — PIN drives city/state lookup so the
                     seller record stays consistent with the actual postcode. */}
                 <div className="space-y-2">
@@ -605,9 +686,11 @@ export function AdminAddUser() {
                 Companies & Brands the Seller Works With
               </CardTitle>
               <p className="text-xs text-gray-500 mt-1">
-                Select at least one company. For each company you can either pick
-                specific brands or use <b>All brands</b> to auto-include any future
-                brands added to that company.
+                Select at least one company and set its <b>Operation Mode</b> —
+                whether the seller acts as that company's Distributor or
+                Wholesaler. For each company you can either pick specific brands
+                or use <b>All brands</b> to auto-include any future brands added
+                to that company.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -648,6 +731,64 @@ export function AdminAddUser() {
                           })}
                         />
                       </div>
+                      {/* Operation Mode — how the seller serves THIS
+                          company. Drives the calculated Seller Type and
+                          which serviceability model (Beats vs Wholesaler
+                          Polygon) the company uses. */}
+                      <div className="w-[180px] space-y-1">
+                        <Label className="text-xs">
+                          Operation Mode <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={sel.operationMode}
+                          onValueChange={(v) =>
+                            setOperationModeForRow(idx, v as OperationMode)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="distributor">Distributor</SelectItem>
+                            <SelectItem value="wholesaler">Wholesaler</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Customer Purchase — distributor-only gate:
+                          does the buyer need a DMS registration
+                          (company customer ID) before ordering from
+                          this company? Mandatory; defaults to the
+                          open option. Hidden for wholesaler rows —
+                          wholesale never restricts. */}
+                      {sel.operationMode === "distributor" && (
+                        <div className="w-[230px] space-y-1">
+                          <Label className="text-xs">
+                            Customer Purchase{" "}
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={sel.purchaseEligibility}
+                            onValueChange={(v) =>
+                              setPurchaseEligibilityForRow(
+                                idx,
+                                v as PurchaseEligibility,
+                              )
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all-customers">
+                                All customers can purchase
+                              </SelectItem>
+                              <SelectItem value="registered-only">
+                                Registered customers only
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div className="pt-5">
                         <Button
                           variant="ghost"
@@ -664,6 +805,22 @@ export function AdminAddUser() {
                           <X className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
+                    </div>
+
+                    {/* Sync toggle — per company */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Checkbox
+                        id={`syncSkus-${idx}`}
+                        checked={sel.syncSkus}
+                        onCheckedChange={(v) =>
+                          setSelections((prev) =>
+                            prev.map((s, i) => i === idx ? { ...s, syncSkus: !!v } : s)
+                          )
+                        }
+                      />
+                      <Label htmlFor={`syncSkus-${idx}`} className="text-xs cursor-pointer">
+                        Sync all SKUs to seller's MySKU
+                      </Label>
                     </div>
 
                     {/* Brand picker — appears once a company is chosen */}

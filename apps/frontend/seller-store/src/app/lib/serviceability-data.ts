@@ -19,11 +19,20 @@
 // every UI surface (admin Serviceability page, customer detail).
 
 import type { DeliveryDay } from "./customers-data";
+import { demoBeats } from "./demo-geography";
 
 export interface ServiceabilityBeat {
   id: string;
   companyId: string;
   companyName: string;
+  /**
+   * The seller (distributor) whose Serviceability tab created this
+   * beat. Drives the Seller Name + distance columns in the admin
+   * Beat Serviceability Report. Optional because legacy records
+   * predate the field.
+   */
+  sellerId?: string;
+  sellerName?: string;
   beatName: string;
   /**
    * Delivery days this beat serves. Always at least one entry.
@@ -39,207 +48,26 @@ export interface ServiceabilityBeat {
 /** Back-compat alias — old consumers that imported `ServiceabilityBit`. */
 export type ServiceabilityBit = ServiceabilityBeat;
 
-// ---- Seed ----
-
-const SAMPLE_FREEDOM_POLYGON = {
-  type: "FeatureCollection" as const,
-  features: [
-    {
-      type: "Feature" as const,
-      properties: { name: "Freedom Zone — Mumbai metropolitan region" },
-      geometry: {
-        type: "Polygon" as const,
-        coordinates: [
-          [
-            [72.7, 18.9],
-            [73.05, 18.9],
-            [73.05, 19.3],
-            [72.7, 19.3],
-            [72.7, 18.9],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
-// ITC seed — 11 beats covering Monday → Saturday. KPHB 1 carries
-// TWO delivery days (Mon + Tue) — the explicit "one beat, two day
-// chips" showcase the meeting called out. Every other beat is
-// single-day.
-const ITC_SEED_BEATS: ServiceabilityBeat[] = [
-  {
-    id: "beat-itc-kphb1",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "KPHB 1",
-    deliveryDays: ["Monday", "Tuesday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-kphb2",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "KPHB 2",
-    deliveryDays: ["Monday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-kphb3",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "KPHB 3",
-    deliveryDays: ["Monday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-banjara",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Banjara Hills",
-    deliveryDays: ["Tuesday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-jubilee",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Jubilee Hills",
-    deliveryDays: ["Tuesday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-sr-nagar",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "SR Nagar",
-    deliveryDays: ["Wednesday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-madhapur",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Madhapur",
-    deliveryDays: ["Thursday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-gachibowli",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Gachibowli",
-    deliveryDays: ["Thursday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-kondapur",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Kondapur",
-    deliveryDays: ["Friday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-hitec",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "HITEC City",
-    deliveryDays: ["Friday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-  {
-    id: "beat-itc-begumpet",
-    companyId: "co-itc",
-    companyName: "ITC Limited",
-    beatName: "Begumpet",
-    deliveryDays: ["Saturday"],
-    createdAt: "2026-04-08T09:00:00Z",
-  },
-];
-
-const ADANI_SEED_BEATS: ServiceabilityBeat[] = [
-  {
-    id: "beat-adani-jubilee",
-    companyId: "co-adani",
-    companyName: "Adani Wilmar Ltd",
-    beatName: "Jubilee Hills",
-    deliveryDays: ["Next Day"],
-    createdAt: "2026-04-11T09:00:00Z",
-  },
-  {
-    id: "beat-adani-banjara",
-    companyId: "co-adani",
-    companyName: "Adani Wilmar Ltd",
-    beatName: "Banjara Hills",
-    deliveryDays: ["Next Day"],
-    createdAt: "2026-04-11T09:00:00Z",
-  },
-  {
-    id: "beat-adani-madhapur",
-    companyId: "co-adani",
-    companyName: "Adani Wilmar Ltd",
-    beatName: "Madhapur",
-    deliveryDays: ["Next Day"],
-    createdAt: "2026-04-11T09:00:00Z",
-  },
-  {
-    id: "beat-adani-kondapur",
-    companyId: "co-adani",
-    companyName: "Adani Wilmar Ltd",
-    beatName: "Kondapur",
-    deliveryDays: ["Next Day"],
-    createdAt: "2026-04-11T09:00:00Z",
-  },
-];
-
-const SEED_BEATS: ServiceabilityBeat[] = [
-  ...ITC_SEED_BEATS,
-  {
-    id: "beat-marico-kphb",
-    companyId: "co-marico",
-    companyName: "Marico",
-    beatName: "KPHB 1",
-    deliveryDays: ["Monday"],
-    createdAt: "2026-04-09T09:00:00Z",
-  },
-  {
-    id: "beat-marico-ameerpet",
-    companyId: "co-marico",
-    companyName: "Marico",
-    beatName: "Ameerpet",
-    deliveryDays: ["Thursday"],
-    createdAt: "2026-04-09T09:00:00Z",
-  },
-  {
-    id: "beat-freedom-mum",
-    companyId: "co-freedom",
-    companyName: "Gemini Edibles & Fats India",
-    beatName: "Mumbai Metro — North",
-    deliveryDays: ["Monday"],
-    polygonFileName: "freedom-zone.geojson",
-    polygonData: SAMPLE_FREEDOM_POLYGON,
-    createdAt: "2026-04-10T09:00:00Z",
-  },
-  {
-    id: "beat-freedom-hyd",
-    companyId: "co-freedom",
-    companyName: "Gemini Edibles & Fats India",
-    beatName: "Hyderabad West",
-    deliveryDays: ["Friday"],
-    createdAt: "2026-04-10T09:00:00Z",
-  },
-  ...ADANI_SEED_BEATS,
-];
+const SEED_BEATS: ServiceabilityBeat[] = demoBeats;
 
 // ---- In-memory store + subscribe API ----
 
 let _beats: ServiceabilityBeat[] = [...SEED_BEATS];
 const _listeners = new Set<() => void>();
 
+// Bumped on every beat-store write. Lets consumers (the customer
+// database's match cache) invalidate derived data without resorting
+// to deep comparisons over hundreds of polygons.
+let _beatsVersion = 0;
+
 const notify = () => {
+  _beatsVersion++;
   for (const cb of _listeners) cb();
 };
+
+export function getServiceabilityBeatsVersion(): number {
+  return _beatsVersion;
+}
 
 export function getServiceabilityBeats(): ServiceabilityBeat[] {
   return _beats;
@@ -303,6 +131,226 @@ function polygonHash(s: string): string {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) | 0;
   return (h >>> 0).toString(36);
+}
+
+// ---- Polygon overlap geometry ----
+//
+// Save-time guard for the Add/Edit beat dialogs: does a candidate
+// polygon geometrically overlap an existing beat's polygon? Outer
+// rings only ([lng, lat] pairs) — city-scale delivery zones don't
+// carry holes, and a false positive inside a hole is harmless here.
+//
+// Two zones "overlap" when any vertex of one falls inside the other,
+// or when any of their edges cross. A cheap bounding-box reject runs
+// first so the O(n·m) edge scan only fires on candidates that are
+// actually near each other.
+
+type Ring = [number, number][];
+
+/** Extract every outer ring from a GeoJSON Polygon/MultiPolygon/Feature(Collection). */
+export function polygonOuterRings(data: unknown): Ring[] {
+  const rings: Ring[] = [];
+  const walk = (geom: { type?: string; coordinates?: unknown } | undefined) => {
+    if (!geom) return;
+    if (geom.type === "Polygon") {
+      const outer = (geom.coordinates as Ring[])?.[0];
+      if (outer?.length) rings.push(outer);
+    } else if (geom.type === "MultiPolygon") {
+      for (const poly of (geom.coordinates as Ring[][]) ?? []) {
+        if (poly?.[0]?.length) rings.push(poly[0]);
+      }
+    }
+  };
+  const d = data as {
+    type?: string;
+    features?: { geometry?: { type?: string; coordinates?: unknown } }[];
+    geometry?: { type?: string; coordinates?: unknown };
+  };
+  if (!d || typeof d !== "object") return rings;
+  if (d.type === "FeatureCollection") {
+    for (const f of d.features ?? []) walk(f?.geometry);
+  } else if (d.type === "Feature") {
+    walk(d.geometry);
+  } else {
+    walk(d as { type?: string; coordinates?: unknown });
+  }
+  return rings;
+}
+
+interface BBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+function ringBBox(ring: Ring): BBox {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const [x, y] of ring) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function bboxDisjoint(a: BBox, b: BBox): boolean {
+  return a.maxX < b.minX || b.maxX < a.minX || a.maxY < b.minY || b.maxY < a.minY;
+}
+
+function pointInRing(x: number, y: number, ring: Ring): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const intersects =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function orient(
+  a: [number, number],
+  b: [number, number],
+  c: [number, number],
+): number {
+  const v = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  return v > 0 ? 1 : v < 0 ? -1 : 0;
+}
+
+function segmentsCross(
+  p1: [number, number],
+  p2: [number, number],
+  p3: [number, number],
+  p4: [number, number],
+): boolean {
+  const d1 = orient(p3, p4, p1);
+  const d2 = orient(p3, p4, p2);
+  const d3 = orient(p1, p2, p3);
+  const d4 = orient(p1, p2, p4);
+  return d1 !== d2 && d3 !== d4;
+}
+
+function ringsOverlap(a: Ring, b: Ring): boolean {
+  if (bboxDisjoint(ringBBox(a), ringBBox(b))) return false;
+  for (const [x, y] of a) if (pointInRing(x, y, b)) return true;
+  for (const [x, y] of b) if (pointInRing(x, y, a)) return true;
+  for (let i = 0; i < a.length - 1; i++) {
+    for (let j = 0; j < b.length - 1; j++) {
+      if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * True when two GeoJSON polygons share any area (or their boundaries
+ * cross). Used to block a new beat whose zone overlaps a DIFFERENT
+ * company's zone with a conflicting delivery-day set.
+ */
+export function polygonsOverlap(a: unknown, b: unknown): boolean {
+  if (a == null || b == null) return false;
+  const ringsA = polygonOuterRings(a);
+  const ringsB = polygonOuterRings(b);
+  for (const ra of ringsA) {
+    for (const rb of ringsB) {
+      if (ringsOverlap(ra, rb)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Great-circle distance between two lat/lng points in kilometres
+ * (haversine). Used for the customer ↔ seller distance column in the
+ * Beat Serviceability Report.
+ */
+export function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/**
+ * True when a lat/lng point falls inside any outer ring of a GeoJSON
+ * polygon. The production-grade counterpart to the demo hash picker —
+ * used by the admin Customer Database to resolve which beats actually
+ * cover an uploaded customer location.
+ */
+export function polygonContainsPoint(
+  data: unknown,
+  lat: number,
+  lng: number,
+): boolean {
+  for (const { ring, bbox } of cachedRings(data)) {
+    if (
+      lng >= bbox.minX &&
+      lng <= bbox.maxX &&
+      lat >= bbox.minY &&
+      lat <= bbox.maxY &&
+      pointInRing(lng, lat, ring)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Ring extraction + bbox per polygon, cached on the polygon object
+// itself. The customer database matches tens of thousands of points
+// against every beat — without this, every check re-walks the GeoJSON
+// and every ring, and the admin pages freeze on real rosters. The
+// bbox reject settles almost every (point, beat) pair without an
+// O(vertices) point-in-ring test.
+interface CachedRing {
+  ring: Ring;
+  bbox: BBox;
+}
+
+const _ringCache = new WeakMap<object, CachedRing[]>();
+
+function cachedRings(data: unknown): CachedRing[] {
+  if (data === null || typeof data !== "object") return [];
+  const hit = _ringCache.get(data);
+  if (hit) return hit;
+  const entries = polygonOuterRings(data).map((ring) => ({
+    ring,
+    bbox: ringBBox(ring),
+  }));
+  _ringCache.set(data, entries);
+  return entries;
+}
+
+/**
+ * Every beat (across ALL companies) whose polygon contains the given
+ * point. A customer inside two companies' zones gets both beats back —
+ * callers group by company for display.
+ */
+export function findBeatsContainingPoint(
+  lat: number,
+  lng: number,
+): ServiceabilityBeat[] {
+  return _beats
+    .filter(
+      (b) =>
+        b.polygonData != null && polygonContainsPoint(b.polygonData, lat, lng),
+    )
+    .sort(beatDisplaySort);
 }
 
 // ---- Lookup helpers ----
