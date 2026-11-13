@@ -1016,6 +1016,8 @@ export function scheduleReturnToSeller(id: string, at?: string) {
   if (r.status !== "Open") fail("Return is not open");
   r.status = "Return to Seller Scheduled";
   r.updatedAt = T(at);
+  // LBNP assigns the delivery person who brings the goods back.
+  r.returnRider ??= pick(RIDERS);
   const o = findOrder(r.orderId);
   if (o) log(o, { title: "Return to seller scheduled", note: `${r.id} · goes back ${o.route === "3pl" ? "with the 3PL delivery partner" : `on the next pickup trip from ${sellerName(r.sellerId)}`}`, leg: "exception", by: handlerName(o, r.cdsId) }, at);
 }
@@ -1025,6 +1027,7 @@ export function markReturnedToSeller(id: string, at?: string) {
   if (r.status !== "Return to Seller Scheduled" && r.status !== "Open") fail("Return already completed");
   r.status = "Returned to Seller";
   r.updatedAt = T(at);
+  r.returnRider ??= pick(RIDERS);
   const o = findOrder(r.orderId);
   if (o) {
     if (r.type === "Delivery Failure (RTO)") {

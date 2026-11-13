@@ -224,6 +224,15 @@ export function fmtDateTime(iso?: string): string {
   return `${fmtDayLabel(iso)}, ${fmtTime(iso)}`;
 }
 
+/** "Today, 20 May 2026, 10:15 am" — the day name with the full date and time
+ *  (older dates: "18 May 2026, 12:00 pm"). */
+export function fmtDayDateTime(iso?: string): string {
+  if (!iso) return "—";
+  const day = fmtDayLabel(iso);
+  const date = fmtDate(iso);
+  return day === date ? `${date}, ${fmtTime(iso)}` : `${day}, ${date}, ${fmtTime(iso)}`;
+}
+
 // ---- date range filter ----
 
 export type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "all";

@@ -5,7 +5,6 @@ import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Package,
-  Warehouse,
   Tag,
   ShoppingCart,
   Users,
@@ -27,8 +26,6 @@ import {
 } from "lucide-react";
 import { isCdsEnabled } from "../lib/cds/store";
 import { CdsOrderSync } from "./cds/cds-order-sync";
-import { CDS_LOCATIONS } from "../lib/cds/master-data";
-import { SELLER_CDS_ID } from "../lib/cds/order-bridge";
 import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
@@ -81,17 +78,6 @@ type SellerNavItem = {
   sectionLabel?: string;
 };
 
-// Cross Dock Store (CDS) — shown for sellers whose CDS connector is
-// enabled from the Admin portal. Sits right after Support; Logistics
-// (3PL) stays too, since the seller picks CDS or 3PL per order.
-const cdsNavigation: SellerNavItem = {
-  name: "Cross Dock Store (CDS)",
-  icon: Warehouse,
-  subItems: [
-    { name: "CDS Orders", href: "/orders?tab=cds" },
-    { name: "CDS Payments", href: "/cds/payments" },
-  ],
-};
 
 // The Logistics nav entry now sits in the base seller navigation
 // directly — every seller persona sees it. The empty-mode seller has
@@ -254,9 +240,7 @@ export function RootLayout() {
               sellerErrorScreensNav,
               sellerLoadingScreensNav,
             ]
-          : isCdsEnabled(user?.id)
-            ? sellerNavigation.flatMap((i) => (i.name === "Support" ? [i, cdsNavigation] : [i]))
-            : sellerNavigation;
+          : sellerNavigation;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     isAdmin ? "User Management" : isCatalogPortal ? null : "Products",
@@ -547,23 +531,6 @@ export function RootLayout() {
                 eye lands on before their identity. Available to every
                 logged-in role (admin + seller). */}
             <ThemeToggle />
-
-            {/* CDS connector badge — tells the seller at a glance that
-                their orders run through the Cross Dock Store. */}
-            {user?.role === "seller" && !isEmptyMode && isCdsEnabled(user?.id) && (
-              <button
-                type="button"
-                onClick={() => navigate("/orders?tab=cds")}
-                title={"CDS connector enabled · " + (CDS_LOCATIONS.find((l) => l.id === SELLER_CDS_ID)?.name ?? "")}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100"
-              >
-                <Warehouse className="h-3.5 w-3.5" />
-                CDS
-                <span className="hidden md:inline font-medium text-teal-600">
-                  · {CDS_LOCATIONS.find((l) => l.id === SELLER_CDS_ID)?.name}
-                </span>
-              </button>
-            )}
 
             {/* User Menu */}
             <DropdownMenu>

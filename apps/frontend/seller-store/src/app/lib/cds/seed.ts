@@ -44,12 +44,12 @@ import {
   verifyHandover,
   type InwardEntry,
 } from "./engine";
-import { CDS_INTENSITY, CDS_LOCATIONS, OPERATOR_SELLER_ID, PRODUCTS, SELLERS, buildRetailers } from "./master-data";
+import { CDS_INTENSITY, CDS_LOCATIONS, OPERATOR_SELLER_ID, PRODUCTS, RIDERS, SELLERS, buildRetailers } from "./master-data";
 import { seedOrders } from "../orders-data";
 import { SELLER_CDS_ID, alignToCdsDay, plusDays, toImported } from "./order-bridge";
 import type { CdsOrder, CdsState, CdsTrip, PaymentType, Shipment } from "./types";
 
-export const CDS_DATA_VERSION = 38;
+export const CDS_DATA_VERSION = 46;
 const PAST_DAYS = 4;
 
 function mulberry32(seed: number) {
@@ -569,7 +569,11 @@ function sellerStory() {
   const c = confirmed.map((id, i) => imp(id, 0, 8, 5 + i, i === 0 ? 0.2 : 0)).filter((x): x is CdsOrder => !!x);
   const multi = (o: CdsOrder) => o.lines.find((l) => l.confirmedQty >= 2) ?? o.lines[0];
   if (c[2]) cancelOrder(c[2].id, "Retailer", "Ordered by mistake", at(0, 9, 40));
-  if (c[3] && c[4]) requestPickupTrip([c[3].id, c[4].id], { at: at(0, 10, 0), slot: "Assigned by LBNP" });
+  if (c[3] && c[4]) {
+    // Pickup person assigned and on the way — seller sees who comes and when.
+    const tp = requestPickupTrip([c[3].id, c[4].id], { at: at(0, 10, 0), slot: "Assigned by LBNP" });
+    lbnpAssignRider(tp, at(0, 10, 15));
+  }
   if (c[5]) {
     const t1 = requestPickupTrip([c[5].id], { at: at(0, 7, 30) });
     lbnpAssignRider(t1, at(0, 7, 50));
@@ -587,14 +591,23 @@ function sellerStory() {
   // 3PL Logistics — retailers outside the CDS area. Picked up from the
   // seller and delivered straight to the retailer (no CDS stop).
   const p3 = (id: string, off: number) => imp(id, off, 8, 20, 0, "3pl");
-  // Ready for logistics
-  p3("QWI-ONDC-260517-R8T3LM", 0);
-  p3("QWI-ONDC-260514-T1R7NH", 0);
+  // Pickup requested, nobody assigned yet (trip is requested at the end)
+  p3("QWI-ONDC-260519-R8T3LM", 0);
+  // Pickup person assigned for tomorrow — the seller sees "will arrive tomorrow".
+  const tmr = p3("QWI-FLPK-260520-T1R7NH", 0);
+  if (tmr) {
+    const tt = requestPickupTrip([tmr.id], { at: at(0, 9, 50), slot: "Assigned by LBNP" });
+    lbnpAssignRider(tt, at(0, 10, 5));
+    for (const st of trip(tt).stops) st.eta = at(1, 10, 0);
+  }
   // Pickup requested
-  const pr = [p3("QWI-ONDC-260516-H5V9PK", 0), p3("QWI-ONDC-260515-Q2X6BN", 0)].filter((x): x is CdsOrder => !!x);
-  if (pr.length) requestPickupTrip(pr.map((o) => o.id), { at: at(0, 10, 30), slot: "Assigned by LBNP" });
+  const pr = [p3("QWI-ONDC-260519-H5V9PK", 0), p3("QWI-FLPK-260519-Q2X6BN", 0)].filter((x): x is CdsOrder => !!x);
+  if (pr.length) {
+    const tp = requestPickupTrip(pr.map((o) => o.id), { at: at(0, 10, 30), slot: "Assigned by LBNP" });
+    lbnpAssignRider(tp, at(0, 10, 40));
+  }
   // Picked up (OTP) and out for delivery with the 3PL rider
-  const ofd = p3("QWI-ONDC-260517-D3F8KT", 0);
+  const ofd = p3("QWI-ONDC-260519-D3F8KT", 0);
   if (ofd) {
     const t = requestPickupTrip([ofd.id], { at: at(0, 7, 40), slot: "Assigned by LBNP" });
     lbnpAssignRider(t, at(0, 8, 0));
@@ -751,6 +764,11 @@ export function buildSeed(): CdsState {
     sellerLateReturns();
   } catch (e) {
     console.error("[CDS seed] late returns", e);
+  }
+  // Every return that is on its way back (or already back) has the delivery
+  // person who brings it to the seller.
+  for (const r of ctx.s.returns) {
+    if (r.status !== "Open" && !r.returnRider) r.returnRider = RIDERS[Math.floor(ctx.rand() * RIDERS.length)];
   }
   ctx.rand = Math.random;
   return ctx.s;

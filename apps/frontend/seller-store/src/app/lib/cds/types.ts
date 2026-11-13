@@ -433,6 +433,8 @@ export interface ReturnCase {
   discrepancyId?: string;
   /** Seller confirmed the return is settled (goods back, deduction accepted). */
   sellerSettledAt?: string;
+  /** Delivery person bringing the goods back to the seller (assigned when the return is scheduled). */
+  returnRider?: Rider;
 }
 
 export interface CdsState {

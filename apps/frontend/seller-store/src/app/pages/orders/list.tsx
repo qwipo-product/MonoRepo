@@ -61,10 +61,11 @@ import { CopyOnHover } from "@mockups/web-ui";
 import { ListPagination } from "@mockups/web-ui";
 import { OrdersMapDialog } from "../../components/orders-map-dialog";
 import { useAuth } from "../../lib/auth-context";
-import { isCdsEnabled } from "../../lib/cds/store";
+import { isCdsEnabled, useCds } from "../../lib/cds/store";
+import { PickupPersonLine, PrintPickupListButton, pickupInfo } from "../../components/cds/pickup-info";
 import { SELLER_CANCELLABLE } from "../../lib/cds/calc";
 import { CdsOrdersTab } from "../../components/cds/cds-orders-tab";
-import { CdsReturnsTab, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
+import { CdsReturnsTab, useCdsReturnComingCount, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
 import { useCdsOrderIds, useCdsOrderMap } from "../../components/cds/cds-order-sync";
 import { areaFromAddress, isCdsServiceable } from "../../lib/cds/order-bridge";
 import type { CdsOrderStatus } from "../../lib/cds/types";
@@ -123,6 +124,8 @@ type TabType =
   | "all"
   | "new"
   | "confirmed"
+  // CDS sellers: confirmed orders the pickup person has collected (CDS or 3PL).
+  | "pickedup"
   | "logistics"
   | "delivered"
   | "cancelled"
@@ -177,6 +180,37 @@ function SelectionActions({ count, actions }: { count: number; actions: Selectio
   );
 }
 
+const WORK_TONE = {
+  blue: "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100",
+  amber: "text-amber-800 bg-amber-50 border-amber-200 hover:bg-amber-100",
+  purple: "text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100",
+} as const;
+
+/** One row: "5 to confirm · 3 waiting for pickup · 2 returns coming back". */
+function TodaysWork({ items }: { items: { key: string; label: string; count: number; tone: keyof typeof WORK_TONE; onClick: () => void }[] }) {
+  const nothing = items.every((i) => i.count === 0);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 flex-shrink-0">
+      <span className="text-sm font-semibold text-gray-900 mr-1">Today's work</span>
+      {nothing ? (
+        <span className="text-sm text-gray-500">All done — nothing waiting for you.</span>
+      ) : (
+        items.map((i) => (
+          <button
+            key={i.key}
+            type="button"
+            onClick={i.onClick}
+            disabled={i.count === 0}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent ${i.count === 0 ? "border-gray-200 text-gray-500" : WORK_TONE[i.tone]}`}
+          >
+            <span className="font-bold">{i.count}</span> {i.label}
+          </button>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function Orders() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -192,6 +226,10 @@ export function Orders() {
   // Other sellers keep Beat / Non-Beat.
   const isRouteA = (o: Order) => (cdsEnabled ? isCdsServiceable(o) : isBeatOrder(o));
   const cdsReturnCount = useCdsReturnCount();
+  const cdsReturnComingCount = useCdsReturnComingCount();
+  const cdsState = useCds();
+  // Today's work strip → Returns opens on "Coming back to you".
+  const [returnsPreset, setReturnsPreset] = useState<"all" | "coming">("all");
   const location = useLocation();
 
   // Read logistics enabled flag for the current seller, and keep it
@@ -229,11 +267,16 @@ export function Orders() {
       typeof updater === "function" ? updater(getOrders()) : updater;
     setOrdersStore(next);
   };
-  const [activeTab, setActiveTab] = useState<TabType>(() =>
-    ((t) => (t === "logistics" || (t && cdsEnabled) ? t : "all"))(
-      (["cds", "returns", "logistics"] as const).find((x) => x === new URLSearchParams(location.search).get("tab")),
-    ),
-  );
+  // The open tab lives in the URL (?tab=confirmed), so Back from an order
+  // page returns to the same tab. Only tabs this seller has are accepted.
+  const tabFromSearch = (search: string): TabType => {
+    const t = new URLSearchParams(search).get("tab");
+    const ok: string[] = ["all", "new", "confirmed", "delivered", "cancelled"];
+    if (cdsEnabled) ok.push("pickedup", "returns");
+    else if (threePlEnabled) ok.push("logistics");
+    return t && ok.includes(t) ? (t as TabType) : "all";
+  };
+  const [activeTab, setActiveTab] = useState<TabType>(() => tabFromSearch(location.search));
   // Sub-tab inside Confirmed: split deliveries by when they're due.
   // "all" matches both buckets — the default so existing flows keep
   // Confirmed-tab navigation. The earlier "Urgent / Tomorrow /
@@ -389,7 +432,14 @@ export function Orders() {
   // tracked on the CDS tab.
   // CDS sellers: confirming routes orders automatically to the CDS or 3PL
   // tab, and Confirmed keeps showing all of them with their stage.
-  const isSellerActionable = (o: Order) => !isWithLogisticsPartner(o);
+  // CDS sellers: once the pickup person has collected a confirmed order
+  // (CDS or 3PL), it moves from Confirmed to the Picked up tab.
+  const isPickedUp = (o: Order) => {
+    if (!cdsEnabled || o.status !== "Confirmed") return false;
+    const c = cdsOrderMap.get(o.id);
+    return !!c && cdsStageLabel(c.status) === "Picked up";
+  };
+  const isSellerActionable = (o: Order) => !isWithLogisticsPartner(o) && !isPickedUp(o);
 
   // Calculate summary statistics
   const summary = useMemo(() => {
@@ -399,17 +449,18 @@ export function Orders() {
       confirmed: orders.filter(
         (o) => o.status === "Confirmed" && isSellerActionable(o),
       ).length,
+      pickedup: orders.filter(isPickedUp).length,
       logistics: orders.filter(isWithLogisticsPartner).length,
       delivered: orders.filter((o) => o.status === "Delivered").length,
       cancelled: orders.filter((o) => o.status === "Cancelled").length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, cdsOrderIds]);
+  }, [orders, cdsOrderIds, cdsOrderMap]);
 
   // Get orders for active tab
   const getTabOrders = (tab: TabType): Order[] => {
     const statusMap: Record<
-      Exclude<TabType, "all" | "logistics" | "cds" | "returns">,
+      Exclude<TabType, "all" | "logistics" | "cds" | "returns" | "pickedup">,
       Order["status"]
     > = {
       new: "New",
@@ -428,7 +479,9 @@ export function Orders() {
           ? true
           : tab === "logistics"
             ? isWithLogisticsPartner(order)
-            : order.status === statusMap[tab];
+            : tab === "pickedup"
+              ? isPickedUp(order)
+              : order.status === statusMap[tab];
       // Orders out with the 3PL partner leave the seller's Confirmed
       // working list — they live in the Logistics tab instead. They
       // stay visible on "All" so the seller can still find an order by
@@ -614,6 +667,7 @@ export function Orders() {
       buildBucketCounts(
         (o) => o.status === "Confirmed" && isSellerActionable(o),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       orders,
       searchQuery,
@@ -621,6 +675,20 @@ export function Orders() {
       selectedBrandFilters,
       selectedDeliveryTypes,
       confirmedDeliveryDay,
+      cdsOrderMap,
+    ],
+  );
+  const pickedUpBucketCounts = useMemo(
+    () => buildBucketCounts(isPickedUp),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      orders,
+      searchQuery,
+      marketplaceFilter,
+      selectedBrandFilters,
+      selectedDeliveryTypes,
+      confirmedDeliveryDay,
+      cdsOrderMap,
     ],
   );
 
@@ -875,29 +943,28 @@ export function Orders() {
   // the admin turns it off mid-session, fall back to All rather than
   // leaving the seller on a tab whose trigger has disappeared.
   useEffect(() => {
-    if (!threePlEnabled && activeTab === "logistics") {
+    // CDS sellers no longer have the CDS / 3PL Logistics tabs.
+    if ((!threePlEnabled || cdsEnabled) && (activeTab === "logistics" || activeTab === "cds")) {
       setActiveTab("all");
       setSelectedOrders([]);
     }
-  }, [threePlEnabled, activeTab]);
+  }, [threePlEnabled, cdsEnabled, activeTab]);
 
+  // Follow the URL: Back / Forward and the sidebar "Orders" link (plain
+  // /orders → All) open the tab named in ?tab=.
   useEffect(() => {
-    const want = new URLSearchParams(location.search).get("tab");
-    if ((want === "cds" || want === "returns" || want === "logistics") && cdsEnabled) {
-      setActiveTab(want);
-      setSelectedOrders([]);
-    } else if (!want || !cdsEnabled) {
-      // Sidebar "Orders" (plain /orders) leaves the CDS / Returns tab.
-      setActiveTab((cur) => (cur === "cds" || cur === "returns" ? "all" : cur));
-    }
-  }, [location.search, cdsEnabled]);
+    const want = tabFromSearch(location.search);
+    setActiveTab(want);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, cdsEnabled, threePlEnabled]);
 
   // Clear selection when changing tabs
   const handleTabChange = (tab: string) => {
+    if (tab !== "returns") setReturnsPreset("all");
     setActiveTab(tab as TabType);
-    // Keep the URL in step with the CDS / Returns tabs so the sidebar
-    // highlights the right item and links back here work.
-    const want = cdsEnabled && (tab === "cds" || tab === "returns" || tab === "logistics") ? "?tab=" + tab : "";
+    // Keep the URL in step with the open tab so Back from an order page
+    // returns here (All = plain /orders).
+    const want = tab === "all" ? "" : "?tab=" + tab;
     if (location.search !== want) navigate("/orders" + want, { replace: true });
     setSelectedOrders([]);
     setCurrentPage(1); // Reset to first page
@@ -1335,12 +1402,26 @@ export function Orders() {
         );
       case "Confirmed": {
         const c = cdsEnabled ? cdsOrderMap.get(order.id) : undefined;
+        // Once the pickup person has collected it, say so plainly.
+        if (c && cdsStageLabel(c.status) === "Picked up") {
+          return c.route === "3pl" ? (
+            <Badge className="bg-blue-50 text-blue-700 border-blue-200 gap-1">
+              <Truck className="h-3 w-3" /> Picked up by 3PL
+            </Badge>
+          ) : (
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200 gap-1">
+              <Warehouse className="h-3 w-3" /> Picked up by CDS
+            </Badge>
+          );
+        }
         return (
           <span className="inline-flex flex-col items-start gap-0.5">
             <Badge className="bg-green-50 text-green-700 border-green-200">
               Confirmed
             </Badge>
-            {c &&
+            {c && pickupInfo(cdsState, c) ? (
+              <PickupPersonLine info={pickupInfo(cdsState, c)!} />
+            ) : c &&
               (c.route === "3pl" ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700">
                   <Truck className="h-3 w-3" /> 3PL · {cdsStageLabel(c.status)}
@@ -1685,7 +1766,7 @@ export function Orders() {
                   <p
                     className="text-sm font-semibold tabular-nums text-gray-900"
                   >
-                    {`₹${order.orderValue.toFixed(2)}`}
+                    {`₹${order.orderValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}
                   </p>
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
@@ -1875,9 +1956,36 @@ export function Orders() {
           pagination stays pinned at the bottom. Mirrors the My SKU
           layout pattern. */}
       <div className="flex-1 overflow-hidden p-6">
-        <div className="h-full">
+        <div className="h-full flex flex-col gap-3">
+          {/* Today's work — what the seller has to do now. Tap a number to open that tab. */}
+          {!isEmptyMode() && (
+            <TodaysWork
+              items={[
+                { key: "new", label: "to confirm", count: summary.new, tone: "blue", onClick: () => handleTabChange("new") },
+                {
+                  key: "confirmed",
+                  label: cdsEnabled ? "waiting for pickup" : "to deliver",
+                  count: summary.confirmed,
+                  tone: "amber",
+                  onClick: () => handleTabChange("confirmed"),
+                },
+                ...(cdsEnabled
+                  ? [{
+                      key: "returns",
+                      label: cdsReturnComingCount === 1 ? "return coming back" : "returns coming back",
+                      count: cdsReturnComingCount,
+                      tone: "purple" as const,
+                      onClick: () => {
+                        setReturnsPreset("coming");
+                        handleTabChange("returns");
+                      },
+                    }]
+                  : []),
+              ]}
+            />
+          )}
           {/* Orders Card with Tabs */}
-          <Card className="h-full flex flex-col overflow-hidden p-0 gap-0">
+          <Card className="flex-1 min-h-0 flex flex-col overflow-hidden p-0 gap-0">
             <Tabs
               value={activeTab}
               onValueChange={handleTabChange}
@@ -1888,68 +1996,69 @@ export function Orders() {
                 <div className="flex items-center justify-between gap-4">
                   {/* Tab Toggle — scrolls on its own so Filters / Export stay in view */}
                   <div className="min-w-0 flex-1 overflow-x-auto">
-                  <TabsList className="bg-gray-100 p-1 rounded-lg inline-flex gap-1 h-auto flex-shrink-0">
+                  <TabsList className="bg-gray-100 p-1 rounded-lg inline-flex flex-wrap gap-1 h-auto max-w-full">
                     <TabsTrigger
                       value="all"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                     >
                       <span className="font-medium">All ({summary.all})</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="new"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      <ShoppingCart className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                       <span className="font-medium">New ({summary.new})</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="confirmed"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                     >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                       <span className="font-medium">Confirmed ({summary.confirmed})</span>
                     </TabsTrigger>
                     {cdsEnabled && (
                       <TabsTrigger
-                        value="cds"
-                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                        value="pickedup"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                       >
-                        <Warehouse className="h-4 w-4 mr-2" />
-                        <span className="font-medium">Cross Dock Store (CDS)</span>
+                        <Truck className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
+                        <span className="font-medium">Picked up ({summary.pickedup})</span>
                       </TabsTrigger>
                     )}
                     {/* Only meaningful once the seller can actually
                         hand orders off, so it's gated on the same flag
-                        as the Request 3PL Logistics action. */}
-                    {threePlEnabled && (
+                        as the Request 3PL Logistics action. CDS sellers
+                        don't get this tab. */}
+                    {threePlEnabled && !cdsEnabled && (
                       <TabsTrigger
                         value="logistics"
-                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                       >
-                        <Truck className="h-4 w-4 mr-2" />
+                        <Truck className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                         <span className="font-medium">{cdsEnabled ? "3PL Logistics" : `3PL Logistics (${summary.logistics})`}</span>
                       </TabsTrigger>
                     )}
                     <TabsTrigger
                       value="delivered"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                     >
-                      <PackageCheck className="h-4 w-4 mr-2" />
+                      <PackageCheck className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                       <span className="font-medium">Delivered ({summary.delivered})</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="cancelled"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                     >
-                      <XCircle className="h-4 w-4 mr-2" />
+                      <XCircle className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                       <span className="font-medium">Cancelled ({summary.cancelled})</span>
                     </TabsTrigger>
                     {cdsEnabled && (
                       <TabsTrigger
                         value="returns"
-                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 transition-all whitespace-nowrap"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
                       >
-                        <RotateCcw className="h-4 w-4 mr-2" />
+                        <RotateCcw className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                         <span className="font-medium">Returns ({cdsReturnCount})</span>
                       </TabsTrigger>
                     )}
@@ -2016,7 +2125,7 @@ export function Orders() {
                       Total Value
                     </span>
                     <span className="text-sm font-semibold text-emerald-700 tabular-nums">
-                      ₹{orderSummary.value.toLocaleString()}
+                      ₹{orderSummary.value.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <span className="ml-auto text-[10px] text-gray-500">
@@ -2214,6 +2323,11 @@ export function Orders() {
                           themselves, so "Request 3PL Logistics" sits
                           alongside "Mark Delivered" rather than
                           replacing it. */}
+                      {cdsEnabled && selectedOrders.length === 0 && (
+                        <PrintPickupListButton
+                          orders={orders.filter((o) => o.status === "Confirmed" && isSellerActionable(o)).map((o) => cdsOrderMap.get(o.id))}
+                        />
+                      )}
                       {selectedOrders.length > 0 && (
                         <SelectionActions
                           count={selectedOrders.length}
@@ -2290,6 +2404,37 @@ export function Orders() {
               </>
               )}
             </TabsContent>
+
+            {/* Picked up — same screen as Delivered: day / type filters, search, table. */}
+            {cdsEnabled && (
+            <TabsContent value="pickedup" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
+              {!isEmpty && renderDayAndBeatFilters(pickedUpBucketCounts)}
+              {!isEmpty && (
+              <div className="px-6 py-4 border-b flex-shrink-0">
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by order ID, retailer name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* Table */}
+              {renderOrderTable(paginatedOrders)}
+            </TabsContent>
+            )}
 
             <TabsContent value="delivered" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
               {!isEmpty && renderDayAndBeatFilters(deliveredBucketCounts)}
@@ -2400,13 +2545,8 @@ export function Orders() {
             </TabsContent>
 
             {cdsEnabled && (
-              <TabsContent value="cds" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-                <CdsOrdersTab renderTable={renderLinkedTable} keep={matchesPanelFilters} />
-              </TabsContent>
-            )}
-            {cdsEnabled && (
               <TabsContent value="returns" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-                <CdsReturnsTab renderTable={renderLinkedTable} keep={matchesPanelFilters} />
+                <CdsReturnsTab key={returnsPreset} initialFilter={returnsPreset} renderTable={renderLinkedTable} keep={matchesPanelFilters} />
               </TabsContent>
             )}
           </Tabs>

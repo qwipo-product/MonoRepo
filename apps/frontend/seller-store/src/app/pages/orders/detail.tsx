@@ -38,15 +38,17 @@ import {
   ExternalLink,
   Pencil,
   Lock,
+  Route,
+  Warehouse,
+  Zap,
 } from "lucide-react";
-import { toast } from "sonner";
-import { Warehouse } from "lucide-react";
 import { useAuth } from "../../lib/auth-context";
-import { isCdsEnabled } from "../../lib/cds/store";
-import { useCdsOrderIds, useCdsOrderMap } from "../../components/cds/cds-order-sync";
-import { CdsOrderSection } from "../../components/cds/order-detail-sheet";
-import { sellerOrderStage } from "../../lib/cds/calc";
+import { isCdsEnabled, useCds } from "../../lib/cds/store";
 import { isCdsServiceable } from "../../lib/cds/order-bridge";
+import { fmtDayDateTime, sellerOrderStage } from "../../lib/cds/calc";
+import { useCdsOrderMap } from "../../components/cds/cds-order-sync";
+import { PickupComingCard, pickupInfo } from "../../components/cds/pickup-info";
+import { toast } from "sonner";
 // Shared orders store — the detail page now looks up the right
 // order by URL :orderId rather than rendering a single hard-coded
 // mock for every route. Status writes (confirm / cancel / mark as
@@ -54,8 +56,7 @@ import { isCdsServiceable } from "../../lib/cds/order-bridge";
 // page's subscribe callback sees the change.
 import {
   getOrderById,
-  getOrders,
-  getAttentionOrders,
+  getOrderType,
   updateOrderStatus,
   subscribeToOrders,
   synthesizeProducts,
@@ -400,23 +401,57 @@ const RICH_PRODUCTS_FOR_SEED_ORDER: OrderProduct[] = [
 export function OrderDetail() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  // Same rule as the Orders list: while older New orders are pending, a
-  // newer New order can be viewed and edited but not confirmed yet.
-  const attention = getAttentionOrders(getOrders());
-  const confirmLocked =
-    !(isCdsEnabled(user?.id) && user?.dataMode !== "empty") &&
-    attention.length > 0 && !attention.some((a) => a.order.id === orderId) && getOrderById(orderId ?? "")?.status === "New";
-  const cdsOrderIds = useCdsOrderIds();
-  // Connector sellers manage confirmed orders from the CDS tab.
-  const inCds = !!orderId && isCdsEnabled(user?.id) && user?.dataMode !== "empty" && cdsOrderIds.has(orderId);
-  const cdsOrderMap = useCdsOrderMap();
-  const cdsOrder = inCds && orderId ? cdsOrderMap.get(orderId) : undefined;
   // Resolve the order from the shared store by URL :orderId. If
   // the ID isn't in the store (e.g. the seller hand-typed a URL
   // for a non-existent order), fall back to the rich mock so the
   // page still renders something useful instead of crashing.
   const initialOrder = orderId ? getOrderById(orderId) : undefined;
+  // Order type — same rule as the Delivery Type column on the Orders list:
+  // CDS sellers get CDS Store Delivery / 3PL Logistics Delivery (by CDS
+  // serviceability); other sellers get Beat / Non-Beat.
+  const { user } = useAuth();
+  const cdsEnabled = isCdsEnabled(user?.id) && user?.dataMode !== "empty";
+  // Back returns to the Orders tab the seller came from (the tab is in the
+  // list URL). Opened directly (no history) → the Orders list.
+  const goBack = () => {
+    if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
+    else navigate("/orders");
+  };
+  // Live CDS / 3PL stage, so a picked-up order reads "Picked up by CDS / 3PL"
+  // instead of "Confirmed" (same as the Orders list).
+  const cdsOrder = useCdsOrderMap().get(orderId ?? "");
+  const pickedUpBy =
+    cdsEnabled && cdsOrder && sellerOrderStage(cdsOrder.status).label === "Picked up" ? (cdsOrder.route === "3pl" ? "3PL" : "CDS") : null;
+  // Who picked it up: the pickup person on the order's pickup trip.
+  const cdsState = useCds();
+  const pickupTrip = pickedUpBy ? cdsState.trips.find((t) => t.id === cdsOrder?.pickupTripId) : undefined;
+  const pickupStop = pickupTrip?.stops.find((st) => st.type === "Pickup" && st.orderIds.includes(orderId ?? ""));
+  const pickupPerson = pickupTrip?.rider;
+  // Before pickup: who is coming and when, so the seller packs in time.
+  const comingPickup = cdsEnabled && initialOrder?.status === "Confirmed" ? pickupInfo(cdsState, cdsOrder) : undefined;
+  const orderTypeBadge = !initialOrder ? null : cdsEnabled ? (
+    isCdsServiceable(initialOrder) ? (
+      <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-teal-200 bg-teal-50 text-[11px] font-medium text-teal-700">
+        <Warehouse className="h-3 w-3" />
+        CDS Store Delivery
+      </span>
+    ) : (
+      <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-medium text-blue-700">
+        <Truck className="h-3 w-3" />
+        3PL Logistics Delivery
+      </span>
+    )
+  ) : getOrderType(initialOrder) === "beat" ? (
+    <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-medium text-emerald-700">
+      <Route className="h-3 w-3" />
+      Beat
+    </span>
+  ) : (
+    <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-[11px] font-medium text-amber-800">
+      <Zap className="h-3 w-3" />
+      Non-Beat
+    </span>
+  );
   const initialDetail = initialOrder
     ? buildOrderDetailFromStore(initialOrder)
     : buildOrderDetailFromStore({
@@ -456,7 +491,6 @@ export function OrderDetail() {
   // Detail page reuses the bulk cancel popup's shape so the seller
   // sees one consistent cancellation experience regardless of where
   // they triggered it.
-  const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
   // Order modification — per-line quantity edit, New orders only.
@@ -518,6 +552,20 @@ export function OrderDetail() {
           </Badge>
         );
       case "Confirmed":
+        if (pickedUpBy === "3PL") {
+          return (
+            <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-base px-4 py-1 gap-1.5">
+              <Truck className="h-4 w-4" /> Picked up by 3PL
+            </Badge>
+          );
+        }
+        if (pickedUpBy === "CDS") {
+          return (
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200 text-base px-4 py-1 gap-1.5">
+              <Warehouse className="h-4 w-4" /> Picked up by CDS
+            </Badge>
+          );
+        }
         return (
           <Badge className="bg-green-50 text-green-700 border-green-200 text-base px-4 py-1">
             Confirmed
@@ -563,11 +611,6 @@ export function OrderDetail() {
   };
 
   const handleConfirmOrder = () => {
-    // CDS sellers confirm straight away — no pop-up.
-    if (isCdsEnabled(user?.id) && user?.dataMode !== "empty") {
-      handleConfirm();
-      return;
-    }
     setIsConfirmModalOpen(true);
   };
 
@@ -577,14 +620,9 @@ export function OrderDetail() {
     // page (and any other subscriber) sees the change.
     if (orderData.orderId) updateOrderStatus(orderData.orderId, "Confirmed");
     setIsConfirmModalOpen(false);
-    const confirmedOrder = orderData.orderId ? getOrderById(orderData.orderId) : undefined;
-    toast.success(
-      isCdsEnabled(user?.id) && user?.dataMode !== "empty" && confirmedOrder
-        ? `Order moved to ${isCdsServiceable(confirmedOrder) ? "CDS" : "3PL Logistics"}`
-        : "Order confirmed successfully!",
-    );
+    toast.success("Order confirmed successfully!");
     setTimeout(() => {
-      navigate("/orders");
+      goBack();
     }, 1500);
   };
 
@@ -607,25 +645,7 @@ export function OrderDetail() {
     setIsCancelModalOpen(false);
     toast.error(`Order cancelled. Reason: ${cancelReason}`);
     setTimeout(() => {
-      navigate("/orders");
-    }, 1500);
-  };
-
-  // ---- Mark as Delivered (Confirmed → Delivered) ----
-  // The Confirmed-status flow needs a follow-on "Mark as
-  // Delivered" CTA. The detail page used to only handle New →
-  // Confirmed; Phase 1 finishes the loop here.
-  const handleMarkDelivered = () => {
-    setIsDeliverModalOpen(true);
-  };
-
-  const handleConfirmDelivered = () => {
-    setOrderData((prev) => ({ ...prev, status: "Delivered" }));
-    if (orderData.orderId) updateOrderStatus(orderData.orderId, "Delivered");
-    setIsDeliverModalOpen(false);
-    toast.success("Order marked as delivered.");
-    setTimeout(() => {
-      navigate("/orders");
+      goBack();
     }, 1500);
   };
 
@@ -642,8 +662,7 @@ export function OrderDetail() {
             <Button
               variant="ghost"
               size="sm"
-              // Back to the tab you came from (CDS, 3PL, Returns…).
-              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/orders"))}
+              onClick={goBack}
               className="gap-1.5 h-8"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -655,12 +674,8 @@ export function OrderDetail() {
                   Order #{orderData.orderId}
                 </h1>
                 {getStatusBadge(orderData)}
-                {cdsOrder && orderData.status === "Confirmed" && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-[11px] font-medium text-teal-700">
-                    <Warehouse className="h-3 w-3" /> {cdsOrder.route === "3pl" ? "3PL" : "CDS"} · {sellerOrderStage(cdsOrder.status).label}
-                  </span>
-                )}
                 {getChannelBadge(orderData.channel)}
+                {orderTypeBadge}
               </div>
               <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-0.5">
                 <Calendar className="h-3 w-3" />
@@ -673,9 +688,8 @@ export function OrderDetail() {
           <div className="flex items-center gap-2 flex-wrap">
               {/* Status-aware CTAs.
                   New → Confirm Order + Cancel.
-                  Confirmed → Mark as Delivered + Cancel.
-                  Delivered / Cancelled → no destructive actions —
-                  the order is past the seller's hand. */}
+                  Confirmed / Delivered / Cancelled → no actions — once
+                  confirmed, the order is past the seller's hand. */}
               {orderData.status === "New" && (
                 <>
                   <Button
@@ -691,46 +705,10 @@ export function OrderDetail() {
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 h-8"
                     onClick={handleConfirmOrder}
-                    disabled={confirmLocked}
-                    title={confirmLocked ? "Update your older pending orders first, then confirm this one" : undefined}
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                     Confirm Order
                   </Button>
-                </>
-              )}
-              {orderData.status === "Confirmed" && inCds && (
-                <Button
-                  size="sm"
-                  className={`h-8 gap-1.5 ${cdsOrder?.route === "3pl" ? "bg-blue-600 hover:bg-blue-700" : "bg-teal-600 hover:bg-teal-700"}`}
-                  onClick={() => navigate(cdsOrder?.route === "3pl" ? "/orders?tab=logistics" : "/orders?tab=cds")}
-                >
-                  <Warehouse className="h-3.5 w-3.5" />
-                  {cdsOrder?.route === "3pl" ? "Manage in 3PL Logistics tab" : "Manage in CDS tab"}
-                </Button>
-              )}
-              {orderData.status === "Confirmed" && !inCds && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-red-300 text-red-700 hover:bg-red-50 h-8"
-                    onClick={handleCancelOrder}
-                  >
-                    <XCircle className="h-3.5 w-3.5 mr-1.5" />
-                    Cancel
-                  </Button>
-                  {/* CDS sellers deliver only via the CDS or 3PL (from the Orders list). */}
-                  {!(isCdsEnabled(user?.id) && user?.dataMode !== "empty") && (
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 h-8"
-                      onClick={handleMarkDelivered}
-                    >
-                      <Truck className="h-3.5 w-3.5 mr-1.5" />
-                      Mark as Delivered
-                    </Button>
-                  )}
                 </>
               )}
             </div>
@@ -738,8 +716,6 @@ export function OrderDetail() {
       </div>
 
       <div className="p-4 space-y-3">
-        {/* CDS / 3PL delivery: stage, last update, payment summary, returns, actions */}
-        {cdsOrder && <CdsOrderSection orderId={cdsOrder.id} />}
         {/* Cancellation banner — only renders when the order is in a
             terminal Cancelled state. Two variants:
               - Buyer-cancelled  → amber, signals the buyer pulled the
@@ -786,6 +762,37 @@ export function OrderDetail() {
               </div>
             );
           })()}
+
+        {/* Pickup person on the way — shown while the order waits for pickup. */}
+        {comingPickup && <PickupComingCard info={comingPickup} />}
+
+        {/* Pickup person — shown once the order is picked up by CDS / 3PL. */}
+        {pickedUpBy && pickupPerson && (
+          <Card className={pickedUpBy === "3PL" ? "border-blue-200" : "border-teal-200"}>
+            <CardContent className="p-3 text-sm">
+              <p className={`text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 ${pickedUpBy === "3PL" ? "text-blue-700" : "text-teal-700"}`}>
+                {pickedUpBy === "3PL" ? <Truck className="h-3.5 w-3.5" /> : <Warehouse className="h-3.5 w-3.5" />}
+                Picked up by {pickedUpBy}
+                {pickupStop?.doneAt && <span className="font-normal normal-case tracking-normal text-gray-500">· {fmtDayDateTime(pickupStop.doneAt)}</span>}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-gray-500">Pickup person:</span>
+                  <span className="font-semibold text-gray-900">{pickupPerson.name}</span>
+                </span>
+                <a href={`tel:${pickupPerson.phone}`} className="flex items-center gap-1.5 text-teal-700 hover:underline">
+                  <Phone className="h-3.5 w-3.5" />
+                  {/^\d{10}$/.test(pickupPerson.phone) ? `+91 ${pickupPerson.phone.slice(0, 5)} ${pickupPerson.phone.slice(5)}` : pickupPerson.phone}
+                </a>
+                <span className="flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5 text-gray-400" />
+                  <span className="text-gray-500">Vehicle:</span>
+                  <span className="font-medium text-gray-900">{pickupPerson.vehicle}</span>
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Buyer / Seller / Order Meta — compact 3-up grid. Each
             column holds the bare minimum: a single identifier and
@@ -870,9 +877,8 @@ export function OrderDetail() {
                   collected from retailer" is emphasised; the seller fees feed
                   downstream enhancements. */}
               {(() => {
-                // Fees and the amount to collect follow the FINAL order value
-                // (after seller edits / short pickup), not the value as placed.
-                const orderValue = orderData.orderValue;
+                const orderValue =
+                  orderData.originalOrderValue ?? orderData.orderValue;
                 // Example setup: a small % of GMV split retailer / seller.
                 //   Commercial fee: 0.5% total → retailer 0.2% + seller 0.3%
                 //   Logistics fee:  0.3% total → retailer 0.1% + seller 0.2%
@@ -900,13 +906,7 @@ export function OrderDetail() {
                 );
                 return (
                   <>
-                    {isModified && orderData.originalOrderValue !== undefined && (
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Original Order Value</span>
-                        <span className="text-gray-400 line-through">{money(orderData.originalOrderValue)}</span>
-                      </div>
-                    )}
-                    <Row label={isModified ? "Final Order Value" : "Order Value"} value={orderValue} />
+                    <Row label="Order Value" value={orderValue} />
                     <Row label="Retailer Logistics Fees" value={retailerLogistics} />
                     <Row label="Retailer Commercial Fees" value={retailerCommercial} />
                     <div className="flex justify-between text-xs rounded bg-blue-50/70 px-1.5 py-1 -mx-0.5">
@@ -930,6 +930,17 @@ export function OrderDetail() {
                   </>
                 );
               })()}
+              {isModified && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Final Value</span>
+                  <span className="text-green-700 font-semibold">
+                    ₹
+                    {orderData.orderValue.toLocaleString("en-IN", {
+                      minimumFractionDigits: orderData.orderValue % 1 ? 2 : 0,
+                    })}
+                  </span>
+                </div>
+              )}
 
               {/* Cancellation details — rendered inline as Order Meta
                   rows (same shape as Payment / Channel Order ID /
@@ -1324,35 +1335,6 @@ export function OrderDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Mark as Delivered Modal — confirmation step for the
-          Confirmed → Delivered transition. */}
-      <Dialog open={isDeliverModalOpen} onOpenChange={setIsDeliverModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-green-600" />
-              Mark as Delivered
-            </DialogTitle>
-            <DialogDescription>
-              Confirm that Order #{orderData.orderId} has been delivered to{" "}
-              {orderData.buyerStoreName}. This action moves the order to the
-              Delivered tab and can't be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeliverModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmDelivered}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Truck className="h-4 w-4 mr-1.5" />
-              Confirm Delivery
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <EditQuantityDialog
         product={editTarget}
