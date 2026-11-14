@@ -16,6 +16,7 @@
 // pushes an SSE frame on ("trip", tripNumber) so an open Trip Details page refreshes. Control from the console:
 // window.__lbnpTrips.simulator.pause() / resume() / tick(), window.__lbnpTrips.setDarkStore(true|false).
 import { db, nowIso, paginate, persist } from '../db';
+import { cdsPointForLocality, ensureCdsTrips, type CdsPoint } from '../extensions/cds';
 import { makePdf, makeXlsx } from '../fileFactory';
 import { MockError, RawResponse, route } from '../server';
 import { publishSse } from '../sseHub';
@@ -207,6 +208,7 @@ function toApiTrip(t: DbTrip, idx: Map<string, DbOrder>) {
     suggestedVehicleRegNumber: t.suggestedVehicleRegNumber,
     suggestedVehicleCapacityKg: t.suggestedVehicleCapacityKg,
     orderSummary,
+    channel: t.channel ?? null,
   };
 }
 
@@ -225,11 +227,29 @@ function publishTrip(t: DbTrip, extra: Record<string, unknown> = {}) {
   });
 }
 
+/** True when at least one item on the trip came back (full return or the returned part of a partial delivery). */
+function tripHasReturns(t: DbTrip, idx: Map<string, DbOrder>): boolean {
+  return deliveryStops(t).some((s) => stopOrders(s, idx).some((o) => o.items.some((it) => returnedQtyOnStop(s, it) > 0)));
+}
+
+/** CDS trips appear only when the caller asks for channel "cds" (CDS tab); every other list is 3PL trips only. */
+const matchesChannel = (t: DbTrip, channel: unknown) => (channel === 'cds' ? t.channel === 'cds' : t.channel !== 'cds');
+
+/** Adds the CDS trips to a mock DB that was seeded before they existed (once; see extensions/cds.ts). */
+function ensureCds() {
+  if (ensureCdsTrips(db())) persist();
+}
+
 // ---------------------------------------------------------------- list / details
 route('POST', BUYER, '/logistics-orders/get_by_filters', (req) => {
+  ensureCds();
   const b = req.body || {};
   const idx = orderIndex();
-  let list = db().trips.slice();
+  // The channel split applies to the lists only. A lookup of one trip (Trip Details, Order Details) finds it on
+  // either channel.
+  let list = b.logisticsOrderId ? db().trips.slice() : db().trips.filter((t) => matchesChannel(t, b.channel));
+  // Credit Notes (CDS tab): only trips where a retailer returned goods.
+  if (b.withReturns) list = list.filter((t) => tripHasReturns(t, idx));
   if (b.buyerId) list = list.filter((t) => t.buyerId === b.buyerId);
   if (b.logisticsOrderId) list = list.filter((t) => t.logisticsOrderId === b.logisticsOrderId || t.orderId === b.logisticsOrderId);
   if (b.pickupDate) list = list.filter((t) => istYmd(t.pickupSlotStart) === String(b.pickupDate));
@@ -255,8 +275,9 @@ route('POST', BUYER, '/logistics-orders/get_by_filters', (req) => {
 });
 
 route('GET', BUYER, '/logistics-orders/provider-names/:buyerId', (req) => {
+  ensureCds();
   const names: string[] = [];
-  db().trips.filter((t) => t.buyerId === req.params.buyerId).forEach((t) => {
+  db().trips.filter((t) => t.buyerId === req.params.buyerId && matchesChannel(t, req.query?.channel)).forEach((t) => {
     if (t.providerName && !names.includes(t.providerName)) names.push(t.providerName);
   });
   return names;
@@ -301,6 +322,8 @@ route('GET', BUYER, '/logistics-orders/products/:id', (req) => {
         buyerOrderStatus: first ? String(first.orderStatusId) : null,
         orderLogisticsMap: os.map((o) => ({ orderId: o.orderId, logisticsOrders: tripsOfOrder(o) })),
         ...(returnedStop && reasonOrder ? { rtoReasonId: reasonOrder.rtoReasonId, returnReason: reasonOrder.returnReason } : {}),
+        // CDS trips: the CDS point where the service center drops this retailer's goods (CDS Wise Orders tab).
+        ...(t.channel === 'cds' ? { cdsPoint: cdsPointForLocality(customerOf(s, os)?.locality) } : {}),
       },
       items: os.flatMap((o) =>
         o.items.map((it) => {
@@ -747,6 +770,38 @@ route('POST', BUYER, '/logistics-orders/customer_wise_indent_sheet', (req) => {
   return withName(makePdf(`Customer Wise Pickup List - ${t.orderId}`, lines), `${t.orderId}_Customer_Wise_Pickup_List.pdf`);
 });
 
+/** CDS Wise Pickup List (CDS tab → Pickup Indents): the trip's goods grouped by the CDS point where the service
+ *  center drops them. Each CDS point lists its retailers and invoices, then the products to load for that point. */
+route('POST', BUYER, '/logistics-orders/cds_wise_pickup_list', (req) => {
+  const t = requireTrip(req.body?.logisticsOrderId);
+  const idx = orderIndex();
+  const lines = tripHeader(t);
+  const groups = new Map<string, { point: CdsPoint; stops: DbStop[] }>();
+  deliveryStops(t).forEach((s) => {
+    const point = cdsPointForLocality(customerOf(s, stopOrders(s, idx))?.locality);
+    if (!groups.has(point.id)) groups.set(point.id, { point, stops: [] });
+    groups.get(point.id)!.stops.push(s);
+  });
+  const sorted = Array.from(groups.values()).sort((a, b) => a.point.name.localeCompare(b.point.name));
+  sorted.forEach(({ point, stops }) => {
+    const os = stops.flatMap((s) => stopOrders(s, idx));
+    lines.push(
+      `CDS POINT: ${point.name}`,
+      `   ${point.address}`,
+      `   Retailers: ${stops.length}    Orders: ${os.length}    Value: ${money(os.reduce((a, o) => a + o.amount, 0))}`,
+      '',
+    );
+    stops.forEach((s) => {
+      const sos = stopOrders(s, idx);
+      lines.push('   ' + cols([[`Stop ${s.sequenceOrder}`, 8], [s.address.name, 30], [sos.map((o) => o.refOrderId).join(', '), 36], [money(sos.reduce((a, o) => a + o.amount, 0)), 16, 'r']]));
+    });
+    lines.push('', ...productTable(productTotals(os)), '', '');
+  });
+  if (!sorted.length) lines.push('No retailers on this trip.');
+  else lines.push('='.repeat(92), `CDS points: ${sorted.length}    Retailers: ${deliveryStops(t).length}    Orders: ${tripOrders(t, idx).length}`);
+  return withName(makePdf(`CDS Wise Pickup List - ${t.orderId}`, lines), `${t.orderId}_CDS_Wise_Pickup_List.pdf`);
+});
+
 route('POST', BUYER, '/logistics-orders/order_details_pdf', (req) => {
   const t = requireTrip(req.body?.logisticsOrderId);
   const idx = orderIndex();
@@ -783,6 +838,46 @@ route('GET', BUYER, '/logistics-orders/return_report/:id', (req) => {
   });
   if (!rows.length) rows.push({ 'Trip Number': t.orderId, 'Stop No.': '', 'Customer Name': 'No returns on this trip' });
   return withName(makeXlsx([{ name: 'Return Report', rows }]), `${t.orderId}_Return_Report.xlsx`);
+});
+
+/** CDS Credit Note (replaces the Return Report on the CDS tab): every retailer's returned products, quantity,
+ *  value and reason, a credit amount per retailer, and the total credit for the trip. */
+route('POST', BUYER, '/logistics-orders/credit_note', (req) => {
+  const t = requireTrip(req.body?.logisticsOrderId);
+  const idx = orderIndex();
+  const lines = tripHeader(t);
+  const head = cols([['#', 3], ['Product', 40], ['Returned Qty', 12, 'r'], ['Rate', 14, 'r'], ['Value', 16, 'r']]);
+  let total = 0;
+  let retailers = 0;
+  deliveryStops(t).forEach((s) => {
+    const os = stopOrders(s, idx);
+    const rows: { name: string; qty: number; rate: number; value: number }[] = [];
+    os.forEach((o) =>
+      o.items.forEach((it) => {
+        const q = returnedQtyOnStop(s, it);
+        if (q <= 0) return;
+        rows.push({ name: it.itemName, qty: q, rate: it.sellingPrice, value: isReturnedStop(s) ? it.totalAmount : round2(q * it.sellingPrice) });
+      }),
+    );
+    if (!rows.length) return;
+    retailers += 1;
+    const credit = rows.reduce((a, r) => a + r.value, 0);
+    total += credit;
+    // The PDF font has no long dashes ("Customer refused – shop closed"), so print them as "-".
+    const reasons = Array.from(new Set(os.map((o) => o.returnReason).filter(Boolean))).map((r) => String(r).replace(/[–—]/g, '-'));
+    lines.push(
+      `RETAILER: ${s.address.name} (${s.contact?.phone || 'N/A'})`,
+      `   Invoices: ${os.map((o) => o.refOrderId).join(', ')}    Return type: ${isReturnedStop(s) ? 'Full Return' : 'Partial Return'}`,
+      `   Reason: ${reasons.join('; ') || '-'}`,
+      '   ' + head,
+      '   ' + '-'.repeat(89),
+    );
+    rows.forEach((r, i) => lines.push('   ' + cols([[i + 1, 3], [r.name, 40], [r.qty, 12, 'r'], [money(r.rate), 14, 'r'], [money(r.value), 16, 'r']])));
+    lines.push('   ' + cols([['', 3], ['Credit for this retailer', 40], ['', 12], ['', 14], [money(credit), 16, 'r']]), '');
+  });
+  if (!retailers) lines.push('No returned goods on this trip.');
+  else lines.push('-'.repeat(92), `Retailers with returns: ${retailers}    Total credit: ${money(total)}`);
+  return withName(makePdf(`Credit Note - ${t.orderId}`, lines), `${t.orderId}_Credit_Note.pdf`);
 });
 
 /** Synthetic seller of a product (brand = first word of the product name). */

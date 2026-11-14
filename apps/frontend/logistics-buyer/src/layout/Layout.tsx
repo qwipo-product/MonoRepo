@@ -10,6 +10,8 @@ function activeMenu(url: string) {
   const has = (...p: string[]) => p.some((x) => url.includes(x));
   if (has('/orders', '/order-details', '/create-order', '/create-single-order')) return 'orders';
   if (has('/delivery-routes', '/delivery-planning', '/customer-orders', '/create-delivery-planning', '/delivery-route-details')) return 'delivery';
+  // CDS lists, and trip details opened from them (?from=cds-…), keep the CDS tab highlighted.
+  if (has('/cds/', 'from=cds')) return 'cds';
   if (has('/trips', '/trip-details', '/trip-order-details')) return 'trips';
   if (has('/issues')) return 'issues';
   if (has('/reports')) return 'reports';
@@ -76,6 +78,25 @@ export default function Layout() {
           {item('/orders', 'fa-box', 'Orders', active === 'orders')}
           {item('/delivery-routes', 'fa-truck', 'Delivery Planning', active === 'delivery')}
           {item('/trips', 'fa-paper-plane', 'Trips', active === 'trips')}
+          {/* CDS tab with its two options. Collapsed sidebar: the CDS icon opens Pickup Indents. */}
+          <Link
+            to="/cds/pickup-indents"
+            className={`nav-item${active === 'cds' ? (open ? ' parent-active' : ' active') : ''}`}
+            title={open ? undefined : 'CDS'}
+          >
+            <i className="fas fa-warehouse" />
+            {open && <span>CDS</span>}
+          </Link>
+          {open && (
+            <div className="nav-sub">
+              <NavLink to="/cds/pickup-indents" className={({ isActive }) => `nav-item nav-subitem${isActive ? ' active' : ''}`}>
+                <span>Pickup Indents</span>
+              </NavLink>
+              <NavLink to="/cds/credit-notes" className={({ isActive }) => `nav-item nav-subitem${isActive ? ' active' : ''}`}>
+                <span>Credit Notes</span>
+              </NavLink>
+            </div>
+          )}
           {item('/reports', 'fa-chart-bar', 'Reports', active === 'reports')}
           {item('/customer-master', 'fa-users', 'Customers')}
           {item('/settings', 'fa-cog', 'Settings')}

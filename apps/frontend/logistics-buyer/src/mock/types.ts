@@ -276,6 +276,9 @@ export interface DbTrip {
   orderIds: string[];
   routePlanComboId: string | null;
   cancelReason: string | null;
+  /** "cds" — created by the CDS service center for orders confirmed as CDS. Shown only on the CDS tab,
+   *  never on the Trips page (which lists 3PL trips). Absent on every other trip. */
+  channel?: 'cds';
 }
 
 export interface DbSalesPerson {

@@ -38,7 +38,33 @@ const KEBAB_MENU_HEIGHT = 220;
 const SUBMENU_HEIGHT = 320;
 const KEBAB_WIDTH = 230;
 
-export default function TripsPage() {
+/**
+ * Which list this screen shows. `trips` is the Trips page (3PL trips). The CDS tab reuses the same screen:
+ * `cds-pickups` lists the trips the CDS service center created for orders already confirmed as CDS, and
+ * `cds-credit-notes` lists the CDS trips where a retailer returned goods. CDS trips never appear on `trips`.
+ */
+export type TripsView = 'trips' | 'cds-pickups' | 'cds-credit-notes';
+
+const VIEW_TEXT: Record<TripsView, { title: string; description: string; icon: string; empty: string }> = {
+  trips: { title: 'Trips', description: 'Track and manage delivery trips, routes, and drivers.', icon: 'local_shipping', empty: 'No trips found' },
+  'cds-pickups': {
+    title: 'Pickup Indents',
+    description: 'Trips the CDS service center created to collect your CDS orders.',
+    icon: 'inventory_2',
+    empty: 'No CDS pickup indents yet.',
+  },
+  'cds-credit-notes': {
+    title: 'Credit Notes',
+    description: 'CDS trips where retailers returned goods, with the credit for each retailer.',
+    icon: 'receipt_long',
+    empty: 'No credit notes yet.',
+  },
+};
+
+export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
+  const isCds = view !== 'trips';
+  const isCreditNotes = view === 'cds-credit-notes';
+  const text = VIEW_TEXT[view];
   const navigate = useNavigate();
   const { buyerId } = usePagePermissions('buyer_trips');
   // ngOnInit force-sets hasView = hasCreate = true, so the *ngIf="hasView" wrapper always renders.
@@ -87,6 +113,13 @@ export default function TripsPage() {
     filtersRef.current = f;
     _setTempFilters(f);
   };
+  // The saved `trips_filters` belong to the Trips page; the CDS lists start unfiltered and do not save filters.
+  const saveFilters = (f: TempFilters) => {
+    if (!isCds) filterPersistence.saveTripFilters(f);
+  };
+  const clearSavedFilters = () => {
+    if (!isCds) filterPersistence.clearTripFilters();
+  };
 
   const resetData = () => {
     setTrips([]);
@@ -108,6 +141,8 @@ export default function TripsPage() {
         providerNames: f.providerNames && f.providerNames.length > 0 ? f.providerNames : undefined,
         pageSize: sizeRef.current,
         pageNumber: pageRef.current,
+        channel: isCds ? 'cds' : undefined,
+        withReturns: isCreditNotes || undefined,
       };
       const res = await svc.getLogisticOrdersDetails(body);
       if (!aliveRef.current) return;
@@ -148,14 +183,16 @@ export default function TripsPage() {
   // ------------------------------------------------------------ init (ngOnInit)
   useEffect(() => {
     aliveRef.current = true;
-    // DARKSTORE detection (fire-and-forget)
-    buyerService
-      .getBuyerById(buyerId)
-      .then((data: any) => aliveRef.current && setIsDarkStoreBuyer((data?.buyerType ?? data?.buyer_type) === 'DARKSTORE'))
-      .catch(() => aliveRef.current && setIsDarkStoreBuyer(false));
-    // Restore filters (pageNumber restored, pageSize forced back to 10 — as-built)
+    // DARKSTORE detection (fire-and-forget). The dark-store seller actions are for 3PL trips, not the CDS lists.
+    if (!isCds) {
+      buyerService
+        .getBuyerById(buyerId)
+        .then((data: any) => aliveRef.current && setIsDarkStoreBuyer((data?.buyerType ?? data?.buyer_type) === 'DARKSTORE'))
+        .catch(() => aliveRef.current && setIsDarkStoreBuyer(false));
+    }
+    // Restore filters (pageNumber restored, pageSize forced back to 10 — as-built). Trips page only.
     try {
-      const saved = filterPersistence.getTripFilters();
+      const saved = isCds ? null : filterPersistence.getTripFilters();
       if (saved) {
         const raw = saved.statuses ?? saved.status;
         const statuses = Array.isArray(raw) ? raw : raw === 0 || raw === undefined || raw === null || raw === '' ? [] : [raw];
@@ -173,7 +210,7 @@ export default function TripsPage() {
     (async () => {
       await loadTrips();
       if (!aliveRef.current) return;
-      const names = await svc.getProviderNames(buyerId);
+      const names = await svc.getProviderNames(buyerId, isCds ? 'cds' : undefined);
       if (aliveRef.current) setProviderNameOptions(names || []);
     })();
     return () => {
@@ -207,7 +244,7 @@ export default function TripsPage() {
   const applyFilters = (f: { statuses: number[]; pickupDate: string; providerNames: string[] }) => {
     const next: TempFilters = { ...f, buyerId, pageNumber: 1, pageSize: sizeRef.current };
     setTempFilters(next);
-    filterPersistence.saveTripFilters(next);
+    saveFilters(next);
     setCurrentPage(1);
     clearSelection();
     setShowFiltersModal(false);
@@ -216,7 +253,7 @@ export default function TripsPage() {
 
   const clearFilters = () => {
     setTempFilters({ buyerId, logisticsOrderId: '', pickupDate: '', statuses: [], providerNames: [], pageSize: sizeRef.current, pageNumber: 1 });
-    filterPersistence.clearTripFilters();
+    clearSavedFilters();
     setCurrentPage(1);
     clearSelection();
     loadTrips();
@@ -225,7 +262,7 @@ export default function TripsPage() {
 
   const applyChipRemoval = (next: TempFilters) => {
     setTempFilters(next);
-    filterPersistence.saveTripFilters(next);
+    saveFilters(next);
     setCurrentPage(1);
     loadTrips();
   };
@@ -238,7 +275,7 @@ export default function TripsPage() {
     setCurrentPage(e.pageIndex + 1);
     const next = { ...filtersRef.current, pageNumber: e.pageIndex + 1, pageSize: e.pageSize };
     setTempFilters(next);
-    filterPersistence.saveTripFilters(next);
+    saveFilters(next);
     loadTrips();
   };
 
@@ -361,12 +398,29 @@ export default function TripsPage() {
       Swal.fire('Error downloading pickup list', 'error');
     }
   };
+  const downloadCdsWisePickupList = async (row: TripRow) => {
+    try {
+      await svc.downloadCdsWisePickupList(row.logisticsOrderId);
+      Swal.fire('CDS wise pickup list downloaded successfully', 'success');
+    } catch {
+      Swal.fire('Error downloading pickup list', 'error');
+    }
+  };
   const downloadReturnReport = async (row: TripRow) => {
     try {
       await svc.downloadReturnReport(row.id, row.logisticsOrderId);
       Swal.fire('Return report downloaded successfully', 'success');
     } catch {
       Swal.fire('Error downloading return report', 'error');
+    }
+  };
+
+  const downloadCreditNote = async (row: TripRow) => {
+    try {
+      await svc.downloadCreditNote(row.logisticsOrderId);
+      Swal.fire('Credit note downloaded successfully', 'success');
+    } catch {
+      Swal.fire('Error downloading credit note', 'error');
     }
   };
 
@@ -408,7 +462,8 @@ export default function TripsPage() {
       <tr className="trip-details-row">
         <td colSpan={14}>
           <div className="trip-details">
-            <div className="details-container">
+            {/* CDS tab: Route Overview only (no Order Summary or Delivery Route card). */}
+            <div className={`details-container${isCds ? ' single' : ''}`}>
               <div className="detail-card route-overview">
                 <h3>Route Overview</h3>
                 <div className="info-card">
@@ -422,93 +477,97 @@ export default function TripsPage() {
                 </div>
               </div>
 
-              <div className="detail-card trip-summary">
-                <h3>Order Summary</h3>
-                <div className="order-summary-grid">
-                  {([
-                    ['total', 'receipt_long', 'Total', os.total],
-                    ['delivered', 'check_circle', 'Delivered', os.delivered],
-                    ['partial', 'rule', 'Partial', os.partialDelivered],
-                    ['returned', 'undo', 'Return', os.returned],
-                    ['pending', 'schedule', 'Pending', os.pending],
-                  ] as [string, string, string, number][]).map(([cls, icon, label, value]) => (
-                    <div className={`os-item ${cls}`} key={cls}>
-                      <div className="os-icon"><i className="material-icons">{icon}</i></div>
-                      <div className="os-count">{value}</div>
-                      <div className="os-label">{label}</div>
-                    </div>
-                  ))}
-                </div>
-                {os.total > 0 && (
-                  <div className="os-progress">
-                    <div className="seg delivered" style={{ width: seg(os.delivered) }} title={`Delivered: ${os.delivered}`} />
-                    <div className="seg partial" style={{ width: seg(os.partialDelivered) }} title={`Partial: ${os.partialDelivered}`} />
-                    <div className="seg returned" style={{ width: seg(os.returned) }} title={`Return: ${os.returned}`} />
-                    <div className="seg pending" style={{ width: seg(os.pending) }} title={`Pending: ${os.pending}`} />
-                  </div>
-                )}
-
-                <h3 className="collection-title">Collection Summary</h3>
-                <div className="info-card collection-card">
-                  <div className="info-row no-icon"><span className="label">Total Sale Value</span><span className="value">{addCurrency(row.totalSaleValue)}</span></div>
-                  <div className="info-row no-icon dashed"><span className="label">Total Delivered Value</span><span className="value">{addCurrency(row.totalDeliveryValue)}</span></div>
-                  <div className="info-row no-icon"><span className="label">Total Partial Value</span><span className="value">{addCurrency(row.totalPartialValue)}</span></div>
-                  <div className="info-row no-icon"><span className="label">Total Return Value</span><span className="value">{addCurrency(row.totalReturnValue)}</span></div>
-                  <div className="info-row"><i className="material-icons">location_on</i><span className="label">Total Delivery Points</span><span className="value">{row.dropPoints || '0'}</span></div>
-                  <div className="info-row"><i className="material-icons">payments</i><span className="label">COD Collection</span><span className="value">{inrSymbol0(row.summary.codCollection)}</span></div>
-                  <div className="info-row"><i className="material-icons">smartphone</i><span className="label">Digital Collection</span><span className="value">{inrSymbol0(row.summary.digitalCollection)}</span></div>
-                  <div className="info-row"><i className="material-icons">account_balance_wallet</i><span className="label">Net Sale Collection</span><span className="value">{inrSymbol0(row.summary.netSaleCollection)}</span></div>
-                </div>
-              </div>
-
-              <div className="detail-card delivery-route">
-                <h3>Delivery Route</h3>
-                <div className="delivery-stops">
-                  {visible.map((loc, i) => {
-                    const isLastCollapsed = !row.showAllLocations && i === visible.length - 1;
-                    return (
-                      <div className={`delivery-stop${i === 0 ? ' first-stop' : ''}${isLastCollapsed ? ' last-visible-stop' : ''}`} key={loc.fulfillmentId || i}>
-                        {i > 0 && <div className="connector" />}
-                        {i === 0 ? (
-                          <div className="stop-icon"><i className="material-icons">store</i></div>
-                        ) : (
-                          <div className="stop-number">{i}</div>
-                        )}
-                        <div className="stop-details">
-                          <div className="stop-info">
-                            <div className="stop-name">{loc.name || 'Unnamed Location'}</div>
-                            <div className="stop-address">{loc.address || 'Address not available'}</div>
-                            <div className="stop-time">{loc.time ? loc.time : 'Time not available'}</div>
-                            <div className="stop-otp">
-                              <span className="otp-label">OTP:</span>
-                              <span className="otp-badge">{loc.otp || 'N/A'}</span>
-                            </div>
-                          </div>
-                          {loc.status && (
-                            <div className="stop-status">
-                              <span className={`status-pill ${statusClass(loc.status)}`}>{loc.status}</span>
-                            </div>
-                          )}
-                        </div>
+              {!isCds && (
+                <div className="detail-card trip-summary">
+                  <h3>Order Summary</h3>
+                  <div className="order-summary-grid">
+                    {([
+                      ['total', 'receipt_long', 'Total', os.total],
+                      ['delivered', 'check_circle', 'Delivered', os.delivered],
+                      ['partial', 'rule', 'Partial', os.partialDelivered],
+                      ['returned', 'undo', 'Return', os.returned],
+                      ['pending', 'schedule', 'Pending', os.pending],
+                    ] as [string, string, string, number][]).map(([cls, icon, label, value]) => (
+                      <div className={`os-item ${cls}`} key={cls}>
+                        <div className="os-icon"><i className="material-icons">{icon}</i></div>
+                        <div className="os-count">{value}</div>
+                        <div className="os-label">{label}</div>
                       </div>
-                    );
-                  })}
-                  {row.dropPoints && locs.length > 3 && (
-                    <div className="show-more-container">
-                      <button
-                        className="show-more-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleShowAllLocations(index);
-                        }}
-                      >
-                        <i className="material-icons">{row.showAllLocations ? 'expand_less' : 'expand_more'}</i>
-                        {row.showAllLocations ? 'Show Less' : 'Show More Stops'}
-                      </button>
+                    ))}
+                  </div>
+                  {os.total > 0 && (
+                    <div className="os-progress">
+                      <div className="seg delivered" style={{ width: seg(os.delivered) }} title={`Delivered: ${os.delivered}`} />
+                      <div className="seg partial" style={{ width: seg(os.partialDelivered) }} title={`Partial: ${os.partialDelivered}`} />
+                      <div className="seg returned" style={{ width: seg(os.returned) }} title={`Return: ${os.returned}`} />
+                      <div className="seg pending" style={{ width: seg(os.pending) }} title={`Pending: ${os.pending}`} />
                     </div>
                   )}
+
+                  <h3 className="collection-title">Collection Summary</h3>
+                  <div className="info-card collection-card">
+                    <div className="info-row no-icon"><span className="label">Total Sale Value</span><span className="value">{addCurrency(row.totalSaleValue)}</span></div>
+                    <div className="info-row no-icon dashed"><span className="label">Total Delivered Value</span><span className="value">{addCurrency(row.totalDeliveryValue)}</span></div>
+                    <div className="info-row no-icon"><span className="label">Total Partial Value</span><span className="value">{addCurrency(row.totalPartialValue)}</span></div>
+                    <div className="info-row no-icon"><span className="label">Total Return Value</span><span className="value">{addCurrency(row.totalReturnValue)}</span></div>
+                    <div className="info-row"><i className="material-icons">location_on</i><span className="label">Total Delivery Points</span><span className="value">{row.dropPoints || '0'}</span></div>
+                    <div className="info-row"><i className="material-icons">payments</i><span className="label">COD Collection</span><span className="value">{inrSymbol0(row.summary.codCollection)}</span></div>
+                    <div className="info-row"><i className="material-icons">smartphone</i><span className="label">Digital Collection</span><span className="value">{inrSymbol0(row.summary.digitalCollection)}</span></div>
+                    <div className="info-row"><i className="material-icons">account_balance_wallet</i><span className="label">Net Sale Collection</span><span className="value">{inrSymbol0(row.summary.netSaleCollection)}</span></div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!isCds && (
+                <div className="detail-card delivery-route">
+                  <h3>Delivery Route</h3>
+                  <div className="delivery-stops">
+                    {visible.map((loc, i) => {
+                      const isLastCollapsed = !row.showAllLocations && i === visible.length - 1;
+                      return (
+                        <div className={`delivery-stop${i === 0 ? ' first-stop' : ''}${isLastCollapsed ? ' last-visible-stop' : ''}`} key={loc.fulfillmentId || i}>
+                          {i > 0 && <div className="connector" />}
+                          {i === 0 ? (
+                            <div className="stop-icon"><i className="material-icons">store</i></div>
+                          ) : (
+                            <div className="stop-number">{i}</div>
+                          )}
+                          <div className="stop-details">
+                            <div className="stop-info">
+                              <div className="stop-name">{loc.name || 'Unnamed Location'}</div>
+                              <div className="stop-address">{loc.address || 'Address not available'}</div>
+                              <div className="stop-time">{loc.time ? loc.time : 'Time not available'}</div>
+                              <div className="stop-otp">
+                                <span className="otp-label">OTP:</span>
+                                <span className="otp-badge">{loc.otp || 'N/A'}</span>
+                              </div>
+                            </div>
+                            {loc.status && (
+                              <div className="stop-status">
+                                <span className={`status-pill ${statusClass(loc.status)}`}>{loc.status}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {row.dropPoints && locs.length > 3 && (
+                      <div className="show-more-container">
+                        <button
+                          className="show-more-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleShowAllLocations(index);
+                          }}
+                        >
+                          <i className="material-icons">{row.showAllLocations ? 'expand_less' : 'expand_more'}</i>
+                          {row.showAllLocations ? 'Show Less' : 'Show More Stops'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </td>
@@ -535,24 +594,27 @@ export default function TripsPage() {
 
       <div className="page-header">
         <div className="header-content">
-          <div className="header-icon"><i className="material-icons">local_shipping</i></div>
+          <div className="header-icon"><i className="material-icons">{text.icon}</i></div>
           <div>
-            <h1>Trips</h1>
-            <p className="header-description">Track and manage delivery trips, routes, and drivers.</p>
+            <h1>{text.title}</h1>
+            <p className="header-description">{text.description}</p>
           </div>
         </div>
         <div className="actions">
-          <Tooltip
-            title={selectedCount === 0 ? 'Select one or more trips to view on map' : ''}
-            placement="bottom"
-            componentsProps={{ tooltip: { className: 'map-view-tooltip' } }}
-          >
-            <span>
-              <button className="filter-btn map-view-btn" disabled={selectedCount === 0} onClick={openMultiTripMapView}>
-                <i className="material-icons">map</i> Map View{selectedCount > 0 ? ` (${selectedCount})` : ''}
-              </button>
-            </span>
-          </Tooltip>
+          {/* The CDS tab has no map view. */}
+          {!isCds && (
+            <Tooltip
+              title={selectedCount === 0 ? 'Select one or more trips to view on map' : ''}
+              placement="bottom"
+              componentsProps={{ tooltip: { className: 'map-view-tooltip' } }}
+            >
+              <span>
+                <button className="filter-btn map-view-btn" disabled={selectedCount === 0} onClick={openMultiTripMapView}>
+                  <i className="material-icons">map</i> Map View{selectedCount > 0 ? ` (${selectedCount})` : ''}
+                </button>
+              </span>
+            </Tooltip>
+          )}
           <button className="filter-btn" onClick={openFilters}>
             <i className="material-icons">filter_list</i> Filter
           </button>
@@ -725,7 +787,7 @@ export default function TripsPage() {
         {!isLoading && trips.length === 0 && (
           <div className="no-trips-message">
             <i className="fas fa-inbox" />
-            <p>No trips found</p>
+            <p>{text.empty}</p>
           </div>
         )}
         {!isLoading && trips.length > 0 && (
@@ -741,7 +803,8 @@ export default function TripsPage() {
       {/* Kebab dropdown (position:fixed, does not follow page scroll) */}
       {kebabRow && (
         <div className="kebab-dropdown" style={{ top: kebabPos.top, right: kebabPos.right }} onClick={(e) => e.stopPropagation()}>
-          {kebabRow.showCancelBtn && (
+          {/* CDS trips belong to the CDS service center, so the distributor cannot cancel them. */}
+          {kebabRow.showCancelBtn && !isCds && (
             <div
               className="kebab-item"
               onClick={() => {
@@ -753,21 +816,23 @@ export default function TripsPage() {
               <span>Cancel</span>
             </div>
           )}
-          <div
-            className={`kebab-item${kebabRow.logisticsOrderStatus === 'Cancelled' ? ' disabled' : ''}`}
-            onClick={() => {
-              if (kebabRow.logisticsOrderStatus !== 'Cancelled') trackOnMap(kebabRow);
-              closeAllMenus();
-            }}
-          >
-            <i className="material-icons" style={{ color: '#3b82f6' }}>place</i>
-            <span>Map view</span>
-          </div>
+          {!isCds && (
+            <div
+              className={`kebab-item${kebabRow.logisticsOrderStatus === 'Cancelled' ? ' disabled' : ''}`}
+              onClick={() => {
+                if (kebabRow.logisticsOrderStatus !== 'Cancelled') trackOnMap(kebabRow);
+                closeAllMenus();
+              }}
+            >
+              <i className="material-icons" style={{ color: '#3b82f6' }}>place</i>
+              <span>Map view</span>
+            </div>
+          )}
           <div
             className="kebab-item"
             onClick={() => {
               closeAllMenus();
-              navigate(`/trip-details/${kebabRow.id}`);
+              navigate(isCds ? `/trip-details/${kebabRow.id}?from=${view}` : `/trip-details/${kebabRow.id}`);
             }}
           >
             <i className="material-icons" style={{ color: '#3b82f6' }}>visibility</i>
@@ -782,25 +847,47 @@ export default function TripsPage() {
       )}
       {kebabRow && showDownloadSubmenu && (
         <div className="download-submenu" style={{ top: submenuPos.top, right: submenuPos.right }} onClick={(e) => e.stopPropagation()}>
-          <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, false); closeAllMenus(); }}>
-            <i className="fas fa-file-alt" /><span>Consolidated Pickup List</span>
-          </div>
-          <div className="submenu-item" onClick={() => { downloadSplitPickupList(kebabRow); closeAllMenus(); }}>
-            <i className="fas fa-file-alt" /><span>PickUp List</span>
-          </div>
-          <div className="submenu-item" onClick={() => { downloadConsolidatedLoadingSheet(kebabRow); closeAllMenus(); }}>
-            <i className="fas fa-file-alt" /><span>Consolidated Loading Sheet</span>
-          </div>
-          <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, true); closeAllMenus(); }}>
-            <i className="fas fa-file-alt" /><span>Beatwise Loading Sheet</span>
-          </div>
-          <div className="submenu-item" onClick={() => { downloadCustomerWisePickupIndent(kebabRow); closeAllMenus(); }}>
-            <i className="fas fa-file-alt" /><span>Customer Wise Pickup List</span>
-          </div>
-          {hasReturnProducts(kebabRow) && (
-            <div className="submenu-item" onClick={() => { downloadReturnReport(kebabRow); closeAllMenus(); }}>
-              <i className="fas fa-file-alt" /><span>Return Report</span>
+          {isCreditNotes ? (
+            // CDS → Credit Notes: the credit note replaces the Return Report.
+            <div className="submenu-item" onClick={() => { downloadCreditNote(kebabRow); closeAllMenus(); }}>
+              <i className="fas fa-file-alt" /><span>Credit Note</span>
             </div>
+          ) : isCds ? (
+            // CDS → Pickup Indents: the three pickup lists the CDS service center needs.
+            <>
+              <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, false); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Consolidated Pickup List</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadCdsWisePickupList(kebabRow); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>CDS Wise Pickup List</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadCustomerWisePickupIndent(kebabRow); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Customer Wise Pickup List</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, false); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Consolidated Pickup List</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadSplitPickupList(kebabRow); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>PickUp List</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadConsolidatedLoadingSheet(kebabRow); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Consolidated Loading Sheet</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, true); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Beatwise Loading Sheet</span>
+              </div>
+              <div className="submenu-item" onClick={() => { downloadCustomerWisePickupIndent(kebabRow); closeAllMenus(); }}>
+                <i className="fas fa-file-alt" /><span>Customer Wise Pickup List</span>
+              </div>
+              {hasReturnProducts(kebabRow) && (
+                <div className="submenu-item" onClick={() => { downloadReturnReport(kebabRow); closeAllMenus(); }}>
+                  <i className="fas fa-file-alt" /><span>Return Report</span>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

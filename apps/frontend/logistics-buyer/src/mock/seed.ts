@@ -5,6 +5,7 @@ import type {
   DbAddress, DbBeat, DbBuyer, DbCluster, DbCustomer, DbOrder, DbOrderItem, DbPermission, DbPerson,
   DbProduct, DbProvider, DbSalesPerson, DbStop, DbTrip, DbValidationError, DbVehicle,
 } from './types';
+import { ensureCdsTrips } from './extensions/cds';
 
 export interface BuyerSettingsRecord {
   id: string;
@@ -514,6 +515,12 @@ export function buildSeed(): MockDatabase {
       console.error('Seed extension failed:', k, e);
     }
   });
+  // CDS trips go last so no other extension's demo picks a CDS trip or order (see extensions/cds.ts).
+  try {
+    ensureCdsTrips(db);
+  } catch (e) {
+    console.error('CDS seed failed:', e);
+  }
   return db;
 }
 buildSeed.VERSION = 3;

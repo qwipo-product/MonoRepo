@@ -4,14 +4,14 @@
 //
 // ID swap (spec 05 §0.3): route `:id` = API logisticsOrderId (uuid); tripDetails.id = API orderId (trip number).
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
 import DataLoading from '../../components/DataLoading';
 import { usePagePermissions } from '../../hooks/usePagePermissions';
 import { sseService } from '../../api/services/sse.service';
 import { ordersService } from '../../api/services/orders.service';
 import {
-  logisticsOrdersService as svc, type CustomerOrderRow, type ProductOrderRow, type ReturnProductRow, type TripLocation, type TripRow,
+  logisticsOrdersService as svc, type CdsPointInfo, type CustomerOrderRow, type ProductOrderRow, type ReturnProductRow, type TripLocation, type TripRow,
 } from '../../api/services/logisticsOrders.service';
 import { addCurrency } from '../../utils/pipes';
 import UpdateHelperDialog from './dialogs/UpdateHelperDialog';
@@ -20,7 +20,7 @@ import MoveRfpDialog, { type MoveRfpData } from './dialogs/MoveRfpDialog';
 import { calculateEstimatedCompletion, ngNumber, statusClass } from './tripUtils';
 import './TripDetailsPage.css';
 
-type TabKey = 'summary' | 'customer' | 'product' | 'return';
+type TabKey = 'summary' | 'customer' | 'product' | 'cds' | 'return';
 
 interface TripDetailsView {
   id: string;
@@ -76,6 +76,10 @@ export default function TripDetailsPage() {
   const { id: tripId = '' } = useParams();
   const navigate = useNavigate();
   const { hasView, buyerId } = usePagePermissions('buyer_trips');
+  // Opened from the CDS tab (?from=cds-pickups | cds-credit-notes) → the back arrow returns to that CDS list.
+  const [searchParams] = useSearchParams();
+  const from = searchParams.get('from');
+  const backTo = from === 'cds-pickups' ? '/cds/pickup-indents' : from === 'cds-credit-notes' ? '/cds/credit-notes' : '/trips';
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('summary');
@@ -208,6 +212,8 @@ export default function TripDetailsPage() {
     const qs = new URLSearchParams();
     (row.orderIds || []).forEach((id) => qs.append('orderIds', id));
     if (row.deliveryTime !== undefined && row.deliveryTime !== null) qs.append('deliveryTime', row.deliveryTime);
+    // Keep the CDS list this page was opened from, so the back arrows return through the CDS tab.
+    if (from) qs.append('from', from);
     navigate(`/trip-order-details/${tripId}${qs.toString() ? `?${qs.toString()}` : ''}`);
   };
 
@@ -260,6 +266,22 @@ export default function TripDetailsPage() {
 
   if (!hasView) return null; // whole template is *ngIf="hasView" (no redirect; data + SSE still load)
 
+  // CDS trips: add CDS Wise Orders (retailers grouped by the CDS point where the service center drops their goods).
+  // Return Products shows for 3PL trips, and for CDS trips only when opened from CDS → Credit Notes.
+  const isCdsTrip = tripSummaryInfo?.channel === 'cds';
+  const tabs: [TabKey, string][] = [['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['product', 'Ordered Products']];
+  if (isCdsTrip) tabs.push(['cds', 'CDS Wise Orders']);
+  if (!isCdsTrip || from === 'cds-credit-notes') tabs.push(['return', 'Return Products']);
+  const cdsGroups = (() => {
+    const m = new Map<string, { point: CdsPointInfo; rows: CustomerOrderRow[] }>();
+    customerOrders.forEach((r) => {
+      if (!r.cdsPoint) return;
+      if (!m.has(r.cdsPoint.id)) m.set(r.cdsPoint.id, { point: r.cdsPoint, rows: [] });
+      m.get(r.cdsPoint.id)!.rows.push(r);
+    });
+    return Array.from(m.values()).sort((a, b) => a.point.name.localeCompare(b.point.name));
+  })();
+
   const locations = tripDetails.deliveryProgress?.locations || [];
   const visible = tripDetails.showAllLocations ? locations : locations.slice(0, 3);
   const th = (icon: string, label: string, align = 'text-center') => (
@@ -280,7 +302,7 @@ export default function TripDetailsPage() {
         <>
           <div className="trip-details-header">
             <div className="header-left">
-              <button className="back-btn" onClick={() => navigate('/trips')}><i className="fas fa-arrow-left" /></button>
+              <button className="back-btn" onClick={() => navigate(backTo)}><i className="fas fa-arrow-left" /></button>
               <h1>{tripDetails.id}</h1>
               <div className="provider">{'Provider: ' + (tripDetails.provider || 'N/A')}</div>
             </div>
@@ -290,7 +312,7 @@ export default function TripDetailsPage() {
           <div className="content-container">
             <div className="tabs-container">
               <div className="tabs">
-                {([['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['product', 'Ordered Products'], ['return', 'Return Products']] as [TabKey, string][]).map(([key, label]) => (
+                {tabs.map(([key, label]) => (
                   <div key={key} className={`tab${activeTab === key ? ' active' : ''}`} onClick={() => setActiveTab(key)}>{label}</div>
                 ))}
               </div>
@@ -537,6 +559,61 @@ export default function TripDetailsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'cds' && isCdsTrip && (
+            <div className="trip-details-content">
+              {cdsGroups.map(({ point, rows }) => (
+                <div className="mat-card mat-elevation-z3 cds-group" key={point.id}>
+                  <div className="cds-group-header">
+                    <div>
+                      <div className="cds-group-name"><i className="fas fa-warehouse" /> {point.name}</div>
+                      <div className="cds-group-address">{point.address}</div>
+                    </div>
+                    <div className="cds-group-totals">
+                      <span>{`${rows.length} ${rows.length === 1 ? 'retailer' : 'retailers'}`}</span>
+                      <span>{`${rows.reduce((s, r) => s + r.orderCount, 0)} orders`}</span>
+                      <span>{addCurrency(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}</span>
+                    </div>
+                  </div>
+                  <div className="mat-card-content p-0">
+                    <div className="table-responsive">
+                      <table className="mat-mdc-table w-100">
+                        <thead>
+                          <tr className="mat-mdc-header-row small bg-light">
+                            {th('fa-hashtag', 'Stop No.')}
+                            {th('fa-store', 'Customer Business Name', 'text-start')}
+                            {th('fa-map-marker-alt', 'Address', 'text-start')}
+                            {th('fa-info-circle', 'Status')}
+                            {th('fa-rupee-sign', 'Orders/Amount')}
+                            {th('fa-cogs', 'Actions')}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((row) => (
+                            <tr className="mat-mdc-row small" key={row.stopNo}>
+                              <td className="text-center">{row.stopNo}</td>
+                              <td className="text-start">{row.customerName}</td>
+                              <td className="text-start">{row.address}</td>
+                              <td className="text-center"><span className={`status-badge ${statusClass(row.status)}`}>{row.status || 'N/A'}</span></td>
+                              <td className="text-center">{`${row.orderCount}/₹ ${safeNumber(row.amount)}`}</td>
+                              <td className="text-center">
+                                <button className="btn btn-sm text-primary" title="View orders" onClick={() => viewOrder(row)}><i className="fas fa-eye" /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {cdsGroups.length === 0 && (
+                <div className="mat-card mat-elevation-z3">
+                  <div className="text-center py-4 small"><i className="fas fa-inbox me-2 text-muted" /> No CDS orders found </div>
+                </div>
+              )}
             </div>
           )}
 

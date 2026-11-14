@@ -68,6 +68,9 @@ export default function TripOrderDetailsPage() {
   const orderIdsParam = query.getAll('orderIds');
   const deliveryTime = query.has('deliveryTime') ? (query.get('deliveryTime') as string) : undefined;
   const orderIdsKey = orderIdsParam.join('|');
+  // Opened from a CDS list (?from=cds-pickups | cds-credit-notes) → Trip Details keeps its CDS tabs and back arrow.
+  const from = query.get('from');
+  const tripDetailsUrl = `/trip-details/${tripId}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
 
   useEffect(() => {
     if (!hasView) {
@@ -79,7 +82,7 @@ export default function TripOrderDetailsPage() {
       return;
     }
     if (orderIdsParam.length === 0) {
-      navigate(`/trip-details/${tripId}`);
+      navigate(tripDetailsUrl);
       return;
     }
     let alive = true;
@@ -149,7 +152,7 @@ export default function TripOrderDetailsPage() {
     <div className="order-details-container trip-order-details">
       <header className="orders-header">
         <div className="d-flex align-items-center gap-3">
-          <button className="back-btn" onClick={() => navigate(`/trip-details/${tripId}`)}><i className="fas fa-arrow-left" /></button>
+          <button className="back-btn" onClick={() => navigate(tripDetailsUrl)}><i className="fas fa-arrow-left" /></button>
           <div>
             <h1><i className="fas fa-shopping-bag me-2" /> Customer Order Details</h1>
             <p className="text-muted small mb-0">Customer: {customerDetails.name}</p>

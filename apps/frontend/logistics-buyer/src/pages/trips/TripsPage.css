@@ -102,6 +102,8 @@
 .trips-container .details-container { display: flex; flex-wrap: nowrap; gap: 20px; }
 .trips-container .detail-card { flex: 1 1 0; min-width: 360px; background: #fff; border-radius: 12px; box-shadow: 0 4px 8px #00000014; padding: 20px; transition: transform .2s; }
 .trips-container .detail-card:hover { transform: translateY(-2px); }
+/* CDS tab: the expanded row shows only the Route Overview card. */
+.trips-container .details-container.single .detail-card { flex: 0 1 560px; }
 .trips-container .detail-card h3 { font-size: 16px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
 .trips-container .detail-card h3::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: currentColor; display: inline-block; }
 .trips-container .route-overview h3 { color: #305fe3; }

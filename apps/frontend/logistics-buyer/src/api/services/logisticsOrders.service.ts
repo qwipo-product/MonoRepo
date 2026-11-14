@@ -80,6 +80,8 @@ export interface ApiTrip {
   totalReturnValue: number | string | null;
   orderSummary?: { delivered: number; partialDelivered: number; returned: number };
   fulfillments: ApiFulfillment[];
+  /** "cds" for trips created by the CDS service center (CDS tab); null for 3PL trips. */
+  channel?: 'cds' | null;
 }
 
 export interface TripLocation {
@@ -132,6 +134,8 @@ export interface TripRow {
   suggestedVehicleRegNumber: string;
   suggestedVehicleCapacityKg: string | number;
   orderSummary?: { delivered: number; partialDelivered: number; returned: number };
+  /** "cds" for trips created by the CDS service center (CDS tab); null for 3PL trips. */
+  channel: 'cds' | null;
 }
 
 export interface TripStats {
@@ -215,6 +219,14 @@ export interface CustomerOrderRow {
   rtoReasonId: number | null;
   returnReason: string | null;
   customerMobileNumber: string;
+  /** CDS trips only: the CDS point where the service center drops this retailer's goods. */
+  cdsPoint: CdsPointInfo | null;
+}
+
+export interface CdsPointInfo {
+  id: string;
+  name: string;
+  address: string;
 }
 
 export interface ProductOrderRow {
@@ -357,6 +369,7 @@ export function mapApiResponse(t: ApiTrip): TripRow {
     suggestedVehicleRegNumber: t.suggestedVehicleRegNumber || '',
     suggestedVehicleCapacityKg: t.suggestedVehicleCapacityKg || 0,
     orderSummary: t.orderSummary,
+    channel: t.channel ?? null,
   };
 }
 
@@ -410,10 +423,10 @@ export const logisticsOrdersService = {
     }
   },
 
-  /** GET /logistics-orders/provider-names/{buyerId} → `data` or `[]`. */
-  async getProviderNames(buyerId: string): Promise<string[]> {
+  /** GET /logistics-orders/provider-names/{buyerId} → `data` or `[]`. `channel: 'cds'` lists the CDS service centers. */
+  async getProviderNames(buyerId: string, channel?: 'cds'): Promise<string[]> {
     try {
-      const res = await http.get<any>(`${base()}/logistics-orders/provider-names/${buyerId}`);
+      const res = await http.get<any>(`${base()}/logistics-orders/provider-names/${buyerId}`, channel ? { params: { channel } } : undefined);
       return res?.success && res.data ? res.data : [];
     } catch (e) {
       console.error('Error fetching provider names:', e);
@@ -489,12 +502,28 @@ export const logisticsOrdersService = {
       `${logisticsOrderId}_Customer_Wise_Pickup_List.pdf`,
     );
   },
+  /** CDS tab → Pickup Indents. POST /logistics-orders/cds_wise_pickup_list (PDF): goods grouped by CDS drop point. */
+  downloadCdsWisePickupList(logisticsOrderId: string) {
+    return downloadBlob(
+      () => http.post<Blob>(`${base()}/logistics-orders/cds_wise_pickup_list`, { logisticsOrderId }, { responseType: 'blob' }),
+      PDF,
+      `${logisticsOrderId}_CDS_Wise_Pickup_List.pdf`,
+    );
+  },
   /** GET /logistics-orders/return_report/{uuid}; fallback `{tripNumber}_Return_Report.xlsx`. */
   downloadReturnReport(id: string, tripNumber?: string) {
     return downloadBlob(
       () => http.get<Blob>(`${base()}/logistics-orders/return_report/${id}`, { responseType: 'blob' }),
       XLSX_MIME,
       `${tripNumber}_Return_Report.xlsx`,
+    );
+  },
+  /** CDS tab → Credit Notes. POST /logistics-orders/credit_note (PDF), keyed by the trip's logisticsOrderId. */
+  downloadCreditNote(logisticsOrderId: string) {
+    return downloadBlob(
+      () => http.post<Blob>(`${base()}/logistics-orders/credit_note`, { logisticsOrderId }, { responseType: 'blob' }),
+      PDF,
+      `${logisticsOrderId}_Credit_Note.pdf`,
     );
   },
   /** Dark-store bulk download: only checks that a body exists (no content-type check), no feedback. */
@@ -618,6 +647,7 @@ export const logisticsOrdersService = {
           rtoReasonId: cd.rtoReasonId ?? null,
           returnReason: cd.returnReason ?? null,
           customerMobileNumber: cd.customerMobileNumber || '',
+          cdsPoint: cd.cdsPoint ?? null,
         });
         (entry.items || []).forEach((it: any) => allOrderItems.push({ ...it, stopStatus: cd.status }));
       });

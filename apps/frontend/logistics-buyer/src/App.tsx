@@ -73,7 +73,11 @@ export default function App() {
               </Route>
               <Route path="sse-test" element={<SseTestPage />} />
               <Route element={<RequireAuth requiredPage="trips" />}>
-                <Route path="trips" element={<TripsPage />} />
+                <Route path="trips" element={<TripsPage key="trips" />} />
+                {/* CDS tab: trips the CDS service center created for orders already confirmed as CDS (never on /trips). */}
+                <Route path="cds" element={<Navigate to="/cds/pickup-indents" replace />} />
+                <Route path="cds/pickup-indents" element={<TripsPage key="cds-pickups" view="cds-pickups" />} />
+                <Route path="cds/credit-notes" element={<TripsPage key="cds-credit-notes" view="cds-credit-notes" />} />
                 <Route path="trip-details/:id" element={<TripDetailsPage />} />
                 <Route path="trip-order-details/:tripId" element={<TripOrderDetailsPage />} />
               </Route>
