@@ -5,7 +5,7 @@
 import { db, nowIso, persist, uuid } from '../db';
 import { makeXlsx } from '../fileFactory';
 import { MockError, route } from '../server';
-import type { DbBeat, DbCluster, DbVehicle } from '../types';
+import type { DbBeat, DbCluster, DbOrder, DbTrip, DbVehicle } from '../types';
 import { getOrderStatusLabel, getTripStatusLabel } from '../../utils/helpers';
 
 const BUYER = 'logistics-buyer-svc';
@@ -274,6 +274,33 @@ const istDateTime = (iso: string | null) => (iso ? new Date(new Date(iso).getTim
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const isYmd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 
+/** The Trips page tab a trip belongs to (the report's "Trip Type" column). */
+const TRIP_TYPES = ['Direct Delivery', 'Consolidated Delivery', 'Consolidated Returns'] as const;
+const tripType = (t: DbTrip) => (t.channel === 'cds' ? TRIP_TYPES[1] : t.channel === 'cds-returns' ? TRIP_TYPES[2] : TRIP_TYPES[0]);
+
+/**
+ * Order counts of one trip row. Direct Delivery: from the orders' status (as-built). Consolidated trips: from the
+ * trip's own stops, so each returned order counts once — on its Consolidated Returns trip. A Consolidated Delivery
+ * trip counts the orders handed over to the CDS service center as delivered, and has no returns.
+ */
+function tripOrderCounts(t: DbTrip, tOrders: DbOrder[]) {
+  if (!t.channel) {
+    const delivered = tOrders.filter((o) => o.orderStatusId === 5).length;
+    const partial = tOrders.filter((o) => o.orderStatusId === 6).length;
+    const returned = tOrders.filter((o) => o.orderStatusId === 8).length;
+    return { delivered, partial, returned, pending: Math.max(0, tOrders.length - delivered - partial - returned) };
+  }
+  const drops = t.stops.filter((s) => s.deliveryType === 'Delivery');
+  const ordersWhere = (match: (s: (typeof drops)[number]) => boolean) => drops.filter(match).reduce((n, s) => n + (s.orderIds?.length || 0), 0);
+  if (t.channel === 'cds') {
+    const delivered = ordersWhere((s) => s.status === 'Order-delivered');
+    return { delivered, partial: 0, returned: 0, pending: Math.max(0, tOrders.length - delivered) };
+  }
+  const returned = ordersWhere((s) => s.displayStatus === 'Returned');
+  const partial = ordersWhere((s) => s.displayStatus === 'Partial Return');
+  return { delivered: 0, partial, returned, pending: Math.max(0, tOrders.length - returned - partial) };
+}
+
 /**
  * GET /performance-report/download?startDate&endDate&buyerId → XLSX blob.
  *  • no trips and no orders in the range        → 404 (UI: "No records found for the selected period.")
@@ -305,13 +332,12 @@ route('GET', BUYER, '/performance-report/download', (req) => {
   const tripRows = trips.map((t) => {
     const tOrders = t.orderIds.map((id) => orderById.get(id)).filter(Boolean) as typeof d.orders;
     const drops = t.stops.filter((s) => s.deliveryType === 'Delivery');
-    const delivered = tOrders.filter((o) => o.orderStatusId === 5).length;
-    const partial = tOrders.filter((o) => o.orderStatusId === 6).length;
-    const returned = tOrders.filter((o) => o.orderStatusId === 8).length;
+    const { delivered, partial, returned, pending } = tripOrderCounts(t, tOrders);
     const volWeight = r2(tOrders.reduce((s, o) => s + (o.volumetricWeight || 0), 0));
     const capacity = Number(t.vehicleVolumetricCapacityKg) || 0;
     return {
       'Trip Number': t.orderId,
+      'Trip Type': tripType(t),
       'Trip Date': istDateTime(t.createdAt),
       Provider: t.providerName,
       'Vehicle Number': t.vehicleRegNumber || '',
@@ -322,7 +348,7 @@ route('GET', BUYER, '/performance-report/download', (req) => {
       Delivered: delivered,
       'Partial Return': partial,
       Returned: returned,
-      Pending: Math.max(0, tOrders.length - delivered - partial - returned),
+      Pending: pending,
       'Planned KMs': Number(t.totalDistance) || 0,
       'Vol. Weight (Kgs)': volWeight,
       'Vehicle Capacity (Kgs)': capacity,
@@ -368,6 +394,18 @@ route('GET', BUYER, '/performance-report/download', (req) => {
     ['Total Order Value (Rs)', r2(orders.reduce((s, o) => s + (o.amount || 0), 0))],
     ['Total Planned KMs', r2(trips.reduce((s, t) => s + (Number(t.totalDistance) || 0), 0))],
     ['Total Trip Charges (Rs)', r2(trips.reduce((s, t) => s + (Number(t.deliveryPrice) || 0), 0))],
+    [],
+    ['Trip Type', 'Trips', 'Completed Trips', 'Planned KMs', 'Trip Charges (Rs)'],
+    ...TRIP_TYPES.map((type) => {
+      const ofType = trips.filter((t) => tripType(t) === type);
+      return [
+        type,
+        ofType.length,
+        ofType.filter((t) => t.status === 3).length,
+        r2(ofType.reduce((s, t) => s + (Number(t.totalDistance) || 0), 0)),
+        r2(ofType.reduce((s, t) => s + (Number(t.deliveryPrice) || 0), 0)),
+      ];
+    }),
   ];
 
   const blob = makeXlsx([
