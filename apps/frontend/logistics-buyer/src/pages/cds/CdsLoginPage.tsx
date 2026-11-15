@@ -12,8 +12,8 @@ function pagesOf(url: string): CdsPage[] {
   const path = url.split('?')[0];
   const map: [string, CdsPage[]][] = [
     ['/cds/orders', ['sc-orders', 'cu-orders']], ['/cds/pickup-planning', ['sc-pickup']], ['/cds/deliver-to-cds', ['sc-deliver']], ['/cds/return-planning', ['sc-returns']],
-    ['/cds/trips', ['sc-trips', 'cu-trips']], ['/cds/reports', ['sc-reports', 'cu-reports']], ['/cds/settings', ['sc-settings']], ['/cds/stores', ['sc-stores']],
-    ['/cds/grn', ['cu-grn']], ['/cds/delivery-planning', ['cu-delivery']], ['/cds/collections', ['cu-collections']], ['/cds/returns', ['cu-returns']], ['/cds/retailers', ['cu-retailers']],
+    ['/cds/trips', ['sc-trips', 'cu-trips']], ['/cds/reports', ['sc-reports', 'cu-reports']], ['/cds/settings', ['sc-settings', 'cu-settings']], ['/cds/stores', ['sc-stores']],
+    ['/cds/grn', ['cu-grn']], ['/cds/delivery-planning', ['cu-delivery']], ['/cds/collections', ['cu-collections']], ['/cds/returns', ['cu-returns']], ['/cds/retailers', ['cu-retailers']], ['/cds/customers', ['cu-retailers']],
   ];
   return map.find(([p]) => path.startsWith(p))?.[1] ?? [];
 }

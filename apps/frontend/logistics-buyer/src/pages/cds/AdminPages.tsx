@@ -8,13 +8,16 @@ import { cdsApi, type Report, type ReportRunRow } from '../../api/services/cds.s
 import { SC_HUB } from '../../cds/engine';
 import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS_GROUPS } from '../../cds/status';
 import { DEFAULT_ROUTE_CONFIG, type CdsRouteEngine, type RouteConfig } from '../../cds/types';
+import PaymentSettingsPage from '../settings/PaymentSettingsPage';
+import UsersPermissionsPage from '../settings/UsersPermissionsPage';
+import { CuDeliverySettings, CuProfile } from './CuSettingsPages';
 import '../settings/SettingsPage.css';
 import '../settings/modules/settings-modules.css';
 import '../settings/ProfilePage.css';
 import '../settings/DeliverySettingsPage.css';
 import { pointInPolygon, ringAreaKm2 } from '../../cds/planning';
 import { CoverageMap, OUTSIDE_COLOR, PolygonEditorDialog, STORE_COLORS, type AreaRetailer, type AreaStore } from './RouteMap';
-import { Card, confirm, downloadCsv, ModuleIntro, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, InfoSection, Loading, PageHead, refreshMeta, RowActions, SectionCard, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
+import { confirm, downloadCsv, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, InfoSection, Loading, PageHead, refreshMeta, RowActions, SectionCard, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
 import '../reports/ReportsPage.css';
 
 const STATUS_OPTIONS: Record<string, Record<string, { label: string }>> = {
@@ -168,114 +171,55 @@ function Reports() {
 
 export function ReportsPage() {
   const { sc } = useCdsSession();
-  const [tab, setTab] = useState<'reports' | 'settings'>('reports');
-  if (sc) {
-    return (
-      <div className="cds-page reports-page container-fluid py-4 p-3 bg-light h-100">
-        <div className="row px-3">
-          <div className="col-md-8">
-            <div className="d-flex align-items-center">
-              <i className="fas fa-chart-bar text-primary me-2 fs-5" />
-              <h1 className="fs-3 mb-0 fw-bold">Reports</h1><ModuleIntro text="Run, download and see the history of reports on pickups, trips, returns and CDS stores." />
-            </div>
-            <p className="text-muted small">Run, download and see the history of reports across your CDS stores.</p>
+  return (
+    <div className="cds-page reports-page container-fluid py-4 p-3 bg-light h-100">
+      <div className="row px-3">
+        <div className="col-md-8">
+          <div className="d-flex align-items-center">
+            <i className="fas fa-chart-bar text-primary me-2 fs-5" />
+            <h1 className="fs-3 mb-0 fw-bold">Reports</h1>
           </div>
+          <p className="text-muted small">{sc ? 'Run, download and see the history of reports across your CDS stores.' : 'Run, download and see the history of reports for your CDS store.'}</p>
         </div>
-        <div className="mt-2 px-1"><Reports /></div>
       </div>
-    );
-  }
-  return (
-    <div className="cds-page">
-      <PageHead info="Reports for your CDS store, and your own vehicles and delivery persons." icon="fa-chart-bar" title="Reports & Settings" subtitle="Your CDS store's reports, delivery persons and vehicles." />
-
-      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'reports', label: 'Reports', icon: 'fa-chart-bar' }, { id: 'settings', label: 'Settings', icon: 'fa-cog' }]} />
-      {tab === 'reports' ? <Reports /> : <><StoreProfile /><div className="row g-3"><div className="col-lg-6"><Fleet show="vehicles" /></div><div className="col-lg-6"><Fleet show="persons" /></div></div></>}
+      <div className="mt-2 px-1"><Reports /></div>
     </div>
   );
 }
 
-function StoreProfile() {
-  const { user, store } = useCdsSession();
-  const meta = useMeta();
-  const st = meta.data?.stores.find((x) => x.id === store);
-  return (
-    <div className="mb-3">
-      <InfoSection icon="fa-store" title="Store & Profile" rows={[
-        ['fa-warehouse', 'CDS Store', `${st?.name ?? ''} (${st?.code ?? ''})`],
-        ['fa-location-dot', 'Address', st?.address],
-        ['fa-user', 'Signed in as', `${user?.name ?? ''} · +91 ${user?.mobile ?? ''}`],
-        ['fa-key', 'OTP Rules', `${meta.data?.settings.otpExpiryMinutes} min · ${meta.data?.settings.otpMaxAttempts} attempts`],
-      ]} />
-    </div>
-  );
-}
-
-/** Vehicles or delivery persons, with Add and an Active switch. */
-function Fleet({ show }: { show: 'vehicles' | 'persons' }) {
-  const { busy, run } = useAction();
-  const { data, error, loading, reload } = useLoad(() => cdsApi.fleet(), []);
-  const toggle = async (kind: 'vehicles' | 'persons', id: string, active: boolean) => { if (await run(() => cdsApi.setFleetActive(kind, id, active), active ? 'Activated' : 'Deactivated')) reload(); };
-  const addVehicle = async () => {
-    const r = await Swal.fire({
-      title: 'Add vehicle', html: `<input id="v-reg" class="swal2-input" placeholder="Registration no. (TS08AB1234)"><select id="v-type" class="swal2-input"><option>Three Wheeler</option><option>Pickup</option><option>Mini Truck</option><option>Truck</option></select><input id="v-cap" type="number" class="swal2-input" placeholder="Capacity (kg)">`,
-      showCancelButton: true, confirmButtonText: 'Add', confirmButtonColor: '#1e3a8a', reverseButtons: true,
-      preConfirm: () => ({ regNo: (document.getElementById('v-reg') as HTMLInputElement).value, type: (document.getElementById('v-type') as HTMLSelectElement).value, capacityKg: Number((document.getElementById('v-cap') as HTMLInputElement).value) }),
-    });
-    if (r.isConfirmed && (await run(() => cdsApi.addVehicle(r.value), 'Vehicle added'))) reload();
-  };
-  const addPerson = async () => {
-    const r = await Swal.fire({
-      title: 'Add delivery person', html: '<input id="p-name" class="swal2-input" placeholder="Name"><input id="p-phone" class="swal2-input" placeholder="Mobile (10 digits)">',
-      showCancelButton: true, confirmButtonText: 'Add', confirmButtonColor: '#1e3a8a', reverseButtons: true,
-      preConfirm: () => ({ name: (document.getElementById('p-name') as HTMLInputElement).value, phone: (document.getElementById('p-phone') as HTMLInputElement).value }),
-    });
-    if (r.isConfirmed && (await run(() => cdsApi.addPerson(r.value), 'Delivery person added'))) reload();
-  };
-  if (error) return <ErrorBox text={error} onRetry={reload} />;
-  if (loading && !data) return <Loading />;
-  const sw = (label: string, on: boolean, change: (v: boolean) => void) => (
-    <div className="form-check form-switch m-0 d-inline-block"><input className="form-check-input" type="checkbox" aria-label={label} disabled={busy} checked={on} onChange={(e) => change(e.target.checked)} /></div>
-  );
-  return show === 'vehicles' ? (
-    <Card title={<><i className="fas fa-truck text-primary me-2" />Vehicles <small>({data?.vehicles.length})</small></>} extra={<button className="btn btn-sm btn-primary" onClick={() => void addVehicle()}><i className="fas fa-plus me-1" />Add Vehicle</button>}>
-      <Table head={['Registration', 'Type', 'Capacity', 'Active']}>
-        {data?.vehicles.map((v) => <tr key={v.id} className="mat-mdc-row"><td className="fw-semibold">{v.regNo}</td><td className="small">{v.type}</td><td className="small">{v.capacityKg} kg</td><td>{sw(`Active ${v.regNo}`, v.active, (x) => void toggle('vehicles', v.id, x))}</td></tr>)}
-      </Table>
-    </Card>
-  ) : (
-    <Card title={<><i className="fas fa-id-badge text-primary me-2" />Delivery Persons <small>({data?.deliveryPersons.length})</small></>} extra={<button className="btn btn-sm btn-primary" onClick={() => void addPerson()}><i className="fas fa-plus me-1" />Add Delivery Person</button>}>
-      <Table head={['Name', 'Mobile', 'Active']}>
-        {data?.deliveryPersons.map((p) => <tr key={p.id} className="mat-mdc-row"><td className="fw-semibold">{p.name}</td><td className="small">{p.phone}</td><td>{sw(`Active ${p.name}`, p.active, (x) => void toggle('persons', p.id, x))}</td></tr>)}
-      </Table>
-    </Card>
-  );
-}
-
-type SettingsTab = 'profile' | 'pickup' | 'return';
+type SettingsTab = 'profile' | 'pickup' | 'return' | 'delivery' | 'payment' | 'users';
 const SETTINGS_TABS: { key: SettingsTab; icon: string; label: string }[] = [
   { key: 'profile', icon: 'fas fa-user-circle', label: ' Profile ' },
   { key: 'pickup', icon: 'fas fa-truck-ramp-box', label: ' Pick up ' },
   { key: 'return', icon: 'fas fa-rotate-left', label: ' Return ' },
 ];
+/** CDS User Settings: the LBNP Settings tabs that apply to a CDS store. */
+const CU_SETTINGS_TABS: { key: SettingsTab; icon: string; label: string }[] = [
+  { key: 'profile', icon: 'fas fa-user-circle', label: ' Profile ' },
+  { key: 'delivery', icon: 'fas fa-truck', label: ' Delivery ' },
+  { key: 'payment', icon: 'fas fa-credit-card', label: ' Payment ' },
+  { key: 'users', icon: 'fas fa-users', label: ' Users & Permissions ' },
+];
 
 /** Settings — same layout as LBNP Settings: header and underline tabs. Profile (business details, location, vehicles
  *  and delivery persons), Pick up and Return (route planning limits, like LBNP Settings › Delivery). */
 export function SettingsPage() {
+  const { sc } = useCdsSession();
   const [params, setParams] = useSearchParams();
-  const tab = (SETTINGS_TABS.find((t) => t.key === params.get('tab'))?.key ?? 'profile') as SettingsTab;
+  const tabs = sc ? SETTINGS_TABS : CU_SETTINGS_TABS;
+  const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? 'profile') as SettingsTab;
   return (
     <div className="cds-page settings-container cds-settings-lbnp">
       <header className="settings-header">
         <div className="header-left">
-          <div className="cds-title-row"><h1><i className="fas fa-cog" /> Settings</h1><ModuleIntro text="Your profile, and the pickup and return route planning that Auto Plan Route uses." /></div>
-          <p className="subtitle">Manage the Service Centre profile, and the pickup and return route planning.</p>
+          <div className="cds-title-row"><h1><i className="fas fa-cog" /> Settings</h1></div>
+          <p className="subtitle">{sc ? 'Manage the Service Centre profile, and the pickup and return route planning.' : 'Customize your preferences, manage account details, and configure app options.'}</p>
         </div>
       </header>
       <div className="content-container">
         <div className="tabs-container">
           <div className="tabs" role="tablist">
-            {SETTINGS_TABS.map((t) => (
+            {tabs.map((t) => (
               <button key={t.key} role="tab" aria-selected={tab === t.key} className={`tab-btn${tab === t.key ? ' active' : ''}`} onClick={() => setParams({ tab: t.key })}>
                 <i className={t.icon} />{t.label}
               </button>
@@ -283,7 +227,10 @@ export function SettingsPage() {
           </div>
         </div>
         <div className="settings-content">
-          {tab === 'profile' && <ServiceCentreProfile />}
+          {tab === 'profile' && (sc ? <ServiceCentreProfile /> : <CuProfile />)}
+          {tab === 'delivery' && <CuDeliverySettings />}
+          {tab === 'payment' && <PaymentSettingsPage />}
+          {tab === 'users' && <UsersPermissionsPage />}
           {tab === 'pickup' && <RoutePlanningSettings kind="pickup" />}
           {tab === 'return' && <RoutePlanningSettings kind="return" />}
         </div>
@@ -505,7 +452,7 @@ export function StoresPage() {
   const locate = (id: string) => { setFocus(id); mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   return (
     <div className="cds-page">
-      <PageHead info="Your CDS stores and their areas: a retailer inside an area gets orders through that store." icon="fa-store" title="CDS Stores" subtitle="CDS stores and their service areas. A retailer inside a service area is served by that CDS store.">
+      <PageHead icon="fa-store" title="CDS Stores" subtitle="CDS stores and their service areas. A retailer inside a service area is served by that CDS store.">
         <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => setCreating(true)}><i className="fas fa-plus me-1" />Create New CDS Store</button>
       </PageHead>
       {creating && (

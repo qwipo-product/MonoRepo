@@ -3,7 +3,7 @@ import { http, HttpError } from '../http';
 import type { Column, Report } from '../../cds/reports';
 import type { TripShown } from '../../cds/status';
 import type {
-  AuditEntry, CdsOrder, CdsPage, CdsRole, CdsSettings, CdsStore, Collection, CollectionStatus, DeliveryPerson, Distributor, Grn, ItemCondition,
+  AuditEntry, CdsOrder, CdsPage, CdsRole, CdsSettings, CdsStore, StoreConfig, Collection, CollectionStatus, DeliveryPerson, Distributor, Grn, ItemCondition,
   OrderStatus, OtpTxn, Plan, Retailer, ReturnRecord, ReturnStatus, Trip, TripStatus, TripStop, TripType, Vehicle,
 } from '../../cds/types';
 
@@ -45,7 +45,7 @@ export const cdsAuth = {
     return this.user?.role === 'SERVICE_CENTRE';
   },
   home() {
-    return this.isSC() ? '/cds/orders' : '/cds/grn';
+    return '/cds/orders';
   },
   set(token: string, user: CdsSessionUser) {
     localStorage.setItem(K.token, token);
@@ -125,7 +125,7 @@ export const cdsApi = {
   resources: (date: string) => call<Resources>('GET', '/cds/resources', undefined, { date }),
 
   searchOrders: (f: { cdsStoreId?: string; statuses?: OrderStatus[]; distributorId?: string; retailerId?: string; state?: string; city?: string; search?: string; fromDate?: string; toDate?: string; noActiveCdsTrip?: boolean; pageNumber?: number; pageSize?: number }) => call<Paged<OrderRow>>('POST', '/cds/orders/search', f),
-  order: (id: string) => call<{ order: CdsOrder; salesPerson: { salesPersonName: string; salesPersonPhone: string }; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
+  order: (id: string) => call<{ order: CdsOrder; salesPerson: { salesPersonName: string; salesPersonPhone: string }; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string; slot: string; deliveryPersonName: string; etaMinutes: number }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
   cancelOrder: (id: string, reason: string) => call<CdsOrder>('POST', `/cds/orders/${id}/cancel`, { reason }),
 
   createPickupPlan: (b: { orders: { orderId: string; cdsStoreId?: string }[]; plannedDate: string; slot?: string; pickup: { vehicleId: string; deliveryPersonId: string }; cdsDelivery?: { vehicleId: string; deliveryPersonId: string } | null; remarks?: string }) =>
@@ -133,11 +133,13 @@ export const cdsApi = {
   createCdsDeliveryPlan: (b: { orderIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/deliver-to-cds/plans', b),
   deliverOverview: () => call<{ store: CdsStore; awaiting: number; trips: { tripId: string; tripNo: string; tripStatus: TripStatus; plannedDate: string; deliveryPersonName: string; vehicleRegNo: string; stopStatus: string; verifiedAt: string | null; orders: number; dispatched: number; received: number }[] }[]>('GET', '/cds/deliver-to-cds/overview'),
   createReturnPlan: (b: { returnIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/return-planning/plans', b),
+  autoAssign: (date: string, loadKg: number) => call<{ vehicle: Vehicle; deliveryPerson: DeliveryPerson }>('GET', `/cds/delivery/auto-assign?date=${date}&loadKg=${loadKg}`),
+  bookOrder: (id: string, b: { provider: string; price: number }) => call<{ plan: Plan; trip: Trip }>('POST', `/cds/orders/${id}/book`, b),
   createDeliveryPlan: (b: { orderIds: string[]; returnIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/delivery/plans', b),
   plans: (kind?: Plan['kind']) => call<PlanRow[]>('GET', '/cds/plans', undefined, { kind }),
 
   searchTrips: (f: { types?: TripType[]; statuses?: TripStatus[]; date?: string; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<TripView>>('POST', '/cds/trips/search', f),
-  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; retailerAddress: string; distributorName: string; storeName: string; deliveredAt: string | null; sellerOrderRef: string; confirmedAt: string; orderValue: number; lines: CdsOrder['lines'] }[]; retailers: { id: string; name: string; phone: string; address: string; city: string; state: string; lat: number; lng: number }[]; returns: { id: string; returnNo: string; status: ReturnStatus; orderNo: string; orderId: string; retailerId: string | null; retailerName: string; retailerAddress: string; storeName: string; lines: { sku: string; name: string; unitPrice: number; unitWeightKg: number; reason: string; qty: number; orderedQty: number }[]; distributorName: string; units: number; value: number }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
+  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; cdsStoreId: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; retailerAddress: string; distributorName: string; storeName: string; deliveredAt: string | null; sellerOrderRef: string; confirmedAt: string; orderValue: number; lines: CdsOrder['lines'] }[]; retailers: { id: string; name: string; phone: string; address: string; city: string; state: string; lat: number; lng: number }[]; returns: { id: string; returnNo: string; status: ReturnStatus; orderNo: string; orderId: string; retailerId: string | null; retailerName: string; retailerAddress: string; storeName: string; lines: { sku: string; name: string; unitPrice: number; unitWeightKg: number; reason: string; qty: number; orderedQty: number }[]; distributorName: string; units: number; value: number }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
   startTrip: (id: string) => call<Trip>('POST', `/cds/trips/${id}/start`),
   cancelTrip: (id: string, reason: string) => call<Trip>('POST', `/cds/trips/${id}/cancel`, { reason }),
   updateTripResources: (id: string, body: { vehicleId: string; deliveryPersonId: string }) => call<Trip>('POST', `/cds/trips/${id}/resources`, body),
@@ -151,6 +153,8 @@ export const cdsApi = {
 
   searchGrns: (f: { status?: 'PENDING' | 'COMPLETED'; distributorId?: string; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<GrnRow>>('POST', '/cds/grns/search', f),
   grn: (id: string) => call<{ grn: Grn; distributor: Distributor; store: CdsStore; cdsTrip: Trip; pickupTrips: { id: string; tripNo: string }[]; orders: { id: string; orderNo: string; status: OrderStatus; retailerName: string }[] }>('GET', `/cds/grns/${id}`),
+  updatePlannedQty: (tripId: string, b: { sku: string; items: { orderId: string; qty: number }[]; remarks: string }) => call<Trip>('POST', `/cds/trips/${tripId}/planned-qty`, b),
+  saveGrnLines: (id: string, lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[]) => call<Grn>('POST', `/cds/grns/${id}/lines`, { lines }),
   completeGrn: (id: string, b: { lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[]; remarks?: string }) => call<Grn>('POST', `/cds/grns/${id}/complete`, b),
 
   searchReturns: (f: { cdsStoreId?: string; statuses?: ReturnStatus[]; distributorId?: string; unplanned?: boolean; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<ReturnRow>>('POST', '/cds/returns/search', f),
@@ -162,7 +166,9 @@ export const cdsApi = {
   handToQwipo: (ids: string[], ref: string) => call<Collection[]>('POST', '/cds/collections/handover', { ids, ref }),
   recordSettlement: (ids: string[], ref: string) => call<Collection[]>('POST', '/cds/collections/settle', { ids, ref }),
 
-  retailers: () => call<(Retailer & { orders: number; openOrders: number; deliveredValue: number; returns: number; collected: number; lastOrder: string | null })[]>('GET', '/cds/retailers'),
+  retailers: () => call<(Retailer & { orders: number; openOrders: number; deliveredValue: number; returns: number; collected: number; lastOrder: string | null; isBulk: boolean; source: 'system' | 'manual'; updatedAt: string | null })[]>('GET', '/cds/retailers'),
+  updateRetailerLocation: (id: string, b: { latitude: string; longitude: string; address?: string; is_bulk_order: boolean }) => call<{ ordersUpdated: number; skippedOrderStatuses: string[] }>('PUT', `/cds/retailers/${id}/location`, b),
+  deleteRetailer: (id: string) => call<boolean>('POST', `/cds/retailers/${id}/delete`),
   stores: () => call<(CdsStore & { user: { name: string; mobile: string; active: boolean } | null; incoming: number; grnPending: number; ready: number; outForDelivery: number; delivered: number; returnsAtCds: number; vehicles: number; deliveryPersons: number })[]>('GET', '/cds/stores'),
   coverage: () => call<CoverageRetailer[]>('GET', '/cds/coverage'),
   createStore: (b: NewStore) => call<CdsStore>('POST', '/cds/stores', b),
@@ -172,5 +178,7 @@ export const cdsApi = {
   addVehicle: (b: { regNo: string; type: string; capacityKg: number }) => call<Vehicle>('POST', '/cds/fleet/vehicles', b),
   addPerson: (b: { name: string; phone: string }) => call<DeliveryPerson>('POST', '/cds/fleet/persons', b),
   updateSettings: (b: Partial<CdsSettings>) => call<CdsSettings>('PUT', '/cds/settings', b),
+  storeSettings: () => call<StoreConfig>('GET', '/cds/store-settings'),
+  updateStoreSettings: (b: Partial<StoreConfig>) => call<StoreConfig>('PUT', '/cds/store-settings', b),
   audit: (entityId: string) => call<AuditEntry[]>('GET', '/cds/audit', undefined, { entityId }),
 };

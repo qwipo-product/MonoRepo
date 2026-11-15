@@ -9,11 +9,11 @@
 export type CdsRole = 'SERVICE_CENTRE' | 'CDS_USER';
 export type CdsPage =
   | 'sc-orders' | 'sc-pickup' | 'sc-deliver' | 'sc-returns' | 'sc-trips' | 'sc-reports' | 'sc-settings' | 'sc-stores'
-  | 'cu-grn' | 'cu-orders' | 'cu-delivery' | 'cu-trips' | 'cu-collections' | 'cu-returns' | 'cu-reports' | 'cu-retailers';
+  | 'cu-grn' | 'cu-orders' | 'cu-delivery' | 'cu-trips' | 'cu-collections' | 'cu-returns' | 'cu-reports' | 'cu-retailers' | 'cu-settings';
 
 export const ROLE_PAGES: Record<CdsRole, CdsPage[]> = {
   SERVICE_CENTRE: ['sc-orders', 'sc-pickup', 'sc-deliver', 'sc-returns', 'sc-trips', 'sc-reports', 'sc-settings', 'sc-stores'],
-  CDS_USER: ['cu-grn', 'cu-orders', 'cu-delivery', 'cu-trips', 'cu-collections', 'cu-returns', 'cu-reports', 'cu-retailers'],
+  CDS_USER: ['cu-grn', 'cu-orders', 'cu-delivery', 'cu-trips', 'cu-collections', 'cu-returns', 'cu-reports', 'cu-retailers', 'cu-settings'],
 };
 
 export interface GeoPoint {
@@ -77,6 +77,11 @@ export interface Retailer {
   state: string;
   lat: number;
   lng: number;
+  /** Customers (LBNP Customer Master): bulk-order flag, location source and last update, deleted from the list. */
+  isBulk?: boolean;
+  source?: 'system' | 'manual';
+  locationUpdatedAt?: string | null;
+  deleted?: boolean;
 }
 
 export interface CdsUser {
@@ -121,7 +126,29 @@ export interface CdsSettings {
   /** Settings › Pick up / Return: route planning limits for the auto route (missing → DEFAULT_ROUTE_CONFIG). */
   pickupRoute?: RouteConfig;
   returnRoute?: RouteConfig;
+  /** CDS User Settings (LBNP Settings › Profile / Delivery), per CDS store. */
+  storeConfig?: Record<string, StoreConfig>;
 }
+
+export interface StoreConfig {
+  openingTime: string;
+  closingTime: string;
+  weeklyHolidays: string[];
+  serviceTimeMinutes: number;
+  maxTravelHours: number;
+  maxStops: number;
+  maxDistanceKm: number;
+  routeEngine: string;
+  sellerOtp: boolean;
+  retailerOtp: boolean;
+  ondcCategory: string;
+  logisticsMode: 'self' | '3pl' | 'self+3pl';
+  exclusions: { fieldName: string; value: string; status: string }[];
+}
+export const DEFAULT_STORE_CONFIG: StoreConfig = {
+  openingTime: '09:00', closingTime: '21:00', weeklyHolidays: ['Sunday'], serviceTimeMinutes: 12, maxTravelHours: 8.5, maxStops: 35, maxDistanceKm: 40,
+  routeEngine: 'route_optimize', sellerOtp: true, retailerOtp: true, ondcCategory: 'Grocery', logisticsMode: 'self+3pl', exclusions: [],
+};
 
 export type CdsRouteEngine = 'route_optimize' | 'store_optimized' | 'seller_optimized';
 export interface RouteConfig {
@@ -274,6 +301,9 @@ export interface Trip extends Stamp {
   /** Helper on the trip (Update Helper, planned trips only). */
   helperName?: string | null;
   helperPhone?: string | null;
+  /** Booked through Search Vehicles (3PL provider) and its charges. */
+  provider?: string | null;
+  charges?: number | null;
   status: TripStatus;
   stops: TripStop[];
   orderIds: string[];
@@ -432,7 +462,7 @@ export interface AuditEntry {
   id: string;
   at: string;
   by: string;
-  entity: 'ORDER' | 'TRIP' | 'PLAN' | 'GRN' | 'RETURN' | 'COLLECTION' | 'OTP' | 'STORE' | 'SETTINGS' | 'SESSION';
+  entity: 'ORDER' | 'TRIP' | 'PLAN' | 'GRN' | 'RETURN' | 'COLLECTION' | 'OTP' | 'STORE' | 'SETTINGS' | 'SESSION' | 'RETAILER';
   entityId: string;
   action: string;
   detail: string;

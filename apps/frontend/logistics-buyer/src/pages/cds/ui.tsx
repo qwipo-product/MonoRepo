@@ -49,13 +49,13 @@ export const refreshMeta = () => { metaCache = null; };
 
 export const Badge = ({ meta }: { meta: StatusMeta }) => <span className={`cds-badge ${meta.tone}`}>{meta.label}</span>;
 
-export function PageHead({ icon, title, subtitle, crumb, info, children }: { icon: string; title: ReactNode; subtitle?: ReactNode; crumb?: { label: string; to: string }; info?: string; children?: ReactNode }) {
+export function PageHead({ icon, title, subtitle, crumb, children }: { icon: string; title: ReactNode; subtitle?: ReactNode; crumb?: { label: string; to: string }; children?: ReactNode }) {
   const navigate = useNavigate();
   return (
     <div className="cds-head">
       <div>
         {crumb && <div className="crumb"><a onClick={() => navigate(crumb.to)}><i className="fas fa-arrow-left me-1" />{crumb.label}</a></div>}
-        <div className="cds-title-row"><h1><i className={`fas ${icon}`} />{title}</h1>{info && <ModuleIntro text={info} />}</div>
+        <div className="cds-title-row"><h1><i className={`fas ${icon}`} />{title}</h1></div>
         {subtitle && <p>{subtitle}</p>}
       </div>
       {children && <div className="d-flex gap-2 flex-wrap align-items-center">{children}</div>}
@@ -401,7 +401,7 @@ const KPI_LOOK: Record<string, { icon: string; title?: string; sub: string }> = 
   returnTrips: { icon: 'fa-rotate-left', title: 'CDS Return Trips', sub: 'Active · CDS Stores to Sellers' },
   returns: { icon: 'fa-arrow-rotate-left', sub: 'Waiting for action' },
   grn: { icon: 'fa-clipboard-check', title: 'GRNs to Verify', sub: 'Handed over at your CDS' },
-  ready: { icon: 'fa-box', title: 'Ready for Delivery', sub: 'Waiting for a delivery plan' },
+  ready: { icon: 'fa-box', title: 'Ready for Planning', sub: 'Waiting for a delivery plan' },
   planned: { icon: 'fa-calendar-check', title: 'Delivery Planned', sub: 'On a delivery trip' },
   out: { icon: 'fa-truck', title: 'Out for Delivery', sub: 'On the road' },
   delivered: { icon: 'fa-circle-check', title: 'Delivered', sub: 'Delivered to retailers' },

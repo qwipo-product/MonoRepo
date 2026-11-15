@@ -1,12 +1,12 @@
 // Orders — Service Centre: all CDS Store Delivery orders across its stores. CDS User: its store's orders, retailer-wise.
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
 import { cdsApi, type OrderRow } from '../../api/services/cds.service';
 import { ORDER_STATUS } from '../../cds/status';
 import type { OrderStatus, TripType } from '../../cds/types';
 import { RouteMapDialog } from './RouteMap';
-import { askText, Badge, ModuleIntro, Empty, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, Loading, money, Pager, sumOf, Table, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
+import { askText, Badge, Empty, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, Loading, money, Pager, sumOf, Table, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
 import DataLoading from '../../components/DataLoading';
 import '../orders/OrderDetailsPage.css';
 import '../orders/OrdersPage.css';
@@ -105,15 +105,10 @@ export default function OrdersPage() {
           <div>
             <div className="d-flex align-items-center">
               <i className="fas fa-shopping-bag text-primary me-2 fs-5" />
-              <h1 className="fs-3 mb-0 fw-bold">Orders</h1><ModuleIntro text={sc ? "Orders that sellers sent for CDS store delivery, and their status until the retailer gets them." : "Orders for your CDS store, and their status until the retailer gets them."} />
+              <h1 className="fs-3 mb-0 fw-bold">Orders</h1>
             </div>
             <p className="text-muted small mb-0">{sc ? 'CDS Store Delivery orders confirmed in the Seller Store, across your CDS stores.' : 'Seller Store orders for your CDS store, retailer-wise.'}</p>
           </div>
-          {!sc && (
-            <div className="d-flex align-items-center gap-2">
-              <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate('/cds/delivery-planning')}><i className="fas fa-truck me-1 fs-6" /><span className="fs-6">Delivery Planning</span></button>
-            </div>
-          )}
         </div>
 
         {/* B. Search row */}
@@ -150,7 +145,7 @@ export default function OrdersPage() {
         {kpi(sc ? 'No. of Retailers' : 'No. of Customers', retailersToPlan.length, 'fa-users', 'customers', sc ? 'Waiting for pickup' : 'To deliver to')}
         {kpi('Total Orders', toPlan.length, 'fa-chart-line', 'orders', sc ? 'Waiting for pickup' : 'Waiting for delivery')}
         {kpi('Total Weight', `${(Math.round(sumOf(toPlan, (o) => o.weightKg) * 10) / 10).toLocaleString('en-IN')} Kgs`, 'fa-weight-hanging', 'weight', sc ? 'Load to pick up' : 'Load to deliver')}
-        {kpi('No. of Distributors', new Set(toPlan.map((o) => o.distributorId)).size, 'fa-industry', 'distributors', sc ? 'Sellers to pick up from' : 'Of the ready orders')}
+        {sc && kpi('No. of Distributors', new Set(toPlan.map((o) => o.distributorId)).size, 'fa-industry', 'distributors', 'Sellers to pick up from')}
         {sc && kpi('No. of CDS Stores', new Set(toPlan.map((o) => o.cdsStoreId)).size, 'fa-warehouse', 'stores', 'CDS stores to drop at')}
       </div>
 
@@ -191,7 +186,20 @@ export default function OrdersPage() {
   );
 }
 
-/** Order view — same layout as the LBNP Order Details screen: header with back button, tabs, info sections. */
+/** Synthetic 3PL providers for Search Vehicles (demo data only). */
+type Provider = { id: string; name: string; category: string; price: number; etaHours: number; expiresAt: number };
+const PROVIDERS = [
+  { name: 'Swift Logistics', category: 'Standard Delivery', rate: 9, base: 120, etaHours: 4 },
+  { name: 'CityLink Movers', category: 'Express Delivery', rate: 12, base: 160, etaHours: 2 },
+  { name: 'QuickHaul Freight', category: 'Standard Delivery', rate: 8, base: 140, etaHours: 6 },
+];
+const SEARCH_STEPS = ['Creating route plan...', 'Searching for available vehicles...', 'Waiting for provider responses...', 'Loading available providers...'];
+const SEARCH_EXPIRY_MS = 5 * 60 * 1000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const left = (ms: number) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+
+/** Order view — same layout as the LBNP Order Details screen: header with back button, tabs, info sections, and
+ *  (Ready for Planning orders) Search Vehicles with the vehicle search sidebar. */
 export function OrderDetailsPage() {
   const { id = '' } = useParams();
   const { sc } = useCdsSession();
@@ -200,6 +208,18 @@ export function OrderDetailsPage() {
   const { busy, run } = useAction();
   const [tab, setTab] = useState<'summary' | 'products'>('summary');
   const { data, error, loading, reload } = useLoad(() => cdsApi.order(id), [id]);
+  const [searching, setSearching] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [searchError, setSearchError] = useState('');
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selected, setSelected] = useState<Provider | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!providers.length) return;
+    const tm = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tm);
+  }, [providers.length]);
   if (error) return <div className="cds-page"><ErrorBox text={error} onRetry={reload} /></div>;
   if (!data) return <div className="order-details-page order-details-container"><DataLoading message="Loading order details..." showTip overlay={false} /></div>;
   const o = data.order;
@@ -229,14 +249,43 @@ export function OrderDetailsPage() {
     });
     if (res.isConfirmed && (await run(() => cdsApi.initiateReturn({ orderId: o.id, lines: res.value }), 'Return initiated'))) reload();
   };
+  const loadKg = sumOf(o.lines, (l) => Math.max(0, l.acceptedQty - l.deliveredQty) * l.unitWeightKg);
+  const searchVehicles = async () => {
+    setSearchError('');
+    setSelected(null);
+    setSearching(true);
+    for (const step of SEARCH_STEPS) {
+      setProgress(step);
+      await sleep(700);
+    }
+    const expiresAt = Date.now() + SEARCH_EXPIRY_MS;
+    setProviders(PROVIDERS.map((p, i) => ({ id: `prv-${i + 1}`, name: p.name, category: p.category, price: Math.round(p.base + p.rate * Math.max(1, loadKg)), etaHours: p.etaHours, expiresAt })));
+    setSearching(false);
+    setProgress('');
+  };
+  const cancelSearch = () => { setProviders([]); setSelected(null); setSearchError(''); };
+  const confirmBooking = async () => {
+    if (!selected) return;
+    setConfirming(true);
+    try {
+      await cdsApi.bookOrder(o.id, { provider: selected.name, price: selected.price });
+      await Swal.fire({ icon: 'success', title: 'Booking Confirmed', text: `Delivery booked with ${selected.name}`, showConfirmButton: false, timer: 1500 });
+      navigate('/cds/trips?tab=RETAILER_DELIVERY');
+    } catch (e) {
+      void Swal.fire({ icon: 'error', title: 'Booking Failed', text: e instanceof Error ? e.message : 'Failed to confirm booking. Please try again.', confirmButtonColor: '#1e3a8a' });
+    } finally {
+      setConfirming(false);
+    }
+  };
+  const live = providers.filter((p) => p.expiresAt > now);
+  const showSidebar = searching || !!searchError || providers.length > 0;
   const tripLink = (type: TripType) => {
     const t = data.trips.find((x) => x.type === type);
     return t ? <a href={`#/cds/trips/${t.id}`} onClick={(e) => { e.preventDefault(); navigate(`/cds/trips/${t.id}`); }}>{t.tripNo}</a> : 'N/A';
   };
-  const pickup = data.trips.find((x) => x.type === 'DISTRIBUTOR_PICKUP');
-  const delivery = data.trips.find((x) => x.type === 'RETAILER_DELIVERY');
+  // LBNP Delivery Information: the retailer delivery trip (before it, the pickup trip).
+  const trip = data.trips.find((x) => x.type === 'RETAILER_DELIVERY' && x.status !== 'CANCELLED') ?? data.trips.find((x) => x.type === 'DISTRIBUTOR_PICKUP' && x.status !== 'CANCELLED');
   const total = sumOf(o.lines, (l) => l.qty * l.unitPrice);
-  const linked = data.returns.length > 0 || data.collections.length > 0 || !!data.grn;
   const section = (icon: string, title: string, rows: [string, string, ReactNode][]) => (
     <div className="details-section">
       <h3><i className={`fas ${icon}`} /> {title}</h3>
@@ -258,6 +307,11 @@ export function OrderDetailsPage() {
           </div>
         </div>
         <div className="header-actions">
+          {!sc && o.status === 'READY_FOR_DELIVERY' && providers.length === 0 && !searching && (
+            <button className="btn btn-primary d-flex align-items-center text-nowrap gap-2" onClick={() => void searchVehicles()}>
+              <i className="fas fa-search" /><span className="fs-6">Search Vehicles</span>
+            </button>
+          )}
           {sc && o.status === 'CONFIRMED' && <button className="btn btn-outline-danger d-flex align-items-center text-nowrap gap-2" disabled={busy} onClick={() => void cancel()}><i className="fas fa-times" /><span className="fs-6">Cancel Order</span></button>}
           {!sc && ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status) && returnable.length > 0 && <button className="btn btn-primary d-flex align-items-center text-nowrap gap-2" disabled={busy} onClick={() => void initiate()}><i className="fas fa-rotate-left" /><span className="fs-6">Initiate Return</span></button>}
         </div>
@@ -265,7 +319,7 @@ export function OrderDetailsPage() {
 
       {o.note && <div className="cds-note warn"><i className="fas fa-circle-exclamation mt-1" />{o.note}</div>}
 
-      <div className="main-layout">
+      <div className={`main-layout${showSidebar ? ' with-sidebar' : ''}`}>
         <div className="content-container">
           <div className="tabs-container">
             <div className={`tab${tab === 'summary' ? ' active' : ''}`} onClick={() => setTab('summary')}><i className="fas fa-info-circle" /> Order Summary</div>
@@ -281,27 +335,22 @@ export function OrderDetailsPage() {
                   ['fa-map-marker-alt', 'Address', data.retailer?.address],
                 ])}
                 {section('fa-calendar-day', 'Delivery Information', [
-                  ['fa-calendar-day', 'Delivery Date', o.deliveredAt ? fmtDate(o.deliveredAt) : delivery ? fmtDate(delivery.plannedDate) : ''],
-                  ['fa-warehouse', 'CDS Store', data.store.name],
-                  ['fa-truck', 'Pickup Trip', pickup ? tripLink('DISTRIBUTOR_PICKUP') : ''],
-                  ['fa-truck-fast', 'Delivery Trip', delivery ? tripLink('RETAILER_DELIVERY') : ''],
+                  ['fa-calendar-day', 'Delivery Date', o.deliveredAt ? fmtDate(o.deliveredAt) : trip ? fmtDate(trip.plannedDate) : ''],
+                  ['fa-user-tie', 'Delivery Executive', trip?.deliveryPersonName],
+                  ['fa-clock', 'Delivery Schedule', trip ? `${trip.etaMinutes} mins` : ''],
+                  ['fa-clock', 'Trip Number', trip ? tripLink(trip.type) : ''],
                 ])}
                 {section('fa-clipboard-list', 'Order Information', [
                   ['fa-hashtag', 'Order Number', o.orderNo],
-                  ['fa-receipt', 'Seller Order', o.sellerOrderRef],
                   ['fa-info-circle', 'Order Status', <Badge key="s" meta={ORDER_STATUS[o.status]} />],
-                  ['fa-money-bill-wave', 'Total Amount', `${money(o.orderValue)} · ${o.paymentMode}`],
+                  ['fa-money-bill-wave', 'Total Amount', money(o.orderValue)],
                 ])}
                 {section('fa-industry', 'Seller Information', [
                   ['fa-industry', 'Distributor', data.distributor.name],
                   ['fa-map-marker-alt', 'Pickup Address', data.distributor.address],
                   ['fa-user-tie', 'Sales Person', data.salesPerson.salesPersonName],
                   ['fa-phone', 'Mobile Number', data.salesPerson.salesPersonPhone],
-                ])}
-                {linked && section('fa-link', 'Linked Records', [
-                  ['fa-clipboard-check', 'GRN', data.grn ? `${data.grn.grnNo} · ${data.grn.status === 'PENDING' ? 'Pending' : 'Generated'}` : ''],
-                  ['fa-rotate-left', 'Returns', data.returns.map((r) => r.returnNo).join(', ')],
-                  ['fa-indian-rupee-sign', 'Collections', data.collections.map((c) => `${money(c.amount)} ${c.mode}`).join(', ')],
+                  ['fa-warehouse', 'CDS Store', data.store.name],
                 ])}
               </div>
             </div>
@@ -348,6 +397,60 @@ export function OrderDetailsPage() {
           )}
 
         </div>
+
+        {showSidebar && (
+          <div className="vehicle-search-sidebar">
+            {searching && (
+              <div className="vehicle-search-section">
+                <h3><i className="fas fa-truck" /> Searching Vehicles</h3>
+                <div className="searching-state">
+                  <div className="spinner-border text-primary" role="status" />
+                  <p className="progress-text">{progress}</p>
+                </div>
+              </div>
+            )}
+            {!searching && searchError && (
+              <div className="vehicle-search-section">
+                <h3><i className="fas fa-truck" /> Vehicle Search</h3>
+                <div className="error-state"><i className="fas fa-exclamation-circle" /><p>{searchError}</p></div>
+              </div>
+            )}
+            {!searching && providers.length > 0 && (
+              <div className="vehicle-search-section">
+                <h3><i className="fas fa-truck" /> Available Vehicles</h3>
+                <div className="providers-list">
+                  {live.map((p) => (
+                    <div key={p.id} className={`provider-card${selected?.id === p.id ? ' selected' : ''}`} role="button" onClick={() => setSelected(p)}>
+                      <div className="provider-header">
+                        <span className="provider-name">{p.name}</span>
+                        <span className="provider-expire-time"><i className="fas fa-clock" /> {left(p.expiresAt - now)}</span>
+                      </div>
+                      <div className="provider-details">
+                        <div className="detail-row"><span className="detail-label">Category</span><span className="detail-value">{p.category}</span></div>
+                        <div className="detail-row"><span className="detail-label">Price</span><span className="detail-value price">{money(p.price)}</span></div>
+                        <div className="detail-row"><span className="detail-label">Est. Delivery</span><span className="detail-value eta">{p.etaHours} hrs</span></div>
+                      </div>
+                      {selected?.id === p.id && <div className="select-indicator"><i className="fas fa-check-circle" /> Selected </div>}
+                    </div>
+                  ))}
+                  {live.length === 0 && <div className="error-state"><i className="fas fa-exclamation-circle" /><p>The quotes have expired. Please search again.</p></div>}
+                </div>
+              </div>
+            )}
+            {!searching && (
+              <div className="confirm-actions">
+                {selected ? (
+                  <button className="btn btn-success d-flex align-items-center gap-2 w-100 justify-content-center" disabled={confirming} onClick={() => void confirmBooking()}>
+                    {confirming ? <span className="spinner-border spinner-border-sm" /> : <i className="fas fa-check" />}
+                    {confirming ? 'Confirming...' : 'Confirm Booking'}
+                  </button>
+                ) : (
+                  <button className="btn btn-outline-secondary d-flex align-items-center gap-2 w-100 justify-content-center" disabled={confirming} onClick={cancelSearch}> Cancel Search </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

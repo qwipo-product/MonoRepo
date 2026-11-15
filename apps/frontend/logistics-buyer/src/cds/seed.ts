@@ -303,6 +303,14 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   // planning for today, done yesterday evening (next-day rule)
   t = at(-1, 18);
   const todayTrips = STORES.map((st) => deliveryPlan(st, day(0), ready(st).slice(0, 2), initiate(st, 1))); // the rest stay Ready for Delivery
+  // a retailer gives back a whole delivered order; it is collected today and handed over at the CDS (order Returned)
+  const fullReturnTrips = STORES.map((st) => {
+    const o = s.orders.find((x) => x.cdsStoreId === st && x.status === 'DELIVERED' && x.lines.every((l) => e.returnableQty(x, l.sku) === l.deliveredQty && l.deliveredQty > 0) && !s.returns.some((r) => r.orderId === x.id));
+    if (!o) return null;
+    tick(15);
+    const r = e.initiateReturn({ orderId: o.id, lines: o.lines.map((l) => ({ sku: l.sku, qty: l.deliveredQty, reason: 'Excess quantity', condition: 'GOOD' as const })) }, USER[st]);
+    return deliveryPlan(st, day(0), [], [r.id]);
+  });
   const rp2 = received().length ? returnPlan(received().slice(0, 3), day(0)) : null;
 
   // ---------------------------------------------------------------- today: live trips and planning queues
@@ -315,6 +323,12 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
     e.startTrip(rp2.id, DP);
     stop(rp2.id, 0); // returns loaded at the first CDS
   }
+  fullReturnTrips.forEach((tr) => {
+    if (!tr) return;
+    const tt = e.trip(tr.id);
+    e.startTrip(tt.id, DP);
+    tt.stops.forEach((x, i) => { if (e.trip(tt.id).stops[i].status === 'PENDING') stop(tt.id, i, x.action === 'RETURN_HANDOVER_CDS' ? { lines: x.lines.map((l, j) => ({ idx: j, actualQty: l.plannedQty, acceptedQty: l.plannedQty, rejectedQty: 0 })) } : {}); });
+  });
   const fresh = ['dst-02', 'dst-03', 'dst-04', 'dst-05'].flatMap((d) => STORES.map((st) => place(d, st)));
   // today's pickup is running: first seller collected
   const p4 = pickupPlan(fresh.filter((o) => ['dst-02', 'dst-03'].includes(o.distributorId)).slice(0, 4).map((o) => o.id), day(0));
@@ -334,9 +348,40 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   // planned today for tomorrow: a pickup plan and a return plan, assigned and not started yet (the other waiting
   // orders and returns stay for live planning)
   t = Math.max(t, at(0, 9));
-  const next = ['dst-01', 'dst-06'].flatMap((d) => ['cds-kkp', 'cds-dsn'].map((st) => place(d, st)));
+  const next = ['dst-01', 'dst-06'].flatMap((d) => STORES.map((st) => place(d, st)));
   pickupPlan(next.map((o) => o.id), day(1));
   const waitingReturns = received();
   if (waitingReturns.length > 1) returnPlan(waitingReturns.slice(0, 1), day(1));
+
+  // ---------------------------------------------------------------- every order status at every CDS store (demo)
+  // Picked Up: today's pickup has collected from the first seller and is on its way to the second seller.
+  t = Math.max(t, at(0, 9) + 30 * 60000);
+  const collecting = ['dst-04', 'dst-06'].flatMap((d) => STORES.map((st) => place(d, st)));
+  const pc = pickupPlan(collecting.map((o) => o.id), day(0));
+  e.startTrip(pc.pickupTrip.id, DP);
+  stop(pc.pickupTrip.id, 0);
+  // GRN Completed / Ready for Planning / Delivery Planned: an early pickup reaches every CDS store; at GRN one order is
+  // fully damaged (GRN Completed, nothing to deliver), one is planned for tomorrow, one stays Ready for Planning.
+  const early = ['dst-02', 'dst-03', 'dst-05'].flatMap((d) => STORES.map((st) => place(d, st)));
+  const pe = pickupPlan(early.map((o) => o.id), day(0));
+  runPickup(pe.pickupTrip.id);
+  s.grns.filter((g) => g.status === 'PENDING' && g.cdsTripId === pe.pickupTrip.id).forEach((g) => {
+    tick(10);
+    const allDamaged = g.distributorId === 'dst-02';
+    e.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: allDamaged ? 0 : l.receivedQty, damagedQty: allDamaged ? l.receivedQty : 0, remarks: allDamaged ? 'Whole consignment wet and damaged' : l.shortQty ? 'Short received from vehicle' : l.excessQty ? 'Extra unit received' : '' })) }, USER[g.cdsStoreId]);
+  });
+  STORES.forEach((st) => {
+    const o = early.find((x) => x.cdsStoreId === st && x.distributorId === 'dst-03' && e.order(x.id).status === 'READY_FOR_DELIVERY');
+    if (o) deliveryPlan(st, day(1), [o.id]);
+  });
+  // Planned: a pickup for later today, assigned and not started yet, dropping at every CDS store (GRN tab)
+  const later = ['dst-03', 'dst-05'].flatMap((d) => STORES.map((st) => place(d, st)));
+  pickupPlan(later.map((o) => o.id), day(0));
+  // Cancelled: the Service Centre cancels a confirmed order at every store
+  STORES.forEach((st) => {
+    const o = place('dst-06', st);
+    tick(5);
+    e.cancelOrder(o.id, 'Retailer cancelled the order before pickup', SC);
+  });
   return s;
 }

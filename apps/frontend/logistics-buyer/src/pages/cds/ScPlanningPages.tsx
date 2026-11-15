@@ -17,13 +17,13 @@ import { SC_HUB } from '../../cds/engine';
 import { routeMetrics, sequenceStops } from '../../cds/planning';
 import { DEFAULT_ROUTE_CONFIG, type Plan, type RouteConfig } from '../../cds/types';
 import { RouteMap } from './RouteMap';
-import { AssignFields, Badge, ModuleIntro, downloadCsv, Empty, ErrorBox, fmtDate, fmtDateTime, kg, Loading, money, SectionCard, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
+import { AssignFields, Badge, downloadCsv, Empty, ErrorBox, fmtDate, fmtDateTime, kg, Loading, money, SectionCard, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
 import '../delivery-routes/DeliveryRoutesPage.css';
 import '../delivery-routes/CreateDeliveryRoutePage.css';
 import '../delivery-routes/OptimizedRoutesModal.css';
 
 /** "Sunflower Oil 1 L × 4, +2 more" — the first product and how many more. */
-const products = <L extends { name: string }>(lines: L[], qty: (l: L) => number) => {
+export const products = <L extends { name: string }>(lines: L[], qty: (l: L) => number) => {
   const shown = lines.filter((l) => qty(l) > 0);
   if (!shown.length) return '—';
   return `${shown[0].name} × ${qty(shown[0])}${shown.length > 1 ? `, +${shown.length - 1} more` : ''}`;
@@ -49,7 +49,7 @@ export function PlanningPage() {
         <div className="col-md-6">
           <div className="d-flex align-items-center">
             <i className="fas fa-shopping-bag text-primary me-2 fs-5" />
-            <h1 className="fs-3 mb-0 fw-bold">Planning</h1><ModuleIntro text="Plan pickups from sellers and returns to sellers. Each plan becomes a trip in Trips." />
+            <h1 className="fs-3 mb-0 fw-bold">Planning</h1>
           </div>
           <p className="text-muted small">Manage and track your pickup and return routes</p>
         </div>
@@ -104,7 +104,7 @@ export function PlanningPage() {
 }
 
 /** LBNP Delivery Planning table header cell (icon + upper-case label). */
-const Th = ({ icon, label, align = 'left' }: { icon: string; label: string; align?: 'left' | 'center' | 'right' }) => (
+export const Th = ({ icon, label, align = 'left' }: { icon: string; label: string; align?: 'left' | 'center' | 'right' }) => (
   <th className={`mat-mdc-header-cell text-uppercase py-2 small ${align === 'center' ? 'px-2 text-center' : 'px-3'} ${align === 'right' ? 'text-end' : ''}`}><i className={`fas ${icon} me-1 text-primary`} /> {label}</th>
 );
 
@@ -139,7 +139,7 @@ export function RecentPlans({ kind, title }: { kind: Plan['kind']; title: string
 
 // ---------------------------------------------------------------- Pickup Planning (like Delivery Planning)
 
-const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
+export const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
 
 type Place = { id: string; name: string; address: string; lat: number; lng: number };
 /** The pickup route the plan creates (same rules as the engine): one trip from the Service Centre hub to the
@@ -181,12 +181,12 @@ function RouteLimitNote({ warnings, kind }: { warnings: string[]; kind: 'pickup'
 }
 
 type SortKey = 'confirmedAt' | 'retailerName' | 'city' | 'distributorName' | 'orderNo' | 'storeName' | 'orderValue' | 'weightKg';
-const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+export const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const ORD = (n: number) => (n % 100 >= 11 && n % 100 <= 13 ? 'th' : n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th');
 /** "November 15th, 2026" — the LBNP date field text. */
-const longDate = (d: Date) => `${d.toLocaleDateString('en-US', { month: 'long' })} ${d.getDate()}${ORD(d.getDate())}, ${d.getFullYear()}`;
-const dmy = (iso: string) => { const d = new Date(iso); return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`; };
+export const longDate = (d: Date) => `${d.toLocaleDateString('en-US', { month: 'long' })} ${d.getDate()}${ORD(d.getDate())}, ${d.getFullYear()}`;
+export const dmy = (iso: string) => { const d = new Date(iso); return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`; };
 
 /** Create Manual Pickup Plan — same layout as LBNP Create Delivery Route: Pickup Date, State / City / Distributor, Order
  *  Dates, Available Orders, then "Plan Pickup Route" opens the Auto Pickup Route (like Optimized Delivery Routes). */

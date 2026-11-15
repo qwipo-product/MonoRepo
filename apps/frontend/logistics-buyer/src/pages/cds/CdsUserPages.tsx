@@ -1,427 +1,561 @@
-// CDS User modules: GRN, Delivery Planning, Collections & Payments, Returns, Retailers. Every call is limited to the
-// user's own CDS store (checked again by the API).
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+// CDS User modules, built like the LBNP screens: GRN (opened from Trips › GRN), Delivery Planning and Create Delivery
+// Route, and Customers. Every call is limited to the user's own CDS store (checked again by the API).
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
-import { cdsApi, type CollectionRow, type MyOtp, type OrderRow, type ReturnRow } from '../../api/services/cds.service';
-import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
-import type { CollectionStatus, ReturnStatus, TripType } from '../../cds/types';
-import { RecentPlans } from './ScPlanningPages';
-import { AssignFields, askText, Badge, Card, confirm, DateSlot, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, KpiStrip, kg, Loading, money, PageHead, Pager, RowActions, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
+import dayjs, { type Dayjs } from 'dayjs';
+import Popover from '@mui/material/Popover';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import { cdsApi, type OrderRow, type ReturnRow } from '../../api/services/cds.service';
+import { ORDER_STATUS, TRIP_TYPE } from '../../cds/status';
+import { routeMetrics, sequenceStops } from '../../cds/planning';
+import DataLoading from '../../components/DataLoading';
+import Paginator from '../../components/Paginator';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
+import { DEFAULT_PAGE_SIZE_OPTIONS } from '../../hooks/usePagePermissions';
+import type { CustomerLocationUpdate, CustomerMasterRow } from '../../api/services/customerMaster.service';
+import UpdateLocationDialog from '../customer-master/UpdateLocationDialog';
+import { RouteMap } from './RouteMap';
+import { dayKey, dmy, longDate, products, startOfDay, Th, ymd } from './ScPlanningPages';
+import { Badge, downloadCsv, ErrorBox, kg, money, sumOf, useAction, useCdsSession, useLoad, useMeta } from './ui';
+import '../delivery-routes/DeliveryRoutesPage.css';
+import '../delivery-routes/CreateDeliveryRoutePage.css';
+import '../delivery-routes/OptimizedRoutesModal.css';
+import '../trips/TripDetailsPage.css';
+import '../customer-master/CustomerMasterPage.css';
 
-/** OTPs sent to this CDS — the CDS User reads them out to the delivery person at the handover. */
-function MyOtps({ purposes, title }: { purposes: string[]; title: string }) {
-  const { data, reload } = useLoad(() => cdsApi.myOtps(), []);
-  useEffect(() => {
-    const t = window.setInterval(reload, 15000);
-    return () => window.clearInterval(t);
-  }, [reload]);
-  const list = (data ?? []).filter((o: MyOtp) => purposes.includes(o.purpose));
-  if (!list.length) return null;
-  return (
-    <Card title={<><i className="fas fa-key text-warning me-2" />{title}</>} extra={<small>Share only with the delivery person at the handover</small>}>
-      <Table head={['Trip', 'Checkpoint', 'Delivery person', 'Vehicle', 'OTP', 'Valid until']}>
-        {list.map((o) => (
-          <tr key={o.id} className="mat-mdc-row">
-            <td className="fw-semibold">{o.tripNo}</td><td className="small">{o.label}</td><td className="small">{o.deliveryPersonName}</td><td className="small">{o.vehicleRegNo}</td>
-            <td><span className="fs-5 fw-bold font-monospace text-primary">{o.code}</span></td><td className="small">{fmtDateTime(o.expiresAt)}</td>
-          </tr>
-        ))}
-      </Table>
-    </Card>
-  );
-}
+// ---------------------------------------------------------------- Delivery Planning (LBNP Delivery Planning)
 
-/** Service Centre trips arriving at / collecting from this store. */
-function Incoming({ type, title }: { type: TripType; title: string }) {
-  const navigate = useNavigate();
-  const { data } = useLoad(() => cdsApi.incoming(type), [type]);
-  const active = (data ?? []).filter((x) => x.stopStatus === 'PENDING' && !['CANCELLED'].includes(x.status));
-  return (
-    <Card title={<><i className={`fas ${TRIP_TYPE[type].icon} text-primary me-2`} />{title} <small className="ms-2">{TRIP_TYPE[type].label} · {TRIP_TYPE[type].direction}</small></>}>
-      <Table head={['Trip', 'Planned', 'Delivery person', 'Vehicle', type === 'CDS_DELIVERY' ? 'Orders' : 'Returns', 'Units', 'Trip status']} empty={!active.length && <Empty icon="fa-check" text="Nothing on the way right now" />}>
-        {active.map((x) => (
-          <tr key={x.tripId} className="mat-mdc-row" role="link" style={{ cursor: 'pointer' }} onClick={() => navigate(`/cds/trips/${x.tripId}`)}>
-            <td className="fw-semibold text-primary">{x.tripNo}</td><td className="small">{fmtDate(x.plannedDate)}</td>
-            <td className="small">{x.deliveryPersonName}<div className="text-muted text-xs">{x.deliveryPersonPhone}</div></td><td className="small">{x.vehicleRegNo}</td>
-            <td>{type === 'CDS_DELIVERY' ? x.orders : x.returns}</td><td>{x.units}</td><td><Badge meta={TRIP_STATUS[x.status]} /></td>
-          </tr>
-        ))}
-      </Table>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------- GRN
-
-export function GrnPage() {
-  const navigate = useNavigate();
-  const meta = useMeta();
-  const [tab, setTab] = useState<'PENDING' | 'COMPLETED'>('PENDING');
-  const [distributorId, setDist] = useState('');
-  const [search, setSearch] = useState('');
-  const [pageNumber, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15);
-  const pending = useLoad(() => cdsApi.searchGrns({ status: 'PENDING', pageSize: 1 }), []);
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchGrns({ status: tab, distributorId, search, pageNumber, pageSize }), [tab, distributorId, search, pageNumber, pageSize]);
-  return (
-    <div className="cds-page">
-      <PageHead info="Check the goods received at your CDS store, one GRN per distributor." icon="fa-clipboard-check" title="GRN (Goods Received Note)" subtitle="Verify the orders handed over at your CDS, distributor-wise." />
-
-      <KpiStrip />
-      <MyOtps purposes={['CDS_HANDOVER']} title="Handover OTPs for your CDS" />
-      <Incoming type="CDS_DELIVERY" title="Incoming CDS deliveries" />
-      <Tabs value={tab} onChange={(v) => { setTab(v); setPage(1); }} tabs={[{ id: 'PENDING', label: 'Pending verification', icon: 'fa-hourglass-half', count: pending.data?.total }, { id: 'COMPLETED', label: 'GRN history', icon: 'fa-list' }]} />
-      <FilterBar
-        title="GRN Filters"
-        search={search}
-        onSearch={(v) => { setSearch(v); setPage(1); }}
-        placeholder="Search GRN, distributor, trip, order…"
-        fields={[{ key: 'distributorId', label: 'Distributor', type: 'select', allLabel: 'All', options: (meta.data?.distributors ?? []).map((d) => ({ value: d.id, label: d.name })) }]}
-        values={{ distributorId }}
-        onApply={(v) => { setDist(v.distributorId); setPage(1); }}
-      />
-      <Card>
-        {error && <ErrorBox text={error} onRetry={reload} />}
-        {loading && !data ? <Loading /> : (
-          <>
-            <Table head={['GRN', 'Distributor', 'CDS delivery trip', 'Pickup trip', 'Orders', 'Dispatched', 'Received', 'Status', tab === 'PENDING' ? 'Handed over' : 'Generated', 'Actions']}
-              empty={!data?.rows.length && <Empty icon={tab === 'PENDING' ? 'fa-check-double' : 'fa-inbox'} text={tab === 'PENDING' ? 'Nothing waiting for verification' : 'No GRNs yet'} />}>
-              {data?.rows.map((g) => (
-                <tr key={g.id} className={`mat-mdc-row${g.issues ? ' warn' : ''}`}>
-                  <td className="fw-semibold">{g.grnNo}</td><td className="small">{g.distributorName}</td>
-                  <td className="small">{g.cdsTripNo}</td><td className="small">{g.pickupTripNos.join(', ')}</td><td>{g.orderIds.length}</td><td>{g.dispatched}</td>
-                  <td className={g.received < g.dispatched ? 'text-danger fw-bold' : ''}>{g.received}</td>
-                  <td><Badge meta={GRN_STATUS[g.status]} /></td>
-                  <td className="small">{fmtDateTime(tab === 'PENDING' ? g.createdAt : g.completedAt)}</td>
-                  <td>
-                    <div className="d-inline-flex align-items-center gap-1">
-                      <RowActions onView={() => navigate(`/cds/grn/${g.id}`)} />
-                      {g.status === 'PENDING' && <button className="btn btn-sm btn-success text-nowrap" onClick={() => navigate(`/cds/grn/${g.id}`)}>Verify</button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </Table>
-            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
-          </>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-export function GrnDetailsPage() {
-  const { id = '' } = useParams();
-  const navigate = useNavigate();
-  const { busy, run } = useAction();
-  const { data, error, loading, reload } = useLoad(() => cdsApi.grn(id), [id]);
-  const [lines, setLines] = useState<{ accepted: number; damaged: number; remarks: string }[]>([]);
-  const [remarks, setRemarks] = useState('');
-  useEffect(() => {
-    if (data) setLines(data.grn.lines.map((l) => ({ accepted: l.acceptedQty ?? l.receivedQty, damaged: l.damagedQty ?? 0, remarks: l.remarks })));
-  }, [data]);
-  if (error) return <div className="cds-page"><ErrorBox text={error} onRetry={reload} /></div>;
-  if (loading && !data) return <div className="cds-page"><Loading /></div>;
-  if (!data) return null;
-  const g = data.grn;
-  const editable = g.status === 'PENDING';
-  const set = (i: number, p: Partial<(typeof lines)[number]>) => setLines((ls) => ls.map((x, j) => {
-    if (j !== i) return x;
-    const n = { ...x, ...p };
-    if (p.damaged !== undefined) n.accepted = Math.max(0, g.lines[i].receivedQty - p.damaged);
-    return n;
-  }));
-  const bad = lines.some((x, i) => x.accepted + x.damaged !== g.lines[i].receivedQty || x.accepted < 0 || x.damaged < 0);
-  const generate = async () => {
-    if (!(await confirm(`Generate ${g.grnNo}?`, 'Accepted quantities become deliverable; damaged items go back to the distributor through Return Planning.', 'Generate GRN'))) return;
-    if (await run(() => cdsApi.completeGrn(g.id, { lines: lines.map((x, i) => ({ idx: i, acceptedQty: x.accepted, damagedQty: x.damaged, remarks: x.remarks })), remarks }), 'GRN generated — orders ready for delivery')) reload();
-  };
-  return (
-    <div className="cds-page">
-      <PageHead icon="fa-clipboard-check" title={g.grnNo} crumb={{ label: 'GRN', to: '/cds/grn' }} subtitle={<>{data.distributor.name} → {data.store.name} · <Badge meta={GRN_STATUS[g.status]} /></>}>
-        {editable && <button className="btn btn-sm btn-primary" disabled={busy || bad} onClick={() => void generate()}><i className="fas fa-check me-1" />Generate GRN</button>}
-      </PageHead>
-      <div className="cds-note mb-3"><i className="fas fa-link mt-1" /><div>
-        CDS delivery trip <a role="button" className="text-primary" onClick={() => navigate(`/cds/trips/${data.cdsTrip.id}`)}>{data.cdsTrip.tripNo}</a> ({data.cdsTrip.deliveryPersonName}, {data.cdsTrip.vehicleRegNo}) · from pickup trip(s) {data.pickupTrips.map((t) => t.tripNo).join(', ')} · {data.orders.length} order(s)
-      </div></div>
-      <Card title={<><i className="fas fa-boxes-stacked text-primary me-2" />Verify received goods</>} extra={<small>Shortages and excess are taken from the OTP-verified handover count</small>}>
-        <Table head={['Order', 'Item', 'Dispatched', 'Received', 'Short', 'Excess', 'Accepted', 'Damaged', 'Remarks']}>
-          {g.lines.map((l, i) => {
-            const x = lines[i] ?? { accepted: 0, damaged: 0, remarks: '' };
-            const needRemark = !!(l.shortQty || l.excessQty || x.damaged);
-            return (
-              <tr key={i} className={`mat-mdc-row${l.shortQty || l.excessQty ? ' warn' : ''}`}>
-                <td className="small fw-semibold">{l.orderNo}</td><td className="small">{l.name}</td><td>{l.dispatchedQty}</td><td className="fw-semibold">{l.receivedQty}</td>
-                <td className={l.shortQty ? 'text-danger fw-bold' : ''}>{l.shortQty}</td><td className={l.excessQty ? 'text-warning fw-bold' : ''}>{l.excessQty}</td>
-                <td>{editable ? <input type="number" min={0} className={`form-control form-control-sm cds-qty${x.accepted + x.damaged !== l.receivedQty ? ' is-invalid' : ''}`} aria-label={`Accepted ${l.name}`} value={x.accepted} onChange={(e) => set(i, { accepted: Math.floor(Number(e.target.value)) })} /> : l.acceptedQty}</td>
-                <td>{editable ? <input type="number" min={0} className="form-control form-control-sm cds-qty" aria-label={`Damaged ${l.name}`} value={x.damaged} onChange={(e) => set(i, { damaged: Math.floor(Number(e.target.value)) })} /> : l.damagedQty}</td>
-                <td style={{ minWidth: 200 }}>{editable ? <input className={`form-control form-control-sm${needRemark && !x.remarks.trim() ? ' is-invalid' : ''}`} placeholder={needRemark ? 'Remark required' : 'Remarks'} aria-label={`Remarks ${l.name}`} value={x.remarks} onChange={(e) => set(i, { remarks: e.target.value })} /> : l.remarks || '—'}</td>
-              </tr>
-            );
-          })}
-        </Table>
-        <div className="p-3">
-          <label className="form-label small fw-medium mb-1">GRN remarks</label>
-          <textarea className="form-control form-control-sm" rows={2} disabled={!editable} value={editable ? remarks : g.remarks} onChange={(e) => setRemarks(e.target.value)} />
-          {bad && editable && <div className="text-danger small mt-1">Accepted + damaged must equal the received quantity on every line.</div>}
-        </div>
-      </Card>
-      <Card title={<><i className="fas fa-box text-primary me-2" />Orders in this GRN</>}>
-        <Table head={['Order', 'Retailer', 'Status']}>
-          {data.orders.map((o) => <tr key={o.id} className="mat-mdc-row"><td><a role="button" className="text-primary fw-semibold" onClick={() => navigate(`/cds/orders/${o.id}`)}>{o.orderNo}</a></td><td className="small">{o.retailerName}</td><td><Badge meta={ORDER_STATUS[o.status]} /></td></tr>)}
-        </Table>
-      </Card>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------- Delivery Planning (next day)
-
+/** Delivery Planning — same screen as LBNP Delivery Planning. Created routes become trips in Trips › Deliveries. */
 export function DeliveryPlanningPage() {
   const navigate = useNavigate();
-  const meta = useMeta();
-  const { busy, run } = useAction();
-  const [selO, setSelO] = useState<Set<string>>(new Set());
-  const [selR, setSelR] = useState<Set<string>>(new Set());
-  const [date, setDate] = useState('');
-  const [slot, setSlot] = useState('09:00 – 13:00');
-  const [a, setA] = useState<Assign>({ vehicleId: '', deliveryPersonId: '' });
-  const day = date || meta.data?.tomorrow || '';
-  const orders = useLoad(() => cdsApi.searchOrders({ statuses: ['READY_FOR_DELIVERY'], pageSize: 0 }), []);
-  const rets = useLoad(() => cdsApi.searchReturns({ statuses: ['RETURN_INITIATED'], unplanned: true, pageSize: 0 }), []);
-  const byRetailer = useMemo(() => {
-    const m = new Map<string, { name: string; locality: string; orders: OrderRow[]; returns: ReturnRow[] }>();
-    (orders.data?.rows ?? []).forEach((o) => { const g = m.get(o.retailerId) ?? { name: o.retailerName, locality: o.locality, orders: [], returns: [] }; g.orders.push(o); m.set(o.retailerId, g); });
-    (rets.data?.rows ?? []).forEach((r) => { const g = m.get(r.retailerId!) ?? { name: r.retailerName, locality: '', orders: [], returns: [] }; g.returns.push(r); m.set(r.retailerId!, g); });
-    return Array.from(m.entries());
-  }, [orders.data, rets.data]);
-  const chosenO = (orders.data?.rows ?? []).filter((o) => selO.has(o.id));
-  const chosenR = (rets.data?.rows ?? []).filter((r) => selR.has(r.id));
-  const loadKg = sumOf(chosenO, (o) => sumOf(o.lines, (l) => (l.acceptedQty - l.deliveredQty) * l.unitWeightKg));
-  const stops = new Set([...chosenO.map((o) => o.retailerId), ...chosenR.map((r) => r.retailerId)]).size;
-  const tog = (set: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) => set((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const submit = async () => {
-    const r = await run(() => cdsApi.createDeliveryPlan({ orderIds: chosenO.map((o) => o.id), returnIds: chosenR.map((x) => x.id), plannedDate: day, slot, ...a }), 'Delivery plan created — retailer trip generated');
-    if (r) navigate(`/cds/trips/${r.trip.id}`);
-  };
   return (
-    <div className="cds-page">
-      <PageHead info="Plan next-day deliveries from your CDS store to retailers." icon="fa-truck" title="Delivery Planning" subtitle="Next-day retailer delivery plans. Group ready orders (and returns to collect) by retailer, assign a delivery person and vehicle — the trip appears in Trips." />
-
-      <div className="cds-grid-2">
-        <Card title={<><i className="fas fa-store text-primary me-2" />Ready for delivery · retailer-wise</>} extra={<small>{(orders.data?.rows ?? []).length} order(s) · {(rets.data?.rows ?? []).length} return(s) to collect</small>}>
-          {(orders.error || rets.error) && <ErrorBox text={orders.error || rets.error} onRetry={() => { orders.reload(); rets.reload(); }} />}
-          {orders.loading && !orders.data ? <Loading /> : (
-            <Table head={['', 'Order / return', 'Items', 'Value', 'Weight', 'Status']} empty={!byRetailer.length && <Empty icon="fa-check" text="Nothing waiting — orders become ready after GRN" />}>
-              {byRetailer.flatMap(([rid, g]) => [
-                <tr key={`h${rid}`} className="mat-mdc-row cds-retailer-row">
-                  <td><input type="checkbox" className="form-check-input" aria-label={`Select all for ${g.name}`} checked={g.orders.every((o) => selO.has(o.id)) && g.returns.every((r) => selR.has(r.id))} onChange={() => {
-                    const on = g.orders.every((o) => selO.has(o.id)) && g.returns.every((r) => selR.has(r.id));
-                    setSelO((s) => { const n = new Set(s); g.orders.forEach((o) => (on ? n.delete(o.id) : n.add(o.id))); return n; });
-                    setSelR((s) => { const n = new Set(s); g.returns.forEach((r) => (on ? n.delete(r.id) : n.add(r.id))); return n; });
-                  }} /></td>
-                  <td colSpan={5}><i className="fas fa-store me-2" />{g.name}<span className="fw-normal text-muted ms-2">{g.locality} · {g.orders.length} order(s){g.returns.length ? ` · ${g.returns.length} return(s) to collect` : ''}</span></td>
-                </tr>,
-                ...g.orders.map((o) => (
-                  <tr key={o.id} className={`mat-mdc-row${selO.has(o.id) ? ' selected' : ''}`}>
-                    <td><input type="checkbox" className="form-check-input" aria-label={`Select ${o.orderNo}`} checked={selO.has(o.id)} onChange={() => tog(setSelO, o.id)} /></td>
-                    <td className="fw-semibold">{o.orderNo}<div className="text-muted text-xs">{o.paymentMode}</div></td>
-                    <td className="small">{o.lines.filter((l) => l.acceptedQty - l.deliveredQty > 0).map((l) => `${l.name} × ${l.acceptedQty - l.deliveredQty}`).join(', ')}</td>
-                    <td className="small">{money(o.orderValue)}</td><td className="small">{kg(sumOf(o.lines, (l) => (l.acceptedQty - l.deliveredQty) * l.unitWeightKg))}</td>
-                    <td><Badge meta={ORDER_STATUS[o.status]} />{o.note && <div className="text-danger text-xs">{o.note}</div>}</td>
-                  </tr>
-                )),
-                ...g.returns.map((r) => (
-                  <tr key={r.id} className={`mat-mdc-row${selR.has(r.id) ? ' selected' : ''}`}>
-                    <td><input type="checkbox" className="form-check-input" aria-label={`Select ${r.returnNo}`} checked={selR.has(r.id)} onChange={() => tog(setSelR, r.id)} /></td>
-                    <td className="fw-semibold">{r.returnNo}<div className="text-muted text-xs">collect · {r.orderNo}</div></td>
-                    <td className="small">{r.lines.map((l) => `${l.name} × ${l.qty} (${l.reason})`).join(', ')}</td><td /><td />
-                    <td><Badge meta={RETURN_STATUS[r.status]} /></td>
-                  </tr>
-                )),
-              ])}
-            </Table>
-          )}
-        </Card>
-        <Card title={<><i className="fas fa-calendar-check text-primary me-2" />Delivery plan</>}>
-          <div className="p-3 d-flex flex-column gap-3 small">
-            <div className="fw-semibold">{chosenO.length} order(s) · {chosenR.length} return(s) · {stops} retailer stop(s) · {kg(loadKg)}</div>
-            <DateSlot date={day} slot={slot} min={meta.data?.settings.nextDayPlanning ? meta.data.tomorrow : meta.data?.today ?? ''} onDate={setDate} onSlot={setSlot} hint="Retailer deliveries are planned for the next day." />
-            <AssignFields date={day} loadKg={loadKg} value={a} onChange={setA} />
-            <div className="cds-note"><i className="fas fa-key mt-1" />OTPs: order pickup at your CDS (you ↔ delivery person), each retailer delivery and return collection (retailer ↔ delivery person), and return handover back at your CDS.</div>
-            <button className="btn btn-primary" disabled={busy || (!chosenO.length && !chosenR.length) || !a.vehicleId || !a.deliveryPersonId} onClick={() => void submit()}><i className="fas fa-paper-plane me-2" />Create Plan &amp; Generate Trip</button>
+    <div className="cds-page delivery-routes-page cds-planning-lbnp container-fluid p-3 bg-light h-100">
+      <div className="row px-3">
+        <div className="col-md-6">
+          <div className="d-flex align-items-center">
+            <i className="fas fa-shopping-bag text-primary me-2 fs-5" />
+            <h1 className="fs-3 mb-0 fw-bold">Delivery Planning</h1>
           </div>
-        </Card>
+          <p className="text-muted small">Manage and track your delivery routes</p>
+        </div>
+        <div className="col-md-6 d-flex justify-content-md-end justify-content-start align-items-end gap-2 pt-3">
+          <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate('/cds/delivery-planning/create')}>
+            <i className="fas fa-upload me-1 fs-6" /><span className="fs-6">Create Delivery Route</span>
+          </button>
+        </div>
       </div>
-      <RecentPlans kind="RETAILER_DELIVERY" title="Recent delivery plans" />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------- Collections & Payments (manual)
-
-const COL_TABS: CollectionStatus[] = ['WITH_DELIVERY_PERSON', 'RECEIVED_BY_CDS', 'HANDED_TO_QWIPO', 'SETTLED'];
-export function CollectionsPage() {
-  const navigate = useNavigate();
-  const meta = useMeta();
-  const { busy, run } = useAction();
-  const [tab, setTab] = useState<CollectionStatus>('WITH_DELIVERY_PERSON');
-  const [search, setSearch] = useState('');
-  const [sel, setSel] = useState<Set<string>>(new Set());
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchCollections({ status: tab, search, pageSize: 0 }), [tab, search]);
-  const counts = useLoad(() => Promise.all(COL_TABS.map((s) => cdsApi.searchCollections({ status: s, pageSize: 0 }))), [data]);
-  const rows = data?.rows ?? [];
-  const chosen = rows.filter((c) => sel.has(c.id));
-  const total = (cs: CollectionRow[], f: (c: CollectionRow) => number) => money(sumOf(cs, f));
-  const after = () => { setSel(new Set()); reload(); };
-  const receive = async () => {
-    const res = await Swal.fire({
-      title: 'Receive cash from delivery person', width: 600,
-      html: `<div class="text-start small">${chosen.map((c) => `<div class="d-flex gap-2 align-items-center mb-2"><span style="min-width:150px">${c.collectionNo} · ${c.deliveryPersonName}</span><span class="text-muted" style="min-width:90px">collected ₹${c.amount}</span><input id="rc-${c.id}" type="number" min="0" class="form-control form-control-sm" style="width:120px" value="${c.amount}" aria-label="Amount received"></div>`).join('')}
-        <textarea id="rc-note" class="form-control form-control-sm mt-2" placeholder="Note (required if an amount differs)"></textarea></div>`,
-      showCancelButton: true, confirmButtonText: 'Record receipt', confirmButtonColor: '#1e3a8a', reverseButtons: true,
-      preConfirm: () => ({ items: chosen.map((c) => ({ id: c.id, amount: Number((document.getElementById(`rc-${c.id}`) as HTMLInputElement).value) })), note: (document.getElementById('rc-note') as HTMLTextAreaElement).value }),
-    });
-    if (res.isConfirmed && (await run(() => cdsApi.receiveCollections(res.value.items, res.value.note || undefined), 'Collection received at the CDS'))) after();
-  };
-  const handover = async () => {
-    const ref = await askText(`Hand over ${total(chosen, (c) => c.cdsReceivedAmount ?? c.amount)} to Qwipo (SNP)`, 'Deposit slip / UTR reference', 'Record handover');
-    if (ref && (await run(() => cdsApi.handToQwipo(chosen.map((c) => c.id), ref), 'Handed over to Qwipo (SNP)'))) after();
-  };
-  const settle = async () => {
-    const ref = await askText('Record Qwipo (SNP) settlement', 'Settlement reference from Qwipo', 'Mark settled');
-    if (ref && (await run(() => cdsApi.recordSettlement(chosen.map((c) => c.id), ref), 'Settlement recorded'))) after();
-  };
-  return (
-    <div className="cds-page">
-      <PageHead info="Cash and UPI collected from retailers, from the delivery person to Qwipo." icon="fa-indian-rupee-sign" title="Collections & Payments" subtitle="Delivery person → your CDS → Qwipo (SNP) → settled.">
-        {tab === 'WITH_DELIVERY_PERSON' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void receive()}><i className="fas fa-hand-holding-dollar me-1" />Receive from Delivery Person</button>}
-        {tab === 'RECEIVED_BY_CDS' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void handover()}><i className="fas fa-building-columns me-1" />Hand Over to Qwipo (SNP)</button>}
-        {tab === 'HANDED_TO_QWIPO' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void settle()}><i className="fas fa-check-double me-1" />Record Settlement</button>}
-      </PageHead>
-
-      <div className="cds-note mb-3"><i className="fas fa-circle-info mt-1" /><div>Qwipo (SNP) settles manually with {meta.data?.settlementParties.join(', ')}. No payment gateway is used — record references for each step.</div></div>
-      <Tabs value={tab} onChange={(v) => { setTab(v); setSel(new Set()); }} tabs={COL_TABS.map((s, i) => ({ id: s, label: COLLECTION_STATUS[s].label, count: counts.data?.[i].total }))} />
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search collection, order, retailer, delivery person…">
-        {tab !== 'SETTLED' && <span className="text-muted">Selected {chosen.length} · {total(chosen, (c) => c.cdsReceivedAmount ?? c.amount)}</span>}
-      </FilterBar>
-      <Card>
-        {error && <ErrorBox text={error} onRetry={reload} />}
-        {loading && !data ? <Loading /> : (
-          <Table head={[tab === 'SETTLED' ? '' : <input key="a" type="checkbox" className="form-check-input" aria-label="Select all" checked={!!rows.length && chosen.length === rows.length} onChange={() => setSel(chosen.length === rows.length ? new Set() : new Set(rows.map((c) => c.id)))} />, 'Collection', 'Collected', 'Order / retailer', 'Delivery person', 'Trip', 'Mode', 'Due', 'Collected', 'Received by CDS', 'References', 'Status', 'Actions']}
-            empty={!rows.length && <Empty text="Nothing here" />}>
-            {rows.map((c) => (
-              <tr key={c.id} className={`mat-mdc-row${sel.has(c.id) ? ' selected' : ''}${c.mismatchNote ? ' warn' : ''}`}>
-                <td>{tab !== 'SETTLED' && <input type="checkbox" className="form-check-input" aria-label={`Select ${c.collectionNo}`} checked={sel.has(c.id)} onChange={() => setSel((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; })} />}</td>
-                <td className="fw-semibold">{c.collectionNo}</td><td className="small">{fmtDateTime(c.collectedAt)}</td>
-                <td className="small">{c.orderNo}<div className="text-muted text-xs">{c.retailerName}</div></td>
-                <td className="small">{c.deliveryPersonName}</td><td className="small">{c.tripNo}</td><td className="small">{c.mode}</td>
-                <td className="small">{money(c.expectedAmount)}</td><td className={`small${c.amount < c.expectedAmount ? ' text-danger fw-bold' : ''}`}>{money(c.amount)}</td>
-                <td className="small">{c.cdsReceivedAmount !== null ? money(c.cdsReceivedAmount) : '—'}{c.mismatchNote && <div className="text-danger text-xs">{c.mismatchNote}</div>}</td>
-                <td className="small">{c.qwipoHandoverRef ?? '—'}{c.settlementRef && <div className="text-muted text-xs">{c.settlementRef}</div>}</td>
-                <td><Badge meta={COLLECTION_STATUS[c.status]} /></td>
-                <td><RowActions onView={() => navigate(`/cds/orders/${c.orderId}`)} items={[{ label: 'View order', icon: 'fa-box', onClick: () => navigate(`/cds/orders/${c.orderId}`) }, { label: 'View trip', icon: 'fa-route', onClick: () => navigate(`/cds/trips/${c.tripId}`) }]} /></td>
-              </tr>
-            ))}
-          </Table>
-        )}
-        {rows.length > 0 && <div className="p-2 small text-end text-muted">Total due {total(rows, (c) => c.expectedAmount)} · collected {total(rows, (c) => c.amount)}</div>}
-      </Card>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------- Returns
-
-const RET_FILTER: Record<string, ReturnStatus[]> = {
-  open: ['RETURN_INITIATED', 'PICKED_UP_FROM_RETAILER'], cds: ['RECEIVED_AT_CDS', 'RETURN_PLANNED'], back: ['PICKED_UP_FROM_CDS', 'DELIVERED_TO_SELLER', 'COMPLETED'], all: [],
-};
-export function ReturnsPage() {
-  const navigate = useNavigate();
-  const { busy, run } = useAction();
-  const [tab, setTab] = useState<'open' | 'cds' | 'back' | 'all'>('open');
-  const [search, setSearch] = useState('');
-  const [pageNumber, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15);
-  const { data, error, loading, reload } = useLoad(() => cdsApi.searchReturns({ statuses: RET_FILTER[tab], search, pageNumber, pageSize }), [tab, search, pageNumber, pageSize]);
-  const cancel = async (r: ReturnRow) => {
-    const reason = await askText(`Cancel ${r.returnNo}?`, 'Reason', 'Cancel return', true);
-    if (reason && (await run(() => cdsApi.cancelReturn(r.id, reason), 'Return cancelled'))) reload();
-  };
-  return (
-    <div className="cds-page">
-      <PageHead info="Goods that retailers give back, from your CDS store to the distributor." icon="fa-rotate-left" title="Returns" subtitle="Track retailer returns: retailer → your CDS → distributor.">
-        <button className="btn btn-sm btn-primary" onClick={() => navigate('/cds/orders?initiate=1')}><i className="fas fa-plus me-1" />Initiate Return</button>
-      </PageHead>
-
-      <MyOtps purposes={['CDS_RETURN_PICKUP', 'RETURN_HANDOVER_CDS', 'CDS_ORDER_PICKUP']} title="Pickup / handover OTPs for your CDS" />
-      <Incoming type="CDS_RETURN" title="Service Centre return pickups from your CDS" />
-      <Tabs value={tab} onChange={(v) => { setTab(v); setPage(1); }} tabs={[{ id: 'open', label: 'With retailer / on the way' }, { id: 'cds', label: 'At your CDS' }, { id: 'back', label: 'Back to seller' }, { id: 'all', label: 'All' }]} />
-      <FilterBar search={search} onSearch={(v) => { setSearch(v); setPage(1); }} placeholder="Search return, order, retailer…" />
-      <Card>
-        {error && <ErrorBox text={error} onRetry={reload} />}
-        {loading && !data ? <Loading /> : (
-          <>
-            <Table head={['Return', 'Order', 'Retailer', 'Distributor', 'Products · reason', 'Return Value', 'Requested', 'Picked', 'Accepted', 'Rejected', 'Status', 'Actions']} empty={!data?.rows.length && <Empty text="No returns" />}>
-              {data?.rows.map((r) => (
-                <tr key={r.id} className="mat-mdc-row">
-                  <td className="fw-semibold">{r.returnNo}<div className="text-muted text-xs">{fmtDate(r.createdAt)}</div></td>
-                  <td><a role="button" className="text-primary" onClick={() => navigate(`/cds/orders/${r.orderId}`)}>{r.orderNo}</a></td>
-                  <td className="small">{r.retailerName}</td><td className="small">{r.distributorName}</td>
-                  <td className="small">{r.lines.map((l) => <div key={l.sku}>{l.name} × {l.qty} <span className="text-muted">· {l.reason}</span></div>)}</td>
-                  <td className="small">{money(sumOf(r.lines, (l) => l.qty * l.unitPrice))}</td>
-                  <td>{sumOf(r.lines, (l) => l.qty)}</td><td>{sumOf(r.lines, (l) => l.pickedQty ?? 0)}</td><td>{sumOf(r.lines, (l) => l.acceptedQty ?? 0)}</td><td>{sumOf(r.lines, (l) => l.rejectedQty ?? 0)}</td>
-                  <td><Badge meta={RETURN_STATUS[r.status]} /></td>
-                  <td>
-                    <RowActions
-                      onView={() => navigate(`/cds/orders/${r.orderId}`)}
-                      items={[
-                        { label: 'View order', icon: 'fa-box', onClick: () => navigate(`/cds/orders/${r.orderId}`) },
-                        { label: 'Cancel return', icon: 'fa-circle-xmark', tone: 'danger', hidden: busy || r.status !== 'RETURN_INITIATED' || !!r.retailerTripId, onClick: () => void cancel(r) },
-                      ]}
-                    />
+      <div className="p-3">
+        <div className="mat-card mat-elevation-z3 mb-4">
+          <div className="mat-card-content p-0">
+            <table className="mat-mdc-table w-100">
+              <thead>
+                <tr className="mat-mdc-header-row">
+                  <Th icon="fa-calendar" label="Created Date" />
+                  <Th icon="fa-hashtag" label="Route ID" />
+                  <Th icon="fa-map-marker-alt" label="Drop Points" align="center" />
+                  <Th icon="fa-calendar-check" label="DELIVERY DATE" align="center" />
+                  <Th icon="fa-weight-hanging" label="Weight / Vol" align="right" />
+                  <Th icon="fa-info-circle" label="Status" align="center" />
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="text-center py-4" colSpan={6}>
+                    <i className="fas fa-inbox mb-3 text-muted" style={{ fontSize: '2rem' }} />
+                    <p className="mb-0">No delivery plannings found</p>
+                    <p className="mb-0 small text-muted mt-1">Created routes move to <a role="button" className="text-primary" onClick={() => navigate('/cds/trips?tab=RETAILER_DELIVERY')}>Trips › Deliveries</a>.</p>
                   </td>
                 </tr>
-              ))}
-            </Table>
-            {data && <Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} />}
-          </>
-        )}
-      </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------- Retailers
+type DeliveryStop = { id: string; seq: number; name: string; address: string; lat: number; lng: number; orders: number; returns: number; kg: number; value: number };
 
-export function RetailersPage() {
+/** Create Delivery Route — same layout as LBNP Create Delivery Route: Delivery Date and Area, Order Dates, Available
+ *  Orders (and returns to collect), then "Plan Delivery Route" opens the delivery route (like Optimized Delivery Routes). */
+export function CreateDeliveryPlanPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const { data, error, loading, reload } = useLoad(() => cdsApi.retailers(), []);
-  const rows = (data ?? []).filter((r) => !search || `${r.name} ${r.ownerName} ${r.phone} ${r.locality}`.toLowerCase().includes(search.toLowerCase()));
+  const meta = useMeta();
+  const [area, setArea] = useState('');
+  const [days, setDays] = useState<Set<string>>(new Set());
+  const [selO, setSelO] = useState<Set<string>>(new Set());
+  const [selR, setSelR] = useState<Set<string>>(new Set());
+  const [date, setDate] = useState<Date | null>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const [planning, setPlanning] = useState(false);
+  const min = meta.data ? new Date(`${meta.data.settings.nextDayPlanning ? meta.data.tomorrow : meta.data.today}T00:00:00`) : startOfDay(new Date());
+  const day = date ?? min;
+  const orders = useLoad(() => cdsApi.searchOrders({ statuses: ['READY_FOR_DELIVERY'], pageSize: 0 }), []);
+  const rets = useLoad(() => cdsApi.searchReturns({ statuses: ['RETURN_INITIATED'], unplanned: true, pageSize: 0 }), []);
+  const allOrders = useMemo(() => orders.data?.rows ?? [], [orders.data]);
+  const allReturns = useMemo(() => rets.data?.rows ?? [], [rets.data]);
+  const areas = Array.from(new Set(allOrders.map((o) => o.locality).filter(Boolean))).sort();
+  const orderDays = useMemo(() => Array.from(new Set(allOrders.map((o) => dayKey(o.confirmedAt)))).sort(), [allOrders]);
+  const rows = allOrders.filter((o) => (!area || o.locality === area) && (!days.size || days.has(dayKey(o.confirmedAt))));
+  const chosenO = allOrders.filter((o) => selO.has(o.id));
+  const chosenR = allReturns.filter((r) => selR.has(r.id));
+  const left = (o: OrderRow) => o.lines.filter((l) => l.acceptedQty - l.deliveredQty > 0);
+  const weight = (o: OrderRow) => sumOf(left(o), (l) => (l.acceptedQty - l.deliveredQty) * l.unitWeightKg);
+  const allOn = rows.length > 0 && rows.every((o) => selO.has(o.id));
+  const toggle = (set: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) => set((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleDay = (d: string) => toggle(setDays, d);
+  const plan = () => {
+    if (!chosenO.length && !chosenR.length) { void Swal.fire({ icon: 'warning', text: 'Select at least one order to plan the delivery route', confirmButtonColor: '#1e3a8a' }); return; }
+    setPlanning(true);
+  };
   return (
-    <div className="cds-page">
-      <PageHead info="Retailers in your CDS store area, with their orders, returns and payments." icon="fa-users" title="Retailers" subtitle="Retailers served by your CDS, with their orders, returns and collections." />
+    <div className="cds-page create-delivery-route-page create-route-container">
+      <header className="orders-header">
+        <button className="back-btn" aria-label="Back" onClick={() => navigate('/cds/delivery-planning')}><i className="fas fa-arrow-left" /></button>
+        <h1><i className="fas fa-route" /> Create Delivery Route <small className="cds-route-chip ms-2">{TRIP_TYPE.RETAILER_DELIVERY.direction}</small></h1>
+      </header>
 
-      <FilterBar search={search} onSearch={setSearch} placeholder="Search retailer, owner, phone, locality…"><span className="text-muted">{rows.length} retailer(s)</span></FilterBar>
-      <Card>
-        {error && <ErrorBox text={error} onRetry={reload} />}
-        {loading && !data ? <Loading /> : (
-          <Table head={['Retailer', 'Owner · phone', 'Address', 'Orders', 'Open', 'Delivered value', 'Returns', 'Collected', 'Last order', 'Actions']} empty={!rows.length && <Empty text="No retailers" />}>
-            {rows.map((r) => (
-              <tr key={r.id} className="mat-mdc-row" role="link" style={{ cursor: r.orders ? 'pointer' : 'default' }} onClick={() => r.orders && navigate(`/cds/orders?retailer=${r.id}`)}>
-                <td className="fw-semibold">{r.name}<div className="text-muted text-xs">{r.code}</div></td>
-                <td className="small">{r.ownerName}<div className="text-muted text-xs">{r.phone}</div></td>
-                <td className="small">{r.address}<div className="text-muted text-xs">{r.locality}</div></td>
-                <td>{r.orders}</td><td>{r.openOrders}</td><td className="small">{money(r.deliveredValue)}</td><td>{r.returns}</td><td className="small">{money(r.collected)}</td>
-                <td className="small">{fmtDate(r.lastOrder)}</td>
-                <td>{r.orders > 0 && <RowActions onView={() => navigate(`/cds/orders?retailer=${r.id}`)} items={[{ label: 'View orders', icon: 'fa-box', onClick: () => navigate(`/cds/orders?retailer=${r.id}`) }]} />}</td>
-              </tr>
-            ))}
-          </Table>
+      <div className="route-card">
+        <div className="card-content w-100 p-3">
+          <div className="route-config-bar">
+            <div className="config-item">
+              <label className="config-label">Delivery Date</label>
+              <div ref={fieldRef}>
+                <TextField
+                  size="small"
+                  value={longDate(day)}
+                  onClick={() => setAnchor(fieldRef.current)}
+                  sx={{ width: 220, cursor: 'pointer', '& input': { cursor: 'pointer' } }}
+                  InputProps={{
+                    readOnly: true,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <IconButton size="small" edge="start" aria-label="Open calendar" onClick={(e) => { e.stopPropagation(); setAnchor(fieldRef.current); }}>
+                          <span className="material-icons" style={{ fontSize: 20 }}>calendar_today</span>
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </div>
+              <Popover open={!!anchor} anchorEl={anchor} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}>
+                <DateCalendar value={dayjs(day)} minDate={dayjs(min)} maxDate={dayjs(min).add(7, 'day')} onChange={(v: Dayjs | null) => { if (v) setDate(startOfDay(v.toDate())); setAnchor(null); }} />
+              </Popover>
+            </div>
+            <div className="config-item">
+              <label className="config-label" htmlFor="dp-area">Area</label>
+              <select id="dp-area" className="form-select cds-config-select" value={area} onChange={(e) => setArea(e.target.value)}>
+                <option value="">All Areas</option>{areas.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="section">
+            <h2>Order Dates</h2>
+            <div className="date-options">
+              {orderDays.map((d) => (
+                <label key={d} className={`date-checkbox${days.has(d) ? ' checked' : ''}`}>
+                  <input type="checkbox" checked={days.has(d)} onChange={() => toggleDay(d)} />
+                  <span>{dmy(`${d}T00:00:00`)}</span>
+                </label>
+              ))}
+              {!orderDays.length && <span className="text-muted small">No orders ready for delivery. Orders are ready after the GRN.</span>}
+            </div>
+          </div>
+
+          {area && (
+            <div className="applied-filters">
+              <span className="applied-label"><i className="fas fa-filter" style={{ color: '#4b5563' }} /> Filters </span>
+              <span className="filter-chip">Area: {area} <i className="fas fa-times" role="button" aria-label="Remove Area" onClick={() => setArea('')} /></span>
+              <span className="clear-all-link" role="button" onClick={() => setArea('')}>Clear all</span>
+            </div>
+          )}
+
+          <div className="section">
+            <div className="orders-title-row">
+              <h2 className="mb-0">Available Orders <small className="text-muted fw-normal">({rows.length} ready for delivery)</small></h2>
+              <label className="select-all-checkbox">
+                <input type="checkbox" checked={allOn} onChange={(e) => setSelO((s) => { const n = new Set(s); rows.forEach((o) => (e.target.checked ? n.add(o.id) : n.delete(o.id))); return n; })} /> Select All
+              </label>
+            </div>
+            {(orders.error || rets.error) && <ErrorBox text={orders.error || rets.error} onRetry={() => { orders.reload(); rets.reload(); }} />}
+            <div className="orders-table-container">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th className="mat-mdc-header-cell select-col" />
+                    {['fa-calendar|Order Date', 'fa-hashtag|Order Number', 'fa-store|Retailer Name', 'fa-map-marker-alt|Area', 'fa-boxes-stacked|Products', 'fa-indian-rupee-sign|Order Value', 'fa-weight-hanging|Weight (kg)', 'fa-circle-info|Status'].map((h) => {
+                      const [icon, label] = h.split('|');
+                      return <th key={label} className="mat-mdc-header-cell"><div className="th-wrap"><div className="th-content"><i className={`fas ${icon}`} /> {label}</div></div></th>;
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.loading && !orders.data && <tr><td colSpan={9} className="text-center py-4"><span className="spinner-border spinner-border-sm text-primary me-2" />Loading orders…</td></tr>}
+                  {rows.map((o) => (
+                    <tr key={o.id} className="order-row">
+                      <td className="select-col"><input type="checkbox" aria-label={`Select ${o.orderNo}`} checked={selO.has(o.id)} onChange={() => toggle(setSelO, o.id)} /></td>
+                      <td>{dmy(o.confirmedAt)}</td>
+                      <td>{o.orderNo}<div className="text-muted text-xs">{o.paymentMode}</div></td>
+                      <td>{o.retailerName}</td>
+                      <td>{o.locality}</td>
+                      <td title={left(o).map((l) => `${l.name} × ${l.acceptedQty - l.deliveredQty}`).join('\n')}>{products(left(o), (l) => l.acceptedQty - l.deliveredQty)}</td>
+                      <td className="text-center">{money(o.orderValue)}</td>
+                      <td className="text-center">{kg(weight(o))}</td>
+                      <td className="text-center"><Badge meta={ORDER_STATUS[o.status]} /></td>
+                    </tr>
+                  ))}
+                  {orders.data && rows.length === 0 && <tr><td className="text-center py-4" colSpan={9}> No orders available </td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {allReturns.length > 0 && (
+            <div className="section">
+              <div className="orders-title-row"><h2 className="mb-0">Returns to Collect <small className="text-muted fw-normal">({allReturns.length} initiated by retailers)</small></h2></div>
+              <div className="orders-table-container">
+                <table className="orders-table">
+                  <thead>
+                    <tr>
+                      <th className="mat-mdc-header-cell select-col" />
+                      {['fa-hashtag|Return Number', 'fa-receipt|Order Number', 'fa-store|Retailer Name', 'fa-boxes-stacked|Products', 'fa-comment|Return Reason'].map((h) => {
+                        const [icon, label] = h.split('|');
+                        return <th key={label} className="mat-mdc-header-cell"><div className="th-wrap"><div className="th-content"><i className={`fas ${icon}`} /> {label}</div></div></th>;
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allReturns.map((r) => (
+                      <tr key={r.id} className="order-row">
+                        <td className="select-col"><input type="checkbox" aria-label={`Select ${r.returnNo}`} checked={selR.has(r.id)} onChange={() => toggle(setSelR, r.id)} /></td>
+                        <td>{r.returnNo}</td><td>{r.orderNo}</td><td>{r.retailerName}</td>
+                        <td>{products(r.lines, (l) => l.qty)}</td><td>{Array.from(new Set(r.lines.map((l) => l.reason))).join(', ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="summary-row">
+            <div><span className="text-primary"><i className="fas fa-list-ol" /> Selected Orders:</span> <span className="fw-bold">{chosenO.length}</span></div>
+            <div><span className="text-primary"><i className="fas fa-rotate-left" /> Returns to Collect:</span> <span className="fw-bold">{chosenR.length}</span></div>
+            <div><span className="text-primary"><i className="fas fa-store" /> Retailers:</span> <span className="fw-bold">{new Set([...chosenO.map((o) => o.retailerId), ...chosenR.map((r) => r.retailerId)]).size}</span></div>
+            <div><span className="text-primary"><i className="fas fa-indian-rupee-sign" /> Total Order Value:</span> <span className="fw-bold">{money(sumOf(chosenO, (o) => o.orderValue))}</span></div>
+            <div><span className="text-primary"><i className="fas fa-weight-hanging" /> Total Weight:</span> <span className="fw-bold">{kg(sumOf(chosenO, weight))}</span></div>
+          </div>
+
+          <div className="action-buttons">
+            <button className="cancel-btn" onClick={() => navigate('/cds/delivery-planning')}>Cancel</button>
+            <button className="confirm-btn" onClick={plan}><i className="fas fa-route me-1" /> Plan Delivery Route</button>
+          </div>
+        </div>
+      </div>
+
+      {planning && meta.data && (
+        <DeliveryRouteModal orders={chosenO} returns={chosenR} known={allOrders} plannedDate={ymd(day)} weightOf={weight} onClose={() => setPlanning(false)} onDone={() => navigate('/cds/trips?tab=RETAILER_DELIVERY')} />
+      )}
+    </div>
+  );
+}
+
+/** Delivery cost of an own-fleet route for the Optimized Delivery Routes figures (demo rate per km). */
+const COST_PER_KM = 12;
+
+/** Optimized Delivery Routes — the same dialog as LBNP: summary, one card per route (vehicle and load, invoice value
+ *  and delivery cost, delivery points), Map View, Back / Confirm Routes. The route engine picks the vehicle and driver. */
+function DeliveryRouteModal({ orders, returns, known, plannedDate, weightOf, onClose, onDone }: { orders: OrderRow[]; returns: ReturnRow[]; known: OrderRow[]; plannedDate: string; weightOf: (o: OrderRow) => number; onClose: () => void; onDone: () => void }) {
+  const { store } = useCdsSession();
+  const meta = useMeta();
+  const { busy, run } = useAction();
+  const [view, setView] = useState<'routes' | 'map'>('routes');
+  const [open, setOpen] = useState(true);
+  const st = meta.data?.stores.find((s) => s.id === store);
+  const origin = { lat: st?.lat ?? 17.385, lng: st?.lng ?? 78.4867 };
+  const loadKg = sumOf(orders, weightOf);
+  const assign = useLoad(() => cdsApi.autoAssign(plannedDate, Math.ceil(loadKg)), [plannedDate, loadKg]);
+  const route = useMemo(() => {
+    // one delivery point per retailer: its orders and the returns to collect there
+    const m = new Map<string, Omit<DeliveryStop, 'seq'>>();
+    const place = (id: string) => known.find((o) => o.retailerId === id);
+    orders.forEach((o) => {
+      const s = m.get(o.retailerId) ?? { id: o.retailerId, name: o.retailerName, address: `${o.locality}, ${o.city}`, lat: o.retailerLat, lng: o.retailerLng, orders: 0, returns: 0, kg: 0, value: 0 };
+      s.orders += 1; s.kg += weightOf(o); s.value += o.orderValue;
+      m.set(o.retailerId, s);
+    });
+    returns.forEach((r) => {
+      if (!r.retailerId) return;
+      const p = place(r.retailerId);
+      const s = m.get(r.retailerId) ?? { id: r.retailerId, name: r.retailerName, address: p ? `${p.locality}, ${p.city}` : '', lat: p?.retailerLat ?? NaN, lng: p?.retailerLng ?? NaN, orders: 0, returns: 0, kg: 0, value: 0 };
+      s.returns += 1;
+      m.set(r.retailerId, s);
+    });
+    const list = Array.from(m.values());
+    const located = list.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+    const order = sequenceStops(origin, located).map((i) => located[i]);
+    const stops: DeliveryStop[] = [...order, ...list.filter((s) => !located.includes(s))].map((s, i) => ({ ...s, seq: i + 1 }));
+    const mt = routeMetrics([origin, ...order], order.length);
+    return { stops, km: mt.distanceKm, minutes: mt.etaMinutes };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, returns, known, origin.lat, origin.lng]);
+  const v = assign.data?.vehicle;
+  const util = v ? Math.round((loadKg / v.capacityKg) * 10000) / 100 : 0;
+  const invoice = sumOf(orders, (o) => o.orderValue);
+  const cost = Math.round(route.km * COST_PER_KM);
+  const costPct = invoice ? Math.round((cost / invoice) * 10000) / 100 : 0;
+  const fmt2 = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt0 = (n: number) => Math.round(n).toLocaleString('en-IN');
+  const confirmRoutes = async () => {
+    if (!assign.data) return;
+    const r = await run(() => cdsApi.createDeliveryPlan({ orderIds: orders.map((o) => o.id), returnIds: returns.map((x) => x.id), plannedDate, slot: '09:00 – 13:00', vehicleId: assign.data!.vehicle.id, deliveryPersonId: assign.data!.deliveryPerson.id }), 'Routes confirmed. See the trip in Trips › Deliveries.');
+    if (r) onDone();
+  };
+  const csv = () => downloadCsv(`optimized-routes-${plannedDate}`, [{ key: 'route', label: 'Route' }, { key: 'vehicle', label: 'Vehicle' }, { key: 'seq', label: 'Stop' }, { key: 'name', label: 'Customer' }, { key: 'orders', label: 'Orders' }, { key: 'kg', label: 'Weight (kg)' }],
+    route.stops.map((s) => ({ route: 'Route 1', vehicle: v?.type ?? '', seq: s.seq, name: s.name, orders: s.orders, kg: Math.round(s.kg * 10) / 10 })));
+  return createPortal(
+    <div className="optimized-routes-modal modal-overlay">
+      <div className={`modal-container${view === 'map' ? ' modal-container-wide' : ''}`} role="dialog" aria-modal="true" aria-label="Optimized Delivery Routes">
+        <div className="modal-header">
+          <h2>Optimized Delivery Routes</h2>
+          <button className="close-button" aria-label="Close" onClick={onClose}><i className="fas fa-times" /></button>
+        </div>
+        {assign.loading && !assign.data && !assign.error ? <DataLoading message="Loading optimized routes..." showTip /> : (
+          <>
+            <div className="modal-body">
+              <div className="sub-tabs">
+                <div className="sub-tab-list">
+                  <div className={`sub-tab${view === 'routes' ? ' active' : ''}`} role="tab" onClick={() => setView('routes')}> Routes </div>
+                  <div className={`sub-tab${view === 'map' ? ' active' : ''}`} role="tab" onClick={() => setView('map')}><i className="fas fa-map-marked-alt" style={{ marginRight: 4 }} /> Map View </div>
+                </div>
+                <button style={{ background: '#4CAF50', color: 'white', border: 'none', padding: '6px 14px', borderRadius: 4, fontSize: 13 }} onClick={csv}> Download CSV </button>
+              </div>
+              {assign.error && <div className="cds-note warn mt-3"><i className="fas fa-triangle-exclamation mt-1" /><div>{assign.error}</div></div>}
+              {view === 'routes' && (
+                <div className="routes-tab">
+                  <div className="summary-section">
+                    <div className="summary-item">
+                      <div className="summary-label">Total Vehicle Types ({v ? 1 : 0} vehicles)</div>
+                      <div className="summary-value">{v && <div>{v.type} <strong>(1)</strong></div>}</div>
+                    </div>
+                    <div className="summary-item"><div className="summary-label">Total Delivery Points</div><div className="summary-value">{route.stops.length}</div></div>
+                    <div className="summary-item"><div className="summary-label">Total Weight</div><div className="summary-value">{Math.round(loadKg * 10) / 10} kgs</div></div>
+                    <div className="summary-item"><div className="summary-label">Total Vehicle Utilization</div><div className="summary-value">{fmt2(util)}%</div></div>
+                    <div className="summary-item"><div className="summary-label">Total Invoice Value</div><div className="summary-value">₹ {fmt0(invoice)}</div></div>
+                    <div className="summary-item"><div className="summary-label">Total Delivery Cost</div><div className="summary-value">₹ {fmt0(cost)}</div></div>
+                    <div className="summary-item"><div className="summary-label">Total Delivery Cost %</div><div className="summary-value">{fmt2(costPct)}%</div></div>
+                  </div>
+                  <div className="route-card">
+                    <div className="route-header">
+                      <div className="route-title"><i className="fas fa-route" /> Route 1</div>
+                      <div className="route-meta"><span className="meta-date">{dmy(`${plannedDate}T00:00:00`)}</span></div>
+                    </div>
+                    <div className="route-stats">
+                      <div className="stat">
+                        <div className="stat-label">Vehicle Wt / Actual Wt / Vehicle Utilization</div>
+                        <div className="stat-value">{v?.type ?? 'N/A'} /<span>{fmt0(loadKg)} kgs</span> /<span>{fmt2(util)}%</span></div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-label">Invoice Value / Delivery Cost / Delivery Cost %</div>
+                        <div className="stat-value"> ₹ {fmt0(invoice)} /<span>₹ {fmt0(cost)} </span> /<span> {fmt2(costPct)}%</span></div>
+                      </div>
+                    </div>
+                    <div className="orders-section">
+                      <div className="orders-header" role="button" onClick={() => setOpen((x) => !x)}>Delivery Points ({route.stops.length}) <i className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'}`} /></div>
+                      {open && (
+                        <div className="customer-list">
+                          {route.stops.map((s) => (
+                            <div key={s.id} className="customer-row">
+                              <div><i className="fas fa-map-marker-alt" /> {s.name}</div>
+                              <span className="order-pill">{s.orders + s.returns} orders</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {view === 'map' && (
+                <div className="pt-3">
+                  <RouteMap height={520} stops={[{ seq: 0, name: st?.name ?? 'CDS Store', detail: 'Start', lat: origin.lat, lng: origin.lng }, ...route.stops.map((s) => ({ seq: s.seq, name: s.name, detail: s.address, lat: s.lat, lng: s.lng, orders: [`${s.orders} order(s) · ${money(s.value)}${s.returns ? ` · ${s.returns} return(s) to collect` : ''}`] }))]} />
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-back" onClick={onClose}>Back</button>
+              <button className="btn-confirm-routes" disabled={!assign.data || busy} onClick={() => void confirmRoutes()}> Confirm Routes </button>
+            </div>
+          </>
         )}
-      </Card>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ---------------------------------------------------------------- Customers (LBNP Customers)
+
+type CustomerRow = Awaited<ReturnType<typeof cdsApi.retailers>>[number];
+/** LBNP "dd/mm/yy" date. */
+const ddmmyy = (iso?: string | null) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)}`;
+};
+/** The LBNP Update Location dialog works on a customer-master row. */
+const asMasterRow = (c: CustomerRow): CustomerMasterRow => ({
+  id: c.id, customer_unique_id: c.code, buyer_id: '', mobile_number: c.phone, business_name: c.name, customer_name: c.ownerName,
+  latitude: String(c.lat), longitude: String(c.lng), address: c.address, status: 'active', created_at: '', updated_at: c.updatedAt,
+  created_by: 'system', updated_by: c.source, is_bulk_order: c.isBulk,
+});
+
+/** Customers — same screen as LBNP Customers: search and Source filter, table (UID, Business Name, Mobile, Latitude,
+ *  Longitude, Bulk, Last Updated, Source), Edit (Update Location) and Delete, paginator. Retailers of this CDS store. */
+export function RetailersPage() {
+  const [search, setSearch] = useState('');
+  const [source, setSource] = useState('');
+  const [pageNumber, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [editing, setEditing] = useState<CustomerRow | null>(null);
+  const [snack, setSnack] = useState<{ key: number; message: string; duration: number } | null>(null);
+  const { data, error, loading, reload } = useLoad(() => cdsApi.retailers(), []);
+  const all = (data ?? [])
+    .filter((r) => !search.trim() || `${r.name} ${r.phone} ${r.code}`.toLowerCase().includes(search.trim().toLowerCase()))
+    .filter((r) => !source || r.source === source);
+  const rows = all.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+  const showSnack = (message: string, duration: number) => setSnack({ key: Date.now(), message, duration });
+  const onDialogClosed = async (c: CustomerRow, result?: CustomerLocationUpdate) => {
+    setEditing(null);
+    if (!result) return;
+    try {
+      const r = await cdsApi.updateRetailerLocation(c.id, result);
+      reload();
+      if (r.ordersUpdated > 0) showSnack(`Updated. ${r.ordersUpdated} order(s) synced.`, 4000);
+      else if (r.skippedOrderStatuses.length > 0) showSnack(`Updated. No orders synced — orders in: ${r.skippedOrderStatuses.join(', ')}.`, 6000);
+      else showSnack('Customer updated successfully.', 3000);
+    } catch (e) {
+      showSnack(e instanceof Error ? e.message : 'An error occurred while updating.', 3000);
+    }
+  };
+  const deleteCustomer = async (c: CustomerRow) => {
+    const ok = await Swal.fire({
+      title: 'Delete Customer?', text: `Are you sure you want to delete "${c.name || c.code}"? This cannot be undone.`, icon: 'warning',
+      showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, Delete', cancelButtonText: 'Cancel',
+    });
+    if (!ok.isConfirmed) return;
+    try {
+      await cdsApi.deleteRetailer(c.id);
+      await Swal.fire({ icon: 'success', title: 'Deleted!', text: 'Customer record has been deleted.', confirmButtonColor: '#3085d6' });
+      reload();
+    } catch {
+      void Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to delete customer. Please try again.', confirmButtonColor: '#3085d6' });
+    }
+  };
+  const thLeft = 'text-left bg-white text-uppercase fw-bold py-2 px-2 small';
+  const thCenter = 'text-center bg-white text-uppercase fw-bold py-2 px-2 small';
+  return (
+    <div className="cds-page customer-master-page container-fluid p-3 bg-light h-100">
+      <div className="row px-3">
+        <div className="col-md-6">
+          <div className="d-flex align-items-center mb-1">
+            <i className="fas fa-users text-primary me-2 fs-5" />
+            <h1 className="fs-3 mb-0 fw-bold">Customers</h1>
+          </div>
+          <p className="text-muted small mb-0">Manage customer location data and sync with orders.</p>
+        </div>
+        <div className="col-md-6">
+          <div className="d-flex justify-content-md-end justify-content-start align-items-end gap-2 pt-3">
+            <div className="position-relative" style={{ minWidth: 320 }}>
+              <input type="text" className="form-control pe-4" autoComplete="off" placeholder="Search by name, mobile, UID..." aria-label="Search customers" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+              {search && <button type="button" className="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 p-0 border-0 bg-transparent text-muted" title="Clear search" onClick={() => { setSearch(''); setPage(1); }}><i className="fas fa-times" /></button>}
+            </div>
+            <select className="form-select form-select-sm" style={{ width: 'auto' }} aria-label="Source" value={source} onChange={(e) => { setSource(e.target.value); setPage(1); }}>
+              <option value="">All Sources</option>
+              <option value="system">System</option>
+              <option value="manual">Manual</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div className="p-3">
+        <div className="mat-card mat-elevation-z3">
+          <div className="mat-card-content p-0">
+            {error && <ErrorBox text={error} onRetry={reload} />}
+            <div className="table-responsive">
+              {loading && !data ? <DataLoading overlay={false} message="Loading customers..." showTip /> : (
+                <table className="mat-mdc-table w-100">
+                  <thead>
+                    <tr className="mat-mdc-header-row bg-white small">
+                      <th className={thLeft}><i className="fas fa-fingerprint me-1 text-primary" />UID</th>
+                      <th className={thLeft}><i className="fas fa-building me-1 text-primary" />Business Name</th>
+                      <th className={thLeft}><i className="fas fa-phone me-1 text-primary" />Mobile</th>
+                      <th className={thCenter}><i className="fas fa-crosshairs me-1 text-primary" />Latitude</th>
+                      <th className={thCenter}><i className="fas fa-crosshairs me-1 text-primary" />Longitude</th>
+                      <th className={thCenter}><i className="fas fa-box me-1 text-primary" />Bulk</th>
+                      <th className={thCenter}><i className="fas fa-clock me-1 text-primary" />Last Updated</th>
+                      <th className={thCenter}><i className="fas fa-tag me-1 text-primary" />Source</th>
+                      <th className={thCenter}><i className="fas fa-cogs me-1 text-primary" />Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((c) => (
+                      <tr className="mat-mdc-row small" key={c.id}>
+                        <td className="text-left py-2 px-2">{c.code}</td>
+                        <td className="text-left py-2 px-2">{c.name || '—'}</td>
+                        <td className="text-left py-2 px-2">{c.phone || '—'}</td>
+                        <td className="text-center py-2 px-2">{c.lat ?? '—'}</td>
+                        <td className="text-center py-2 px-2">{c.lng ?? '—'}</td>
+                        <td className="text-center py-2 px-2">{c.isBulk ? <span className="badge bg-warning text-dark">Yes</span> : <span className="badge bg-light text-muted">No</span>}</td>
+                        <td className="text-center py-2 px-2">{ddmmyy(c.updatedAt)}</td>
+                        <td className="text-center py-2 px-2"><span className={`badge ${c.source === 'system' ? 'bg-secondary' : 'bg-info text-dark'}`}>{c.source}</span></td>
+                        <td className="text-center py-2 px-2">
+                          <div className="d-inline-flex gap-1">
+                            <button type="button" className="btn btn-sm" title="Edit" aria-label={`Edit ${c.name}`} onClick={() => setEditing(c)}><i className="fas fa-pen" /></button>
+                            <button type="button" className="btn btn-sm" title="Delete" aria-label={`Delete ${c.name}`} onClick={() => void deleteCustomer(c)}><i className="fas fa-trash text-danger" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {rows.length === 0 && (
+                      <tr className="mat-row"><td colSpan={10} className="py-4"><div className="text-center text-muted small"><i className="fas fa-users fs-3 mb-2" /><p className="mb-0 mt-2 small">No customers found</p></div></td></tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            {all.length > 0 && (
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-center p-1 bg-white">
+                <div className="text-muted small" />
+                <div className="bg-transparent shadow-none" aria-label="Select page of customers">
+                  <Paginator length={all.length} pageIndex={pageNumber - 1} pageSize={pageSize} pageSizeOptions={DEFAULT_PAGE_SIZE_OPTIONS} onPage={(e) => { setPage(e.pageIndex + 1); setPageSize(e.pageSize); }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <UpdateLocationDialog key={editing?.id ?? 'none'} open={!!editing} customer={editing ? asMasterRow(editing) : null} onClose={(result) => editing && void onDialogClosed(editing, result)} />
+      <Snackbar
+        key={snack?.key}
+        open={!!snack}
+        autoHideDuration={snack?.duration}
+        onClose={(_e, reason) => reason !== 'clickaway' && setSnack(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        message={snack?.message}
+        className="customer-master-snackbar"
+        action={<Button size="small" onClick={() => setSnack(null)} sx={{ color: '#abc7ff' }}>Close</Button>}
+      />
     </div>
   );
 }

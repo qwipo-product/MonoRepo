@@ -20,15 +20,14 @@ const MENU: Record<'SERVICE_CENTRE' | 'CDS_USER', MenuItem[]> = {
     { page: 'sc-settings', to: '/cds/settings', icon: 'fa-cog', label: 'Settings' },
     { page: 'sc-stores', to: '/cds/stores', icon: 'fa-store', label: 'CDS Stores' },
   ],
+  // Same menu as LBNP: Orders, Delivery Planning, Trips, Reports, Customers, Settings. GRN and returns are in Trips.
   CDS_USER: [
-    { page: 'cu-grn', to: '/cds/grn', icon: 'fa-clipboard-check', label: 'GRN' },
     { page: 'cu-orders', to: '/cds/orders', icon: 'fa-box', label: 'Orders' },
     { page: 'cu-delivery', to: '/cds/delivery-planning', icon: 'fa-truck', label: 'Delivery Planning' },
     { page: 'cu-trips', to: '/cds/trips', icon: 'fa-paper-plane', label: 'Trips' },
-    { page: 'cu-collections', to: '/cds/collections', icon: 'fa-indian-rupee-sign', label: 'Collections & Payments' },
-    { page: 'cu-returns', to: '/cds/returns', icon: 'fa-rotate-left', label: 'Returns' },
-    { page: 'cu-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports & Settings' },
-    { page: 'cu-retailers', to: '/cds/retailers', icon: 'fa-users', label: 'Retailers' },
+    { page: 'cu-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports' },
+    { page: 'cu-retailers', to: '/cds/customers', icon: 'fa-users', label: 'Customers' },
+    { page: 'cu-settings', to: '/cds/settings', icon: 'fa-cog', label: 'Settings' },
   ],
 };
 

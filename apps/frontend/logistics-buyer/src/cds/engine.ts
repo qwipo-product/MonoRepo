@@ -9,7 +9,7 @@ import type {
 } from './types.ts';
 
 /** Bump when the demo data changes: stored CDS data of an older version is rebuilt on next use. */
-export const CDS_STATE_VERSION = 9;
+export const CDS_STATE_VERSION = 11;
 
 export class CdsError extends Error {
   status: number;
@@ -400,7 +400,7 @@ export class CdsEngine {
     if (!orders.length && !rets.length) throw bad('Select at least one order or return');
     orders.forEach((o) => {
       if (o.cdsStoreId !== st.id) throw new CdsError(403, `${o.orderNo} belongs to another CDS`);
-      if (o.status !== 'READY_FOR_DELIVERY') throw conflict(`${o.orderNo} is ${o.status}; only Ready for Delivery orders can be planned`);
+      if (o.status !== 'READY_FOR_DELIVERY') throw conflict(`${o.orderNo} is ${o.status}; only Ready for Planning orders can be planned`);
     });
     rets.forEach((r) => {
       if (r.cdsStoreId !== st.id) throw new CdsError(403, `${r.returnNo} belongs to another CDS`);
@@ -773,9 +773,15 @@ export class CdsEngine {
               s.lines.filter((l) => l.orderId === o.id).forEach((l) => (l.plannedQty = line(o, l.sku).pickedQty));
               s.lines = s.lines.filter((l) => l.plannedQty > 0);
             });
-            if (['STARTED', 'IN_PROGRESS'].includes(ct.status)) this.setOrder(o, 'IN_TRANSIT_TO_CDS', by, ct.tripNo);
+            // two-trip data: the CDS leg is a separate trip that is already running
+            if (ct.id !== t.id && ['STARTED', 'IN_PROGRESS'].includes(ct.status)) this.setOrder(o, 'IN_TRANSIT_TO_CDS', by, ct.tripNo);
           }
         });
+        // One pickup trip: orders stay Picked Up while the vehicle collects from the sellers; after the last seller
+        // pickup they are In Transit to CDS.
+        if (!t.stops.some((s) => s.action === 'DISTRIBUTOR_PICKUP' && s.status === 'PENDING')) {
+          t.orderIds.map((x) => this.order(x)).filter((o) => o.status === 'PICKED_UP' && o.cdsTripId === t.id).forEach((o) => this.setOrder(o, 'IN_TRANSIT_TO_CDS', by, t.tripNo));
+        }
         break;
       case 'CDS_HANDOVER':
         ordersAt.forEach((o) => {
@@ -926,6 +932,62 @@ export class CdsEngine {
 
   // ---------------------------------------------------------------- 4. GRN (distributor-wise)
 
+  /** Ordered Products › Edit on a planned pickup trip (CDS User): changes a product's quantity on its store's orders
+   *  before the pickup starts. The order value and weight, the trip stops and the trip load follow the new quantity. */
+  updatePlannedQty(tripId: string, cdsStoreId: string, sku: string, items: { orderId: string; qty: number }[], remarks: string, by: string) {
+    const t = this.trip(tripId);
+    if (t.type !== 'DISTRIBUTOR_PICKUP') throw bad('Only pickup trips can be edited here');
+    if (!['PLANNED', 'ASSIGNED'].includes(t.status)) throw conflict(`${t.tripNo} has started; quantities cannot change now`);
+    if (!items?.length) throw bad('Nothing to save');
+    if (!remarks?.trim()) throw bad('Add a remark for the change');
+    const changes = items.map((x) => {
+      const o = this.order(x.orderId);
+      if (o.cdsStoreId !== cdsStoreId || !t.orderIds.includes(o.id)) throw bad(`${o.orderNo} is not on this trip for your CDS store`);
+      const l = o.lines.find((y) => y.sku === sku);
+      if (!l) throw bad(`${o.orderNo} has no such product`);
+      if (!isQty(x.qty) || x.qty > l.qty) throw bad(`${o.orderNo}: enter a quantity from 0 to ${l.qty}`);
+      if (sum(o.lines, (y) => (y.sku === sku ? x.qty : y.qty)) === 0) throw bad(`${o.orderNo}: at least one unit must stay on the order (cancel the order instead)`);
+      return { o, l, qty: x.qty };
+    });
+    changes.forEach(({ o, l, qty }) => {
+      if (qty === l.qty) return;
+      const was = l.qty;
+      l.qty = qty;
+      o.orderValue = round2(sum(o.lines, (y) => y.qty * y.unitPrice));
+      o.weightKg = round2(sum(o.lines, (y) => y.qty * y.unitWeightKg));
+      o.history.push({ from: o.status, to: o.status, at: this.now(), by, note: `${l.name}: ${was} → ${qty} on ${t.tripNo} (${remarks.trim()})` });
+      this.touch(o, by);
+      t.stops.forEach((s) => {
+        s.lines.filter((x) => x.orderId === o.id && x.sku === sku).forEach((x) => (x.plannedQty = qty));
+        s.lines = s.lines.filter((x) => x.plannedQty > 0);
+      });
+      this.audit('ORDER', o.id, by, 'QTY_UPDATED', `${o.orderNo} · ${l.name}: ${was} → ${qty} · ${remarks.trim()}`);
+    });
+    t.loadKg = round2(sum(t.stops.filter((s) => s.action === 'DISTRIBUTOR_PICKUP'), (s) => sum(s.lines, (x) => x.plannedQty * x.unitWeightKg)));
+    this.touch(t, by);
+    return t;
+  }
+  /** Ordered Products › Edit: saves the verified quantities of some GRN lines; the GRN stays pending until generated. */
+  saveGrnLines(id: string, lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[], by: string) {
+    const g = this.grn(id);
+    if (g.status !== 'PENDING') throw conflict(`${g.grnNo} is already generated`);
+    if (!lines?.length) throw bad('Nothing to save');
+    lines.forEach((x) => {
+      const l = g.lines[x.idx];
+      if (!l) throw bad('Unknown GRN line');
+      if (!isQty(x.acceptedQty) || !isQty(x.damagedQty)) throw bad(`${l.name}: enter valid quantities`);
+      if (x.acceptedQty + x.damagedQty !== l.receivedQty) throw bad(`${l.name} (${l.orderNo}): accepted + damaged must equal received (${l.receivedQty})`);
+      if ((l.shortQty || l.excessQty || x.damagedQty) && !(x.remarks ?? '').trim()) throw bad(`${l.name} (${l.orderNo}): add a remark for the shortage / excess / damage`);
+    });
+    lines.forEach((x) => {
+      const l = g.lines[x.idx];
+      l.acceptedQty = x.acceptedQty;
+      l.damagedQty = x.damagedQty;
+      l.remarks = x.remarks ?? '';
+    });
+    this.touch(g, by);
+    return g;
+  }
   completeGrn(id: string, b: { lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[]; remarks?: string }, by: string) {
     const g = this.grn(id);
     if (g.status !== 'PENDING') throw conflict(`${g.grnNo} is already generated`);

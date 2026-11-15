@@ -277,3 +277,22 @@ test('OTP: expiry and no reuse; trips cancel cleanly; failed pickup returns orde
   e2.cancelTrip(again.pickupTrip.id, 'Vehicle breakdown', SC);
   assert.equal(e2.order(o.id).status, 'CONFIRMED');
 });
+
+test('2b. planned pickup trip: the CDS User changes a product quantity before the pickup; not after it starts', () => {
+  const { e, order, free, done } = setup();
+  const o = order('dst-01', RT.upl, [sku(0, 5), sku(1, 2)]);
+  const other = order('dst-01', RT.dsn, [sku(0, 3)]);
+  const { pickupTrip: pt } = e.createPickupPlan({ orders: [{ orderId: o.id }, { orderId: other.id }], plannedDate: today, pickup: free('SC') }, SC);
+  const load = e.trip(pt.id).loadKg;
+  throwsCds(() => e.updatePlannedQty(pt.id, 'cds-upl', 'SKU1001', [{ orderId: o.id, qty: 3 }], '', 'Rajesh Kumar'), /remark/);
+  throwsCds(() => e.updatePlannedQty(pt.id, 'cds-upl', 'SKU1001', [{ orderId: other.id, qty: 1 }], 'less', 'Rajesh Kumar'), /not on this trip for your CDS store/);
+  throwsCds(() => e.updatePlannedQty(pt.id, 'cds-upl', 'SKU1001', [{ orderId: o.id, qty: 6 }], 'more', 'Rajesh Kumar'), /from 0 to 5/);
+  e.updatePlannedQty(pt.id, 'cds-upl', 'SKU1001', [{ orderId: o.id, qty: 3 }], 'Retailer reduced the order', 'Rajesh Kumar');
+  assert.equal(e.order(o.id).lines[0].qty, 3);
+  assert.equal(e.order(o.id).orderValue, Math.round((3 * products[0].price + 2 * products[1].price) * 100) / 100);
+  e.trip(pt.id).stops.forEach((s) => s.lines.filter((l) => l.orderId === o.id && l.sku === 'SKU1001').forEach((l) => assert.equal(l.plannedQty, 3)));
+  assert.ok(e.trip(pt.id).loadKg < load);
+  e.startTrip(pt.id, DP);
+  done(pt.id, 0);
+  throwsCds(() => e.updatePlannedQty(pt.id, 'cds-upl', 'SKU1002', [{ orderId: o.id, qty: 1 }], 'late', 'Rajesh Kumar'), /has started/);
+});

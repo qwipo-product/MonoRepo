@@ -11,7 +11,7 @@ export const ORDER_STATUS: Record<OrderStatus, Meta> = {
   IN_TRANSIT_TO_CDS: { label: 'In Transit to CDS', tone: 'purple' },
   RECEIVED_AT_CDS: { label: 'Received at CDS', tone: 'amber' },
   GRN_COMPLETED: { label: 'GRN Completed', tone: 'teal' },
-  READY_FOR_DELIVERY: { label: 'Ready for Delivery', tone: 'teal' },
+  READY_FOR_DELIVERY: { label: 'Ready for Planning', tone: 'teal' },
   DELIVERY_PLANNED: { label: 'Delivery Planned', tone: 'blue' },
   OUT_FOR_DELIVERY: { label: 'Out for Delivery', tone: 'purple' },
   DELIVERED: { label: 'Delivered', tone: 'green' },
@@ -99,7 +99,7 @@ export const TRIP_TYPE: Record<TripType, { label: string; prefix: string; direct
   DISTRIBUTOR_PICKUP: { label: 'Pickup Trip', prefix: 'DPT', direction: 'Sellers to CDS Stores', icon: 'fa-truck-ramp-box' },
   CDS_DELIVERY: { label: 'CDS Delivery Trip', prefix: 'CDT', direction: 'Sellers to CDS Stores', icon: 'fa-warehouse' },
   CDS_RETURN: { label: 'Return Trip', prefix: 'CRT', direction: 'CDS Stores to Sellers', icon: 'fa-rotate-left' },
-  RETAILER_DELIVERY: { label: 'Retailer Delivery Trip', prefix: 'RDT', direction: 'CDS to Retailer', icon: 'fa-truck-fast' },
+  RETAILER_DELIVERY: { label: 'Retailer Delivery Trip', prefix: 'RDT', direction: 'CDS Store to Retailers', icon: 'fa-truck-fast' },
 };
 
 /** Each stop action = one OTP checkpoint. `otpTo` receives the OTP; the delivery person enters it. */

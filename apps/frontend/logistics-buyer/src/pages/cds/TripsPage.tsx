@@ -3,12 +3,11 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import Dialog from '@mui/material/Dialog';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import Swal from 'sweetalert2';
-import { cdsApi, type StopView, type TripView } from '../../api/services/cds.service';
+import { cdsApi, type GrnRow, type StopView, type TripView } from '../../api/services/cds.service';
 import { ORDER_STATUS, RETURN_STATUS, STOP_ACTION, TRIP_SHOWN, TRIP_STATUS_GROUPS, TRIP_TYPE, type TripShown } from '../../cds/status';
 import type { TripType } from '../../cds/types';
 import { RouteMapDialog, mapStops } from './RouteMap';
-import { alertError, askText, Badge, ModuleIntro, confirm, downloadCsv, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, kg, Loading, money, Pager, sumOf, Table, Tabs, toast, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
+import { askText, Badge, confirm, downloadCsv, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, kg, Loading, money, Pager, sumOf, Tabs, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
 import { PLAN_DIRECTION } from './ScPlanningPages';
 import DataLoading from '../../components/DataLoading';
 import '../trips/TripsPage.css';
@@ -16,6 +15,13 @@ import '../trips/TripDetailsPage.css';
 import '../trips/dialogs/TripDialogs.css';
 import '../trips/TripOrderDetailsPage.css';
 
+/** CDS User: GRN (Service Centre pickups that drop at the store), its own retailer deliveries, and the Service Centre
+ *  return trips that pick up from the store. */
+const CU_TABS: { id: TripType; label: string; sub: string; icon: string }[] = [
+  { id: 'DISTRIBUTOR_PICKUP', label: 'GRN', sub: 'Seller to CDS Store', icon: 'fa-clipboard-check' },
+  { id: 'RETAILER_DELIVERY', label: 'Deliveries', sub: 'CDS Store to Retailers', icon: 'fa-truck' },
+  { id: 'CDS_RETURN', label: 'Returns', sub: 'CDS Stores to Distributors', icon: 'fa-rotate-left' },
+];
 const SC_TABS: { id: TripType; label: string; sub: string; icon: string }[] = [
   { id: 'DISTRIBUTOR_PICKUP', label: 'Pickups', sub: PLAN_DIRECTION.pickups, icon: 'fa-truck-ramp-box' },
   { id: 'CDS_RETURN', label: 'Returns', sub: PLAN_DIRECTION.returns, icon: 'fa-rotate-left' },
@@ -31,10 +37,15 @@ const duration = (a?: string | null, b?: string | null) => {
 /** Trips — same layout as the LBNP Trips screen: header (Map View, Filter), stat cards, applied filters, trips table
  *  with expandable details (Route Overview, Stop Summary, Route). Service Centre: one tab per trip type. */
 export default function TripsPage() {
-  const { sc } = useCdsSession();
+  const { sc, store } = useCdsSession();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const tab = (params.get('tab') as TripType) ?? (sc ? 'DISTRIBUTOR_PICKUP' : 'RETAILER_DELIVERY');
+  const tabsOf = sc ? SC_TABS : CU_TABS;
+  const tab = tabsOf.find((x) => x.id === params.get('tab'))?.id ?? tabsOf[0].id;
+  // CDS User: GRN has no Drop Points; Deliveries and Returns have no Trip Charges.
+  const cuGrn = !sc && tab === 'DISTRIBUTOR_PICKUP';
+  const showDrop = !cuGrn;
+  const showCharges = sc || cuGrn;
   const [f, setF] = useState({ status: '', date: '' });
   const [search, setSearch] = useState('');
   const [pageNumber, setPage] = useState(1);
@@ -72,7 +83,8 @@ export default function TripsPage() {
   const allOn = trips.length > 0 && trips.every((t) => selected.has(t.id));
   const toggleAll = () => setSelected((m) => { const n = new Map(m); trips.forEach((t) => (allOn ? n.delete(t.id) : n.set(t.id, t))); return n; });
   // Planned trips can be cancelled (Service Centre and CDS User); once started, the delivery agent handles the trip.
-  const canCancel = (t: TripView) => ['PLANNED', 'ASSIGNED'].includes(t.status) || (!sc && t.status === 'STARTED' && t.stops.every((s) => s.status === 'PENDING'));
+  // Only the owner cancels: the Service Centre its trips, the CDS User its delivery trips.
+  const canCancel = (t: TripView) => (sc || t.owner !== 'SC') && (['PLANNED', 'ASSIGNED'].includes(t.status) || (!sc && t.status === 'STARTED' && t.stops.every((s) => s.status === 'PENDING')));
   const cancel = async (t: TripView) => {
     const r = await askText(`Cancel ${t.tripNo}?`, 'Cancellation reason', 'Cancel trip', true);
     if (r && (await run(() => cdsApi.cancelTrip(t.id, r), 'Trip cancelled'))) { reload(); all.reload(); }
@@ -101,7 +113,7 @@ export default function TripsPage() {
       ['person_outline', 'Helper', t.helperName || 'Not Assigned'],
       ['play_circle_outline', 'Start Time', t.startedAt ? fmtDateTime(t.startedAt) : 'N/A'],
       ['access_time', 'Estimated Completion', estCompletion(t)],
-      ...OTP_ROWS[t.type].map(([label, actions]) => ['vpn_key', label, lastOtp(t.stops, actions)] as [string, string, string]),
+      ...otpRows(t, sc, store).map(([label, value]) => ['vpn_key', label, value] as [string, string, string]),
     ];
     const stops = showAll.has(t.id) ? t.stops : t.stops.slice(0, 3);
     return (
@@ -184,8 +196,8 @@ export default function TripsPage() {
         <div className="header-content">
           <div className="header-icon"><i className="material-icons">local_shipping</i></div>
           <div>
-            <div className="cds-title-row"><h1>Trips</h1><ModuleIntro text={sc ? "Track the trips from your plans: pickups from sellers to CDS stores, and returns to sellers." : "Your delivery trips from the CDS store to retailers."} /></div>
-            <p className="header-description">{sc ? 'Track and manage pickup trips and return trips.' : 'Track and manage your retailer delivery trips (CDS to Retailer).'}</p>
+            <div className="cds-title-row"><h1>Trips</h1></div>
+            <p className="header-description">{sc ? 'Track and manage pickup trips and return trips.' : 'Track and manage GRN, delivery and return trips of your CDS store.'}</p>
           </div>
         </div>
         <div className="actions">
@@ -196,7 +208,7 @@ export default function TripsPage() {
         </div>
       </div>
 
-      {sc && <Tabs value={tab} onChange={switchTab} tabs={SC_TABS} />}
+      <Tabs value={tab} onChange={switchTab} tabs={tabsOf} />
 
       <div className="stats-grid">
         {([
@@ -244,14 +256,14 @@ export default function TripsPage() {
                 <th>Trip Number</th>
                 <th>Provider</th>
                 <th>Status</th>
-                <th>Drop Points</th>
+                {showDrop && <th>Drop Points</th>}
                 <th>Vol Weight</th>
                 <th>Driver Name</th>
                 <th>Planned Kms</th>
                 <th>Created Date</th>
                 <th>Arrival Time</th>
                 <th>Time Covered</th>
-                <th>Trip Charges</th>
+                {showCharges && <th>Trip Charges</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -266,14 +278,14 @@ export default function TripsPage() {
                       <td className="trip-number"><a role="button" className="text-primary text-decoration-none" onClick={() => navigate(`/cds/trips/${t.id}`)}>{t.tripNo}</a></td>
                       <td>{t.providerName}</td>
                       <td><span className={`status-badge ${BADGE[t.shown.status]}`}>{TRIP_SHOWN[t.shown.status].label}</span>{t.shown.note && <div className="cds-trip-note">{t.shown.note}</div>}</td>
-                      <td>{`${t.stops.length} / ${maxStops(t)}`}</td>
+                      {showDrop && <td>{`${t.stops.length} / ${maxStops(t)}`}</td>}
                       <td>{`${Math.round(t.loadKg * 10) / 10} / ${t.capacityKg || 'N/A'}`}</td>
                       <td>{t.deliveryPersonName || 'N/A'}</td>
                       <td>{t.distanceKm ? `${t.distanceKm} km` : 'N/A'}</td>
                       <td>{fmtDateTime(t.createdAt)}</td>
                       <td>{t.completedAt && t.status !== 'CANCELLED' ? fmtDateTime(t.completedAt) : 'N/A'}</td>
                       <td>{t.startedAt ? duration(t.startedAt, t.completedAt) : 'N/A'}</td>
-                      <td>N/A</td>
+                      {showCharges && <td>{t.charges ? money(t.charges) : 'N/A'}</td>}
                       <td><button className="kebab-btn" title="Actions" aria-label={`Actions for ${t.tripNo}`} onClick={(e) => openMenu(t, e)}><i className="material-icons">more_vert</i></button></td>
                     </tr>
                     {open && details(t)}
@@ -296,9 +308,9 @@ export default function TripsPage() {
           {canCancel(menu.trip) && !busy && (
             <div className="kebab-item" role="menuitem" onClick={() => { const t = menu.trip; setMenu(null); void cancel(t); }}><i className="material-icons" style={{ color: '#ef4444' }}>cancel</i><span>Cancel</span></div>
           )}
-          <div className={`kebab-item${menu.trip.status === 'CANCELLED' ? ' disabled' : ''}`} role="menuitem" onClick={() => { if (menu.trip.status !== 'CANCELLED') setMap([menu.trip]); setMenu(null); }}><i className="material-icons" style={{ color: '#3b82f6' }}>place</i><span>Map view</span></div>
+          {!cuGrn && <div className={`kebab-item${menu.trip.status === 'CANCELLED' ? ' disabled' : ''}`} role="menuitem" onClick={() => { if (menu.trip.status !== 'CANCELLED') setMap([menu.trip]); setMenu(null); }}><i className="material-icons" style={{ color: '#3b82f6' }}>place</i><span>Map view</span></div>}
           <div className="kebab-item" role="menuitem" onClick={() => { const id = menu.trip.id; setMenu(null); navigate(`/cds/trips/${id}`); }}><i className="material-icons" style={{ color: '#3b82f6' }}>visibility</i><span>View details</span></div>
-          <div className="kebab-item" role="menuitem" onClick={() => { download(menu.trip); setMenu(null); }}><i className="material-icons" style={{ color: '#22c55e' }}>download</i><span>Download stops</span></div>
+          {!cuGrn && <div className="kebab-item" role="menuitem" onClick={() => { download(menu.trip); setMenu(null); }}><i className="material-icons" style={{ color: '#22c55e' }}>download</i><span>Download stops</span></div>}
         </div>
       )}
 
@@ -316,7 +328,6 @@ export default function TripsPage() {
   );
 }
 
-const stopTone = (s: StopView) => (s.status === 'DONE' ? 'done' : s.status === 'FAILED' ? 'fail' : s.status === 'PARTIAL' ? 'partial' : '');
 const STOP_LABEL = { PENDING: 'Pending', DONE: 'Done', PARTIAL: 'Partial', FAILED: 'Failed' };
 
 /** OTP code of a stop (like the LBNP stop OTP badge); 'N/A' until the OTP is sent at the stop. */
@@ -331,6 +342,10 @@ const OTP_ROWS: Record<TripType, [string, StopView['action'][]][]> = {
   CDS_RETURN: [['Pickup OTP', ['CDS_RETURN_PICKUP']], ['Return OTP', ['SELLER_RETURN_HANDOVER']]],
   RETAILER_DELIVERY: [['Pickup OTP', ['CDS_ORDER_PICKUP']], ['Return OTP', ['RETURN_HANDOVER_CDS']]],
 };
+/** Route Overview OTP rows. A CDS User's GRN trip only drops at its store: Pickup OTP N/A, Drop OTP of its stop. */
+const otpRows = (t: TripView, sc: boolean, store: string | null | undefined): [string, string][] => (!sc && t.type === 'DISTRIBUTOR_PICKUP'
+  ? [['Pickup OTP', 'N/A'], ['Drop OTP', otpOf(t.stops.find((s) => s.partyType === 'CDS' && s.partyId === store))]]
+  : OTP_ROWS[t.type].map(([label, actions]) => [label, lastOtp(t.stops, actions)]));
 /** The stop where each trip type drops its orders (Delivered / Pending in Ordered Products). */
 const DROP_ACTION: Record<TripType, StopView['action']> = { DISTRIBUTOR_PICKUP: 'CDS_HANDOVER', CDS_DELIVERY: 'CDS_HANDOVER', CDS_RETURN: 'SELLER_RETURN_HANDOVER', RETAILER_DELIVERY: 'RETAILER_DELIVERY' };
 const th = (icon: string, label: string, align = 'text-center') => <th className={`text-uppercase py-2 px-3 small ${align}`}><i className={`fas ${icon} me-1 text-primary`} />{label}</th>;
@@ -358,7 +373,108 @@ function tripFigures(t: TripView) {
   };
 }
 
-type DetailTab = 'summary' | 'stops' | 'customer' | 'distributor' | 'cds' | 'product' | 'return';
+type DetailTab = 'summary' | 'customer' | 'distributor' | 'cds' | 'product' | 'return';
+
+/** Ordered Products › Edit (CDS User, Planned GRN trip): the quantity of one product on this store's orders, before the
+ *  pickup starts. Same dialog look as LBNP Edit Resource. */
+function PlannedQtyDialog({ tripId, sku, name, orders, onClose }: { tripId: string; sku: string; name: string; orders: { id: string; orderNo: string; retailerName: string; qty: number }[]; onClose: (saved?: boolean) => void }) {
+  const { busy, run } = useAction();
+  const [qty, setQty] = useState(() => orders.map((o) => o.qty));
+  const [remarks, setRemarks] = useState('');
+  const changed = qty.some((q, i) => q !== orders[i].qty);
+  const bad = qty.some((q, i) => !Number.isInteger(q) || q < 0 || q > orders[i].qty);
+  const save = async () => {
+    if (await run(() => cdsApi.updatePlannedQty(tripId, { sku, items: orders.map((o, i) => ({ orderId: o.id, qty: qty[i] })), remarks }), 'Product updated successfully.')) onClose(true);
+  };
+  return (
+    <Dialog open onClose={() => onClose()} className="resource-dialog-container trip-dialog" disableEnforceFocus PaperProps={{ className: 'trip-dialog-paper', style: { width: 640, maxWidth: '95vw' } }}>
+      <div className="dialog-header">
+        <h2 className="dialog-title">Edit Product</h2>
+        <button className="close-btn" aria-label="Close" onClick={() => onClose()}><i className="fas fa-times" /></button>
+      </div>
+      <div className="dialog-body">
+        <p className="dialog-subtitle">{name}: update the quantity to pick up for your CDS store. The trip has not started yet.</p>
+        <table className="mat-mdc-table w-100">
+          <thead><tr className="mat-mdc-header-row small bg-light">{th('fa-hashtag', 'Order ID', 'text-start')}{th('fa-store', 'Customer Business Name', 'text-start')}{th('fa-layer-group', 'Ordered Qty')}{th('fa-pen', 'New Qty')}</tr></thead>
+          <tbody>
+            {orders.map((o, i) => (
+              <tr key={o.id} className="mat-mdc-row small">
+                <td className="text-start">{o.orderNo}</td>
+                <td className="text-start">{o.retailerName}</td>
+                <td className="text-center">{o.qty}</td>
+                <td className="text-center"><input type="number" min={0} max={o.qty} className={`form-control form-control-sm cds-qty mx-auto${qty[i] < 0 || qty[i] > o.qty ? ' is-invalid' : ''}`} aria-label={`New quantity ${o.orderNo}`} value={qty[i]} onChange={(e) => setQty((q) => q.map((x, j) => (j === i ? Math.floor(Number(e.target.value)) : x)))} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="form-group mt-3">
+          <label htmlFor="pq-remarks">Remarks <span className="required">*</span></label>
+          <input id="pq-remarks" className="form-control form-control-sm" placeholder="Why the quantity changes (e.g. retailer reduced the order)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+        </div>
+        {bad && <div className="text-danger small mt-2">Enter a quantity from 0 to the ordered quantity.</div>}
+      </div>
+      <div className="dialog-footer">
+        <button className="cancel-btn" onClick={() => onClose()}>Cancel</button>
+        <button className="primary-btn" disabled={!changed || bad || !remarks.trim() || busy} onClick={() => void save()}>{busy ? <><i className="fas fa-spinner fa-spin" /> Updating...</> : <><i className="fas fa-save" /> Update</>}</button>
+      </div>
+    </Dialog>
+  );
+}
+
+/** Ordered Products › Edit (CDS User, GRN trip): the verified quantities of one product, order-wise, from the GRN lines
+ *  of this trip at the store. Saved as a draft until Generate GRN. Same dialog look as LBNP Edit Resource. */
+function EditProductDialog({ name, items, onClose }: { name: string; items: { grn: GrnRow; idx: number }[]; onClose: (saved?: boolean) => void }) {
+  const { busy, run } = useAction();
+  const [vals, setVals] = useState(() => items.map(({ grn, idx }) => { const l = grn.lines[idx]; return { accepted: l.acceptedQty ?? l.receivedQty, damaged: l.damagedQty ?? 0, remarks: l.remarks }; }));
+  const set = (i: number, p: Partial<(typeof vals)[number]>) => setVals((vs) => vs.map((x, j) => {
+    if (j !== i) return x;
+    const n = { ...x, ...p };
+    if (p.damaged !== undefined) n.accepted = Math.max(0, items[i].grn.lines[items[i].idx].receivedQty - p.damaged);
+    return n;
+  }));
+  const bad = vals.some((x, i) => { const l = items[i].grn.lines[items[i].idx]; return x.accepted < 0 || x.damaged < 0 || x.accepted + x.damaged !== l.receivedQty || ((l.shortQty || l.excessQty || x.damaged) > 0 && !x.remarks.trim()); });
+  const save = async () => {
+    const byGrn = new Map<string, { idx: number; acceptedQty: number; damagedQty: number; remarks: string }[]>();
+    items.forEach(({ grn, idx }, i) => byGrn.set(grn.id, [...(byGrn.get(grn.id) ?? []), { idx, acceptedQty: vals[i].accepted, damagedQty: vals[i].damaged, remarks: vals[i].remarks }]));
+    const ok = await run(async () => { for (const [gid, lines] of byGrn) await cdsApi.saveGrnLines(gid, lines); return true; }, 'Product updated successfully.');
+    if (ok) onClose(true);
+  };
+  return (
+    <Dialog open onClose={() => onClose()} className="resource-dialog-container trip-dialog" disableEnforceFocus PaperProps={{ className: 'trip-dialog-paper', style: { width: 640, maxWidth: '95vw' } }}>
+      <div className="dialog-header">
+        <h2 className="dialog-title">Edit Product</h2>
+        <button className="close-btn" aria-label="Close" onClick={() => onClose()}><i className="fas fa-times" /></button>
+      </div>
+      <div className="dialog-body">
+        <p className="dialog-subtitle">{name}: update the accepted and damaged quantity received at your CDS store.</p>
+        <table className="mat-mdc-table w-100">
+          <thead><tr className="mat-mdc-header-row small bg-light">{th('fa-hashtag', 'Order ID', 'text-start')}{th('fa-cubes', 'Received Qty')}{th('fa-check', 'Accepted')}{th('fa-triangle-exclamation', 'Damaged')}{th('fa-comment', 'Remarks', 'text-start')}</tr></thead>
+          <tbody>
+            {items.map(({ grn, idx }, i) => {
+              const l = grn.lines[idx];
+              const x = vals[i];
+              const needRemark = !!(l.shortQty || l.excessQty || x.damaged);
+              return (
+                <tr key={`${grn.id}-${idx}`} className="mat-mdc-row small">
+                  <td className="text-start">{l.orderNo}{(l.shortQty || l.excessQty) ? <div className="text-danger text-xs">{l.shortQty ? `Short ${l.shortQty}` : `Excess ${l.excessQty}`}</div> : null}</td>
+                  <td className="text-center">{l.receivedQty}</td>
+                  <td className="text-center"><input type="number" min={0} className={`form-control form-control-sm cds-qty mx-auto${x.accepted + x.damaged !== l.receivedQty ? ' is-invalid' : ''}`} aria-label={`Accepted ${l.orderNo}`} value={x.accepted} onChange={(e) => set(i, { accepted: Math.floor(Number(e.target.value)) })} /></td>
+                  <td className="text-center"><input type="number" min={0} className="form-control form-control-sm cds-qty mx-auto" aria-label={`Damaged ${l.orderNo}`} value={x.damaged} onChange={(e) => set(i, { damaged: Math.floor(Number(e.target.value)) })} /></td>
+                  <td className="text-start"><input className={`form-control form-control-sm${needRemark && !x.remarks.trim() ? ' is-invalid' : ''}`} placeholder={needRemark ? 'Remark required' : 'Remarks'} aria-label={`Remarks ${l.orderNo}`} value={x.remarks} onChange={(e) => set(i, { remarks: e.target.value })} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {bad && <div className="text-danger small mt-2">Accepted + damaged must equal the received quantity, and a short / excess / damaged line needs a remark.</div>}
+      </div>
+      <div className="dialog-footer">
+        <button className="cancel-btn" onClick={() => onClose()}>Cancel</button>
+        <button className="primary-btn" disabled={bad || busy} onClick={() => void save()}>{busy ? <><i className="fas fa-spinner fa-spin" /> Updating...</> : <><i className="fas fa-save" /> Update</>}</button>
+      </div>
+    </Dialog>
+  );
+}
 
 /** Edit Resource — same dialog as LBNP: vehicle and driver, with the capacity acknowledgement. Planned trips only. */
 function EditResourceDialog({ trip, onClose }: { trip: TripView; onClose: (saved?: boolean) => void }) {
@@ -485,43 +601,50 @@ function TabTable({ head, children, foot, empty, cols }: { head: ReactNode; chil
 export function TripDetailsPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { sc } = useCdsSession();
+  const { sc, store } = useCdsSession();
   const { busy, run } = useAction();
   const { data, error, reload } = useLoad(() => cdsApi.trip(id), [id]);
-  const [openStop, setOpenStop] = useState<string | null>(null);
-  const [tab, setTab] = useState<DetailTab | ''>('');
+  // CDS User: the GRNs of its store (GRN trips: Ordered Products › Edit and Generate GRN)
+  const grns = useLoad(async () => (sc ? [] : (await cdsApi.searchGrns({ pageSize: 0 })).rows), [sc, id]);
+  const [tab, setTab] = useState<DetailTab>('summary');
   const [showAll, setShowAll] = useState(false);
   const [dialog, setDialog] = useState<'resource' | 'helper' | null>(null);
+  const [editSku, setEditSku] = useState<string | null>(null);
   const t = data?.trip;
-  useEffect(() => {
-    if (t && !openStop) setOpenStop(t.stops.find((s) => s.status === 'PENDING')?.id ?? null);
-  }, [t, openStop]);
   if (error) return <div className="cds-page"><ErrorBox text={error} onRetry={reload} /></div>;
   if (!t || !data) return <div className="trip-details-container"><div className="loading-container"><DataLoading overlay={false} message="Loading trip details..." showTip /></div></div>;
-  const running = ['STARTED', 'IN_PROGRESS'].includes(t.status);
-  const retailerTrip = t.type === 'RETAILER_DELIVERY';
   const returnTrip = t.type === 'CDS_RETURN';
-  const isPlanned = ['PLANNED', 'ASSIGNED'].includes(t.status);
-  // A running trip of the CDS User opens on its stops (that is where the work is); others open on the summary.
-  const view: DetailTab = tab || (running && data.canRun ? 'stops' : 'summary');
-  const start = async () => {
-    const early = t.plannedDate > new Date().toISOString().slice(0, 10);
-    if (!(await confirm(`Start ${t.tripNo}?`, early ? `This trip is planned for ${fmtDate(t.plannedDate)}. Start it now?` : `${t.deliveryPersonName} starts the trip in the Delivery Partner App.`, 'Start trip'))) return;
-    if (await run(() => cdsApi.startTrip(t.id), 'Trip started')) { reload(); setTab('stops'); }
+  // Edit Resource / Update Helper: planned trips, by the owner (Service Centre trips by the Service Centre).
+  const isPlanned = ['PLANNED', 'ASSIGNED'].includes(t.status) && (sc ? t.owner === 'SC' : data.canRun);
+  const grnTrip = !sc && t.type === 'DISTRIBUTOR_PICKUP';
+  const plannedTrip = grnTrip && ['PLANNED', 'ASSIGNED'].includes(t.status);
+  const view: DetailTab = tab;
+  const tripGrns = (grns.data ?? []).filter((g) => g.cdsTripId === t.id);
+  const pendingGrns = tripGrns.filter((g) => g.status === 'PENDING');
+  const generateGrn = async () => {
+    if (!(await confirm('Generate GRN?', 'Accepted quantities become ready for planning; damaged items go back to the distributor through a return trip.', 'Generate GRN'))) return;
+    const ok = await run(async () => {
+      for (const g of pendingGrns) await cdsApi.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: l.acceptedQty ?? l.receivedQty, damagedQty: l.damagedQty ?? 0, remarks: l.remarks })) });
+      return true;
+    }, 'GRN generated. The orders are ready for planning.');
+    if (ok) { grns.reload(); reload(); }
   };
-  const back = sc ? `/cds/trips?tab=${t.type}` : !data.canRun ? '/cds/grn' : '/cds/trips';
+  const back = `/cds/trips?tab=${t.type}`;
   const f = tripFigures(t);
   const last = lastStops(t);
   const qtyOf = (l: StopView['lines'][number]) => l.actualQty ?? l.plannedQty;
   const valueOf = (s: StopView) => sumOf(s.lines, (l) => qtyOf(l) * l.unitPrice);
-  const tabs: [DetailTab, string][] = [
-    ['summary', 'Summary'],
-    ...(retailerTrip && data.canRun ? [['stops', 'Stops'] as [DetailTab, string]] : []),
-    ['customer', 'Customer Wise Orders'],
-    ...(retailerTrip ? [] : [['distributor', 'Distributor Wise Orders'], ['cds', 'CDS Wise Orders']] as [DetailTab, string][]),
-    ...(returnTrip ? [] : [['product', 'Ordered Products'] as [DetailTab, string]]),
-    ...(returnTrip || retailerTrip ? [['return', 'Return Products'] as [DetailTab, string]] : []),
-  ];
+  // Tabs. Service Centre: Summary, Customer / Distributor / CDS Wise Orders, Ordered or Return Products.
+  // CDS User (LBNP Trips view): GRN trips Summary + Ordered Products; deliveries Summary, Customer Wise Orders,
+  // Ordered Products, Return Products; returns Summary, Customer Wise Orders, Return Products.
+  const tabs: [DetailTab, string][] = sc
+    ? [
+      ['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['distributor', 'Distributor Wise Orders'], ['cds', 'CDS Wise Orders'],
+      ...(returnTrip ? [['return', 'Return Products'] as [DetailTab, string]] : [['product', 'Ordered Products'] as [DetailTab, string]]),
+    ]
+    : grnTrip ? [['summary', 'Summary'], ['product', 'Ordered Products']]
+      : returnTrip ? [['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['return', 'Return Products']]
+        : [['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['product', 'Ordered Products'], ['return', 'Return Products']];
   const visible = showAll ? t.stops : t.stops.slice(0, 3);
   const info = (icon: string, label: string, value: ReactNode, key = label) => (
     <div className="info-row" key={key}><div className="info-item full-width"><i className="material-icons">{icon}</i><div className="label">{label}</div><div className="value">{value}</div></div></div>
@@ -539,9 +662,10 @@ export function TripDetailsPage() {
   }).sort((a, z) => (a.stop?.seq ?? 0) - (z.stop?.seq ?? 0) || a.name.localeCompare(z.name));
 
   // Ordered Products (orders) and Return Products (returns), product-wise like LBNP.
-  const drops = t.stops.filter((s) => s.action === DROP_ACTION[t.type]);
+  const drops = t.stops.filter((s) => s.action === DROP_ACTION[t.type] && (!grnTrip || s.partyId === store));
+  const productOrders = grnTrip ? data.orders.filter((o) => o.cdsStoreId === store) : data.orders;
   const dropQty = (sku: string, done: boolean) => sumOf(drops.filter((s) => (s.status !== 'PENDING') === done), (s) => sumOf(s.lines.filter((l) => l.sku === sku && l.orderId), (l) => (done ? l.actualQty ?? 0 : l.plannedQty)));
-  const products = Array.from(data.orders.flatMap((o) => o.lines).reduce((m, l) => {
+  const products = Array.from(productOrders.flatMap((o) => o.lines).reduce((m, l) => {
     const p = m.get(l.sku) ?? { sku: l.sku, name: l.name, mrp: l.unitPrice, qty: 0 };
     p.qty += l.qty;
     return m.set(l.sku, p);
@@ -585,7 +709,7 @@ export function TripDetailsPage() {
           <div className="provider">{'Provider: ' + (t.providerName || 'N/A')}</div>
         </div>
         <div className="header-right">
-          {data.canRun && t.status === 'ASSIGNED' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void start()}><i className="fas fa-play me-2" />Start Trip</button>}
+          {grnTrip && pendingGrns.length > 0 && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void generateGrn()}><i className="fas fa-check me-2" />Generate GRN</button>}
         </div>
       </div>
       {t.status === 'CANCELLED' && <div className="cds-note warn mb-3"><i className="fas fa-ban mt-1" />Cancelled: {t.cancelReason}</div>}
@@ -614,7 +738,7 @@ export function TripDetailsPage() {
                 {info('person_outline', 'Helper', <>{' ' + (t.helperName || 'N/A') + ' '}<i className={`fas fa-pencil-alt edit-helper-icon${!isPlanned ? ' disabled' : ''}`} title="Update Helper" role="button" aria-label="Update Helper" onClick={() => isPlanned && setDialog('helper')} /></>)}
                 {info('play_circle_outline', 'Start Time', t.startedAt ? fmtDateTime(t.startedAt) : 'N/A')}
                 {info('access_time', 'Estimated Completion', estCompletion(t))}
-                {OTP_ROWS[t.type].map(([label, actions]) => info('vpn_key', label, lastOtp(t.stops, actions)))}
+                {otpRows(t, sc, store).map(([label, value]) => info('vpn_key', label, value))}
               </div>
 
               <div className="information-card trip-summary">
@@ -685,8 +809,8 @@ export function TripDetailsPage() {
       {view === 'cds' && partyTable('CDS')}
       {view === 'product' && (
         <TabTable cols={10} empty={!products.length && 'No product orders found'}
-          head={<>{th('fa-box', 'Product Name', 'text-start')}{th('fa-ruler', 'UOM')}{th('fa-barcode', 'UPC')}{th('fa-box', 'Cases')}{th('fa-cubes', 'PCS')}{th('fa-tag', 'MRP')}{th('fa-check-circle', 'Delivered')}{th('fa-clock', 'Pending')}{th('fa-layer-group', 'Total Qty')}{th('fa-rupee-sign', 'Amount')}</>}
-          foot={products.length > 0 && <><td /><td /><td /><td /><td /><td /><td /><td className="text-center fw-bold"> Total: </td><td className="text-center fw-bold">{sumOf(products, (p) => p.qty)}</td><td className="text-center fw-bold">{money(sumOf(products, (p) => p.qty * p.mrp))}</td></>}>
+          head={<>{th('fa-box', 'Product Name', 'text-start')}{th('fa-ruler', 'UOM')}{th('fa-barcode', 'UPC')}{th('fa-box', 'Cases')}{th('fa-cubes', 'PCS')}{th('fa-tag', 'MRP')}{th('fa-check-circle', 'Delivered')}{th('fa-clock', 'Pending')}{th('fa-layer-group', 'Total Qty')}{th('fa-rupee-sign', 'Amount')}{grnTrip && th('fa-cogs', 'Actions')}</>}
+          foot={products.length > 0 && <><td /><td /><td /><td /><td /><td /><td /><td className="text-center fw-bold"> Total: </td><td className="text-center fw-bold">{sumOf(products, (p) => p.qty)}</td><td className="text-center fw-bold">{money(sumOf(products, (p) => p.qty * p.mrp))}</td>{grnTrip && <td />}</>}>
           {products.map((p) => (
             <tr className="mat-mdc-row small" key={p.sku}>
               <td className="text-start">{p.name}</td>
@@ -699,10 +823,28 @@ export function TripDetailsPage() {
               <td className="text-center">{p.pending}</td>
               <td className="text-center">{p.qty}</td>
               <td className="text-center">{money(p.qty * p.mrp)}</td>
+              {grnTrip && (() => {
+                // Planned trip: edit the quantity to pick up. After the handover: edit the GRN (accepted / damaged).
+                const lines = tripGrns.flatMap((g) => g.lines.map((l, idx) => ({ grn: g, idx, l })).filter((x) => x.l.sku === p.sku));
+                const done = lines.length > 0 && lines.every((x) => x.grn.status !== 'PENDING');
+                const can = plannedTrip || (lines.length > 0 && !done);
+                const title = plannedTrip ? 'Edit' : !lines.length ? 'Available after the handover at your CDS store' : done ? 'GRN generated' : 'Edit';
+                return <td className="text-center"><button className="btn btn-sm text-primary cds-icon-btn" title={title} aria-label={`Edit ${p.name}`} disabled={!can} onClick={() => setEditSku(p.sku)}><i className="fas fa-pen" /></button></td>;
+              })()}
             </tr>
           ))}
         </TabTable>
       )}
+      {editSku && plannedTrip && (() => {
+        const p = products.find((x) => x.sku === editSku);
+        const orders = productOrders.filter((o) => o.lines.some((l) => l.sku === editSku)).map((o) => ({ id: o.id, orderNo: o.orderNo, retailerName: o.retailerName, qty: o.lines.find((l) => l.sku === editSku)!.qty }));
+        return <PlannedQtyDialog tripId={t.id} sku={editSku} name={p?.name ?? editSku} orders={orders} onClose={(saved) => { setEditSku(null); if (saved) reload(); }} />;
+      })()}
+      {editSku && !plannedTrip && (() => {
+        const items = tripGrns.filter((g) => g.status === 'PENDING').flatMap((g) => g.lines.map((l, idx) => ({ grn: g, idx, l })).filter((x) => x.l.sku === editSku)).map(({ grn, idx }) => ({ grn, idx }));
+        const p = products.find((x) => x.sku === editSku);
+        return <EditProductDialog name={p?.name ?? editSku} items={items} onClose={(saved) => { setEditSku(null); if (saved) grns.reload(); }} />;
+      })()}
       {view === 'return' && (
         <TabTable cols={9} empty={!returnProducts.length && 'No return products found'}
           head={<>{th('fa-box', 'Product Name', 'text-start')}{th('fa-ruler', 'UOM')}{th('fa-barcode', 'UPC')}{th('fa-box', 'Cases')}{th('fa-cubes', 'PCS')}{th('fa-tag', 'MRP')}{th('fa-layer-group', 'Ordered Qty')}{th('fa-undo', 'Return Qty')}{th('fa-rupee-sign', 'Amount')}</>}
@@ -721,37 +863,6 @@ export function TripDetailsPage() {
             </tr>
           ))}
         </TabTable>
-      )}
-      {view === 'stops' && (
-        <div className="trip-details-content cds-plain">
-          {data.canRun && t.status === 'ASSIGNED' && <div className="cds-note m-3"><i className="fas fa-circle-info mt-1" />Start the trip to record the stops.</div>}
-          {t.stops.map((s) => (
-            <div key={s.id}>
-              <div className="cds-stop" role="button" onClick={() => setOpenStop(openStop === s.id ? null : s.id)}>
-                <div className={`num ${stopTone(s)}`}>{s.seq}</div>
-                <div className="flex-grow-1 small">
-                  <div className="fw-semibold">{STOP_ACTION[s.action].label} · {s.name}</div>
-                  <div className="text-muted">{s.address}</div>
-                  {s.verifiedAt && <div className="text-success text-xs mt-1"><i className="fas fa-shield-halved me-1" />OTP verified {fmtDateTime(s.verifiedAt)}</div>}
-                  {s.failReason && <div className="text-danger text-xs">{s.status === 'FAILED' ? 'Failed' : 'Note'}: {s.failReason}</div>}
-                </div>
-                <div className="text-end small">
-                  <span className={`cds-badge ${s.status === 'DONE' ? 'green' : s.status === 'FAILED' ? 'red' : s.status === 'PARTIAL' ? 'amber' : 'grey'}`}>{STOP_LABEL[s.status]}</span>
-                  <div className="text-muted text-xs mt-1">{s.lines.reduce((a, l) => a + (l.actualQty ?? 0), 0)}/{s.lines.reduce((a, l) => a + l.plannedQty, 0)} units</div>
-                </div>
-                <i className={`fas fa-chevron-${openStop === s.id ? 'up' : 'down'} text-muted small ms-2 mt-1`} />
-              </div>
-              {openStop === s.id && (
-                <div className="px-3 pb-3">
-                  {s.status === 'PENDING' && running && data.canRun
-                    ? <StopAction key={s.id} tripId={t.id} stop={s} orders={data.orders} onDone={() => { setOpenStop(null); reload(); }} />
-                    : <StopLines stop={s} />}
-                  {s.action === 'RETAILER_DELIVERY' && s.status !== 'FAILED' && running && data.canRun && <AdHocReturn tripId={t.id} stop={s} onDone={reload} />}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
       )}
       {dialog === 'resource' && <EditResourceDialog trip={t} onClose={(saved) => { setDialog(null); if (saved) reload(); }} />}
       {dialog === 'helper' && <UpdateHelperDialog trip={t} onClose={(saved) => { setDialog(null); if (saved) reload(); }} />}
@@ -932,146 +1043,4 @@ export function TripOrderDetailsPage() {
       </div>
     </div>
   );
-}
-
-/** The stop's items with price, value and weight. Value and weight use the actual quantity once the stop is done. */
-function StopLines({ stop }: { stop: StopView }) {
-  const handover = stop.action === 'RETURN_HANDOVER_CDS';
-  const qty = (l: StopView['lines'][number]) => l.actualQty ?? l.plannedQty;
-  const value = (l: StopView['lines'][number]) => qty(l) * l.unitPrice;
-  const weight = (l: StopView['lines'][number]) => qty(l) * l.unitWeightKg;
-  const cols = 4 + (handover ? 2 : 0);
-  return (
-    <Table head={['Order / return', 'Item', 'Planned Qty', 'Actual Qty', ...(handover ? ['Accepted', 'Rejected'] : []), 'Unit Price', 'Total Value', 'Total Weight']}>
-      {stop.lines.map((l, i) => (
-        <tr key={i} className="mat-mdc-row">
-          <td className="small">{l.returnId ? 'Return' : 'Order'}</td><td className="small">{l.name}</td><td>{l.plannedQty}</td>
-          <td className={l.actualQty !== null && l.actualQty < l.plannedQty ? 'text-danger fw-bold' : ''}>{l.actualQty ?? '—'}</td>
-          {handover && <><td>{l.acceptedQty ?? '—'}</td><td>{l.rejectedQty ?? '—'}</td></>}
-          <td className="small">{money(l.unitPrice)}</td>
-          <td className="small">{money(value(l))}</td>
-          <td className="small">{kg(weight(l))}</td>
-        </tr>
-      ))}
-      <tr className="mat-mdc-row cds-retailer-row">
-        <td colSpan={cols} className="text-end">Total · {stop.lines.length} item{stop.lines.length === 1 ? '' : 's'} · {stop.lines.reduce((a, l) => a + qty(l), 0)} units</td>
-        <td />
-        <td>{money(stop.lines.reduce((a, l) => a + value(l), 0))}</td>
-        <td>{kg(stop.lines.reduce((a, l) => a + weight(l), 0))}</td>
-      </tr>
-    </Table>
-  );
-}
-
-type TripOrders = Awaited<ReturnType<typeof cdsApi.trip>>['orders'];
-
-/** One stop: send the OTP, record quantities (and money / accepted-rejected), verify the OTP, or mark it failed. */
-function StopAction({ tripId, stop, orders, onDone }: { tripId: string; stop: StopView; orders: TripOrders; onDone: () => void }) {
-  const { busy, run } = useAction();
-  const [qty, setQty] = useState<number[]>(stop.lines.map((l) => l.plannedQty));
-  const [acc, setAcc] = useState<number[]>(stop.lines.map((l) => l.plannedQty));
-  const [otp, setOtp] = useState('');
-  const [sms, setSms] = useState<{ to: string; text: string; expires: string } | null>(null);
-  const handover = stop.action === 'RETURN_HANDOVER_CDS';
-  const delivery = stop.action === 'RETAILER_DELIVERY';
-  const codOrders = delivery ? Array.from(new Set(stop.lines.map((l) => l.orderId!))).filter((oid) => orders.find((o) => o.id === oid)?.paymentMode === 'COD') : [];
-  const due = (oid: string) => Math.round(stop.lines.reduce((a, l, i) => a + (l.orderId === oid ? qty[i] * l.unitPrice : 0), 0) * 100) / 100;
-  const [cash, setCash] = useState<Record<string, { amount: string; mode: 'CASH' | 'UPI' }>>({});
-  const send = async () => {
-    const r = await run(() => cdsApi.sendStopOtp(tripId, stop.id));
-    if (r) setSms({ to: `${r.sentToName} · +91 ${r.sentToPhone}`, text: r.demoSms, expires: r.expiresAt });
-  };
-  const complete = async () => {
-    const r = await run(() => cdsApi.completeStop(tripId, stop.id, {
-      otp: otp.trim(),
-      lines: stop.lines.map((_, i) => ({ idx: i, actualQty: qty[i], ...(handover ? { acceptedQty: acc[i], rejectedQty: qty[i] - acc[i] } : {}) })),
-      collections: codOrders.map((oid) => ({ orderId: oid, amount: Number(cash[oid]?.amount ?? due(oid)), mode: cash[oid]?.mode ?? 'CASH' })),
-    }), 'OTP verified — stop completed');
-    if (r) onDone();
-  };
-  const markFailed = async () => {
-    const reason = await askText(`${STOP_ACTION[stop.action].label} not done`, 'Reason (e.g. shop closed, stock not ready)', 'Mark failed', true);
-    if (reason && (await run(() => cdsApi.failStop(tripId, stop.id, reason), 'Stop marked failed'))) onDone();
-  };
-  const invalid = qty.some((q, i) => !(q >= 0 && Number.isInteger(q))) || (handover && acc.some((a, i) => a < 0 || a > qty[i])) || !/^\d{4,6}$/.test(otp.trim());
-  return (
-    <div className="border rounded p-3 bg-light">
-      <div className="small fw-semibold mb-2">{STOP_ACTION[stop.action].verb} — confirm quantities, then verify the OTP from {stop.partyType === 'CDS' ? 'the CDS User' : stop.partyType === 'RETAILER' ? 'the retailer' : 'the seller / distributor'}</div>
-      <Table head={['Item', 'Planned Qty', handover ? 'Received' : 'Actual Qty', ...(handover ? ['Accepted', 'Rejected'] : [])]}>
-        {stop.lines.map((l, i) => (
-          <tr key={i} className="mat-mdc-row">
-            <td className="small">{l.name}<div className="text-muted text-xs">{l.returnId ? 'Return' : orders.find((o) => o.id === l.orderId)?.orderNo}</div></td>
-            <td>{l.plannedQty}</td>
-            <td><input type="number" min={0} className="form-control form-control-sm cds-qty" aria-label={`Quantity ${l.name}`} value={qty[i]} onChange={(e) => setQty((q) => q.map((x, j) => (j === i ? Math.floor(Number(e.target.value)) : x)))} /></td>
-            {handover && <>
-              <td><input type="number" min={0} className="form-control form-control-sm cds-qty" aria-label={`Accepted ${l.name}`} value={acc[i]} onChange={(e) => setAcc((q) => q.map((x, j) => (j === i ? Math.floor(Number(e.target.value)) : x)))} /></td>
-              <td>{Math.max(0, qty[i] - acc[i])}</td>
-            </>}
-          </tr>
-        ))}
-      </Table>
-      {codOrders.length > 0 && (
-        <div className="mt-2 small">
-          <div className="fw-semibold mb-1"><i className="fas fa-indian-rupee-sign me-1" />Payment collected (COD)</div>
-          {codOrders.map((oid) => (
-            <div key={oid} className="d-flex gap-2 align-items-center mb-1">
-              <span style={{ minWidth: 110 }}>{orders.find((o) => o.id === oid)?.orderNo}</span>
-              <span className="text-muted">due {money(due(oid))}</span>
-              <input type="number" min={0} className="form-control form-control-sm" style={{ width: 110 }} aria-label="Amount collected" value={cash[oid]?.amount ?? String(due(oid))} onChange={(e) => setCash((c) => ({ ...c, [oid]: { mode: c[oid]?.mode ?? 'CASH', amount: e.target.value } }))} />
-              <select className="form-select form-select-sm" style={{ width: 90 }} aria-label="Mode" value={cash[oid]?.mode ?? 'CASH'} onChange={(e) => setCash((c) => ({ ...c, [oid]: { amount: c[oid]?.amount ?? String(due(oid)), mode: e.target.value as 'CASH' } }))}><option value="CASH">Cash</option><option value="UPI">UPI</option></select>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="d-flex flex-wrap gap-2 align-items-end mt-3">
-        <button className="btn btn-sm btn-outline-primary" disabled={busy} onClick={() => void send()}><i className="fas fa-paper-plane me-1" />{stop.otp?.status === 'ACTIVE' || sms ? 'Resend OTP' : 'Send OTP'}</button>
-        <div>
-          <label className="form-label mb-1 small fw-medium">OTP</label>
-          <input className="form-control form-control-sm" style={{ width: 120 }} inputMode="numeric" maxLength={6} placeholder="6 digits" aria-label="OTP" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
-        </div>
-        <button className="btn btn-sm btn-success" disabled={busy || invalid} onClick={() => void complete()}><i className="fas fa-shield-halved me-1" />Verify OTP &amp; Complete</button>
-        {STOP_ACTION[stop.action].canFail && <button className="btn btn-sm btn-outline-danger ms-auto" disabled={busy} onClick={() => void markFailed()}>Mark Failed</button>}
-      </div>
-      {sms && (
-        <div className="cds-note mt-2"><i className="fas fa-comment-sms mt-1" /><div>OTP sent to {sms.to} (valid until {fmtDateTime(sms.expires)}).<div className="text-muted text-xs mt-1">Demo SMS: “{sms.text}”</div></div></div>
-      )}
-    </div>
-  );
-}
-
-/** Delivery person takes back items during the visit — creates the return and a return-collection stop. */
-function AdHocReturn({ tripId, stop, onDone }: { tripId: string; stop: StopView; onDone: () => void }) {
-  const meta = useMeta();
-  const open = async () => {
-    const reasons = meta.data?.returnReasons ?? [];
-    // any order already delivered to this retailer
-    const delivered = (await cdsApi.searchOrders({ retailerId: stop.partyId, statuses: ['DELIVERED', 'PARTIALLY_DELIVERED'], pageSize: 0 })).rows;
-    const lines = delivered.flatMap((o) => o.lines.filter((l) => l.deliveredQty - l.returnedQty > 0).map((l) => ({ o, l })));
-    if (!lines.length) return void alertError(new Error('No delivered orders of this retailer to return yet'));
-    const res = await Swal.fire({
-      title: `Collect return at ${stop.name}`, width: 640,
-      html: `<div class="text-start small">${lines.map(({ o, l }, i) => `<div class="border rounded p-2 mb-2"><div class="fw-semibold mb-1">${o.orderNo} · ${l.name} <span class="text-muted">(delivered ${l.deliveredQty})</span></div>
-        <div class="d-flex gap-2"><input id="aq-${i}" type="number" min="0" max="${l.deliveredQty}" value="0" class="form-control form-control-sm" style="width:80px" aria-label="Quantity">
-        <select id="ar-${i}" class="form-select form-select-sm">${reasons.map((x) => `<option>${x}</option>`).join('')}</select>
-        <select id="ac-${i}" class="form-select form-select-sm" style="width:120px"><option value="GOOD">Good</option><option value="DAMAGED">Damaged</option><option value="EXPIRED">Expired</option></select></div></div>`).join('')}
-        <div class="text-muted">A return-collection stop is added; confirm it with the retailer's OTP.</div></div>`,
-      showCancelButton: true, confirmButtonText: 'Add return', confirmButtonColor: '#1e3a8a', reverseButtons: true,
-      preConfirm: () => {
-        const v = (k: string) => (document.getElementById(k) as HTMLInputElement).value;
-        const picked = lines.map(({ o, l }, i) => ({ orderId: o.id, sku: l.sku, qty: Math.floor(Number(v(`aq-${i}`))), reason: v(`ar-${i}`), condition: v(`ac-${i}`) as 'GOOD' })).filter((x) => x.qty > 0);
-        if (!picked.length) return Swal.showValidationMessage('Enter a quantity');
-        if (new Set(picked.map((x) => x.orderId)).size > 1) return Swal.showValidationMessage('Add one order at a time');
-        return picked;
-      },
-    });
-    if (!res.isConfirmed) return;
-    try {
-      await cdsApi.addReturnAtStop(tripId, stop.id, { orderId: res.value[0].orderId, lines: res.value.map(({ sku, qty, reason, condition }: { sku: string; qty: number; reason: string; condition: 'GOOD' }) => ({ sku, qty, reason, condition })) });
-      void toast('Return added to the trip');
-      onDone();
-    } catch (e) {
-      void alertError(e);
-    }
-  };
-  return <button className="btn btn-sm btn-outline-primary mt-2" onClick={() => void open()}><i className="fas fa-rotate-left me-1" />Collect a return from this retailer</button>;
 }
