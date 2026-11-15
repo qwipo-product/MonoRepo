@@ -301,6 +301,16 @@
 .cds-store-form { max-width: 760px; }
 .cds-store-form .fm-input.is-invalid { border-color: #dc2626; }
 .cds-field-error { color: #dc2626; font-size: 12px; margin-top: 4px; }
+.cds-store-area { border: 1px dashed #93c5fd; background: #f8fbff; border-radius: 8px; padding: 12px 14px; margin-top: 8px; }
+.cds-store-area.is-invalid { border-color: #dc2626; background: #fff7f7; }
+.cds-store-area .area-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cds-store-area .area-title { font-weight: 600; color: #1f2937; font-size: 14px; }
+.cds-store-area .area-served { border-top: 1px solid #e5e7eb; margin-top: 10px; padding-top: 10px; }
+.area-chip { display: inline-flex; align-items: center; gap: 5px; background: #e0e7ff; color: #312e81; border: 1px solid #c7d2fe; border-radius: 14px; padding: 3px 11px; font-size: 13px; font-weight: 500; }
+.area-chip b { background: #fff; color: #3730a3; border-radius: 9px; padding: 0 6px; font-size: 11px; }
+.cds-area-names { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: #fff; }
+.cds-area-names .names-title { font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 6px; }
+.cds-area-names .names-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 140px; overflow-y: auto; }
 
 /* Planning uses the LBNP Delivery Planning styles; a green band for the completed cards. */
 .cds-page.delivery-routes-page { padding: 1rem; }

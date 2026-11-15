@@ -89,7 +89,7 @@ export default function CdsLayout() {
     <div className="layout-container">
       <aside className={`sidebar cds-sidebar${open ? '' : ' collapsed'}`}>
         <div className="sidebar-header">
-          {open && <div className="logo"><i className="fas fa-warehouse" /><h1>Cross Dock Store</h1></div>}
+          {open && <div className="logo"><i className="fas fa-warehouse" /><h1>{sc ? 'CDS Service Centre' : 'Cross Dock Store'}</h1></div>}
           <button className="toggle-btn" onClick={() => setOpen((o) => !o)} aria-label="Toggle sidebar"><i className={`fas ${open ? 'fa-chevron-left' : 'fa-chevron-right'}`} /></button>
         </div>
         <nav className="nav-menu" style={{ paddingTop: 12 }}>

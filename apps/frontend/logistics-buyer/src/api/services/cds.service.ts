@@ -95,7 +95,7 @@ export function cdsErrorText(e: unknown): string {
 export interface Paged<T> { rows: T[]; total: number; pageNumber: number; pageSize: number }
 export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; city: string; state: string; retailerLat: number; retailerLng: number; distributorName: string; storeName: string; units: number };
 export interface ReportRunRow { id: string; reportId: string; filters: Record<string, string>; rows: number; at: string; by: string }
-export interface NewStore { code: string; name: string; address: string; city: string; state: string; lat: number; lng: number; localities: string[]; managerName: string; managerPhone: string }
+export interface NewStore { code: string; name: string; address: string; city: string; state: string; lat: number; lng: number; polygon: [number, number][]; localities: string[]; managerName: string; managerPhone: string }
 export type StopView = TripStop & { otp: Omit<OtpTxn, 'code'> | null };
 /** `shown`: the status shown (Assigned / In Progress / Completed / Cancelled) and what the vehicle is doing now. */
 export type TripView = Omit<Trip, 'stops'> & { ownerName: string; units: number; stops: StopView[]; shown: { status: TripShown; note: string } };

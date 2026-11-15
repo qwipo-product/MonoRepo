@@ -12,6 +12,10 @@ export const mapStops = (stops: { seq: number; name: string; address: string; la
 
 export interface MapStop { seq: number; name: string; detail?: string; lat: number; lng: number; status?: 'PENDING' | 'DONE' | 'PARTIAL' | 'FAILED' }
 
+/** OpenStreetMap tiles: they show area and street names (the CARTO tiles now need an API key). */
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors';
+
 const COLORS = { PENDING: '#2563eb', DONE: '#16a34a', PARTIAL: '#d97706', FAILED: '#dc2626' } as const;
 
 const pin = (s: MapStop) =>
@@ -40,7 +44,7 @@ export function RouteMap({ stops, height = 420, groups, line = true }: { stops: 
   return (
     <div className="cds-map" style={{ height }}>
       <MapContainer center={points[0]} zoom={12} style={{ width: '100%', height: '100%' }}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap contributors &copy; CARTO" />
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         {line && lines.map((p, i) => <Polyline key={i} positions={p} pathOptions={{ color: groups ? STORE_COLORS[i % STORE_COLORS.length] : '#2563eb', weight: 3, opacity: 0.8, dashArray: '8 6' }} />)}
         {shown.map((s, i) => (
           <Marker key={`${i}-${s.seq}-${s.name}`} position={[s.lat, s.lng]} icon={pin(s)}>
@@ -116,7 +120,7 @@ export function CoverageMap({ stores, retailers, focusId, height = 440 }: { stor
   return (
     <div className="cds-map" style={{ height }}>
       <MapContainer center={[17.41, 78.49]} zoom={11} style={{ width: '100%', height: '100%' }}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap contributors &copy; CARTO" />
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
         {stores.map((s) => s.polygon.length >= 3 && (
           <Polygon key={s.id} positions={s.polygon} pathOptions={{ color: color(s.id), weight: 2, fillOpacity: s.active ? 0.12 : 0.04, dashArray: s.active ? undefined : '6 6' }}>
             <Tooltip sticky>{s.name}{s.active ? '' : ' (inactive)'}</Tooltip>
@@ -149,6 +153,8 @@ export function PolygonEditorDialog({ store, others, retailers, busy, onSave, on
   const inside = retailers.filter((r) => ring.length >= 3 && pointInPolygon(r, ring));
   const shared = inside.filter((r) => others.some((o) => o.active && o.polygon.length >= 3 && pointInPolygon(r, o.polygon)));
   const area = ringAreaKm2(ring);
+  // area names inside the drawing, with how many retailers each has
+  const names = Array.from(inside.reduce((m, r) => m.set(r.locality, (m.get(r.locality) ?? 0) + 1), new Map<string, number>()).entries()).filter(([n]) => n).sort((a, b) => a[0].localeCompare(b[0]));
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
@@ -168,6 +174,12 @@ export function PolygonEditorDialog({ store, others, retailers, busy, onSave, on
               <div><b>{area}</b><span>km²</span></div>
               <div><b>{inside.length}</b><span>retailers inside</span></div>
             </div>
+            <div className="cds-area-names">
+              <div className="names-title"><i className="fas fa-location-dot me-1" />Areas inside {names.length > 0 && <span className="text-muted fw-normal">({names.length})</span>}</div>
+              {ring.length < 3 ? <div className="text-muted small">Add at least 3 points to see the area names.</div>
+                : names.length ? <div className="names-list">{names.map(([n, c]) => <span key={n} className="area-chip" title={`${c} retailer${c === 1 ? '' : 's'}`}>{n} <b>{c}</b></span>)}</div>
+                  : <div className="text-muted small">No retailers inside yet.</div>}
+            </div>
             {shared.length > 0 && <div className="cds-note warn"><i className="fas fa-triangle-exclamation mt-1" /><div>{shared.length} retailer{shared.length === 1 ? ' is' : 's are'} also inside another CDS area. They go to the nearest CDS store.</div></div>}
             <div className="cds-note"><i className="fas fa-circle-info mt-1" /><div>New Seller Store orders use the saved area. Orders already allocated keep their CDS store.</div></div>
             <div className="d-flex flex-wrap gap-2">
@@ -182,11 +194,11 @@ export function PolygonEditorDialog({ store, others, retailers, busy, onSave, on
           </div>
           <div className="cds-map" style={{ height: 480 }}>
             <MapContainer center={[store.lat, store.lng]} zoom={12} style={{ width: '100%', height: '100%', cursor: 'crosshair' }}>
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap contributors &copy; CARTO" />
+              <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
               {others.filter((o) => o.polygon.length >= 3).map((o) => <Polygon key={o.id} positions={o.polygon} pathOptions={{ color: OUTSIDE_COLOR, weight: 1, fillOpacity: 0.06, dashArray: '4 4' }}><Tooltip sticky>{o.name}</Tooltip></Polygon>)}
-              {ring.length >= 3 && <Polygon positions={ring} pathOptions={{ color: '#2563eb', weight: 2, fillOpacity: 0.15 }} />}
+              {ring.length >= 3 && <Polygon positions={ring} pathOptions={{ color: '#2563eb', weight: 2, fillOpacity: 0.15 }}><Tooltip sticky>{store.name}{names.length ? `: ${names.map(([n]) => n).join(', ')}` : ''}</Tooltip></Polygon>}
               {ring.length === 2 && <Polyline positions={ring} pathOptions={{ color: '#2563eb', weight: 2 }} />}
-              {retailers.map((r) => <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={3} pathOptions={{ color: inside.includes(r) ? '#2563eb' : OUTSIDE_COLOR, weight: 1, fillOpacity: 0.8 }} />)}
+              {retailers.map((r) => <CircleMarker key={r.id} center={[r.lat, r.lng]} radius={inside.includes(r) ? 5 : 3} pathOptions={{ color: inside.includes(r) ? '#2563eb' : OUTSIDE_COLOR, weight: 1, fillOpacity: 0.8 }}><Tooltip direction="top">{r.name} · {r.locality}</Tooltip></CircleMarker>)}
               {ring.map((p, i) => (
                 <Marker key={i} position={p} icon={vertexIcon} draggable
                   eventHandlers={{ dragend: (e) => { const ll = (e.target as L.Marker).getLatLng(); setRing((r) => r.map((x, j) => (j === i ? [Math.round(ll.lat * 1e6) / 1e6, Math.round(ll.lng * 1e6) / 1e6] : x))); } }} />

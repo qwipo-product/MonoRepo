@@ -12,8 +12,8 @@ import '../settings/SettingsPage.css';
 import '../settings/modules/settings-modules.css';
 import '../settings/ProfilePage.css';
 import '../settings/DeliverySettingsPage.css';
-import { ringAreaKm2 } from '../../cds/planning';
-import { CoverageMap, OUTSIDE_COLOR, PolygonEditorDialog, STORE_COLORS } from './RouteMap';
+import { pointInPolygon, ringAreaKm2 } from '../../cds/planning';
+import { CoverageMap, OUTSIDE_COLOR, PolygonEditorDialog, STORE_COLORS, type AreaRetailer, type AreaStore } from './RouteMap';
 import { Card, confirm, downloadCsv, ModuleIntro, Empty, ErrorBox, FilterBar, fmtDate, fmtDateTime, InfoSection, Loading, PageHead, refreshMeta, RowActions, SectionCard, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
 import '../reports/ReportsPage.css';
 
@@ -475,8 +475,10 @@ export function StoresPage() {
       </PageHead>
       {creating && (
         <CreateStoreDialog
+          stores={stores}
+          retailers={retailers}
           onClose={() => setCreating(false)}
-          onCreated={(id) => { setCreating(false); refreshMeta(); reload(); coverage.reload(); setEditing(id); }}
+          onCreated={(id) => { setCreating(false); refreshMeta(); reload(); coverage.reload(); setListStore(id); }}
         />
       )}
       {(error || coverage.error) && <ErrorBox text={error || coverage.error} onRetry={() => { reload(); coverage.reload(); }} />}
@@ -577,32 +579,42 @@ export function StoresPage() {
 }
 
 
-type StoreForm = Record<'code' | 'name' | 'address' | 'city' | 'state' | 'lat' | 'lng' | 'localities' | 'managerName' | 'managerPhone', string>;
-const STORE_FIELDS: { key: keyof StoreForm; label: string; placeholder: string; type?: string }[] = [
+type StoreForm = Record<'code' | 'name' | 'address' | 'city' | 'state' | 'lat' | 'lng' | 'managerName' | 'managerPhone', string>;
+const STORE_FIELDS: { key: keyof StoreForm; label: string; placeholder: string; type?: string; optional?: boolean }[] = [
   { key: 'name', label: 'Store Name', placeholder: 'e.g. CDS Gachibowli' },
   { key: 'code', label: 'Store Code', placeholder: 'e.g. CDS-GCB' },
   { key: 'address', label: 'Address', placeholder: 'Plot / street, area, pincode' },
-  { key: 'localities', label: 'Areas Served', placeholder: 'Comma separated, e.g. Gachibowli, Kondapur' },
   { key: 'city', label: 'City', placeholder: 'e.g. Hyderabad' },
   { key: 'state', label: 'State', placeholder: 'e.g. Telangana' },
-  { key: 'lat', label: 'Latitude', placeholder: 'e.g. 17.4401', type: 'number' },
-  { key: 'lng', label: 'Longitude', placeholder: 'e.g. 78.3489', type: 'number' },
   { key: 'managerName', label: 'Store Manager Name', placeholder: 'Full name' },
   { key: 'managerPhone', label: 'Store Manager Phone', placeholder: '10-digit mobile number', type: 'tel' },
+  { key: 'lat', label: 'Latitude', placeholder: 'Auto from the area centre', type: 'number', optional: true },
+  { key: 'lng', label: 'Longitude', placeholder: 'Auto from the area centre', type: 'number', optional: true },
 ];
+type Ring = [number, number][];
+const centreOf = (ring: Ring) => ring.length ? [ring.reduce((a, p) => a + p[0], 0) / ring.length, ring.reduce((a, p) => a + p[1], 0) / ring.length].map((x) => Math.round(x * 1e4) / 1e4) as [number, number] : null;
 
-/** Create New CDS Store — every field is required. The service area starts around the location; edit it next. */
-function CreateStoreDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+/** Create New CDS Store: store details, then draw the service area. Areas Served fill in automatically from the
+ *  localities of the retailers inside the area; the store location defaults to the centre of the area. */
+function CreateStoreDialog({ stores, retailers, onClose, onCreated }: { stores: AreaStore[]; retailers: AreaRetailer[]; onClose: () => void; onCreated: (id: string) => void }) {
   const { busy, run } = useAction();
-  const [v, setV] = useState<StoreForm>({ code: '', name: '', address: '', city: 'Hyderabad', state: 'Telangana', lat: '', lng: '', localities: '', managerName: '', managerPhone: '' });
-  const [errors, setErrors] = useState<Partial<Record<keyof StoreForm, string>>>({});
-  const check = (x: StoreForm) => {
-    const e: Partial<Record<keyof StoreForm, string>> = {};
-    STORE_FIELDS.forEach((f) => { if (!x[f.key].trim()) e[f.key] = `${f.label} is required`; });
-    if (x.code.trim() && !/^[A-Za-z0-9-]{3,12}$/.test(x.code.trim())) e.code = 'Use 3 to 12 letters, numbers or "-"';
-    if (x.managerPhone.trim() && !/^[6-9]\d{9}$/.test(x.managerPhone.trim())) e.managerPhone = 'Enter a valid 10-digit mobile number';
-    if (x.lat.trim() && !(Math.abs(Number(x.lat) - 17.4) < 0.6)) e.lat = 'Latitude must be in the Hyderabad region (about 16.8 to 18.0)';
-    if (x.lng.trim() && !(Math.abs(Number(x.lng) - 78.5) < 0.6)) e.lng = 'Longitude must be in the Hyderabad region (about 77.9 to 79.1)';
+  const [v, setV] = useState<StoreForm>({ code: '', name: '', address: '', city: 'Hyderabad', state: 'Telangana', lat: '', lng: '', managerName: '', managerPhone: '' });
+  const [ring, setRing] = useState<Ring>([]);
+  const [drawing, setDrawing] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof StoreForm | 'area', string>>>({});
+  const inside = ring.length >= 3 ? retailers.filter((r) => pointInPolygon(r, ring)) : [];
+  const areas = Array.from(new Set(inside.map((r) => r.locality).filter(Boolean))).sort();
+  const centre = centreOf(ring);
+  const lat = v.lat.trim() ? Number(v.lat) : centre?.[0] ?? NaN;
+  const lng = v.lng.trim() ? Number(v.lng) : centre?.[1] ?? NaN;
+  const check = () => {
+    const e: Partial<Record<keyof StoreForm | 'area', string>> = {};
+    STORE_FIELDS.forEach((f) => { if (!f.optional && !v[f.key].trim()) e[f.key] = `${f.label} is required`; });
+    if (v.code.trim() && !/^[A-Za-z0-9-]{3,12}$/.test(v.code.trim())) e.code = 'Use 3 to 12 letters, numbers or "-"';
+    if (v.managerPhone.trim() && !/^[6-9]\d{9}$/.test(v.managerPhone.trim())) e.managerPhone = 'Enter a valid 10-digit mobile number';
+    if (v.lat.trim() && !(Math.abs(Number(v.lat) - 17.4) < 0.6)) e.lat = 'Latitude must be in the Hyderabad region (about 16.8 to 18.0)';
+    if (v.lng.trim() && !(Math.abs(Number(v.lng) - 78.5) < 0.6)) e.lng = 'Longitude must be in the Hyderabad region (about 77.9 to 79.1)';
+    if (ring.length < 3) e.area = 'Draw the service area on the map (at least 3 points)';
     return e;
   };
   const set = (k: keyof StoreForm, x: string) => {
@@ -610,17 +622,18 @@ function CreateStoreDialog({ onClose, onCreated }: { onClose: () => void; onCrea
     if (errors[k]) setErrors((p) => ({ ...p, [k]: undefined }));
   };
   const save = async () => {
-    const e = check(v);
+    const e = check();
     setErrors(e);
     if (Object.keys(e).length) return;
     const r = await run(() => cdsApi.createStore({
       code: v.code.trim().toUpperCase(), name: v.name.trim(), address: v.address.trim(), city: v.city.trim(), state: v.state.trim(),
-      lat: Number(v.lat), lng: Number(v.lng), localities: v.localities.split(',').map((x) => x.trim()).filter(Boolean), managerName: v.managerName.trim(), managerPhone: v.managerPhone.trim(),
-    }), 'CDS store created. Now check its service area on the map.');
+      lat, lng, polygon: ring, localities: areas, managerName: v.managerName.trim(), managerPhone: v.managerPhone.trim(),
+    }), 'CDS store created with its service area');
     if (r) onCreated(r.id);
   };
   const rows: (typeof STORE_FIELDS)[] = [];
   STORE_FIELDS.forEach((f, i) => (i % 2 ? rows[rows.length - 1].push(f) : rows.push([f])));
+  const editorStore: AreaStore = { id: 'new', name: v.name.trim() || 'New CDS Store', lat: Number.isFinite(lat) ? lat : 17.41, lng: Number.isFinite(lng) ? lng : 78.49, polygon: ring, active: true };
   return createPortal(
     <div className="modal-overlay fm-overlay" onClick={onClose}>
       <div className="modal-content filters-modal cds-filters-modal cds-store-form" role="dialog" aria-modal="true" aria-label="Create New CDS Store" onClick={(e) => e.stopPropagation()}>
@@ -629,20 +642,39 @@ function CreateStoreDialog({ onClose, onCreated }: { onClose: () => void; onCrea
           <button className="close-btn" onClick={onClose} aria-label="Close"><i className="fas fa-times" /></button>
         </div>
         <div className="modal-body">
-          <p className="text-muted small mb-3">All fields are required. After you create the store, set its service area on the map. Retailers inside the area are served by this store.</p>
+          <p className="text-muted small mb-3">Fields with <span className="text-danger">*</span> are required. Draw the service area: retailers inside it are served by this store, and Areas Served fill in from them.</p>
           <div className="filter-grid">
             {rows.map((r, i) => (
               <div className="filter-row" key={i}>
                 {r.map((f) => (
                   <div className="filter-col" key={f.key}>
-                    <label htmlFor={`cs-${f.key}`}>{f.label} <span className="text-danger">*</span></label>
-                    <input id={`cs-${f.key}`} type={f.type ?? 'text'} step={f.type === 'number' ? '0.0001' : undefined} className={`fm-input${errors[f.key] ? ' is-invalid' : ''}`} placeholder={f.placeholder}
+                    <label htmlFor={`cs-${f.key}`}>{f.label} {!f.optional && <span className="text-danger">*</span>}</label>
+                    <input id={`cs-${f.key}`} type={f.type ?? 'text'} step={f.type === 'number' ? '0.0001' : undefined} className={`fm-input${errors[f.key] ? ' is-invalid' : ''}`}
+                      placeholder={f.optional && centre ? `${f.key === 'lat' ? centre[0] : centre[1]} (area centre)` : f.placeholder}
                       value={v[f.key]} onChange={(e) => set(f.key, e.target.value)} aria-invalid={!!errors[f.key]} />
                     {errors[f.key] && <div className="cds-field-error">{errors[f.key]}</div>}
                   </div>
                 ))}
+                {r.length === 1 && <div className="filter-col" />}
               </div>
             ))}
+          </div>
+
+          <div className={`cds-store-area${errors.area ? ' is-invalid' : ''}`}>
+            <div className="area-head">
+              <div>
+                <div className="area-title"><i className="fas fa-draw-polygon me-1" />Service Area <span className="text-danger">*</span></div>
+                <div className="text-muted small">{ring.length >= 3 ? `${ring.length} points · ${ringAreaKm2(ring)} km² · ${inside.length} retailer${inside.length === 1 ? '' : 's'} inside` : 'Not drawn yet'}</div>
+              </div>
+              <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setDrawing(true)}><i className={`fas ${ring.length >= 3 ? 'fa-pen' : 'fa-draw-polygon'} me-1`} />{ring.length >= 3 ? 'Edit Service Area' : 'Draw Service Area'}</button>
+            </div>
+            {errors.area && <div className="cds-field-error">{errors.area}</div>}
+            <div className="area-served">
+              <div className="small fw-semibold mb-1">Areas Served <span className="cds-auto-tag"><i className="fas fa-location-crosshairs me-1" />Auto</span></div>
+              {ring.length < 3 ? <div className="text-muted small">Filled in from the retailers inside the service area.</div>
+                : areas.length ? <div className="d-flex flex-wrap gap-1">{areas.map((a) => <span key={a} className="area-chip">{a}</span>)}</div>
+                  : <div className="text-muted small">No retailers inside this area yet.</div>}
+            </div>
           </div>
         </div>
         <div className="modal-footer">
@@ -650,6 +682,13 @@ function CreateStoreDialog({ onClose, onCreated }: { onClose: () => void; onCrea
           <button className="save-btn" disabled={busy} onClick={() => void save()}>{busy ? 'Creating…' : 'Create Store'}</button>
         </div>
       </div>
+      {drawing && (
+        // the editor sits on top of this form; its clicks must not reach the form's backdrop
+        <div onClick={(e) => e.stopPropagation()}>
+          <PolygonEditorDialog store={editorStore} others={stores} retailers={retailers} busy={false}
+            onSave={(r) => { setRing(r); setDrawing(false); setErrors((p) => ({ ...p, area: undefined })); }} onClose={() => setDrawing(false)} />
+        </div>
+      )}
     </div>,
     document.body,
   );

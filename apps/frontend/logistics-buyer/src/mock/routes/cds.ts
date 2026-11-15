@@ -16,7 +16,7 @@ import { CDS_STATE_VERSION, CdsEngine, CdsError, localDay, type StopInput } from
 import { buildReport, REPORTS, summary, type ReportFilters } from '../../cds/reports';
 import { ACTIVE_TRIP, STOP_ACTION, TRIP_STATUS_GROUPS, tripPhase } from '../../cds/status';
 import { buildCdsState } from '../../cds/seed';
-import { serviceStoreFor } from '../../cds/planning';
+import { pointInPolygon, serviceStoreFor } from '../../cds/planning';
 import { DEFAULT_ROUTE_CONFIG, RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripStatus, type TripType } from '../../cds/types';
 import { seedInputs } from '../extensions/cds';
 
@@ -549,7 +549,7 @@ route('GET', SVC, '/cds/stores', (req) => {
     };
   });
 });
-/** Service Centre: a new CDS store. Its service area starts as a ~2 km hexagon around the location (edit it on the map). */
+/** Service Centre: a new CDS store with its service area (polygon). Areas Served come from the retailers inside it. */
 route('POST', SVC, '/cds/stores', (req) => {
   const u = need(req, 'sc-stores');
   const b = req.body ?? {};
@@ -565,13 +565,13 @@ route('POST', SVC, '/cds/stores', (req) => {
     const lat = Number(b.lat);
     const lng = Number(b.lng);
     if (!(Math.abs(lat - 17.4) < 0.6 && Math.abs(lng - 78.5) < 0.6)) throw new CdsError(400, 'Enter a latitude and longitude inside the Hyderabad region (e.g. 17.43, 78.45)');
-    const localities = (Array.isArray(b.localities) ? b.localities : String(b.localities ?? '').split(',')).map((x: unknown) => String(x).trim()).filter(Boolean);
-    if (!localities.length) throw new CdsError(400, 'Enter at least one area served');
-    const r = 0.018;
-    const polygon = Array.from({ length: 6 }, (_, i) => {
-      const a = (Math.PI / 3) * i;
-      return [Math.round((lat + r * Math.sin(a)) * 1e6) / 1e6, Math.round((lng + r * 1.05 * Math.cos(a)) * 1e6) / 1e6] as [number, number];
-    });
+    const ring = b.polygon as unknown;
+    const okRing = Array.isArray(ring) && ring.length >= 3 && ring.length <= 60 && ring.every((p) => Array.isArray(p) && p.length === 2 && Math.abs(Number(p[0]) - 17.4) < 1 && Math.abs(Number(p[1]) - 78.5) < 1);
+    if (!okRing) throw new CdsError(400, 'Draw the service area with at least 3 points on the map');
+    const polygon = (ring as [number, number][]).map(([la, ln]) => [Math.round(Number(la) * 1e6) / 1e6, Math.round(Number(ln) * 1e6) / 1e6] as [number, number]);
+    // Areas Served: the localities of the retailers inside the service area (when none are sent).
+    const sent = (Array.isArray(b.localities) ? b.localities : []).map((x: unknown) => String(x).trim()).filter(Boolean);
+    const localities: string[] = sent.length ? sent : Array.from(new Set(e.s.retailers.filter((x) => pointInPolygon(x, polygon)).map((x) => x.locality).filter(Boolean))).sort();
     const st = {
       id: `cds-${code.toLowerCase().replace(/^cds-/, '')}-${Date.now().toString(36).slice(-4)}`, code, name: txt('name'), address: txt('address'), city: txt('city'), state: txt('state'),
       lat, lng, localities, polygon, managerName: txt('managerName'), managerPhone: txt('managerPhone'), active: true,
