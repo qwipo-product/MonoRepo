@@ -471,7 +471,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     );
     return (
       <tr className="trip-details-row">
-        <td colSpan={14}>
+        <td colSpan={isDelivery ? 11 : 14}>
           <div className="trip-details">
             {/* Direct Delivery: every card. Consolidated Delivery: Route Overview only. Consolidated Returns: Route
                 Overview and Collection Summary (the return value). */}
@@ -752,13 +752,15 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                 <th>Trip Number</th>
                 <th>Provider</th>
                 <th>Status</th>
-                <th>Drop Points</th>
+                {/* Consolidated Delivery (pickup from the distributor): the distributor's part ends at the hand-over,
+                    so the service center's route columns (drop points, planned KMs, time covered) are not shown. */}
+                {!isDelivery && <th>Drop Points</th>}
                 <th>Vol Weight</th>
                 <th>Driver Name</th>
-                <th>Planned Kms</th>
+                {!isDelivery && <th>Planned Kms</th>}
                 <th>Created Date</th>
                 <th>Arrival Time</th>
-                <th>Time Covered</th>
+                {!isDelivery && <th>Time Covered</th>}
                 <th>Trip Charges</th>
                 <th>Actions</th>
               </tr>
@@ -781,13 +783,14 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                         {/* +"Planned" is NaN → every badge gets the light-blue "planned" style (as-built) */}
                         <span className={`status-badge ${getTripStatusClass(+row.logisticsOrderStatus)}`}>{row.logisticsOrderStatus}</span>
                       </td>
-                      <td>{`${row.dropPoints || 'N/A'} / ${row.maxStopCount || 'N/A'}`}</td>
-                      <td>{`${row.volumetricWeight || 'N/A'} / ${row.vehicleVolumetricCapacityKg || 'N/A'}`}</td>
+                      {!isDelivery && <td>{`${row.dropPoints || 'N/A'} / ${row.maxStopCount || 'N/A'}`}</td>}
+                      {/* Consolidated Delivery: the load weight only (the vehicle capacity is the service center's). */}
+                      <td>{isDelivery ? `${row.volumetricWeight || 'N/A'}` : `${row.volumetricWeight || 'N/A'} / ${row.vehicleVolumetricCapacityKg || 'N/A'}`}</td>
                       <td>{row.driver || 'N/A'}</td>
-                      <td>{row.totalDistance || 'N/A'}</td>
+                      {!isDelivery && <td>{row.totalDistance || 'N/A'}</td>}
                       <td>{row.createdDate}</td>
                       <td>{row.arrivalTime || 'N/A'}</td>
-                      <td>{calculateTimeCovered(row)}</td>
+                      {!isDelivery && <td>{calculateTimeCovered(row)}</td>}
                       <td>{addCurrency(row.logisticsOrderCharges)}</td>
                       <td>
                         <button className="kebab-btn" title="Actions" onClick={(e) => toggleKebabMenu(index, e)}>
