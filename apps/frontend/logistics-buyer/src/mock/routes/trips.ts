@@ -7,7 +7,7 @@
 //   - totalPartialValue   = delivered part of Partial Delivered stops
 //   - totalReturnValue    = returned stops in full + returned part of Partial Delivered stops
 //   - orderSummary        = counts of Order Delivered / Partial Delivered / Returned stops
-//   - volumetricWeight    = Σ order volumetricWeight
+//   - volumetricWeight    = Σ order volumetricWeight (Consolidated Returns trips: the returned goods only)
 // Returns are derived from the *stop* status (not the order's current status) so a returned order that was later
 // moved back to RFP / re-planned still shows on its old trip.
 //
@@ -167,7 +167,14 @@ function toApiTrip(t: DbTrip, idx: Map<string, DbOrder>) {
     partialDelivered: ds.filter((s) => isPartialStop(s)).length,
     returned: ds.filter((s) => isReturnedStop(s)).length,
   };
-  const volumetricWeight = round2(orders.reduce((a, o) => a + (Number(o.volumetricWeight) || 0), 0));
+  // A Consolidated Returns trip carries only the returned goods: its weight is theirs, not the full orders'.
+  const volumetricWeight =
+    t.channel === 'cds-returns'
+      ? round2(ds.reduce((a, s) => a + stopOrders(s, idx).reduce((b, o) => {
+          const volPerKg = Number(o.orderWeight) ? (Number(o.volumetricWeight) || 0) / Number(o.orderWeight) : 1;
+          return b + o.items.reduce((c, it) => c + returnedQtyOnStop(s, it) * (Number(it.weightKg) || 0) * volPerKg, 0);
+        }, 0), 0))
+      : round2(orders.reduce((a, o) => a + (Number(o.volumetricWeight) || 0), 0));
   return {
     logisticsOrderId: t.logisticsOrderId,
     orderId: t.orderId,

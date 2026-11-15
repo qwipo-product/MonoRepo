@@ -471,7 +471,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     );
     return (
       <tr className="trip-details-row">
-        <td colSpan={isDelivery ? 11 : 14}>
+        <td colSpan={isConsolidated ? 11 : 14}>
           <div className="trip-details">
             {/* Direct Delivery: every card. Consolidated Delivery: Route Overview only. Consolidated Returns: Route
                 Overview and Collection Summary (the return value). */}
@@ -752,15 +752,15 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                 <th>Trip Number</th>
                 <th>Provider</th>
                 <th>Status</th>
-                {/* Consolidated Delivery (pickup from the distributor): the distributor's part ends at the hand-over,
-                    so the service center's route columns (drop points, planned KMs, time covered) are not shown. */}
-                {!isDelivery && <th>Drop Points</th>}
+                {/* Consolidated trips: the distributor only hands the goods over (delivery) or receives the returns
+                    (returns), so the service center's route columns (drop points, planned KMs, time covered) are not shown. */}
+                {!isConsolidated && <th>Drop Points</th>}
                 <th>Vol Weight</th>
                 <th>Driver Name</th>
-                {!isDelivery && <th>Planned Kms</th>}
+                {!isConsolidated && <th>Planned Kms</th>}
                 <th>Created Date</th>
                 <th>Arrival Time</th>
-                {!isDelivery && <th>Time Covered</th>}
+                {!isConsolidated && <th>Time Covered</th>}
                 <th>Trip Charges</th>
                 <th>Actions</th>
               </tr>
@@ -783,14 +783,15 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                         {/* +"Planned" is NaN → every badge gets the light-blue "planned" style (as-built) */}
                         <span className={`status-badge ${getTripStatusClass(+row.logisticsOrderStatus)}`}>{row.logisticsOrderStatus}</span>
                       </td>
-                      {!isDelivery && <td>{`${row.dropPoints || 'N/A'} / ${row.maxStopCount || 'N/A'}`}</td>}
-                      {/* Consolidated Delivery: the load weight only (the vehicle capacity is the service center's). */}
-                      <td>{isDelivery ? `${row.volumetricWeight || 'N/A'}` : `${row.volumetricWeight || 'N/A'} / ${row.vehicleVolumetricCapacityKg || 'N/A'}`}</td>
+                      {!isConsolidated && <td>{`${row.dropPoints || 'N/A'} / ${row.maxStopCount || 'N/A'}`}</td>}
+                      {/* Consolidated trips: the weight only (the vehicle capacity is the service center's). On a
+                          Consolidated Returns trip the weight is that of the returned goods (see the mock trips route). */}
+                      <td>{isConsolidated ? `${row.volumetricWeight || 'N/A'}` : `${row.volumetricWeight || 'N/A'} / ${row.vehicleVolumetricCapacityKg || 'N/A'}`}</td>
                       <td>{row.driver || 'N/A'}</td>
-                      {!isDelivery && <td>{row.totalDistance || 'N/A'}</td>}
+                      {!isConsolidated && <td>{row.totalDistance || 'N/A'}</td>}
                       <td>{row.createdDate}</td>
                       <td>{row.arrivalTime || 'N/A'}</td>
-                      {!isDelivery && <td>{calculateTimeCovered(row)}</td>}
+                      {!isConsolidated && <td>{calculateTimeCovered(row)}</td>}
                       <td>{addCurrency(row.logisticsOrderCharges)}</td>
                       <td>
                         <button className="kebab-btn" title="Actions" onClick={(e) => toggleKebabMenu(index, e)}>
