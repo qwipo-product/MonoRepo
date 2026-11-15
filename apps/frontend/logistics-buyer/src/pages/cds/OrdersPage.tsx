@@ -1,4 +1,4 @@
-// Orders — Service Centre: all CDS Store Delivery orders across its stores. CDS User: its store's orders, retailer-wise.
+// Orders — Service Centre: all Self delivery orders across its stores. CDS User: its store's orders, retailer-wise.
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
@@ -107,7 +107,7 @@ export default function OrdersPage() {
               <i className="fas fa-shopping-bag text-primary me-2 fs-5" />
               <h1 className="fs-3 mb-0 fw-bold">Orders</h1>
             </div>
-            <p className="text-muted small mb-0">{sc ? 'CDS Store Delivery orders confirmed in the Seller Store, across your CDS stores.' : 'Seller Store orders for your CDS store, retailer-wise.'}</p>
+            <p className="text-muted small mb-0">{sc ? 'Seller Store orders with delivery type Self, across your CDS stores.' : 'Seller Store orders for your CDS store, retailer-wise.'}</p>
           </div>
         </div>
 

@@ -407,7 +407,7 @@ export function OrderDetail() {
   // page still renders something useful instead of crashing.
   const initialOrder = orderId ? getOrderById(orderId) : undefined;
   // Order type — same rule as the Delivery Type column on the Orders list:
-  // CDS sellers get CDS Store Delivery / 3PL Logistics Delivery (by CDS
+  // CDS sellers get Self / 3PL Logistics (by CDS
   // serviceability); other sellers get Beat / Non-Beat.
   const { user } = useAuth();
   const cdsEnabled = isCdsEnabled(user?.id) && user?.dataMode !== "empty";
@@ -433,12 +433,12 @@ export function OrderDetail() {
     isCdsServiceable(initialOrder) ? (
       <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-teal-200 bg-teal-50 text-[11px] font-medium text-teal-700">
         <Warehouse className="h-3 w-3" />
-        CDS Store Delivery
+        Self
       </span>
     ) : (
       <span title="Delivery Type" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-medium text-blue-700">
         <Truck className="h-3 w-3" />
-        3PL Logistics Delivery
+        3PL Logistics
       </span>
     )
   ) : getOrderType(initialOrder) === "beat" ? (

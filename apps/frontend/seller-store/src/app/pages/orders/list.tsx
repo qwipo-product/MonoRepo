@@ -191,7 +191,7 @@ export function Orders() {
   // Tabs that draw their own summary + filters (CDS, 3PL for CDS sellers, Returns).
   const ownHeaderTab = (tab: string) => tab === "cds" || tab === "returns" || (cdsEnabled && tab === "logistics");
   // CDS sellers: the order type comes from CDS serviceability (buyer inside
-  // the CDS polygon → CDS Store Delivery, else 3PL Logistics Delivery).
+  // the CDS polygon → Self, else 3PL Logistics).
   // Other sellers keep Beat / Non-Beat.
   const isRouteA = (o: Order) => (cdsEnabled ? isCdsServiceable(o) : isBeatOrder(o));
   const cdsReturnCount = useCdsReturnCount();
@@ -1290,7 +1290,7 @@ export function Orders() {
           statusLabelFor(order),
           orderDateLabelFor(order),
           cdsEnabled
-            ? isCdsServiceable(order) ? "CDS Store Delivery" : "3PL Logistics Delivery"
+            ? isCdsServiceable(order) ? "Self" : "3PL Logistics"
             : getOrderType(order) === "beat" ? "Beat" : "Non-Beat",
           cdsEnabled ? areaFromAddress(order.buyerAddress) : order.beatName ?? "",
           order.expectedDeliveryDate,
@@ -1686,12 +1686,12 @@ export function Orders() {
                     isCdsServiceable(order) ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-teal-200 bg-teal-50 text-[11px] font-medium text-teal-700">
                         <Warehouse className="h-3 w-3" />
-                        CDS Store Delivery
+                        Self
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-medium text-blue-700">
                         <Truck className="h-3 w-3" />
-                        3PL Logistics Delivery
+                        3PL Logistics
                       </span>
                     )
                   ) : getOrderType(order) === "beat" ? (
@@ -1896,7 +1896,7 @@ export function Orders() {
           }`}
         >
           {cdsEnabled ? <Warehouse className="h-3 w-3" /> : <Route className="h-3 w-3" />}
-          {cdsEnabled ? "CDS Store Delivery" : "Beat orders"} ({counts.beat})
+          {cdsEnabled ? "Self" : "Beat orders"} ({counts.beat})
         </button>
         <button
           onClick={() => handleConfirmedBeatModeChange("non-beat")}
@@ -1907,7 +1907,7 @@ export function Orders() {
           }`}
         >
           {cdsEnabled ? <Truck className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-          {cdsEnabled ? "3PL Logistics Delivery" : "Non-beat orders"} ({counts.nonBeat})
+          {cdsEnabled ? "3PL Logistics" : "Non-beat orders"} ({counts.nonBeat})
         </button>
       </div>
       )}
@@ -2719,7 +2719,7 @@ export function Orders() {
                   {cdsOrderIds.has(o.id) ? (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap border border-teal-200 bg-teal-50 text-teal-700">
                       <Warehouse className="h-3 w-3" />
-                      CDS Store Delivery
+                      Self
                     </span>
                   ) : (
                   <span

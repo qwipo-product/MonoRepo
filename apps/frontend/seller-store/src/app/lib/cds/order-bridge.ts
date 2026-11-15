@@ -46,7 +46,7 @@ function inPolygon(lat: number, lng: number, poly: [number, number][]): boolean 
 }
 
 /** True when the buyer's delivery location is inside the CDS serviceable
- *  area → "CDS Store Delivery"; otherwise "3PL Logistics Delivery".
+ *  area → "Self"; otherwise "3PL Logistics".
  *  Orders without a location can't be checked, so they go by 3PL. */
 export function isCdsServiceable(o: { buyerLat?: number; buyerLng?: number }): boolean {
   if (o.buyerLat === undefined || o.buyerLng === undefined) return false;

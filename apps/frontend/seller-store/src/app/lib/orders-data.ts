@@ -2036,7 +2036,7 @@ const ORDER_GEO: Record<
     connectivity: "Online",
   },
   // Retailers outside the Kukatpally CDS area (outer Hyderabad) — these
-  // orders are "3PL Logistics Delivery" for CDS sellers.
+  // orders are "3PL Logistics" for CDS sellers.
   "QWI-ONDC-260517-N4WQ2S": {
     lat: 17.6295,
     lng: 78.4812,
