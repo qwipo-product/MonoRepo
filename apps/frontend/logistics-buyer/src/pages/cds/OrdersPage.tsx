@@ -254,7 +254,7 @@ export function OrderDetailsPage() {
         { id: 'summary', label: 'Order Summary', icon: 'fa-info-circle' },
         { id: 'items', label: 'Items', icon: 'fa-boxes-stacked', count: o.lines.length },
         { id: 'trips', label: 'Trips', icon: 'fa-route', count: data.trips.length },
-        { id: 'history', label: 'History', icon: 'fa-clock-rotate-left' },
+        { id: 'history', label: 'Status History', icon: 'fa-clock-rotate-left' },
       ]}>
         {tab === 'summary' && (
           <InfoGrid>
