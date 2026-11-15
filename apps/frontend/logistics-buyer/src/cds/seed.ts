@@ -5,7 +5,11 @@ import { CdsEngine, CDS_STATE_VERSION, localDay, type SkuLine, type StopInput } 
 import { serviceStoreFor } from './planning.ts';
 import type { CdsState, CdsStore, Retailer, TripStop } from './types.ts';
 
-export interface SeedRetailer { id: string; code: string; name: string; ownerName: string; phone: string; address: string; locality: string; lat: number; lng: number }
+export interface SeedRetailer { id: string; code: string; name: string; ownerName: string; phone: string; address: string; locality: string; city?: string; state?: string; lat: number; lng: number }
+
+/** Demo only: the twin city's localities are shown as Secunderabad so the City filter has more than one value. */
+const SECUNDERABAD = ['Secunderabad', 'Begumpet', 'Tarnaka'];
+const cityOf = (r: SeedRetailer) => (SECUNDERABAD.some((x) => r.locality.startsWith(x)) ? 'Secunderabad' : r.city || 'Hyderabad');
 export interface SeedProduct { name: string; price: number; weightKg: number; category: string }
 
 /** Demo logins for the CDS sign-in page (OTP from the mock panel, default 123456). */
@@ -41,9 +45,9 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
   const kkp = fleet('cds-kkp', 'TS09KK00', [['Three Wheeler', 400], ['Pickup', 750], ['Mini Truck', 1500]], ['Shiva Prasad', 'Arjun Rao', 'Sandeep Yadav'], 7702013201);
   const dsn = fleet('cds-dsn', 'TS10DS00', [['Three Wheeler', 400], ['Pickup', 750], ['Mini Truck', 1500]], ['Mahesh Babu', 'Ravi Shankar', 'Sai Teja'], 7702014201);
   const stores: CdsStore[] = [
-    { id: 'cds-upl', code: 'CDS-UPL', name: 'CDS Uppal', address: 'Survey 41, IDA Uppal Phase 2, Hyderabad 500039', lat: 17.3995, lng: 78.5548, localities: ['Uppal', 'Boduppal', 'Tarnaka', 'Secunderabad'], polygon: [[17.458, 78.482], [17.462, 78.54], [17.44, 78.6], [17.39, 78.598], [17.388, 78.53], [17.42, 78.482]], managerName: 'Rajesh Kumar', managerPhone: '9100000002', active: true },
-    { id: 'cds-kkp', code: 'CDS-KKP', name: 'CDS Kukatpally', address: 'Plot 7, Balanagar Industrial Area, Hyderabad 500037', lat: 17.4762, lng: 78.4321, localities: ['Kukatpally', 'Moosapet', 'Ameerpet', 'Begumpet', 'Mehdipatnam', 'Tolichowki'], polygon: [[17.515, 78.38], [17.515, 78.44], [17.462, 78.48], [17.415, 78.48], [17.378, 78.455], [17.378, 78.398], [17.43, 78.38]], managerName: 'Lakshmi Prasanna', managerPhone: '9100000003', active: true },
-    { id: 'cds-dsn', code: 'CDS-DSN', name: 'CDS Dilsukhnagar', address: '16-11-740, Moosarambagh, Dilsukhnagar, Hyderabad 500036', lat: 17.3721, lng: 78.5103, localities: ['Dilsukhnagar', 'Kothapet', 'LB Nagar', 'Saroornagar'], polygon: [[17.386, 78.505], [17.386, 78.566], [17.34, 78.568], [17.333, 78.545], [17.338, 78.505]], managerName: 'Venkat Rao', managerPhone: '9100000004', active: true },
+    { id: 'cds-upl', code: 'CDS-UPL', name: 'CDS Uppal', address: 'Survey 41, IDA Uppal Phase 2, Hyderabad 500039', lat: 17.3995, lng: 78.5548, localities: ['Uppal', 'Boduppal', 'Tarnaka', 'Secunderabad'], polygon: [[17.458, 78.482], [17.462, 78.54], [17.44, 78.6], [17.39, 78.598], [17.388, 78.53], [17.42, 78.482]], city: 'Hyderabad', state: 'Telangana', managerName: 'Rajesh Kumar', managerPhone: '9100000002', active: true },
+    { id: 'cds-kkp', code: 'CDS-KKP', name: 'CDS Kukatpally', address: 'Plot 7, Balanagar Industrial Area, Hyderabad 500037', lat: 17.4762, lng: 78.4321, localities: ['Kukatpally', 'Moosapet', 'Ameerpet', 'Begumpet', 'Mehdipatnam', 'Tolichowki'], polygon: [[17.515, 78.38], [17.515, 78.44], [17.462, 78.48], [17.415, 78.48], [17.378, 78.455], [17.378, 78.398], [17.43, 78.38]], city: 'Hyderabad', state: 'Telangana', managerName: 'Lakshmi Prasanna', managerPhone: '9100000003', active: true },
+    { id: 'cds-dsn', code: 'CDS-DSN', name: 'CDS Dilsukhnagar', address: '16-11-740, Moosarambagh, Dilsukhnagar, Hyderabad 500036', lat: 17.3721, lng: 78.5103, localities: ['Dilsukhnagar', 'Kothapet', 'LB Nagar', 'Saroornagar'], polygon: [[17.386, 78.505], [17.386, 78.566], [17.34, 78.568], [17.333, 78.545], [17.338, 78.505]], city: 'Hyderabad', state: 'Telangana', managerName: 'Venkat Rao', managerPhone: '9100000004', active: true },
   ];
   return {
     version: CDS_STATE_VERSION,
@@ -60,7 +64,7 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
       { id: 'dst-06', code: 'DST-06', name: 'Telangana Staples Co.', contactName: 'Ravi Teja', phone: '9848011106', address: 'Plot 21, LB Nagar Ring Road, Hyderabad', lat: 17.3481, lng: 78.5498 },
     ],
     // all retailers of the customer master; each CDS store serves the ones inside its service area polygon
-    retailers: retailers as Retailer[],
+    retailers: retailers.map((r): Retailer => ({ ...r, city: cityOf(r), state: r.state || 'Telangana' })),
     users: [
       { id: 'usr-sc', name: 'Service Centre Admin', mobile: '9100000001', email: 'service.centre@cds.example', role: 'SERVICE_CENTRE', cdsStoreIds: stores.map((s) => s.id), active: true },
       { id: 'usr-upl', name: 'Rajesh Kumar', mobile: '9100000002', email: 'uppal@cds.example', role: 'CDS_USER', cdsStoreIds: ['cds-upl'], active: true },
@@ -70,7 +74,7 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
     sessions: [],
     vehicles: [...sc.vehicles, ...upl.vehicles, ...kkp.vehicles, ...dsn.vehicles],
     deliveryPersons: [...sc.deliveryPersons, ...upl.deliveryPersons, ...kkp.deliveryPersons, ...dsn.deliveryPersons],
-    orders: [], plans: [], trips: [], otps: [], grns: [], returns: [], collections: [], dpEventIds: [], audit: [],
+    orders: [], plans: [], trips: [], otps: [], grns: [], returns: [], collections: [], dpEventIds: [], audit: [], reportRuns: [],
   };
 }
 
@@ -105,8 +109,13 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
 
   // ---------------------------------------------------------------- helpers
   let ref = 51000;
-  const pool = (store: string) => s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === store);
+  const served = s.retailers.filter((r) => serviceStoreFor(s.stores, r));
+  const pool = (store: string) => {
+    const own = s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === store);
+    return own.length ? own : served;
+  };
   const place = (dist: string, store: string) => {
+    if (!served.length) throw new Error('CDS seed: no retailer is inside any CDS service area');
     const range = skus.filter((k) => ASSORTMENT[dist].includes(k.category));
     const m = new Map<string, number>();
     const n = rng.int(1, Math.min(3, range.length));
@@ -314,5 +323,12 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
     const h = collectionsOf(st, 'HANDED_TO_QWIPO');
     if (h.length) e.recordSettlement(st, h.map((c) => c.id), `QWP-STL-${day(0).replace(/-/g, '')}-${st.slice(-3).toUpperCase()}`, USER[st]);
   });
+  // planned today for tomorrow: a pickup plan and a return plan, assigned and not started yet (the other waiting
+  // orders and returns stay for live planning)
+  t = Math.max(t, at(0, 9));
+  const next = ['dst-01', 'dst-06'].flatMap((d) => ['cds-kkp', 'cds-dsn'].map((st) => place(d, st)));
+  pickupPlan(next.map((o) => o.id), day(1), true);
+  const waitingReturns = received();
+  if (waitingReturns.length > 1) returnPlan(waitingReturns.slice(0, 1), day(1));
   return s;
 }

@@ -9,7 +9,7 @@ import type {
 } from './types.ts';
 
 /** Bump when the demo data changes: stored CDS data of an older version is rebuilt on next use. */
-export const CDS_STATE_VERSION = 6;
+export const CDS_STATE_VERSION = 8;
 
 export class CdsError extends Error {
   status: number;

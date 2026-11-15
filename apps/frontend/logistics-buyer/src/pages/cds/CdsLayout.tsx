@@ -14,8 +14,7 @@ interface MenuItem { page: CdsPage; to: string; icon: string; label: string }
 const MENU: Record<'SERVICE_CENTRE' | 'CDS_USER', MenuItem[]> = {
   SERVICE_CENTRE: [
     { page: 'sc-orders', to: '/cds/orders', icon: 'fa-box', label: 'Orders' },
-    { page: 'sc-pickup', to: '/cds/pickup-planning', icon: 'fa-truck-ramp-box', label: 'Pickup Planning' },
-    { page: 'sc-returns', to: '/cds/return-planning', icon: 'fa-rotate-left', label: 'Return Planning' },
+    { page: 'sc-pickup', to: '/cds/planning', icon: 'fa-truck-ramp-box', label: 'Planning' },
     { page: 'sc-trips', to: '/cds/trips', icon: 'fa-paper-plane', label: 'Trips' },
     { page: 'sc-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports' },
     { page: 'sc-settings', to: '/cds/settings', icon: 'fa-cog', label: 'Settings' },

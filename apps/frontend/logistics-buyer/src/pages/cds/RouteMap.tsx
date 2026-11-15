@@ -31,18 +31,19 @@ function Fit({ points }: { points: [number, number][] }) {
   return null;
 }
 
-/** Map of the stops in order. */
-export function RouteMap({ stops, height = 420 }: { stops: MapStop[]; height?: number }) {
+/** Map of the stops in order. `groups` draws several routes (one line each); `line={false}` shows points only. */
+export function RouteMap({ stops, height = 420, groups, line = true }: { stops: MapStop[]; height?: number; groups?: MapStop[][]; line?: boolean }) {
   const shown = stops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+  const lines = useMemo(() => (groups ?? [shown]).map((g) => g.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng)).map((s) => [s.lat, s.lng] as [number, number])), [groups, shown]);
   const points = useMemo(() => shown.map((s) => [s.lat, s.lng] as [number, number]), [shown]);
   if (!shown.length) return <div className="cds-empty">No locations to show</div>;
   return (
     <div className="cds-map" style={{ height }}>
       <MapContainer center={points[0]} zoom={12} style={{ width: '100%', height: '100%' }}>
         <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap contributors &copy; CARTO" />
-        <Polyline positions={points} pathOptions={{ color: '#2563eb', weight: 3, opacity: 0.8, dashArray: '8 6' }} />
-        {shown.map((s) => (
-          <Marker key={`${s.seq}-${s.name}`} position={[s.lat, s.lng]} icon={pin(s)}>
+        {line && lines.map((p, i) => <Polyline key={i} positions={p} pathOptions={{ color: groups ? STORE_COLORS[i % STORE_COLORS.length] : '#2563eb', weight: 3, opacity: 0.8, dashArray: '8 6' }} />)}
+        {shown.map((s, i) => (
+          <Marker key={`${i}-${s.seq}-${s.name}`} position={[s.lat, s.lng]} icon={pin(s)}>
             <Tooltip direction="top" offset={[0, -12]}><b>{s.seq}. {s.name}</b>{s.detail && <div>{s.detail}</div>}</Tooltip>
           </Marker>
         ))}
@@ -53,7 +54,7 @@ export function RouteMap({ stops, height = 420 }: { stops: MapStop[]; height?: n
 }
 
 /** "Map View" dialog with the stop list beside the map. */
-export function RouteMapDialog({ title, subtitle, stops, onClose }: { title: string; subtitle?: string; stops: MapStop[]; onClose: () => void }) {
+export function RouteMapDialog({ title, subtitle, stops, onClose, groups, line }: { title: string; subtitle?: string; stops: MapStop[]; onClose: () => void; groups?: MapStop[][]; line?: boolean }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
@@ -68,14 +69,14 @@ export function RouteMapDialog({ title, subtitle, stops, onClose }: { title: str
         </div>
         <div className="cds-map-dialog-body">
           <ol className="cds-map-stops">
-            {stops.map((s) => (
-              <li key={`${s.seq}-${s.name}`}>
+            {stops.map((s, i) => (
+              <li key={`${i}-${s.seq}-${s.name}`}>
                 <span className="dot" style={{ background: COLORS[s.status ?? 'PENDING'] }}>{s.seq}</span>
                 <div><div className="fw-semibold">{s.name}</div>{s.detail && <div className="text-muted text-xs">{s.detail}</div>}</div>
               </li>
             ))}
           </ol>
-          <RouteMap stops={stops} height={460} />
+          <RouteMap stops={stops} height={460} groups={groups} line={line} />
         </div>
       </div>
     </div>,

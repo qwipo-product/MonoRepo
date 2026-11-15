@@ -49,13 +49,13 @@ export const refreshMeta = () => { metaCache = null; };
 
 export const Badge = ({ meta }: { meta: StatusMeta }) => <span className={`cds-badge ${meta.tone}`}>{meta.label}</span>;
 
-export function PageHead({ icon, title, subtitle, crumb, children }: { icon: string; title: ReactNode; subtitle?: ReactNode; crumb?: { label: string; to: string }; children?: ReactNode }) {
+export function PageHead({ icon, title, subtitle, crumb, info, children }: { icon: string; title: ReactNode; subtitle?: ReactNode; crumb?: { label: string; to: string }; info?: string; children?: ReactNode }) {
   const navigate = useNavigate();
   return (
     <div className="cds-head">
       <div>
         {crumb && <div className="crumb"><a onClick={() => navigate(crumb.to)}><i className="fas fa-arrow-left me-1" />{crumb.label}</a></div>}
-        <h1><i className={`fas ${icon}`} />{title}</h1>
+        <div className="cds-title-row"><h1><i className={`fas ${icon}`} />{title}</h1>{info && <ModuleIntro text={info} />}</div>
         {subtitle && <p>{subtitle}</p>}
       </div>
       {children && <div className="d-flex gap-2 flex-wrap align-items-center">{children}</div>}
@@ -84,6 +84,11 @@ export const Empty = ({ icon = 'fa-inbox', text, children }: { icon?: string; te
 export const ErrorBox = ({ text, onRetry }: { text: string; onRetry?: () => void }) => (
   <div className="cds-note warn m-3"><i className="fas fa-triangle-exclamation mt-1" /><div>{text}{onRetry && <button className="btn btn-link btn-sm p-0 ms-2" onClick={onRetry}>Retry</button>}</div></div>
 );
+
+/** Short info next to a module title: what the page is for, in simple words. */
+export function ModuleIntro({ text }: { text: string }) {
+  return <span className="cds-intro" role="note"><i className="fas fa-circle-info" />{text}</span>;
+}
 
 export function Card({ title, extra, children, className = '' }: { title?: ReactNode; extra?: ReactNode; children: ReactNode; className?: string }) {
   return (
@@ -215,8 +220,9 @@ export function RowActions({ onView, items = [] }: { onView?: () => void; items?
 
 // ---------------------------------------------------------------- filters (search box + Filters dialog, like Orders)
 
+/** A select may depend on another field (City on State): only options whose `parent` matches are offered. */
 export type FilterField =
-  | { key: string; label: string; type: 'select'; options: { value: string; label: string }[]; allLabel?: string }
+  | { key: string; label: string; type: 'select'; options: { value: string; label: string; parent?: string }[]; allLabel?: string; dependsOn?: string }
   | { key: string; label: string; type: 'date' };
 export type FilterValues = Record<string, string>;
 
@@ -247,9 +253,15 @@ export function FilterBar({ search, onSearch, placeholder = 'Search…', fields 
   );
 }
 
-function FiltersDialog({ title, fields, values, defaults, onClose, onApply }: { title: string; fields: FilterField[]; values: FilterValues; defaults: FilterValues; onClose: () => void; onApply: (v: FilterValues) => void }) {
+export function FiltersDialog({ title, fields, values, defaults = {}, onClose, onApply }: { title: string; fields: FilterField[]; values: FilterValues; defaults?: FilterValues; onClose: () => void; onApply: (v: FilterValues) => void }) {
   const [v, setV] = useState<FilterValues>(() => Object.fromEntries(fields.map((f) => [f.key, values[f.key] ?? defaults[f.key] ?? ''])));
-  const set = (k: string, x: string) => setV((p) => ({ ...p, [k]: x }));
+  const set = (k: string, x: string) => setV((p) => {
+    const n = { ...p, [k]: x };
+    // a dependent field (City) is cleared when its parent (State) changes
+    fields.forEach((f) => { if (f.type === 'select' && f.dependsOn === k) n[f.key] = ''; });
+    return n;
+  });
+  const optionsOf = (f: Extract<FilterField, { type: 'select' }>) => (f.dependsOn && v[f.dependsOn] ? f.options.filter((o) => o.parent === v[f.dependsOn!]) : f.options);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
@@ -283,7 +295,7 @@ function FiltersDialog({ title, fields, values, defaults, onClose, onApply }: { 
                     ) : (
                       <select id={`cf-${f.key}`} className="fm-input" value={v[f.key]} onChange={(e) => set(f.key, e.target.value)}>
                         {f.allLabel !== undefined && <option value="">{f.allLabel}</option>}
-                        {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {optionsOf(f).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     )}
                   </div>
@@ -383,9 +395,9 @@ const KPI_LOOK: Record<string, { icon: string; title?: string; sub: string }> = 
   confirmed: { icon: 'fa-clipboard-list', title: 'Orders to Plan', sub: 'Waiting for a pickup plan' },
   picked: { icon: 'fa-box-open', title: 'Picked Up', sub: 'Waiting for a CDS delivery trip' },
   transit: { icon: 'fa-truck-fast', title: 'In Transit to CDS', sub: 'On the way to the CDS' },
-  pickupTrips: { icon: 'fa-truck-ramp-box', title: 'Distributor Pickup Trips', sub: 'Active · CDS to Distributor' },
-  cdsTrips: { icon: 'fa-warehouse', title: 'CDS Delivery Trips', sub: 'Active · Distributor to CDS' },
-  returnTrips: { icon: 'fa-rotate-left', title: 'CDS Return Trips', sub: 'Active · CDS to Seller' },
+  pickupTrips: { icon: 'fa-truck-ramp-box', title: 'Distributor Pickup Trips', sub: 'Active · CDS Service Centre to Sellers' },
+  cdsTrips: { icon: 'fa-warehouse', title: 'CDS Delivery Trips', sub: 'Active · Sellers to CDS Stores' },
+  returnTrips: { icon: 'fa-rotate-left', title: 'CDS Return Trips', sub: 'Active · CDS Stores to Sellers' },
   returns: { icon: 'fa-arrow-rotate-left', sub: 'Waiting for action' },
   grn: { icon: 'fa-clipboard-check', title: 'GRNs to Verify', sub: 'Handed over at your CDS' },
   ready: { icon: 'fa-box', title: 'Ready for Delivery', sub: 'Waiting for a delivery plan' },

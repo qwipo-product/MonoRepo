@@ -10,14 +10,14 @@
 // The CDS module never writes the existing Logistics Buyer data; 3PL seller orders are forwarded unchanged to
 // LBNP's existing order intake (POST /orders).
 import { route, MockError, handleMockRequest, type MockRequest } from '../server';
-import { db, persist } from '../db';
+import { db, persist, persistNow } from '../db';
 import { getControls } from '../controls';
 import { CDS_STATE_VERSION, CdsEngine, CdsError, localDay, type StopInput } from '../../cds/engine';
 import { buildReport, REPORTS, summary, type ReportFilters } from '../../cds/reports';
-import { ACTIVE_TRIP, STOP_ACTION } from '../../cds/status';
+import { ACTIVE_TRIP, STOP_ACTION, TRIP_STATUS_GROUPS, tripPhase } from '../../cds/status';
 import { buildCdsState } from '../../cds/seed';
 import { serviceStoreFor } from '../../cds/planning';
-import { RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripType } from '../../cds/types';
+import { DEFAULT_ROUTE_CONFIG, RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripStatus, type TripType } from '../../cds/types';
 import { seedInputs } from '../extensions/cds';
 
 const SVC = 'cds-svc';
@@ -161,7 +161,7 @@ route('GET', SVC, '/cds/meta', (req) => {
     stores: s.stores.filter((x) => u.cdsStoreIds.includes(x.id)),
     allStores: isSC(u) ? s.stores : s.stores.filter((x) => u.cdsStoreIds.includes(x.id)),
     distributors: s.distributors,
-    settings: s.settings,
+    settings: { ...s.settings, pickupRoute: { ...DEFAULT_ROUTE_CONFIG, ...s.settings.pickupRoute }, returnRoute: { ...DEFAULT_ROUTE_CONFIG, ...s.settings.returnRoute } },
     returnReasons: RETURN_REASONS,
     settlementParties: SETTLEMENT_PARTIES,
     reports: (isSC(u) ? REPORTS.SERVICE_CENTRE : REPORTS.CDS_USER),
@@ -177,7 +177,7 @@ route('POST', SVC, '/cds/demo/reset', (req) => {
   const { retailers, products } = seedInputs(d);
   d.ext.cds = buildCdsState(retailers, products);
   (d.ext.cds as CdsState).sessions = sessions;
-  persist();
+  persistNow(); // the page reloads right after the reset — save before it does
   return { reset: true };
 });
 
@@ -191,7 +191,19 @@ route('GET', SVC, '/cds/reports/:id', (req) => {
   if (!def) throw new MockError(404, 'Report not found');
   const f: ReportFilters = { from: req.query.from || undefined, to: req.query.to || undefined, cdsStoreId: req.query.cdsStoreId || undefined, distributorId: req.query.distributorId || undefined, retailerId: req.query.retailerId || undefined, status: req.query.status || undefined };
   if (f.cdsStoreId) scopeOf(u, f.cdsStoreId);
-  return buildReport(cdsState(), def.id, u.cdsStoreIds, f);
+  const out = buildReport(cdsState(), def.id, u.cdsStoreIds, f);
+  // A "Run" (not a preview refresh) is kept in the report's History.
+  if (req.query.run === '1') {
+    const s = cdsState();
+    const filters = Object.fromEntries(Object.entries(f).filter(([, v]) => !!v)) as Record<string, string>;
+    s.reportRuns = [{ id: `run-${Date.now().toString(36)}`, reportId: def.id, userId: u.id, filters, rows: out.rows.length, at: new Date().toISOString(), by: u.name }, ...(s.reportRuns ?? [])].slice(0, 200);
+    persist();
+  }
+  return out;
+});
+route('GET', SVC, '/cds/reports/:id/history', (req) => {
+  const u = need(req, ['sc-reports', 'cu-reports']);
+  return (cdsState().reportRuns ?? []).filter((r) => r.reportId === req.params.id && r.userId === u.id);
 });
 route('GET', SVC, '/cds/resources', (req) => {
   const u = sessionUser(req);
@@ -217,8 +229,10 @@ route('POST', SVC, '/cds/orders/search', (req) => {
     .filter((o) => !b.noActiveCdsTrip || !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status)))
     .map((o) => {
       const r = n.r(o.retailerId);
-      return { ...o, retailerName: r?.name ?? '', retailerPhone: r?.phone ?? '', retailerAddress: r?.address ?? '', locality: r?.locality ?? '', distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), units: o.lines.reduce((a, l) => a + l.qty, 0) };
+      return { ...o, retailerName: r?.name ?? '', retailerPhone: r?.phone ?? '', retailerAddress: r?.address ?? '', locality: r?.locality ?? '', city: r?.city ?? '', state: r?.state ?? '', retailerLat: r?.lat ?? 0, retailerLng: r?.lng ?? 0, distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), units: o.lines.reduce((a, l) => a + l.qty, 0) };
     })
+    .filter((o) => !b.state || o.state === b.state)
+    .filter((o) => !b.city || o.city === b.city)
     .filter((o) => has(b.search, o.orderNo, o.sellerOrderRef, o.retailerName, o.retailerPhone, o.distributorName))
     .sort((a, z) => z.confirmedAt.localeCompare(a.confirmedAt));
   return page(rows, b);
@@ -295,8 +309,9 @@ route('GET', SVC, '/cds/deliver-to-cds/overview', (req) => {
 
 function tripView(s: CdsState, t: Trip) {
   const n = names(s);
+  const pickupOfPlan = t.type === 'CDS_DELIVERY' ? s.trips.find((x) => x.planId === t.planId && x.type === 'DISTRIBUTOR_PICKUP') : undefined;
   return {
-    ...t, ownerName: n.st(t.owner),
+    ...t, ownerName: n.st(t.owner), shown: tripPhase(t, pickupOfPlan),
     stops: t.stops.map((x) => ({ ...x, otp: x.otpId ? (({ code: _code, ...rest }) => rest)(s.otps.find((o) => o.id === x.otpId)!) : null })),
     units: t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP', 'CDS_RETURN_PICKUP'].includes(x.action)).reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0)
       || t.stops.reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0),
@@ -313,11 +328,12 @@ route('POST', SVC, '/cds/trips/search', (req) => {
   const rows = s.trips
     .filter((t) => (isSC(u) ? t.owner === 'SC' : t.owner === myStore(u)))
     .filter((t) => !types.length || types.includes(t.type))
-    .filter((t) => !b.statuses?.length || b.statuses.includes(t.status))
     .filter((t) => !b.date || t.plannedDate === b.date)
     .filter((t) => has(b.search, t.tripNo, t.deliveryPersonName, t.vehicleRegNo, ...t.stops.map((x) => x.name)))
     .sort((a, z) => z.plannedDate.localeCompare(a.plannedDate) || z.createdAt.localeCompare(a.createdAt))
-    .map((t) => tripView(s, t));
+    .map((t) => tripView(s, t))
+    // the status filter matches the shown status (a CDS Delivery Trip is In Progress once its pickup starts)
+    .filter((t) => !b.statuses?.length || b.statuses.some((x: TripStatus) => TRIP_STATUS_GROUPS[t.shown.status].statuses.includes(x)));
   return page(rows, b);
 });
 route('GET', SVC, '/cds/trips/:id', (req) => {
@@ -328,17 +344,24 @@ route('GET', SVC, '/cds/trips/:id', (req) => {
   const n = names(s);
   return {
     trip: tripView(s, t),
-    canRun: (isSC(u) && t.owner === 'SC') || (!isSC(u) && t.owner === myStore(u)),
+    // The Service Centre plans and tracks; stops (OTP checks) are run by the CDS User, seller, retailer and delivery agent.
+    canRun: !isSC(u) && t.owner === myStore(u),
     otps: s.otps.filter((o) => o.tripId === t.id).map(({ code: _code, ...rest }) => rest).reverse(),
     orders: s.orders.filter((o) => t.orderIds.includes(o.id)).map((o) => ({ id: o.id, orderNo: o.orderNo, status: o.status, paymentMode: o.paymentMode, retailerId: o.retailerId, retailerName: n.r(o.retailerId)?.name ?? '', distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), lines: o.lines })),
     returns: s.returns.filter((r) => t.returnIds.includes(r.id)).map((r) => ({ id: r.id, returnNo: r.returnNo, status: r.status, orderNo: r.orderNo })),
     collections: s.collections.filter((c) => c.tripId === t.id),
   };
 });
+/** Trip actions (start, cancel, OTP, complete, fail, returns) are not for the Service Centre: it plans and assigns;
+ *  the delivery agent runs its trips in the Delivery Partner App (/cds/dp/*) with the CDS User, seller and retailer. */
+const notForServiceCentre = (u: CdsUser) => {
+  if (isSC(u)) throw new MockError(403, 'The delivery agent runs the trip in the Delivery Partner App with the CDS User, seller and retailer');
+};
 const tripWrite = (fn: (e: CdsEngine, t: Trip, body: any, by: string, req: MockRequest) => unknown) => (req: MockRequest) => {
   const u = sessionUser(req);
   const t = read((e) => e.trip(req.params.id));
   tripAccess(u, t, true);
+  notForServiceCentre(u);
   return cdsTx((e) => fn(e, e.trip(t.id), req.body ?? {}, `${u.name} (for ${t.deliveryPersonName})`, req));
 };
 route('POST', SVC, '/cds/trips/:id/start', tripWrite((e, t, _b, by) => e.startTrip(t.id, by)));
@@ -352,6 +375,7 @@ route('POST', SVC, '/cds/trips/:id/stops/:stopId/complete', (req) => {
   const u = sessionUser(req);
   const t = read((e) => e.trip(req.params.id));
   tripAccess(u, t, true);
+  notForServiceCentre(u);
   return completeStop(t.id, req.params.stopId, req.body ?? {}, `${u.name} (for ${t.deliveryPersonName})`);
 });
 route('POST', SVC, '/cds/trips/:id/stops/:stopId/fail', tripWrite((e, t, b, by, req) => e.failStop(t.id, req.params.stopId, b.reason, by)));
@@ -525,6 +549,39 @@ route('GET', SVC, '/cds/stores', (req) => {
     };
   });
 });
+/** Service Centre: a new CDS store. Its service area starts as a ~2 km hexagon around the location (edit it on the map). */
+route('POST', SVC, '/cds/stores', (req) => {
+  const u = need(req, 'sc-stores');
+  const b = req.body ?? {};
+  const txt = (k: string) => String(b[k] ?? '').trim();
+  return cdsTx((e) => {
+    const code = txt('code').toUpperCase();
+    if (!/^[A-Z0-9-]{3,12}$/.test(code)) throw new CdsError(400, 'Enter a store code of 3 to 12 letters, numbers or "-"');
+    if (e.s.stores.some((x) => x.code === code)) throw new CdsError(409, `Store code ${code} already exists`);
+    for (const [k, label] of [['name', 'store name'], ['address', 'address'], ['city', 'city'], ['state', 'state'], ['managerName', 'manager name']] as const) {
+      if (!txt(k)) throw new CdsError(400, `Enter the ${label}`);
+    }
+    if (!/^[6-9]\d{9}$/.test(txt('managerPhone'))) throw new CdsError(400, 'Enter a valid 10-digit manager phone number');
+    const lat = Number(b.lat);
+    const lng = Number(b.lng);
+    if (!(Math.abs(lat - 17.4) < 0.6 && Math.abs(lng - 78.5) < 0.6)) throw new CdsError(400, 'Enter a latitude and longitude inside the Hyderabad region (e.g. 17.43, 78.45)');
+    const localities = (Array.isArray(b.localities) ? b.localities : String(b.localities ?? '').split(',')).map((x: unknown) => String(x).trim()).filter(Boolean);
+    if (!localities.length) throw new CdsError(400, 'Enter at least one area served');
+    const r = 0.018;
+    const polygon = Array.from({ length: 6 }, (_, i) => {
+      const a = (Math.PI / 3) * i;
+      return [Math.round((lat + r * Math.sin(a)) * 1e6) / 1e6, Math.round((lng + r * 1.05 * Math.cos(a)) * 1e6) / 1e6] as [number, number];
+    });
+    const st = {
+      id: `cds-${code.toLowerCase().replace(/^cds-/, '')}-${Date.now().toString(36).slice(-4)}`, code, name: txt('name'), address: txt('address'), city: txt('city'), state: txt('state'),
+      lat, lng, localities, polygon, managerName: txt('managerName'), managerPhone: txt('managerPhone'), active: true,
+    };
+    e.s.stores.push(st);
+    e.s.users.filter((x) => x.role === 'SERVICE_CENTRE').forEach((x) => x.cdsStoreIds.push(st.id));
+    e.audit('STORE', st.id, u.name, 'CREATED', `${st.code} ${st.name}`);
+    return st;
+  });
+});
 route('PUT', SVC, '/cds/stores/:id', (req) => {
   const u = need(req, 'sc-stores');
   scopeOf(u, req.params.id);
@@ -609,6 +666,17 @@ route('PUT', SVC, '/cds/settings', (req) => {
       x.otpMaxAttempts = Number(b.otpMaxAttempts);
     }
     if (b.nextDayPlanning !== undefined) x.nextDayPlanning = !!b.nextDayPlanning;
+    for (const key of ['pickupRoute', 'returnRoute'] as const) {
+      const r = b[key];
+      if (r === undefined) continue;
+      const n = (k: string) => Number(r?.[k]);
+      if (!(n('serviceMinutes') >= 1 && n('serviceMinutes') <= 60)) throw new CdsError(400, 'Service time per stop must be 1–60 minutes');
+      if (!(n('maxTravelHours') >= 0.5 && n('maxTravelHours') <= 24)) throw new CdsError(400, 'Max travel time must be 0.5–24 hours');
+      if (!(Number.isInteger(n('maxStops')) && n('maxStops') >= 1 && n('maxStops') <= 100)) throw new CdsError(400, 'Max stops per vehicle must be 1–100');
+      if (!(n('maxDistanceKm') >= 1 && n('maxDistanceKm') <= 500)) throw new CdsError(400, 'Max distance must be 1–500 km');
+      if (!(n('maxWeightKg') >= 1 && n('maxWeightKg') <= 10000)) throw new CdsError(400, 'Max weight must be 1–10,000 kg');
+      x[key] = { serviceMinutes: n('serviceMinutes'), maxTravelHours: n('maxTravelHours'), maxStops: n('maxStops'), maxDistanceKm: n('maxDistanceKm'), maxWeightKg: n('maxWeightKg') };
+    }
     e.audit('SETTINGS', 'settings', u.name, 'UPDATED', JSON.stringify(b));
     return x;
   });

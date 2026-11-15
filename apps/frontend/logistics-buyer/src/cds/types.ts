@@ -47,6 +47,8 @@ export interface CdsStore {
   localities: string[];
   /** Service area: retailers inside this polygon ([lat, lng] points) are served by this CDS store. */
   polygon: [number, number][];
+  city: string;
+  state: string;
   managerName: string;
   managerPhone: string;
   active: boolean;
@@ -71,6 +73,8 @@ export interface Retailer {
   phone: string;
   address: string;
   locality: string;
+  city: string;
+  state: string;
   lat: number;
   lng: number;
 }
@@ -114,7 +118,19 @@ export interface CdsSettings {
   otpMaxAttempts: number;
   /** Retailer delivery plans and return plans must be for the next day or later. */
   nextDayPlanning: boolean;
+  /** Settings › Pick up / Return: route planning limits for the auto route (missing → DEFAULT_ROUTE_CONFIG). */
+  pickupRoute?: RouteConfig;
+  returnRoute?: RouteConfig;
 }
+
+export interface RouteConfig {
+  serviceMinutes: number;
+  maxTravelHours: number;
+  maxStops: number;
+  maxDistanceKm: number;
+  maxWeightKg: number;
+}
+export const DEFAULT_ROUTE_CONFIG: RouteConfig = { serviceMinutes: 15, maxTravelHours: 8, maxStops: 12, maxDistanceKm: 120, maxWeightKg: 1500 };
 
 // ---------------------------------------------------------------- orders
 
@@ -431,6 +447,18 @@ export interface CdsState {
   /** Delivery Partner App events already applied (idempotency). */
   dpEventIds: string[];
   audit: AuditEntry[];
+  /** Reports › History: each run with its filters. */
+  reportRuns: ReportRun[];
+}
+
+export interface ReportRun {
+  id: string;
+  reportId: string;
+  userId: string;
+  filters: Record<string, string>;
+  rows: number;
+  at: string;
+  by: string;
 }
 
 export const RETURN_REASONS = ['Damaged in transit', 'Expired / near expiry', 'Wrong item', 'Quality issue', 'Excess quantity', 'Retailer refused', 'Other'] as const;

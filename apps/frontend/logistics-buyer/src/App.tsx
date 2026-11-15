@@ -45,9 +45,8 @@ const RequireCds = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ def
 const CdsHome = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.CdsHome })));
 const CdsOrders = lazy(() => import('./pages/cds/OrdersPage'));
 const CdsOrderDetails = lazy(() => import('./pages/cds/OrdersPage').then((m) => ({ default: m.OrderDetailsPage })));
-const CdsPickupPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.PickupPlanningPage })));
+const CdsPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.PlanningPage })));
 const CdsCreatePickupPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreatePickupPlanPage })));
-const CdsReturnPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.ReturnPlanningPage })));
 const CdsCreateReturnPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreateReturnPlanPage })));
 const CdsTrips = lazy(() => import('./pages/cds/TripsPage'));
 const CdsTripDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripDetailsPage })));
@@ -86,12 +85,15 @@ export default function App() {
               <Route index element={<CdsHome />} />
               <Route path="orders" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrders /></RequireCds>} />
               <Route path="orders/:id" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrderDetails /></RequireCds>} />
-              <Route path="pickup-planning" element={<RequireCds page={'sc-pickup'}><CdsPickupPlanning /></RequireCds>} />
-              <Route path="pickup-planning/create" element={<RequireCds page={'sc-pickup'}><CdsCreatePickupPlan /></RequireCds>} />
-              {/* Deliver to CDS is created with each pickup plan; its trips are in Trips › CDS Delivery Trips. */}
+              <Route path="planning" element={<RequireCds page={'sc-pickup'}><CdsPlanning /></RequireCds>} />
+              <Route path="planning/pickup/create" element={<RequireCds page={'sc-pickup'}><CdsCreatePickupPlan /></RequireCds>} />
+              <Route path="planning/return/create" element={<RequireCds page={'sc-pickup'}><CdsCreateReturnPlan /></RequireCds>} />
+              {/* Legacy routes for backward compatibility */}
+              <Route path="pickup-planning" element={<Navigate to="/cds/planning?tab=pickups" replace />} />
+              <Route path="pickup-planning/create" element={<Navigate to="/cds/planning/pickup/create" replace />} />
               <Route path="deliver-to-cds" element={<Navigate to="/cds/trips?tab=CDS_DELIVERY" replace />} />
-              <Route path="return-planning" element={<RequireCds page={'sc-returns'}><CdsReturnPlanning /></RequireCds>} />
-              <Route path="return-planning/create" element={<RequireCds page={'sc-returns'}><CdsCreateReturnPlan /></RequireCds>} />
+              <Route path="return-planning" element={<Navigate to="/cds/planning?tab=returns" replace />} />
+              <Route path="return-planning/create" element={<Navigate to="/cds/planning/return/create" replace />} />
               <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsTrips /></RequireCds>} />
               <Route path="trips/:id" element={<CdsTripDetails />} />
               <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsReports /></RequireCds>} />

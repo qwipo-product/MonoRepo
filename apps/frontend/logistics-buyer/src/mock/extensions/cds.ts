@@ -9,7 +9,7 @@ export function seedInputs(db: MockDatabase): { retailers: SeedRetailer[]; produ
     .filter((c) => c.latitude && c.longitude && !Number.isNaN(Number(c.latitude)))
     .map((c) => ({
       id: c.id, code: c.customer_unique_id, name: c.business_name, ownerName: c.customer_name, phone: c.mobile_number, address: c.address,
-      locality: c.locality, lat: Number(c.latitude), lng: Number(c.longitude),
+      locality: c.locality, city: c.city, state: c.state, lat: Number(c.latitude), lng: Number(c.longitude),
     }));
   const products = db.products.map((p) => ({ name: p.name, price: p.sellingPrice, weightKg: p.weightKg, category: p.category }));
   return { retailers, products };

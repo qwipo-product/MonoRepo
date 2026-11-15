@@ -1,5 +1,5 @@
 // Operational reports and dashboard figures, computed from live CDS records. Pure (Node-testable).
-import { ACTIVE_TRIP, COLLECTION_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS, TRIP_TYPE } from './status.ts';
+import { ACTIVE_TRIP, COLLECTION_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS, TRIP_STATUS_GROUPS, TRIP_TYPE } from './status.ts';
 import type { CdsRole, CdsState, TripType } from './types.ts';
 
 export interface ReportFilters { from?: string; to?: string; cdsStoreId?: string; distributorId?: string; retailerId?: string; status?: string }
@@ -10,9 +10,9 @@ export const REPORTS: Record<CdsRole, { id: string; title: string; filters: (key
   SERVICE_CENTRE: [
     { id: 'distributor-pickups', title: 'Distributor-wise pickups', filters: ['from', 'to', 'distributorId'] },
     { id: 'cds-incoming', title: 'CDS-wise incoming orders', filters: ['from', 'to', 'cdsStoreId'] },
-    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor Pickup Trips (CDS to Distributor)', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_DELIVERY', title: 'CDS Delivery Trips (Distributor to CDS)', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_RETURN', title: 'CDS Return Trips (CDS to Seller)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor Pickup Trips (CDS Service Centre to Sellers)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-CDS_DELIVERY', title: 'CDS Delivery Trips (Sellers to CDS Stores)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-CDS_RETURN', title: 'CDS Return Trips (CDS Stores to Sellers)', filters: ['from', 'to', 'status'] },
     { id: 'pending-ops', title: 'Pending pickup & delivery operations', filters: ['cdsStoreId'] },
     { id: 'return-quantities', title: 'Return quantities', filters: ['from', 'to', 'cdsStoreId', 'distributorId'] },
     { id: 'trip-completion', title: 'Trip completion', filters: ['from', 'to'] },
@@ -44,11 +44,11 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
 
   if (id.startsWith('trips-')) {
     const type = id.slice(6) as TripType;
-    const trips = s.trips.filter((t) => t.type === type && inRange(t.plannedDate, f) && (!f.status || t.status === f.status))
+    const trips = s.trips.filter((t) => t.type === type && inRange(t.plannedDate, f) && (!f.status || (TRIP_STATUS_GROUPS[f.status]?.statuses ?? [f.status]).includes(t.status)))
       .filter((t) => (t.owner === 'SC' ? t.stops.some((x) => x.partyType !== 'CDS' || storeOk(x.partyId)) || type === 'DISTRIBUTOR_PICKUP' : storeOk(t.owner)));
     return {
       id, title: `${TRIP_TYPE[type].label}s (${TRIP_TYPE[type].direction})`,
-      columns: [C('tripNo', 'Trip ID'), C('date', 'Planned date'), C('status', 'Status'), C('dp', 'Delivery person'), C('vehicle', 'Vehicle'), C('stops', 'Stops', 'end'), C('done', 'Stops done', 'end'), C('otps', 'OTP verified', 'end'), C('units', 'Units planned', 'end'), C('handed', 'Units handed over', 'end'), C('completed', 'Completed at')],
+      columns: [C('tripNo', 'Trip ID'), C('date', 'Planned date'), C('status', 'Status'), C('dp', 'Delivery person'), C('vehicle', 'Vehicle'), C('stops', 'Stops', 'end'), C('done', 'Stops done', 'end'), ...(type === 'RETAILER_DELIVERY' ? [C('otps', 'OTP verified', 'end')] : []), C('units', 'Units planned', 'end'), C('handed', 'Units handed over', 'end'), C('completed', 'Completed at')],
       rows: trips.map((t) => ({
         tripNo: t.tripNo, date: t.plannedDate, status: TRIP_STATUS[t.status].label, dp: t.deliveryPersonName, vehicle: t.vehicleRegNo, stops: t.stops.length,
         done: t.stops.filter((x) => x.status !== 'PENDING').length, otps: t.stops.filter((x) => x.verifiedAt).length,

@@ -1,6 +1,7 @@
 // CDS client: its own sign-in session (separate from the Logistics Buyer login) and the CDS API.
 import { http, HttpError } from '../http';
 import type { Column, Report } from '../../cds/reports';
+import type { TripShown } from '../../cds/status';
 import type {
   AuditEntry, CdsOrder, CdsPage, CdsRole, CdsSettings, CdsStore, Collection, CollectionStatus, DeliveryPerson, Distributor, Grn, ItemCondition,
   OrderStatus, OtpTxn, Plan, Retailer, ReturnRecord, ReturnStatus, Trip, TripStatus, TripStop, TripType, Vehicle,
@@ -92,9 +93,12 @@ export function cdsErrorText(e: unknown): string {
 }
 
 export interface Paged<T> { rows: T[]; total: number; pageNumber: number; pageSize: number }
-export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; distributorName: string; storeName: string; units: number };
+export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; city: string; state: string; retailerLat: number; retailerLng: number; distributorName: string; storeName: string; units: number };
+export interface ReportRunRow { id: string; reportId: string; filters: Record<string, string>; rows: number; at: string; by: string }
+export interface NewStore { code: string; name: string; address: string; city: string; state: string; lat: number; lng: number; localities: string[]; managerName: string; managerPhone: string }
 export type StopView = TripStop & { otp: Omit<OtpTxn, 'code'> | null };
-export type TripView = Omit<Trip, 'stops'> & { ownerName: string; units: number; stops: StopView[] };
+/** `shown`: the status shown (Assigned / In Progress / Completed / Cancelled) and what the vehicle is doing now. */
+export type TripView = Omit<Trip, 'stops'> & { ownerName: string; units: number; stops: StopView[]; shown: { status: TripShown; note: string } };
 export type ReturnRow = ReturnRecord & { retailerName: string; distributorName: string; storeName: string; units: number; accepted: number; weightKg: number };
 export type GrnRow = Grn & { distributorName: string; cdsTripNo: string; pickupTripNos: string[]; received: number; dispatched: number; issues: boolean };
 export type CollectionRow = Collection & { retailerName: string };
@@ -116,10 +120,11 @@ export const cdsApi = {
   summary: () => call<Kpi[]>('GET', '/cds/summary'),
   /** Demo: rebuild the CDS demo data. */
   resetDemo: () => call<{ reset: boolean }>('POST', '/cds/demo/reset'),
-  report: (id: string, f: Record<string, string>) => call<Report>('GET', `/cds/reports/${id}`, undefined, f),
+  report: (id: string, f: Record<string, string>, run = false) => call<Report>('GET', `/cds/reports/${id}`, undefined, run ? { ...f, run: '1' } : f),
+  reportHistory: (id: string) => call<ReportRunRow[]>('GET', `/cds/reports/${id}/history`),
   resources: (date: string) => call<Resources>('GET', '/cds/resources', undefined, { date }),
 
-  searchOrders: (f: { cdsStoreId?: string; statuses?: OrderStatus[]; distributorId?: string; retailerId?: string; search?: string; fromDate?: string; toDate?: string; noActiveCdsTrip?: boolean; pageNumber?: number; pageSize?: number }) => call<Paged<OrderRow>>('POST', '/cds/orders/search', f),
+  searchOrders: (f: { cdsStoreId?: string; statuses?: OrderStatus[]; distributorId?: string; retailerId?: string; state?: string; city?: string; search?: string; fromDate?: string; toDate?: string; noActiveCdsTrip?: boolean; pageNumber?: number; pageSize?: number }) => call<Paged<OrderRow>>('POST', '/cds/orders/search', f),
   order: (id: string) => call<{ order: CdsOrder; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
   cancelOrder: (id: string, reason: string) => call<CdsOrder>('POST', `/cds/orders/${id}/cancel`, { reason }),
 
@@ -158,6 +163,7 @@ export const cdsApi = {
   retailers: () => call<(Retailer & { orders: number; openOrders: number; deliveredValue: number; returns: number; collected: number; lastOrder: string | null })[]>('GET', '/cds/retailers'),
   stores: () => call<(CdsStore & { user: { name: string; mobile: string; active: boolean } | null; incoming: number; grnPending: number; ready: number; outForDelivery: number; delivered: number; returnsAtCds: number; vehicles: number; deliveryPersons: number })[]>('GET', '/cds/stores'),
   coverage: () => call<CoverageRetailer[]>('GET', '/cds/coverage'),
+  createStore: (b: NewStore) => call<CdsStore>('POST', '/cds/stores', b),
   updateStore: (id: string, b: Partial<Pick<CdsStore, 'managerName' | 'managerPhone' | 'active' | 'polygon'>>) => call<CdsStore>('PUT', `/cds/stores/${id}`, b),
   fleet: () => call<{ vehicles: Vehicle[]; deliveryPersons: DeliveryPerson[]; settings: CdsSettings }>('GET', '/cds/fleet'),
   setFleetActive: (kind: 'vehicles' | 'persons', id: string, active: boolean) => call('POST', `/cds/fleet/${kind}/${id}/active`, { active }),

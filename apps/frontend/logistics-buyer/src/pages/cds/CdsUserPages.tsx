@@ -66,7 +66,8 @@ export function GrnPage() {
   const { data, error, loading, reload } = useLoad(() => cdsApi.searchGrns({ status: tab, distributorId, search, pageNumber, pageSize }), [tab, distributorId, search, pageNumber, pageSize]);
   return (
     <div className="cds-page">
-      <PageHead icon="fa-clipboard-check" title="GRN (Goods Received Note)" subtitle="Verify the orders handed over at your CDS, distributor-wise." />
+      <PageHead info="Check the goods received at your CDS store, one GRN per distributor." icon="fa-clipboard-check" title="GRN (Goods Received Note)" subtitle="Verify the orders handed over at your CDS, distributor-wise." />
+
       <KpiStrip />
       <MyOtps purposes={['CDS_HANDOVER']} title="Handover OTPs for your CDS" />
       <Incoming type="CDS_DELIVERY" title="Incoming CDS deliveries" />
@@ -206,7 +207,8 @@ export function DeliveryPlanningPage() {
   };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-truck" title="Delivery Planning" subtitle="Next-day retailer delivery plans. Group ready orders (and returns to collect) by retailer, assign a delivery person and vehicle — the trip appears in Trips." />
+      <PageHead info="Plan next-day deliveries from your CDS store to retailers." icon="fa-truck" title="Delivery Planning" subtitle="Next-day retailer delivery plans. Group ready orders (and returns to collect) by retailer, assign a delivery person and vehicle — the trip appears in Trips." />
+
       <div className="cds-grid-2">
         <Card title={<><i className="fas fa-store text-primary me-2" />Ready for delivery · retailer-wise</>} extra={<small>{(orders.data?.rows ?? []).length} order(s) · {(rets.data?.rows ?? []).length} return(s) to collect</small>}>
           {(orders.error || rets.error) && <ErrorBox text={orders.error || rets.error} onRetry={() => { orders.reload(); rets.reload(); }} />}
@@ -293,11 +295,12 @@ export function CollectionsPage() {
   };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-indian-rupee-sign" title="Collections & Payments" subtitle="Delivery person → your CDS → Qwipo (SNP) → settled.">
+      <PageHead info="Cash and UPI collected from retailers, from the delivery person to Qwipo." icon="fa-indian-rupee-sign" title="Collections & Payments" subtitle="Delivery person → your CDS → Qwipo (SNP) → settled.">
         {tab === 'WITH_DELIVERY_PERSON' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void receive()}><i className="fas fa-hand-holding-dollar me-1" />Receive from Delivery Person</button>}
         {tab === 'RECEIVED_BY_CDS' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void handover()}><i className="fas fa-building-columns me-1" />Hand Over to Qwipo (SNP)</button>}
         {tab === 'HANDED_TO_QWIPO' && <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" disabled={busy || !chosen.length} onClick={() => void settle()}><i className="fas fa-check-double me-1" />Record Settlement</button>}
       </PageHead>
+
       <div className="cds-note mb-3"><i className="fas fa-circle-info mt-1" /><div>Qwipo (SNP) settles manually with {meta.data?.settlementParties.join(', ')}. No payment gateway is used — record references for each step.</div></div>
       <Tabs value={tab} onChange={(v) => { setTab(v); setSel(new Set()); }} tabs={COL_TABS.map((s, i) => ({ id: s, label: COLLECTION_STATUS[s].label, count: counts.data?.[i].total }))} />
       <FilterBar search={search} onSearch={setSearch} placeholder="Search collection, order, retailer, delivery person…">
@@ -348,9 +351,10 @@ export function ReturnsPage() {
   };
   return (
     <div className="cds-page">
-      <PageHead icon="fa-rotate-left" title="Returns" subtitle="Track retailer returns: retailer → your CDS → distributor.">
+      <PageHead info="Goods that retailers give back, from your CDS store to the distributor." icon="fa-rotate-left" title="Returns" subtitle="Track retailer returns: retailer → your CDS → distributor.">
         <button className="btn btn-sm btn-primary" onClick={() => navigate('/cds/orders?initiate=1')}><i className="fas fa-plus me-1" />Initiate Return</button>
       </PageHead>
+
       <MyOtps purposes={['CDS_RETURN_PICKUP', 'RETURN_HANDOVER_CDS', 'CDS_ORDER_PICKUP']} title="Pickup / handover OTPs for your CDS" />
       <Incoming type="CDS_RETURN" title="Service Centre return pickups from your CDS" />
       <Tabs value={tab} onChange={(v) => { setTab(v); setPage(1); }} tabs={[{ id: 'open', label: 'With retailer / on the way' }, { id: 'cds', label: 'At your CDS' }, { id: 'back', label: 'Back to seller' }, { id: 'all', label: 'All' }]} />
@@ -398,7 +402,8 @@ export function RetailersPage() {
   const rows = (data ?? []).filter((r) => !search || `${r.name} ${r.ownerName} ${r.phone} ${r.locality}`.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="cds-page">
-      <PageHead icon="fa-users" title="Retailers" subtitle="Retailers served by your CDS, with their orders, returns and collections." />
+      <PageHead info="Retailers in your CDS store area, with their orders, returns and payments." icon="fa-users" title="Retailers" subtitle="Retailers served by your CDS, with their orders, returns and collections." />
+
       <FilterBar search={search} onSearch={setSearch} placeholder="Search retailer, owner, phone, locality…"><span className="text-muted">{rows.length} retailer(s)</span></FilterBar>
       <Card>
         {error && <ErrorBox text={error} onRetry={reload} />}

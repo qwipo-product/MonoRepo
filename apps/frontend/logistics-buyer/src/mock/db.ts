@@ -20,15 +20,38 @@ export function db(): MockDatabase {
   return state;
 }
 
+/** Saves soon (batched). A save still pending when the page closes or reloads is written before it goes. */
 export function persist() {
   window.clearTimeout(timer);
-  timer = window.setTimeout(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch (e) {
-      console.warn('Mock DB could not be persisted (storage full?)', e);
-    }
-  }, 50);
+  pending = true;
+  timer = window.setTimeout(persistNow, 50);
+}
+
+/** Saves now — use before a reload (for example a demo reset). */
+export function persistNow() {
+  window.clearTimeout(timer);
+  pending = false;
+  if (!state) return;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Mock DB could not be persisted (storage full?)', e);
+  }
+}
+
+let pending = false;
+if (typeof window !== 'undefined') {
+  const flush = () => { if (pending) persistNow(); };
+  window.addEventListener('pagehide', flush);
+  window.addEventListener('beforeunload', flush);
+  // Another tab saved (for example a demo reset): drop this tab's copy so the next read loads the saved data and
+  // this tab can never write its older copy back over it.
+  window.addEventListener('storage', (e) => {
+    if (e.key !== KEY) return;
+    window.clearTimeout(timer);
+    pending = false;
+    state = null;
+  });
 }
 
 export function resetDb() {

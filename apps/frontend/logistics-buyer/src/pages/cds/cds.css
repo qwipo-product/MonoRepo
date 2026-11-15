@@ -268,3 +268,89 @@
 .cds-route-chip { display: inline-flex; align-items: center; background: #eef2ff; color: #3730a3; border-radius: 10px; padding: 1px 8px; font-size: 12px; font-weight: 500; }
 .cds-route-preview .leg-title small { font-weight: 400; color: #6b7280; margin-left: 6px; }
 .cds-route-preview .leg-title small::before { content: "· "; }
+
+/* Reports list (each report with Run, Download, History) */
+.cds-reports-list { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }
+.cds-report-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; background: #fff; }
+.cds-report-item:hover { background: #f8fafc; border-color: #d1d5db; }
+.cds-report-item .report-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cds-report-item .report-name { font-weight: 600; color: #1f2937; font-size: 14px; flex: 1; }
+.cds-report-item .report-actions { display: flex; gap: 6px; }
+.cds-report-item .report-actions .btn { font-size: 12px; padding: 4px 10px; }
+
+/* Orders and Trips use the LBNP Orders / Trips styles; only CDS-specific bits here. */
+.cds-page.orders-page .retailer-search { float: none; width: 100%; max-width: 520px; margin-left: auto; display: block; }
+.cds-page.trips-container { padding: 24px; background: #f8f9fa; }
+.cds-trips-lbnp .cds-tabs { margin-bottom: 16px; }
+.cds-trips-search { position: relative; max-width: 420px; margin: 0 0 12px auto; }
+.cds-trips-search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; }
+.cds-trips-search input { padding-left: 30px; height: 36px; border-radius: 8px; }
+.cds-trips-lbnp .trips-table .status-badge { width: auto; min-width: 80px; }
+.cds-trips-lbnp .trips-table .status-badge.cancelled { background: #fee2e2; color: #dc2626; }
+.cds-trips-lbnp .trip-number a { cursor: pointer; font-weight: 500; }
+.cds-trips-lbnp .delivery-route h3 small { font-size: 12px; }
+.cds-trips-lbnp .delivery-stops { height: auto; max-height: 450px; }
+
+/* Reports: LBNP report cards with Run · Download · History panels. */
+.cds-page.reports-page { padding: 1rem 1.25rem; }
+.cds-report-card .card-title { font-size: 1.05rem; }
+.cds-report-panel { border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px; }
+.cds-report-panel .table-responsive { border: 1px solid #eef0f3; border-radius: 8px; }
+
+/* Create New CDS Store form (Filters dialog look). */
+.cds-store-form { max-width: 760px; }
+.cds-store-form .fm-input.is-invalid { border-color: #dc2626; }
+.cds-field-error { color: #dc2626; font-size: 12px; margin-top: 4px; }
+
+/* Planning uses the LBNP Delivery Planning styles; a green band for the completed cards. */
+.cds-page.delivery-routes-page { padding: 1rem; }
+.delivery-routes-page .done-card { border-left: 3px solid #059669; }
+.delivery-routes-page .done-card .mat-mdc-row:hover td { background: #f0fdf4; }
+.delivery-routes-page .done-header { background: linear-gradient(135deg, #ecfdf5, #f8fafc); }
+.delivery-routes-page .done-header .section-icon, .delivery-routes-page .done-header .count-pill { background: #059669; }
+.delivery-routes-page .cds-trip-pill { cursor: pointer; white-space: nowrap; font-size: 12px; }
+.delivery-routes-page .status-generating.cds-trip-pill:hover { background: #dbeafe; }
+.cds-planning-lbnp .cds-tabs { margin-bottom: 4px; }
+
+/* Orders: five LBNP KPI cards in one row. */
+.cds-orders-lbnp .stats-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1300px) { .cds-orders-lbnp .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .cds-orders-lbnp .stats-grid { grid-template-columns: 1fr; } }
+.cds-orders-lbnp .stat-icon--distributors { background: #ede9fe; color: #7c3aed; }
+.cds-orders-lbnp .stat-icon--stores { background: #ccfbf1; color: #0d9488; }
+
+/* Module intro: short info next to the page title (wraps under it on narrow screens). */
+.cds-title-row { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; row-gap: 2px; }
+.cds-title-row h1 { margin-bottom: 0; }
+.cds-intro { display: inline-flex; gap: 5px; align-items: baseline; margin-left: 12px; font-size: 12.5px; font-weight: 400; color: #6b7280; line-height: 1.4; }
+.cds-title-row .cds-intro { margin-left: 0; }
+.cds-intro > i { color: #3b82f6; font-size: 12px; flex-shrink: 0; }
+
+/* Planning: status filter under the plans card header. */
+.cds-plan-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid #e5e7eb; background: #fff; }
+.cds-plan-filter .filter-label { font-size: 13px; font-weight: 600; color: #4b5563; margin-right: 4px; }
+.cds-plan-filter .plan-filter-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 16px; padding: 4px 12px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.cds-plan-filter .plan-filter-chip:hover { border-color: #93c5fd; background: #f8fafc; }
+.cds-plan-filter .plan-filter-chip.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.cds-plan-filter .plan-filter-chip .n { background: #f1f5f9; color: #475569; border-radius: 10px; padding: 0 7px; font-size: 11px; }
+.cds-plan-filter .plan-filter-chip.active .n { background: #dbeafe; color: #1e40af; }
+/* Available orders / returns: waiting status */
+.cds-wait-badge { display: inline-block; background: #e0f2fe; color: #0369a1; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+
+/* What the vehicle is doing now, under the trip status. */
+.cds-trip-note { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.3; white-space: normal; }
+span.cds-trip-note { font-size: 12px; }
+
+/* Settings uses the LBNP Settings / Profile / Delivery styles. */
+.cds-page.settings-container { padding: 24px; }
+@media (max-width: 1000px) { .cds-settings-lbnp .config-grid, .cds-settings-lbnp .profile-grid { grid-template-columns: 1fr; } }
+
+/* Create Pickup Plan uses the LBNP Create Delivery Route / Optimized Routes styles. */
+.cds-page.create-delivery-route-page { padding: 16px; background: #f0f4f8; }
+.create-delivery-route-page .route-config-bar { gap: 32px; }
+.create-delivery-route-page .cds-config-select { width: 200px; height: 40px; font-size: 14px; }
+.create-delivery-route-page .summary-row { flex-wrap: wrap; row-gap: 8px; }
+.optimized-routes-modal .cds-csv-btn { background: #4caf50; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 13px; }
+.optimized-routes-modal .cds-route-assign { padding: 0 16px 16px; font-size: 13px; max-width: 560px; }
+.optimized-routes-modal .btn-confirm-routes:disabled { opacity: .55; cursor: not-allowed; }
+.optimized-routes-modal .route-title .cds-route-chip { font-size: 12px; }
