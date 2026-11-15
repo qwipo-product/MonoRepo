@@ -2,17 +2,19 @@
 //
 // - Consolidated Delivery (`channel: 'cds'`): the CDS service center collects this distributor's goods for
 //   orders confirmed as 3PL + CDS. The trip completes when the goods are handed over to the service center, so it
-//   carries no returns. Five trips: Planned (pickup tomorrow), In Progress and three Completed.
+//   carries no returns. Recent trips: Planned (pickup tomorrow), In Progress and three Completed; plus ten
+//   completed trips over the past four weeks (history, so a monthly Performance Report has data).
 // - Consolidated Returns (`channel: 'cds-returns'`): the service center brings retailers' returns back to the
 //   distributor in a separate trip (the vehicle can differ, for example the next day). The trip closes with the
-//   return OTP. Four trips: Planned, In Progress and two Completed, each carrying full and/or partial returns of
-//   orders delivered by the completed Consolidated Delivery trips.
+//   return OTP. Recent trips: Planned, In Progress and two Completed; plus six completed trips in the history. Each
+//   carries full and/or partial returns of orders delivered by a completed Consolidated Delivery trip.
 // Neither channel appears on the Direct Delivery tab, which lists 3PL trips.
 //
 // This file exports no `seed`: buildSeed() calls `ensureCdsTrips()` after every other extension has run, so no
 // other demo (issues, orders, trip tweaks) picks a CDS trip or order. Browsers that seeded the mock DB earlier get
-// the trips on first use: the trips list route calls `ensureCdsTrips()` too. It replaces CDS data from an earlier
-// version of this demo (flag `db.ext.cdsSeeded` = CDS_SEED_VERSION) without resetting any other demo data.
+// the trips on first use: the trips list and Performance Report routes call `ensureCdsTrips()` too. It replaces CDS
+// data from an earlier version of this demo (flag `db.ext.cdsSeeded` = CDS_SEED_VERSION) without resetting any
+// other demo data.
 import type { MockDatabase } from '../seed';
 import type { DbOrder, DbOrderItem, DbStop, DbTrip } from '../types';
 
@@ -78,7 +80,7 @@ const FULL_RETURN_REASON = 'Customer refused – shop closed';
 const PARTIAL_RETURN_REASON = 'Damaged product';
 
 /** Bumped when the CDS demo data changes shape; an older version is replaced on the next request. */
-const CDS_SEED_VERSION = 2;
+const CDS_SEED_VERSION = 3;
 
 type StopPlan = 'assigned' | 'pending' | 'out' | 'at' | 'delivered';
 
@@ -115,7 +117,8 @@ interface ReturnPlan {
   /** 1 Planned · 2 In Progress · 3 Completed (return OTP confirmed) */
   status: 1 | 2 | 3;
   dayOffset: number;
-  /** Returned orders: [index in PLANS, stop index in that trip, full or partial return]. Only completed trips. */
+  /** Returned orders: [index in PLANS then HISTORY_PLANS, stop index in that trip, full or partial return].
+   *  Only completed delivery trips. */
   returns: [number, number, 'full' | 'partial'][];
   charges: number;
   distanceKm: string;
@@ -129,6 +132,31 @@ const RETURN_PLANS: ReturnPlan[] = [
   { center: 0, status: 3, dayOffset: -2, returns: [[4, 1, 'partial']], charges: 520, distanceKm: '14.30' },
 ];
 
+/** History: completed Consolidated Delivery trips over the past four weeks, so the Performance Report for a month
+ *  has data (PLANS cover only the last few days). They follow PLANS, so their indexes start at PLANS.length. */
+const HISTORY_DAYS = [-5, -7, -9, -12, -14, -16, -19, -21, -23, -26];
+const HISTORY_PLANS: CdsTripPlan[] = HISTORY_DAYS.map((dayOffset, k) => {
+  const stops = 3 + (k % 2);
+  return {
+    center: k % 2,
+    status: 3,
+    dayOffset,
+    customers: Array.from({ length: stops }, (_, j) => (k * 5 + j * 9 + 3) % 40),
+    stops: Array.from({ length: stops }, () => 'delivered' as const),
+    charges: 820 + ((k * 37) % 260),
+    distanceKm: (16.4 + ((k * 13) % 10)).toFixed(2),
+  };
+});
+/** Completed Consolidated Returns trips for the history above (indexes as in PLANS + HISTORY_PLANS). */
+const HISTORY_RETURN_PLANS: ReturnPlan[] = [
+  { center: 0, status: 3, dayOffset: -4, returns: [[5, 0, 'partial']], charges: 480, distanceKm: '12.40' },
+  { center: 1, status: 3, dayOffset: -6, returns: [[6, 1, 'full'], [6, 2, 'partial']], charges: 610, distanceKm: '15.80' },
+  { center: 0, status: 3, dayOffset: -8, returns: [[7, 0, 'partial']], charges: 500, distanceKm: '13.10' },
+  { center: 1, status: 3, dayOffset: -13, returns: [[9, 2, 'full']], charges: 560, distanceKm: '14.70' },
+  { center: 0, status: 3, dayOffset: -18, returns: [[11, 0, 'partial'], [11, 1, 'partial']], charges: 590, distanceKm: '15.20' },
+  { center: 1, status: 3, dayOffset: -22, returns: [[13, 2, 'full']], charges: 530, distanceKm: '13.90' },
+];
+
 /** Adds the CDS trips once per CDS_SEED_VERSION. Returns true when it changed the database (the caller persists). */
 export function ensureCdsTrips(db: MockDatabase): boolean {
   if (db.ext.cdsSeeded === CDS_SEED_VERSION) return false;
@@ -139,7 +167,8 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
     db.trips = db.trips.filter((t) => !oldTrips.has(t.logisticsOrderId));
     db.orders = db.orders.filter((o) => !(o.tripId && oldTrips.has(o.tripId)));
   }
-  const rng = cdsRng(20261114);
+  // The recent trips keep their own sequence, so their trip numbers do not change when the history is added.
+  let rng = cdsRng(20261114);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const warehouse = db.addresses.find((a) => a.is_default) || db.addresses[0];
@@ -160,7 +189,7 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
   };
 
   const deliveryTrips: { trip: DbTrip; orders: DbOrder[] }[] = [];
-  PLANS.forEach((plan, ti) => {
+  const addDeliveryTrip = (plan: CdsTripPlan, ti: number) => {
     const createdAt = isoAt(today, plan.dayOffset - 1, 17, 10 + ti * 7);
     const pickupSlotStart = isoAt(today, plan.dayOffset, 7, 0);
     const startTime = plan.status >= 2 ? isoAt(today, plan.dayOffset, 7, 20) : null;
@@ -244,10 +273,10 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
     db.orders.push(...orders);
     db.trips.push(trip);
     deliveryTrips.push({ trip, orders });
-  });
+  };
 
   // Consolidated Returns: each returned order comes from a completed Consolidated Delivery trip above.
-  RETURN_PLANS.forEach((plan, ri) => {
+  const addReturnTrip = (plan: ReturnPlan, ri: number) => {
     const createdAt = isoAt(today, plan.dayOffset - 1, 18, 5 + ri * 7);
     const pickupSlotStart = isoAt(today, plan.dayOffset, 8, 0);
     const startTime = plan.status >= 2 ? isoAt(today, plan.dayOffset, 8, 15) : null;
@@ -315,7 +344,14 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
       stops, orderIds: returned.map((r) => r.order.orderId), routePlanComboId: null, cancelReason: null,
       channel: 'cds-returns',
     });
-  });
+  };
+
+  PLANS.forEach(addDeliveryTrip);
+  RETURN_PLANS.forEach(addReturnTrip);
+  // The four weeks of history use a second sequence (see above).
+  rng = cdsRng(20261115);
+  HISTORY_PLANS.forEach((plan, k) => addDeliveryTrip(plan, PLANS.length + k));
+  HISTORY_RETURN_PLANS.forEach((plan, k) => addReturnTrip(plan, RETURN_PLANS.length + k));
 
   db.orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   db.trips.sort((a, b) => b.createdAt.localeCompare(a.createdAt));

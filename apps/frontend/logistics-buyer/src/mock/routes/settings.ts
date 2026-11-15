@@ -3,6 +3,7 @@
 // `err.error.error.message` reads work. Server-side validation rules are not in the bundle (spec 08 §11);
 // the ones below are plausible guards so every client error branch can be exercised.
 import { db, nowIso, persist, uuid } from '../db';
+import { ensureCdsTrips } from '../extensions/cds';
 import { makeXlsx } from '../fileFactory';
 import { MockError, route } from '../server';
 import type { DbBeat, DbCluster, DbOrder, DbTrip, DbVehicle } from '../types';
@@ -343,6 +344,8 @@ route('GET', BUYER, '/performance-report/download', (req) => {
   }
 
   const d = db();
+  // A browser that opens Reports before the Trips page still gets the consolidated trips (see extensions/cds.ts).
+  if (ensureCdsTrips(d)) persist();
   const inRange = (iso: string) => {
     const day = istYmd(iso);
     return day >= startDate && day <= endDate;
