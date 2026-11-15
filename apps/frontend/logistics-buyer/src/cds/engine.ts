@@ -9,7 +9,7 @@ import type {
 } from './types.ts';
 
 /** Bump when the demo data changes: stored CDS data of an older version is rebuilt on next use. */
-export const CDS_STATE_VERSION = 8;
+export const CDS_STATE_VERSION = 9;
 
 export class CdsError extends Error {
   status: number;
@@ -196,8 +196,39 @@ export class CdsEngine {
 
   // ---------------------------------------------------------------- vehicles & delivery persons
 
-  private busyOn(kind: 'vehicleId' | 'deliveryPersonId', id: string, date: string) {
-    return this.s.trips.find((t) => t[kind] === id && t.plannedDate === date && ACTIVE_TRIP.includes(t.status)) ?? null;
+  private busyOn(kind: 'vehicleId' | 'deliveryPersonId', id: string, date: string, exceptTripId?: string) {
+    return this.s.trips.find((t) => t.id !== exceptTripId && t[kind] === id && t.plannedDate === date && ACTIVE_TRIP.includes(t.status)) ?? null;
+  }
+  /** Edit Resource: change the vehicle and driver of a planned trip (not started yet). */
+  updateTripResources(id: string, a: Assignment, by: string) {
+    const t = this.trip(id);
+    if (!['PLANNED', 'ASSIGNED'].includes(t.status)) throw conflict(`${t.tripNo} has started; the resources cannot change`);
+    const v = this.s.vehicles.find((x) => x.id === a?.vehicleId);
+    if (!v || v.owner !== t.owner) throw bad('Select a vehicle');
+    if (!v.active) throw conflict(`Vehicle ${v.regNo} is inactive`);
+    const p = this.s.deliveryPersons.find((x) => x.id === a?.deliveryPersonId);
+    if (!p || p.owner !== t.owner) throw bad('Select a driver');
+    if (!p.active) throw conflict(`${p.name} is inactive`);
+    const vb = this.busyOn('vehicleId', v.id, t.plannedDate, t.id);
+    if (vb) throw conflict(`Vehicle ${v.regNo} is already on ${vb.tripNo} on ${t.plannedDate}`);
+    const pb = this.busyOn('deliveryPersonId', p.id, t.plannedDate, t.id);
+    if (pb) throw conflict(`${p.name} is already on ${pb.tripNo} on ${t.plannedDate}`);
+    Object.assign(t, { vehicleId: v.id, vehicleRegNo: v.regNo, vehicleType: v.type, capacityKg: v.capacityKg, deliveryPersonId: p.id, deliveryPersonName: p.name, deliveryPersonPhone: p.phone });
+    if (t.helperName === p.name) Object.assign(t, { helperName: null, helperPhone: null });
+    t.history.push({ from: t.status, to: t.status, at: this.now(), by, note: `Resources updated: ${v.regNo}, ${p.name}` });
+    this.touch(t, by);
+    return t;
+  }
+  /** Update Helper: a delivery person of the same owner (not the driver) helps on a planned trip. */
+  updateTripHelper(id: string, personId: string, by: string) {
+    const t = this.trip(id);
+    if (!['PLANNED', 'ASSIGNED'].includes(t.status)) throw conflict(`${t.tripNo} has started; the helper cannot change`);
+    const p = this.s.deliveryPersons.find((x) => x.id === personId);
+    if (!p || p.owner !== t.owner || p.id === t.deliveryPersonId) throw bad('Select a helper');
+    Object.assign(t, { helperName: p.name, helperPhone: p.phone });
+    t.history.push({ from: t.status, to: t.status, at: this.now(), by, note: `Helper updated: ${p.name}` });
+    this.touch(t, by);
+    return t;
   }
   resources(owner: string, date: string) {
     return {
@@ -277,14 +308,13 @@ export class CdsEngine {
     return sequenceStops(origin, xs, end).map((i) => xs[i]);
   }
 
-  // ---------------------------------------------------------------- 2–3. Pickup Planning → Distributor Pickup Trip (+ CDS Delivery Trip)
+  // ---------------------------------------------------------------- 2–3. Pickup Planning → Pickup Trip (sellers to CDS stores)
 
   /**
-   * Plans pickups from one or more distributors (each order to its destination CDS) and generates the Distributor
-   * Pickup Trip; with `cdsDelivery`, also the CDS Delivery Trip that takes the collected orders to their CDS stores.
-   * The delivery leg may use the same vehicle and delivery person (milk run).
+   * Plans pickups from one or more distributors (each order to its destination CDS) and generates one Pickup Trip:
+   * the vehicle collects at the sellers, then hands the orders over at their CDS stores (milk run).
    */
-  createPickupPlan(b: { orders: { orderId: string; cdsStoreId?: string }[]; plannedDate: string; slot?: string; pickup: Assignment; cdsDelivery?: Assignment | null; remarks?: string }, by: string) {
+  createPickupPlan(b: { orders: { orderId: string; cdsStoreId?: string }[]; plannedDate: string; slot?: string; pickup: Assignment; /** ignored: one vehicle runs the whole pickup */ cdsDelivery?: Assignment | null; remarks?: string }, by: string) {
     this.checkDate(b.plannedDate, false);
     if (!b.orders?.length) throw bad('Select at least one confirmed order');
     const orders = uniq(b.orders.map((x) => x.orderId)).map((id) => this.order(id));
@@ -299,23 +329,23 @@ export class CdsEngine {
     });
     const loadKg = sum(orders, (o) => o.weightKg);
     const pickupA = this.assign('SC', b.plannedDate, b.pickup, loadKg);
-    let deliveryA: { v: Vehicle; p: DeliveryPerson } | null = null;
-    if (b.cdsDelivery) {
-      const sameV = b.cdsDelivery.vehicleId === b.pickup.vehicleId;
-      const sameP = b.cdsDelivery.deliveryPersonId === b.pickup.deliveryPersonId;
-      deliveryA = sameV && sameP ? pickupA : this.assignLeg(b.plannedDate, b.cdsDelivery, loadKg, sameV ? pickupA.v : null, sameP ? pickupA.p : null);
-    }
     const plan = this.newPlan('PICKUP', 'SC', b.plannedDate, orders.map((o) => o.id), [], b.remarks ?? '', by);
-    const dists = uniq(orders.map((o) => o.distributorId)).map((id) => this.distributor(id));
-    const stops = this.sequence(SC_HUB, dists).map((d, i) =>
-      this.newStop(i + 1, 'DISTRIBUTOR_PICKUP', 'DISTRIBUTOR', d, orders.filter((o) => o.distributorId === d.id).flatMap((o) => this.orderLines(o, (l) => l.qty))));
+    // One pickup trip: the sellers first (shortest order from the Service Centre), then the CDS stores (shortest
+    // order from the last seller). Each order uses this trip for both its pickup and its CDS handover.
+    const dists = this.sequence(SC_HUB, uniq(orders.map((o) => o.distributorId)).map((id) => this.distributor(id)));
+    const stores = this.sequence(dists[dists.length - 1] ?? SC_HUB, uniq(orders.map((o) => o.cdsStoreId)).map((id) => this.store(id)));
+    const stops = [
+      ...dists.map((d) => this.newStop(0, 'DISTRIBUTOR_PICKUP', 'DISTRIBUTOR', d, orders.filter((o) => o.distributorId === d.id).flatMap((o) => this.orderLines(o, (l) => l.qty)))),
+      ...stores.map((st) => this.newStop(0, 'CDS_HANDOVER', 'CDS', this.storeParty(st), orders.filter((o) => o.cdsStoreId === st.id).flatMap((o) => this.orderLines(o, (l) => l.qty)))),
+    ];
+    stops.forEach((s, i) => (s.seq = i + 1));
     const pickup = this.newTrip('DISTRIBUTOR_PICKUP', 'SC', plan, b.plannedDate, b.slot ?? '08:00 – 12:00', pickupA, stops, by, SC_HUB);
     orders.forEach((o) => {
       o.pickupTripId = pickup.id;
+      o.cdsTripId = pickup.id;
       this.setOrder(o, 'PICKUP_PLANNED', by, pickup.tripNo);
     });
-    const delivery = deliveryA ? this.buildCdsDeliveryTrip(plan, orders, b.plannedDate, '12:00 – 17:00', deliveryA, by, (l) => l.qty) : null;
-    return { plan, pickupTrip: pickup, cdsDeliveryTrip: delivery };
+    return { plan, pickupTrip: pickup, cdsDeliveryTrip: null as Trip | null };
   }
   private assignLeg(date: string, a: Assignment, loadKg: number, v: Vehicle | null, p: DeliveryPerson | null) {
     if (v && !p) {

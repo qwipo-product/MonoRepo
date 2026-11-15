@@ -104,6 +104,7 @@ export function Card({ title, extra, children, className = '' }: { title?: React
 /** Header icon by column name — the existing tables show a small icon before every header. */
 const HEAD_ICONS: [RegExp, string][] = [
   [/^actions?$/, 'fa-gear'],
+  [/sales person/, 'fa-user-tie'],
   [/qty/, 'fa-cubes'],
   [/status/, 'fa-circle-info'],
   [/otp/, 'fa-key'],
@@ -531,9 +532,9 @@ export function AssignFields({ date, loadKg, value, onChange, label, allowBusy }
         {v && <div className="mt-1"><div className={`cds-load${pct > 100 ? ' over' : ''}`}><div style={{ width: `${Math.min(100, pct)}%` }} /></div><div className="text-muted text-xs">{kg(loadKg)} of {v.capacityKg} kg ({pct}%)</div></div>}
       </div>
       <div>
-        <label className="form-label mb-1 small fw-medium">Delivery person</label>
+        <label className="form-label mb-1 small fw-medium">Driver</label>
         <select aria-label={`${label ?? ''} delivery person`} className="form-select form-select-sm" value={value.deliveryPersonId} onChange={(e) => onChange({ ...value, deliveryPersonId: e.target.value })}>
-          <option value="">Select delivery person</option>
+          <option value="">Select a driver</option>
           {ps.map((x) => {
             const busyOk = x.id === allowBusy?.deliveryPersonId;
             return <option key={x.id} value={x.id} disabled={!x.active || (!x.available && !busyOk)}>{x.name} · {x.phone}{!x.active ? ' — inactive' : !x.available && !busyOk ? ` — on ${x.busyTripNo}` : ''}</option>;

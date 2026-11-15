@@ -323,9 +323,25 @@
 .cds-planning-lbnp .cds-tabs { margin-bottom: 4px; }
 
 /* Orders: five LBNP KPI cards in one row. */
-.cds-orders-lbnp .stats-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-@media (max-width: 1300px) { .cds-orders-lbnp .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .cds-orders-lbnp .stats-grid { grid-template-columns: 1fr; } }
+/* KPI tiles: one compact row (scrolls sideways on narrow screens). */
+.cds-orders-lbnp .stats-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; overflow-x: auto; }
+@media (max-width: 1100px) { .cds-orders-lbnp .stats-grid { grid-auto-columns: 180px; } }
+.cds-orders-lbnp .stat-card { min-width: 0; position: relative; }
+.cds-orders-lbnp .stat-map-link { position: absolute; right: 14px; bottom: 8px; }
+.cds-orders-lbnp .stat-card { padding: 10px 14px; }
+.cds-orders-lbnp .stat-label { font-size: 13px; }
+.cds-orders-lbnp .stat-value { font-size: 20px; }
+.cds-orders-lbnp .stat-subtitle { font-size: 12px; }
+.cds-orders-lbnp .stat-left { min-width: 0; }
+.cds-orders-lbnp .stat-label, .cds-orders-lbnp .stat-subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cds-orders-lbnp .stat-icon { width: 32px; height: 32px; font-size: 14px; }
+.cds-orders-lbnp .stat-map-link { font-size: 12px; }
+
+/* Icon action buttons (View / Cancel) with hover. */
+.cds-icon-btn { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: none; transition: background .15s ease, transform .15s ease; }
+.cds-icon-btn:hover { background: #eef2ff; transform: translateY(-1px); }
+.cds-icon-btn--danger:hover { background: #fee2e2; }
+.cds-icon-btn:disabled { opacity: .5; transform: none; }
 .cds-orders-lbnp .stat-icon--distributors { background: #ede9fe; color: #7c3aed; }
 .cds-orders-lbnp .stat-icon--stores { background: #ccfbf1; color: #0d9488; }
 
@@ -364,3 +380,10 @@ span.cds-trip-note { font-size: 12px; }
 .optimized-routes-modal .cds-route-assign { padding: 0 16px 16px; font-size: 13px; max-width: 560px; }
 .optimized-routes-modal .btn-confirm-routes:disabled { opacity: .55; cursor: not-allowed; }
 .optimized-routes-modal .route-title .cds-route-chip { font-size: 12px; }
+
+/* Map View hover card (details and orders of a point). */
+.leaflet-tooltip.cds-map-tooltip { white-space: normal; width: 280px; padding: 8px 10px; border-radius: 8px; box-shadow: 0 4px 14px #0000002e; }
+.cds-map-tip .tip-title { font-weight: 700; font-size: 13px; color: #111827; }
+.cds-map-tip .tip-line { font-size: 12px; color: #4b5563; margin-top: 2px; }
+.cds-map-tip .tip-head { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2563eb; margin-top: 6px; border-top: 1px solid #e5e7eb; padding-top: 4px; }
+.cds-map-tip .tip-order { font-size: 12px; color: #111827; padding: 1px 0; }

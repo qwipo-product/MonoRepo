@@ -6,8 +6,8 @@ import { useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
 import { cdsApi, type Report, type ReportRunRow } from '../../api/services/cds.service';
 import { SC_HUB } from '../../cds/engine';
-import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS_GROUPS, TRIP_TYPE } from '../../cds/status';
-import { DEFAULT_ROUTE_CONFIG, type RouteConfig } from '../../cds/types';
+import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS_GROUPS } from '../../cds/status';
+import { DEFAULT_ROUTE_CONFIG, type CdsRouteEngine, type RouteConfig } from '../../cds/types';
 import '../settings/SettingsPage.css';
 import '../settings/modules/settings-modules.css';
 import '../settings/ProfilePage.css';
@@ -268,8 +268,8 @@ export function SettingsPage() {
     <div className="cds-page settings-container cds-settings-lbnp">
       <header className="settings-header">
         <div className="header-left">
-          <div className="cds-title-row"><h1><i className="fas fa-cog" /> Settings</h1><ModuleIntro text="Your profile, vehicles, delivery persons and the route limits that Auto Plan Route uses." /></div>
-          <p className="subtitle">Manage the Service Centre profile, vehicles and delivery persons, and the pickup and return route planning.</p>
+          <div className="cds-title-row"><h1><i className="fas fa-cog" /> Settings</h1><ModuleIntro text="Your profile, and the pickup and return route planning that Auto Plan Route uses." /></div>
+          <p className="subtitle">Manage the Service Centre profile, and the pickup and return route planning.</p>
         </div>
       </header>
       <div className="content-container">
@@ -292,7 +292,7 @@ export function SettingsPage() {
   );
 }
 
-/** Profile — LBNP Profile layout: Business Details and Service Centre Location, then the vehicles and delivery persons. */
+/** Profile — LBNP Profile layout: Business Details and Service Centre Location. */
 function ServiceCentreProfile() {
   const { user } = useCdsSession();
   const meta = useMeta();
@@ -324,57 +324,67 @@ function ServiceCentreProfile() {
           </div>
         </section>
       </section>
-      <div className="row g-3 mt-1">
-        <div className="col-lg-6"><Fleet show="vehicles" /></div>
-        <div className="col-lg-6"><Fleet show="persons" /></div>
-      </div>
     </div>
   );
 }
 
-const ROUTE_CARDS: { key: keyof RouteConfig; icon: string; label: string; hint: (kind: 'pickup' | 'return') => string; unit: string; min: number; max: number; step?: number }[] = [
+type NumKey = 'serviceMinutes' | 'maxTravelHours' | 'maxDistributorStops' | 'maxCdsStops' | 'maxDistanceKm' | 'maxWeightKg';
+const ROUTE_CARDS: { key: NumKey; icon: string; label: string; hint: (kind: 'pickup' | 'return') => string; unit: string; min: number; max: number; step?: number }[] = [
   { key: 'serviceMinutes', icon: 'fas fa-clock', label: 'Service Time per Stop', hint: (k) => (k === 'pickup' ? 'Time spent at each seller and CDS store' : 'Time spent at each CDS store and seller'), unit: 'minutes', min: 1, max: 60 },
   { key: 'maxTravelHours', icon: 'fas fa-road', label: 'Max Travel Time', hint: () => 'Maximum travel time per route', unit: 'hours', min: 0.5, max: 24, step: 0.5 },
-  { key: 'maxStops', icon: 'fas fa-map-marker-alt', label: 'Max Stops per Vehicle', hint: (k) => (k === 'pickup' ? 'Maximum seller pickups and CDS drops per route' : 'Maximum CDS pickups and seller handovers per route'), unit: 'stops', min: 1, max: 100 },
+  { key: 'maxDistributorStops', icon: 'fas fa-industry', label: 'Max Distributor Stops', hint: (k) => (k === 'pickup' ? 'Maximum seller pickups per route' : 'Maximum seller handovers per route'), unit: 'stops', min: 1, max: 50 },
+  { key: 'maxCdsStops', icon: 'fas fa-warehouse', label: 'Max CDS Stops', hint: (k) => (k === 'pickup' ? 'Maximum CDS store drops per route' : 'Maximum CDS store pickups per route'), unit: 'stops', min: 1, max: 50 },
   { key: 'maxDistanceKm', icon: 'fas fa-route', label: 'Max Distance', hint: () => 'Maximum distance per route', unit: 'km', min: 1, max: 500 },
   { key: 'maxWeightKg', icon: 'fas fa-weight-hanging', label: 'Max Weight per Vehicle', hint: (k) => (k === 'pickup' ? 'Maximum load picked up from sellers per route' : 'Maximum return load per route'), unit: 'kg', min: 1, max: 10000 },
 ];
+const CDS_ROUTE_ENGINES: { value: CdsRouteEngine; label: string; description: string; isDefault: boolean }[] = [
+  { value: 'route_optimize', label: 'Route Optimizer', description: 'Plans the shortest route across sellers and CDS stores, and balances the vehicle load. Orders of one CDS store may go on more than one trip.', isDefault: true },
+  { value: 'store_optimized', label: 'CDS Store Optimizer', description: 'Keeps all orders for the same CDS store in a single trip. A CDS store is never split across trips.', isDefault: false },
+  { value: 'seller_optimized', label: 'Seller Optimizer', description: 'Keeps all orders from the same seller in a single trip. A seller is never split across trips.', isDefault: false },
+];
+const POD_TOGGLES: { key: 'sellerOtp' | 'cdsOtp'; icon: string; label: string; hint: (kind: 'pickup' | 'return') => string }[] = [
+  { key: 'sellerOtp', icon: 'fas fa-store', label: 'Seller OTP', hint: (k) => (k === 'pickup' ? '(Pickup from seller)' : '(Return handover to seller)') },
+  { key: 'cdsOtp', icon: 'fas fa-warehouse', label: 'CDS Store OTP', hint: (k) => (k === 'pickup' ? '(Drop at CDS store)' : '(Return pickup at CDS store)') },
+];
 
-/** Pick up / Return — LBNP Settings › Delivery look: Route Planning Configuration (Reset Defaults, Save); Return also
- *  has the Next-day Planning rule. The Auto Pickup / Return Route warns when a route goes past these limits. */
+/** Pick up / Return — same screen as LBNP Settings › Delivery: Route Planning Configuration (limits and Route Engine,
+ *  Reset Defaults, Save) and Proof of Delivery (OTP). */
 function RoutePlanningSettings({ kind }: { kind: 'pickup' | 'return' }) {
   const meta = useMeta();
   const { busy, run } = useAction();
   const key = kind === 'pickup' ? 'pickupRoute' : 'returnRoute';
-  const saved = meta.data?.settings[key] ?? DEFAULT_ROUTE_CONFIG;
-  const [edit, setEdit] = useState<Partial<Record<keyof RouteConfig, string>>>({});
-  const [nextDay, setNextDay] = useState<boolean | null>(null);
-  const value = (k: keyof RouteConfig) => edit[k] ?? String(saved[k]);
-  const dirty = ROUTE_CARDS.some((c) => edit[c.key] !== undefined && Number(edit[c.key]) !== saved[c.key]);
-  const nextDaySaved = !!meta.data?.settings.nextDayPlanning;
-  const nextDayDirty = nextDay !== null && nextDay !== nextDaySaved;
+  const saved: RouteConfig = { ...DEFAULT_ROUTE_CONFIG, ...meta.data?.settings[key] };
+  const [edit, setEdit] = useState<Partial<Record<NumKey, string>>>({});
+  const [engine, setEngine] = useState<CdsRouteEngine | null>(null);
+  const [pod, setPod] = useState<Partial<Record<'sellerOtp' | 'cdsOtp', boolean>>>({});
+  const value = (k: NumKey) => edit[k] ?? String(saved[k]);
+  const engineNow = engine ?? saved.routeEngine;
+  const podNow = (k: 'sellerOtp' | 'cdsOtp') => pod[k] ?? saved[k];
+  const dirty = ROUTE_CARDS.some((c) => edit[c.key] !== undefined && Number(edit[c.key]) !== saved[c.key]) || engineNow !== saved.routeEngine;
+  const podDirty = POD_TOGGLES.some((p) => podNow(p.key) !== saved[p.key]);
   const reload = () => { refreshMeta(); meta.reload(); };
+  const label = kind === 'pickup' ? 'Pickup' : 'Return';
   const save = async () => {
-    const cfg = Object.fromEntries(ROUTE_CARDS.map((c) => [c.key, Number(value(c.key))])) as unknown as RouteConfig;
-    if (await run(() => cdsApi.updateSettings({ [key]: cfg }), `${kind === 'pickup' ? 'Pickup' : 'Return'} route planning saved`)) { setEdit({}); reload(); }
+    const cfg: RouteConfig = { ...saved, ...(Object.fromEntries(ROUTE_CARDS.map((c) => [c.key, Number(value(c.key))])) as Record<NumKey, number>), routeEngine: engineNow };
+    if (await run(() => cdsApi.updateSettings({ [key]: cfg }), `${label} route planning saved`)) { setEdit({}); setEngine(null); reload(); }
   };
-  const reset = () => setEdit(Object.fromEntries(ROUTE_CARDS.map((c) => [c.key, String(DEFAULT_ROUTE_CONFIG[c.key])])));
-  const saveNextDay = async () => {
-    if (await run(() => cdsApi.updateSettings({ nextDayPlanning: !!nextDay }), 'Planning rule saved')) { setNextDay(null); reload(); }
+  const savePod = async () => {
+    const cfg: RouteConfig = { ...saved, sellerOtp: podNow('sellerOtp'), cdsOtp: podNow('cdsOtp') };
+    if (await run(() => cdsApi.updateSettings({ [key]: cfg }), `${label} proof of delivery saved`)) { setPod({}); reload(); }
   };
+  const reset = () => { setEdit(Object.fromEntries(ROUTE_CARDS.map((c) => [c.key, String(DEFAULT_ROUTE_CONFIG[c.key])]))); setEngine(DEFAULT_ROUTE_CONFIG.routeEngine); };
   if (meta.loading && !meta.data) return <Loading />;
-  const on = nextDay ?? nextDaySaved;
+  const saveBtn = (disabled: boolean, onClick: () => void) => (
+    <button className="save-config-btn" disabled={disabled || busy} onClick={onClick}><i className={busy ? 'fas fa-spinner fa-spin' : 'fas fa-save'} /> {busy ? 'Saving...' : 'Save'}</button>
+  );
   return (
     <div className="delivery-settings-page">
       <section className="settings-section route-planning-section">
         <div className="section-header">
-          <div>
-            <h2>{kind === 'pickup' ? 'Pickup Route Planning Configuration' : 'Return Route Planning Configuration'}</h2>
-            <p className="section-subtitle">{kind === 'pickup' ? `Consolidated pickups: ${TRIP_TYPE.DISTRIBUTOR_PICKUP.direction}, then ${TRIP_TYPE.CDS_DELIVERY.direction}` : `Consolidated returns: ${TRIP_TYPE.CDS_RETURN.direction}`}</p>
-          </div>
+          <h2>Route Planning Configuration</h2>
           <div className="header-actions">
             <button className="reset-btn" title="Reset to defaults" onClick={reset}><i className="fas fa-undo" />{' Reset Defaults '}</button>
-            <button className="save-config-btn" disabled={!dirty || busy} onClick={() => void save()}><i className={busy ? 'fas fa-spinner fa-spin' : 'fas fa-save'} /> {busy ? 'Saving...' : 'Save'}</button>
+            {saveBtn(!dirty, () => void save())}
           </div>
         </div>
         <div className="config-grid">
@@ -393,35 +403,60 @@ function RoutePlanningSettings({ kind }: { kind: 'pickup' | 'return' }) {
               </div>
             </div>
           ))}
+          <div className="config-card route-engine-card">
+            <div className="config-icon"><i className="fas fa-cogs" /></div>
+            <div className="config-details">
+              <label className="config-label">Route Engine</label>
+              <span className="config-hint">Algorithm used for route planning</span>
+              <div className="route-engine-options">
+                {CDS_ROUTE_ENGINES.map((o) => (
+                  <label key={o.value} className={`route-engine-option${engineNow === o.value ? ' selected' : ''}`}>
+                    <input type="radio" name={`routeEngine-${kind}`} value={o.value} checked={engineNow === o.value} onChange={() => setEngine(o.value)} />
+                    <div className="route-engine-option-body">
+                      <div className="route-engine-option-title">
+                        <span className="route-engine-option-name">{o.label}</span>
+                        {o.isDefault && <span className="route-engine-default-badge">Default</span>}
+                      </div>
+                      <p className="route-engine-option-desc">{o.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-      {kind === 'return' && (
-        <section className="settings-section otp-config-section">
-          <div className="section-header">
-            <div className="section-title-group">
-              <div className="config-icon"><i className="fas fa-calendar-day" /></div>
-              <h2>Return Planning Rules</h2>
-            </div>
-            <button className="save-config-btn" disabled={!nextDayDirty || busy} onClick={() => void saveNextDay()}><i className="fas fa-save" /> Save</button>
+
+      <section className="settings-section otp-config-section">
+        <div className="section-header">
+          <div className="section-title-group">
+            <div className="config-icon"><i className="fas fa-check-circle" /></div>
+            <h2>Proof of Delivery (OTP)</h2>
           </div>
-          <div className="config-grid">
-            <div className="config-card otp-toggle-card">
-              <div className="config-icon"><i className="fas fa-calendar-check" /></div>
-              <div className="config-details">
-                <label className="config-label">Next-day Planning</label>
-                <span className="config-hint">Return plans (and CDS store delivery plans) for the next day or later</span>
+          {saveBtn(!podDirty, () => void savePod())}
+        </div>
+        <div className="config-grid">
+          {POD_TOGGLES.map((p) => {
+            const isOn = podNow(p.key);
+            return (
+              <div className="config-card otp-toggle-card" key={p.key}>
+                <div className="config-icon"><i className={p.icon} /></div>
+                <div className="config-details">
+                  <label className="config-label">{p.label}</label>
+                  <span className="config-hint">{p.hint(kind)}</span>
+                </div>
+                <div className="otp-toggle-wrap">
+                  <span className={`otp-status-label ${isOn ? 'enabled' : 'disabled'}`}>{isOn && <span className="status-dot" />}{isOn ? 'Enabled' : 'Disabled'}</span>
+                  <label className="toggle-switch">
+                    <input type="checkbox" aria-label={`${p.label} ${p.hint(kind)}`} checked={isOn} onChange={(e) => setPod((x) => ({ ...x, [p.key]: e.target.checked }))} />
+                    <span className="toggle-slider" />
+                  </label>
+                </div>
               </div>
-              <div className="otp-toggle-wrap">
-                <span className={`otp-status-label ${on ? 'enabled' : 'disabled'}`}>{on && <span className="status-dot" />}{on ? 'Enabled' : 'Disabled'}</span>
-                <label className="toggle-switch">
-                  <input type="checkbox" aria-label="Next-day planning" checked={on} onChange={(e) => setNextDay(e.target.checked)} />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
@@ -670,7 +705,7 @@ function CreateStoreDialog({ stores, retailers, onClose, onCreated }: { stores: 
             </div>
             {errors.area && <div className="cds-field-error">{errors.area}</div>}
             <div className="area-served">
-              <div className="small fw-semibold mb-1">Areas Served <span className="cds-auto-tag"><i className="fas fa-location-crosshairs me-1" />Auto</span></div>
+              <div className="small fw-semibold mb-1">Areas Served</div>
               {ring.length < 3 ? <div className="text-muted small">Filled in from the retailers inside the service area.</div>
                 : areas.length ? <div className="d-flex flex-wrap gap-1">{areas.map((a) => <span key={a} className="area-chip">{a}</span>)}</div>
                   : <div className="text-muted small">No retailers inside this area yet.</div>}

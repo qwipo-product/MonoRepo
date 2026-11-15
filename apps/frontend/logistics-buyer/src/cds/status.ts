@@ -35,10 +35,10 @@ export const ORDER_FLOW: Record<OrderStatus, OrderStatus[]> = {
   CANCELLED: [],
 };
 
-/** Shown trip statuses: Assigned, In Progress, Completed (and Cancelled). The detailed status stays in the data. */
+/** Shown trip statuses: Planned, In Progress, Completed (and Cancelled), as in LBNP Trips. The detailed status stays in the data. */
 export const TRIP_STATUS: Record<TripStatus, Meta> = {
-  PLANNED: { label: 'Assigned', tone: 'blue' },
-  ASSIGNED: { label: 'Assigned', tone: 'blue' },
+  PLANNED: { label: 'Planned', tone: 'blue' },
+  ASSIGNED: { label: 'Planned', tone: 'blue' },
   STARTED: { label: 'In Progress', tone: 'purple' },
   IN_PROGRESS: { label: 'In Progress', tone: 'purple' },
   COMPLETED: { label: 'Completed', tone: 'green' },
@@ -47,7 +47,7 @@ export const TRIP_STATUS: Record<TripStatus, Meta> = {
 };
 export type TripShown = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export const TRIP_SHOWN: Record<TripShown, Meta> = {
-  ASSIGNED: { label: 'Assigned', tone: 'blue' },
+  ASSIGNED: { label: 'Planned', tone: 'blue' },
   IN_PROGRESS: { label: 'In Progress', tone: 'purple' },
   COMPLETED: { label: 'Completed', tone: 'green' },
   CANCELLED: { label: 'Cancelled', tone: 'grey' },
@@ -56,9 +56,8 @@ const SHOWN: Record<TripStatus, TripShown> = { PLANNED: 'ASSIGNED', ASSIGNED: 'A
 type PhaseTrip = { type: TripType; status: TripStatus; stops: { action: StopAction; status: string }[] };
 
 /**
- * The status shown for a trip and one line on what the vehicle is doing. A CDS Delivery Trip is the second half of
- * the pickup run: it is In Progress as soon as its plan's Distributor Pickup Trip starts (the vehicle goes to the
- * sellers first, then delivers back to the CDS stores).
+ * The status shown for a trip and one line on what the vehicle is doing. A Pickup Trip collects at the sellers,
+ * then delivers to the CDS stores. (CDS_DELIVERY: older two-trip pickup data.)
  */
 export function tripPhase(t: PhaseTrip, pickupOfPlan?: PhaseTrip): { status: TripShown; note: string } {
   const own = SHOWN[t.status];
@@ -72,14 +71,14 @@ export function tripPhase(t: PhaseTrip, pickupOfPlan?: PhaseTrip): { status: Tri
     return { status: own, note: '' };
   }
   if (own !== 'IN_PROGRESS') return { status: own, note: '' };
-  if (t.type === 'DISTRIBUTOR_PICKUP') return { status: own, note: 'Picking up from Sellers' };
+  if (t.type === 'DISTRIBUTOR_PICKUP') return { status: own, note: pending('DISTRIBUTOR_PICKUP') ? 'Picking up from Sellers' : 'Delivering to CDS Stores' };
   if (t.type === 'CDS_RETURN') return { status: own, note: pending('CDS_RETURN_PICKUP') ? 'Picking up returns from CDS Stores' : 'Delivering returns to Sellers' };
   return { status: own, note: pending('CDS_ORDER_PICKUP') ? 'Loading orders at the CDS Store' : 'Delivering to retailers' };
 }
 
 /** Status filter choices (one per shown status) and the statuses each one covers. */
 export const TRIP_STATUS_GROUPS: Record<string, { label: string; statuses: TripStatus[] }> = {
-  ASSIGNED: { label: 'Assigned', statuses: ['PLANNED', 'ASSIGNED'] },
+  ASSIGNED: { label: 'Planned', statuses: ['PLANNED', 'ASSIGNED'] },
   IN_PROGRESS: { label: 'In Progress', statuses: ['STARTED', 'IN_PROGRESS'] },
   COMPLETED: { label: 'Completed', statuses: ['COMPLETED', 'PARTIALLY_COMPLETED'] },
   CANCELLED: { label: 'Cancelled', statuses: ['CANCELLED'] },
@@ -97,9 +96,9 @@ export const ACTIVE_TRIP: TripStatus[] = ['PLANNED', 'ASSIGNED', 'STARTED', 'IN_
 
 /** `direction` is the trip's start → end, shown under the trip type everywhere (one wording per type). */
 export const TRIP_TYPE: Record<TripType, { label: string; prefix: string; direction: string; icon: string }> = {
-  DISTRIBUTOR_PICKUP: { label: 'Distributor Pickup Trip', prefix: 'DPT', direction: 'CDS Service Centre to Sellers', icon: 'fa-truck-ramp-box' },
+  DISTRIBUTOR_PICKUP: { label: 'Pickup Trip', prefix: 'DPT', direction: 'Sellers to CDS Stores', icon: 'fa-truck-ramp-box' },
   CDS_DELIVERY: { label: 'CDS Delivery Trip', prefix: 'CDT', direction: 'Sellers to CDS Stores', icon: 'fa-warehouse' },
-  CDS_RETURN: { label: 'CDS Return Trip', prefix: 'CRT', direction: 'CDS Stores to Sellers', icon: 'fa-rotate-left' },
+  CDS_RETURN: { label: 'Return Trip', prefix: 'CRT', direction: 'CDS Stores to Sellers', icon: 'fa-rotate-left' },
   RETAILER_DELIVERY: { label: 'Retailer Delivery Trip', prefix: 'RDT', direction: 'CDS to Retailer', icon: 'fa-truck-fast' },
 };
 
@@ -154,4 +153,12 @@ export const OTP_STATUS: Record<OtpStatus, Meta> = {
 export const GRN_STATUS: Record<'PENDING' | 'COMPLETED', Meta> = {
   PENDING: { label: 'Pending Verification', tone: 'amber' },
   COMPLETED: { label: 'GRN Generated', tone: 'green' },
+};
+
+/** Synthetic sales people (demo data only). Each distributor has three; the retailer picks one. */
+const SALES_PEOPLE = ['Ravi Teja', 'Suresh Babu', 'Anil Kumar', 'Praveen Reddy', 'Kiran Rao', 'Mahesh Goud', 'Srinivas Naik', 'Venkat Rao', 'Naresh Yadav', 'Rajesh Varma', 'Prakash Chary', 'Sandeep Kumar'];
+const hashOf = (s: string) => Array.from(s).reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+export const salesPersonOf = (distributorId: string, retailerId: string) => {
+  const i = (hashOf(distributorId) % 4) * 3 + (hashOf(retailerId) % 3);
+  return { salesPersonName: SALES_PEOPLE[i], salesPersonPhone: `90000${21001 + i * 7}` };
 };

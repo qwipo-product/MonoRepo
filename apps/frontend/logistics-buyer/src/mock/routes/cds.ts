@@ -14,7 +14,7 @@ import { db, persist, persistNow } from '../db';
 import { getControls } from '../controls';
 import { CDS_STATE_VERSION, CdsEngine, CdsError, localDay, type StopInput } from '../../cds/engine';
 import { buildReport, REPORTS, summary, type ReportFilters } from '../../cds/reports';
-import { ACTIVE_TRIP, STOP_ACTION, TRIP_STATUS_GROUPS, tripPhase } from '../../cds/status';
+import { ACTIVE_TRIP, salesPersonOf, STOP_ACTION, TRIP_STATUS_GROUPS, tripPhase } from '../../cds/status';
 import { buildCdsState } from '../../cds/seed';
 import { pointInPolygon, serviceStoreFor } from '../../cds/planning';
 import { DEFAULT_ROUTE_CONFIG, RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripStatus, type TripType } from '../../cds/types';
@@ -229,7 +229,7 @@ route('POST', SVC, '/cds/orders/search', (req) => {
     .filter((o) => !b.noActiveCdsTrip || !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status)))
     .map((o) => {
       const r = n.r(o.retailerId);
-      return { ...o, retailerName: r?.name ?? '', retailerPhone: r?.phone ?? '', retailerAddress: r?.address ?? '', locality: r?.locality ?? '', city: r?.city ?? '', state: r?.state ?? '', retailerLat: r?.lat ?? 0, retailerLng: r?.lng ?? 0, distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), units: o.lines.reduce((a, l) => a + l.qty, 0) };
+      return { ...o, retailerName: r?.name ?? '', retailerPhone: r?.phone ?? '', retailerAddress: r?.address ?? '', locality: r?.locality ?? '', city: r?.city ?? '', state: r?.state ?? '', retailerLat: r?.lat ?? 0, retailerLng: r?.lng ?? 0, distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), units: o.lines.reduce((a, l) => a + l.qty, 0), ...salesPersonOf(o.distributorId, o.retailerId) };
     })
     .filter((o) => !b.state || o.state === b.state)
     .filter((o) => !b.city || o.city === b.city)
@@ -247,7 +247,7 @@ route('GET', SVC, '/cds/orders/:id', (req) => {
   const n = names(s);
   const tripsOf = [o.pickupTripId, o.cdsTripId, o.deliveryTripId].concat(s.trips.filter((t) => t.orderIds.includes(o.id)).map((t) => t.id));
   return {
-    order: o, retailer: n.r(o.retailerId), distributor: s.distributors.find((d) => d.id === o.distributorId), store: s.stores.find((x) => x.id === o.cdsStoreId),
+    order: o, salesPerson: salesPersonOf(o.distributorId, o.retailerId), retailer: n.r(o.retailerId), distributor: s.distributors.find((d) => d.id === o.distributorId), store: s.stores.find((x) => x.id === o.cdsStoreId),
     trips: s.trips.filter((t) => tripsOf.includes(t.id)).map((t) => ({ id: t.id, tripNo: t.tripNo, type: t.type, status: t.status, plannedDate: t.plannedDate })),
     grn: o.grnId ? s.grns.find((g) => g.id === o.grnId) ?? null : null,
     returns: s.returns.filter((r) => r.orderId === o.id),
@@ -307,12 +307,33 @@ route('GET', SVC, '/cds/deliver-to-cds/overview', (req) => {
 
 // ---------------------------------------------------------------- trips
 
+/** "CDS Service Centre - Hyderabad": the Service Centre and the state its CDS stores are in. CDS User trips: the store. */
+function providerOf(s: CdsState, t: Trip) {
+  if (t.owner !== 'SC') return s.stores.find((x) => x.id === t.owner)?.name ?? '';
+  const st = s.stores.find((x) => t.stops.some((p) => p.partyType === 'CDS' && p.partyId === x.id)) ?? s.stores[0];
+  return `CDS Service Centre - ${st?.city || st?.state || 'Hyderabad'}`;
+}
+/** The orders / returns at a stop (for the map hover card and the trip tabs). */
+function stopRefs(s: CdsState, x: Trip['stops'][number]) {
+  const n = names(s);
+  const ids = Array.from(new Set(x.lines.map((l) => l.returnId ?? l.orderId).filter((v): v is string => !!v)));
+  return ids.map((id) => {
+    const o = s.orders.find((v) => v.id === id);
+    const r = s.returns.find((v) => v.id === id);
+    const ls = x.lines.filter((l) => (l.returnId ?? l.orderId) === id);
+    const retailerId = o?.retailerId ?? r?.retailerId ?? null;
+    return { id, no: o?.orderNo ?? r?.returnNo ?? id, retailer: retailerId ? n.r(retailerId)?.name ?? '' : '', units: ls.reduce((a, l) => a + (l.actualQty ?? l.plannedQty), 0), value: ls.reduce((a, l) => a + (l.actualQty ?? l.plannedQty) * l.unitPrice, 0) };
+  });
+}
 function tripView(s: CdsState, t: Trip) {
   const n = names(s);
   const pickupOfPlan = t.type === 'CDS_DELIVERY' ? s.trips.find((x) => x.planId === t.planId && x.type === 'DISTRIBUTOR_PICKUP') : undefined;
   return {
     ...t, ownerName: n.st(t.owner), shown: tripPhase(t, pickupOfPlan),
-    stops: t.stops.map((x) => ({ ...x, otp: x.otpId ? (({ code: _code, ...rest }) => rest)(s.otps.find((o) => o.id === x.otpId)!) : null })),
+    // The OTP code is shown on the trip, like the LBNP Trips screen (Pickup OTP / stop OTP).
+    stops: t.stops.map((x) => ({ ...x, otp: x.otpId ? s.otps.find((o) => o.id === x.otpId) ?? null : null, refs: stopRefs(s, x) })),
+    providerName: providerOf(s, t),
+    collected: s.collections.filter((c) => c.tripId === t.id).reduce((a, c) => (c.mode === 'UPI' ? { ...a, digital: a.digital + c.amount } : { ...a, cod: a.cod + c.amount }), { cod: 0, digital: 0 }),
     units: t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP', 'CDS_RETURN_PICKUP'].includes(x.action)).reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0)
       || t.stops.reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0),
   };
@@ -347,25 +368,31 @@ route('GET', SVC, '/cds/trips/:id', (req) => {
     // The Service Centre plans and tracks; stops (OTP checks) are run by the CDS User, seller, retailer and delivery agent.
     canRun: !isSC(u) && t.owner === myStore(u),
     otps: s.otps.filter((o) => o.tripId === t.id).map(({ code: _code, ...rest }) => rest).reverse(),
-    orders: s.orders.filter((o) => t.orderIds.includes(o.id)).map((o) => ({ id: o.id, orderNo: o.orderNo, status: o.status, paymentMode: o.paymentMode, retailerId: o.retailerId, retailerName: n.r(o.retailerId)?.name ?? '', distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), lines: o.lines })),
-    returns: s.returns.filter((r) => t.returnIds.includes(r.id)).map((r) => ({ id: r.id, returnNo: r.returnNo, status: r.status, orderNo: r.orderNo })),
+    orders: s.orders.filter((o) => t.orderIds.includes(o.id)).map((o) => ({ id: o.id, orderNo: o.orderNo, status: o.status, paymentMode: o.paymentMode, retailerId: o.retailerId, retailerName: n.r(o.retailerId)?.name ?? '', retailerAddress: n.r(o.retailerId)?.address ?? '', distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), deliveredAt: o.deliveredAt, lines: o.lines })),
+    returns: s.returns.filter((r) => t.returnIds.includes(r.id)).map((r) => ({ id: r.id, returnNo: r.returnNo, status: r.status, orderNo: r.orderNo, orderId: r.orderId, retailerId: r.retailerId, retailerName: r.retailerId ? n.r(r.retailerId)?.name ?? '' : 'Damaged at GRN', retailerAddress: r.retailerId ? n.r(r.retailerId)?.address ?? '' : '', storeName: n.st(r.cdsStoreId), lines: r.lines.map((l) => ({ sku: l.sku, name: l.name, unitPrice: l.unitPrice, qty: l.acceptedQty ?? l.qty, orderedQty: s.orders.find((o) => o.id === r.orderId)?.lines.find((x) => x.sku === l.sku)?.qty ?? l.qty })), distributorName: n.d(r.distributorId), units: r.lines.reduce((a, l) => a + (l.acceptedQty ?? l.qty), 0), value: r.lines.reduce((a, l) => a + (l.acceptedQty ?? l.qty) * l.unitPrice, 0) })),
     collections: s.collections.filter((c) => c.tripId === t.id),
   };
 });
-/** Trip actions (start, cancel, OTP, complete, fail, returns) are not for the Service Centre: it plans and assigns;
+/** Trip actions (start, OTP, complete, fail, returns) are not for the Service Centre: it plans, assigns and may cancel a planned trip;
  *  the delivery agent runs its trips in the Delivery Partner App (/cds/dp/*) with the CDS User, seller and retailer. */
 const notForServiceCentre = (u: CdsUser) => {
   if (isSC(u)) throw new MockError(403, 'The delivery agent runs the trip in the Delivery Partner App with the CDS User, seller and retailer');
 };
-const tripWrite = (fn: (e: CdsEngine, t: Trip, body: any, by: string, req: MockRequest) => unknown) => (req: MockRequest) => {
+const tripWrite = (fn: (e: CdsEngine, t: Trip, body: any, by: string, req: MockRequest) => unknown, scAllowed = false) => (req: MockRequest) => {
   const u = sessionUser(req);
   const t = read((e) => e.trip(req.params.id));
   tripAccess(u, t, true);
-  notForServiceCentre(u);
+  if (!scAllowed) notForServiceCentre(u);
   return cdsTx((e) => fn(e, e.trip(t.id), req.body ?? {}, `${u.name} (for ${t.deliveryPersonName})`, req));
 };
 route('POST', SVC, '/cds/trips/:id/start', tripWrite((e, t, _b, by) => e.startTrip(t.id, by)));
-route('POST', SVC, '/cds/trips/:id/cancel', tripWrite((e, t, b, by) => e.cancelTrip(t.id, b.reason, by)));
+route('POST', SVC, '/cds/trips/:id/cancel', tripWrite((e, t, b, by, req) => {
+  // the Service Centre cancels only planned trips (not started yet)
+  if (isSC(sessionUser(req)) && !['PLANNED', 'ASSIGNED'].includes(t.status)) throw new CdsError(409, `${t.tripNo} has started; the delivery agent handles it now`);
+  return e.cancelTrip(t.id, b.reason, by);
+}, true));
+route('POST', SVC, '/cds/trips/:id/resources', tripWrite((e, t, b, by) => e.updateTripResources(t.id, { vehicleId: b.vehicleId, deliveryPersonId: b.deliveryPersonId }, by), true));
+route('POST', SVC, '/cds/trips/:id/helper', tripWrite((e, t, b, by) => e.updateTripHelper(t.id, b.helperId, by), true));
 /** Sends the OTP to the counter-party. Demo: the SMS text is returned so the OTP can be read (`demoSms`). */
 route('POST', SVC, '/cds/trips/:id/stops/:stopId/otp', tripWrite((e, t, _b, by, req) => {
   const o = e.sendOtp(t.id, req.params.stopId, by);
@@ -405,7 +432,7 @@ route('GET', SVC, '/cds/incoming', (req) => {
   const s = cdsState();
   const st = myStore(u);
   return s.trips.filter((t) => t.owner === 'SC' && t.status !== 'CANCELLED' && t.stops.some((x) => x.partyId === st && x.partyType === 'CDS'))
-    .filter((t) => req.query.type ? t.type === req.query.type : true)
+    .filter((t) => !req.query.type || t.type === req.query.type || (req.query.type === 'CDS_DELIVERY' && t.type === 'DISTRIBUTOR_PICKUP')) // pickup trips drop at the CDS
     .sort((a, b) => b.plannedDate.localeCompare(a.plannedDate)).slice(0, 30)
     .map((t) => {
       const x = t.stops.find((y) => y.partyId === st && y.partyType === 'CDS')!;
@@ -672,10 +699,12 @@ route('PUT', SVC, '/cds/settings', (req) => {
       const n = (k: string) => Number(r?.[k]);
       if (!(n('serviceMinutes') >= 1 && n('serviceMinutes') <= 60)) throw new CdsError(400, 'Service time per stop must be 1–60 minutes');
       if (!(n('maxTravelHours') >= 0.5 && n('maxTravelHours') <= 24)) throw new CdsError(400, 'Max travel time must be 0.5–24 hours');
-      if (!(Number.isInteger(n('maxStops')) && n('maxStops') >= 1 && n('maxStops') <= 100)) throw new CdsError(400, 'Max stops per vehicle must be 1–100');
+      if (!(Number.isInteger(n('maxCdsStops')) && n('maxCdsStops') >= 1 && n('maxCdsStops') <= 50)) throw new CdsError(400, 'Max CDS stops must be 1–50');
+      if (!(Number.isInteger(n('maxDistributorStops')) && n('maxDistributorStops') >= 1 && n('maxDistributorStops') <= 50)) throw new CdsError(400, 'Max distributor stops must be 1–50');
+      if (!['route_optimize', 'store_optimized', 'seller_optimized'].includes(String(r?.routeEngine))) throw new CdsError(400, 'Select a route engine');
       if (!(n('maxDistanceKm') >= 1 && n('maxDistanceKm') <= 500)) throw new CdsError(400, 'Max distance must be 1–500 km');
       if (!(n('maxWeightKg') >= 1 && n('maxWeightKg') <= 10000)) throw new CdsError(400, 'Max weight must be 1–10,000 kg');
-      x[key] = { serviceMinutes: n('serviceMinutes'), maxTravelHours: n('maxTravelHours'), maxStops: n('maxStops'), maxDistanceKm: n('maxDistanceKm'), maxWeightKg: n('maxWeightKg') };
+      x[key] = { serviceMinutes: n('serviceMinutes'), maxTravelHours: n('maxTravelHours'), maxCdsStops: n('maxCdsStops'), maxDistributorStops: n('maxDistributorStops'), maxDistanceKm: n('maxDistanceKm'), maxWeightKg: n('maxWeightKg'), routeEngine: r.routeEngine, sellerOtp: r.sellerOtp !== false, cdsOtp: r.cdsOtp !== false };
     }
     e.audit('SETTINGS', 'settings', u.name, 'UPDATED', JSON.stringify(b));
     return x;

@@ -10,9 +10,8 @@ export const REPORTS: Record<CdsRole, { id: string; title: string; filters: (key
   SERVICE_CENTRE: [
     { id: 'distributor-pickups', title: 'Distributor-wise pickups', filters: ['from', 'to', 'distributorId'] },
     { id: 'cds-incoming', title: 'CDS-wise incoming orders', filters: ['from', 'to', 'cdsStoreId'] },
-    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor Pickup Trips (CDS Service Centre to Sellers)', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_DELIVERY', title: 'CDS Delivery Trips (Sellers to CDS Stores)', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_RETURN', title: 'CDS Return Trips (CDS Stores to Sellers)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Pickup Trips (Sellers to CDS Stores)', filters: ['from', 'to', 'status'] },
+    { id: 'trips-CDS_RETURN', title: 'Return Trips (CDS Stores to Sellers)', filters: ['from', 'to', 'status'] },
     { id: 'pending-ops', title: 'Pending pickup & delivery operations', filters: ['cdsStoreId'] },
     { id: 'return-quantities', title: 'Return quantities', filters: ['from', 'to', 'cdsStoreId', 'distributorId'] },
     { id: 'trip-completion', title: 'Trip completion', filters: ['from', 'to'] },
@@ -200,10 +199,8 @@ export function summary(s: CdsState, role: CdsRole, stores: string[]) {
     const tr = (ty: TripType) => s.trips.filter((t) => t.type === ty && ACTIVE_TRIP.includes(t.status)).length;
     return [
       { key: 'confirmed', label: 'Orders to plan for pickup', value: n(['CONFIRMED']), tone: 'amber', to: '/cds/pickup-planning' },
-      { key: 'picked', label: 'Picked up, awaiting CDS delivery', value: os.filter((o) => o.status === 'PICKED_UP' && !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status))).length, tone: 'purple', to: '/cds/trips?tab=CDS_DELIVERY' },
-      { key: 'transit', label: 'In transit to CDS', value: n(['IN_TRANSIT_TO_CDS']), tone: 'purple', to: '/cds/trips?tab=CDS_DELIVERY' },
+      { key: 'transit', label: 'In transit to CDS', value: n(['PICKED_UP', 'IN_TRANSIT_TO_CDS']), tone: 'purple', to: '/cds/trips?tab=DISTRIBUTOR_PICKUP' },
       { key: 'pickupTrips', label: 'Active pickup trips', value: tr('DISTRIBUTOR_PICKUP'), tone: 'blue', to: '/cds/trips?tab=DISTRIBUTOR_PICKUP' },
-      { key: 'cdsTrips', label: 'Active CDS delivery trips', value: tr('CDS_DELIVERY'), tone: 'blue', to: '/cds/trips?tab=CDS_DELIVERY' },
       { key: 'returnTrips', label: 'Active CDS return trips', value: tr('CDS_RETURN'), tone: 'blue', to: '/cds/trips?tab=CDS_RETURN' },
       { key: 'returns', label: 'Returns to plan', value: s.returns.filter((r) => stores.includes(r.cdsStoreId) && r.status === 'RECEIVED_AT_CDS' && !r.returnTripId).length, tone: 'red', to: '/cds/return-planning' },
     ];

@@ -77,21 +77,21 @@ test('1b. allocation by service area polygon: inside → that CDS; outside every
   assert.ok(ringAreaKm2(s.stores[1].polygon) > 10);
 });
 
-test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every pickup and handover, distributor-wise GRN', () => {
+test('2–3. pickup planning: one pickup trip (sellers, then CDS stores), OTP at every pickup and handover, distributor-wise GRN', () => {
   const { e, order, free, done } = setup();
   const o1 = order('dst-01', RT.upl, [sku(0, 2), sku(3, 10)]);
   const o2 = order('dst-02', RT.kkp, [sku(4, 6)]);
   const o3 = order('dst-02', RT.dsn, [sku(4, 4)]);
   const a = free('SC');
-  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e.createPickupPlan({ orders: [{ orderId: o1.id }, { orderId: o2.id }, { orderId: o3.id, cdsStoreId: 'cds-upl' }], plannedDate: today, pickup: a, cdsDelivery: a }, SC);
-  assert.equal(pt.stops.length, 2, 'one pickup stop per distributor');
-  assert.equal(ct!.stops.length, 2, 'one handover stop per destination CDS (o3 redirected to Uppal)');
+  const { pickupTrip: pt, cdsDeliveryTrip } = e.createPickupPlan({ orders: [{ orderId: o1.id }, { orderId: o2.id }, { orderId: o3.id, cdsStoreId: 'cds-upl' }], plannedDate: today, pickup: a }, SC);
+  assert.equal(cdsDeliveryTrip, null, 'one trip from pickup to drop');
+  assert.deepEqual(pt.stops.map((s) => s.action), ['DISTRIBUTOR_PICKUP', 'DISTRIBUTOR_PICKUP', 'CDS_HANDOVER', 'CDS_HANDOVER'], 'one stop per distributor, then one per destination CDS (o3 redirected to Uppal)');
   assert.equal(e.order(o1.id).status, 'PICKUP_PLANNED');
   throwsCds(() => e.createPickupPlan({ orders: [{ orderId: o1.id }], plannedDate: today, pickup: free('SC', today, 0) }, SC), /only Confirmed/);
   throwsCds(() => e.sendOtp(pt.id, pt.stops[0].id, DP), /Start/);
   e.startTrip(pt.id, DP);
-  e.startTrip(ct!.id, DP);
-  throwsCds(() => e.sendOtp(ct!.id, ct!.stops[0].id, DP), /from the distributor first/);
+  const ct = pt; // the CDS drops are on the same trip
+  throwsCds(() => e.sendOtp(pt.id, pt.stops[2].id, DP), /from the distributor first/);
   // OTP rules on the first pickup
   const st = pt.stops[0];
   const otp = e.sendOtp(pt.id, st.id, DP);
@@ -109,35 +109,34 @@ test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every 
   assert.equal(e.trip(pt.id).stops[dIdx].status, 'PARTIAL');
   throwsCds(() => e.completeStop(pt.id, st.id, { otp: otp2.code }, DP), /already/);
   done(pt.id, 1);
-  assert.equal(e.trip(pt.id).status, 'PARTIALLY_COMPLETED');
+  assert.equal(e.trip(pt.id).status, 'IN_PROGRESS', 'pickups done; the CDS drops are next on the same trip');
   const first = e.trip(pt.id).stops[0];
   const shortOrder = e.order(first.lines[0].orderId!);
-  assert.equal(shortOrder.status, 'IN_TRANSIT_TO_CDS', 'CDS leg already running');
-  // the CDS leg carries what was collected
-  const leg = e.trip(ct!.id).stops.flatMap((x) => x.lines).find((l) => l.orderId === shortOrder.id && l.sku === first.lines[0].sku)!;
+  assert.equal(shortOrder.status, 'IN_TRANSIT_TO_CDS', 'on the way to the CDS on the same trip');
+  // the CDS drops carry what was collected
+  const leg = e.trip(ct.id).stops.filter((x) => x.action === 'CDS_HANDOVER').flatMap((x) => x.lines).find((l) => l.orderId === shortOrder.id && l.sku === first.lines[0].sku)!;
   assert.equal(leg.plannedQty, first.lines[0].plannedQty - 1);
   // handovers: OTP goes to the CDS user of that store
-  const h = e.sendOtp(ct!.id, ct!.stops[0].id, DP);
+  const h = e.sendOtp(ct.id, ct.stops[2].id, DP);
   assert.equal(h.sentToType, 'CDS');
   assert.ok(['9100000002', '9100000003'].includes(h.sentToPhone));
-  e.completeStop(ct!.id, ct!.stops[0].id, { otp: h.code }, DP);
-  done(ct!.id, 1);
-  assert.equal(e.trip(ct!.id).status, 'COMPLETED');
+  e.completeStop(ct.id, ct.stops[2].id, { otp: h.code }, DP);
+  done(ct.id, 3);
+  assert.equal(e.trip(ct.id).status, 'PARTIALLY_COMPLETED', 'one pickup was short');
   assert.equal(e.order(o1.id).status, 'RECEIVED_AT_CDS');
   const grnsUpl = e.s.grns.filter((g) => g.cdsStoreId === 'cds-upl');
   assert.equal(grnsUpl.length, 2, 'Uppal received from two distributors → two GRNs');
-  assert.ok(grnsUpl.every((g) => g.pickupTripIds.includes(pt.id) && g.cdsTripId === ct!.id));
+  assert.ok(grnsUpl.every((g) => g.pickupTripIds.includes(pt.id) && g.cdsTripId === pt.id));
 });
 
 test('4. GRN: verification rules, shortage / damage remarks, orders ready, damaged goods become a return', () => {
   const { e, order, free, done } = setup();
   const o = order('dst-01', RT.upl, [sku(3, 10)]);
   const a = free('SC');
-  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: a, cdsDelivery: a }, SC);
+  const { pickupTrip: pt } = e.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: a }, SC);
   e.startTrip(pt.id, DP);
   done(pt.id, 0);
-  e.startTrip(ct!.id, DP);
-  done(ct!.id, 0, { lines: [{ idx: 0, actualQty: 9 }] }); // 1 short at handover
+  done(pt.id, 1, { lines: [{ idx: 0, actualQty: 9 }] }); // 1 short at handover
   const g = e.s.grns[0];
   assert.equal(g.lines[0].shortQty, 1);
   throwsCds(() => e.completeGrn(g.id, { lines: [{ idx: 0, acceptedQty: 9, damagedQty: 1 }] }, 'u'), /must equal received/);
@@ -158,11 +157,10 @@ function readyOrders() {
   const o2 = order('dst-01', RT.upl2, [sku(3, 6)], 'PREPAID');
   const o3 = order('dst-01', 'rt-2-0', [sku(3, 3)]);
   const a = x.free('SC');
-  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e.createPickupPlan({ orders: [o1, o2, o3].map((o) => ({ orderId: o.id })), plannedDate: today, pickup: a, cdsDelivery: a }, SC);
+  const { pickupTrip: pt } = e.createPickupPlan({ orders: [o1, o2, o3].map((o) => ({ orderId: o.id })), plannedDate: today, pickup: a }, SC);
   e.startTrip(pt.id, DP);
   done(pt.id, 0);
-  e.startTrip(ct!.id, DP);
-  done(ct!.id, 0);
+  done(pt.id, 1);
   const g = e.s.grns[0];
   e.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) }, 'u');
   void free;
@@ -265,14 +263,15 @@ test('OTP: expiry and no reuse; trips cancel cleanly; failed pickup returns orde
   const e2 = new CdsEngine(e.s, () => new Date(now));
   const o = order('dst-03', RT.dsn, [sku(6, 5)]);
   const a = free('SC');
-  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e2.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: a, cdsDelivery: a }, SC);
+  const { pickupTrip: pt } = e2.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: a }, SC);
   e2.startTrip(pt.id, DP);
   const otp = e2.sendOtp(pt.id, pt.stops[0].id, DP);
   now += 16 * 60000;
   assert.match(e2.completeStop(pt.id, pt.stops[0].id, { otp: otp.code }, DP).error!.message, /expired/);
   e2.failStop(pt.id, pt.stops[0].id, 'Stock not ready', DP);
   assert.equal(e2.order(o.id).status, 'CONFIRMED');
-  assert.equal(e2.trip(ct!.id).status, 'CANCELLED', 'nothing left for the CDS leg');
+  assert.ok(!e2.trip(pt.id).stops.some((s) => s.action === 'CDS_HANDOVER'), 'nothing left to drop at the CDS');
+  assert.equal(e2.trip(pt.id).status, 'PARTIALLY_COMPLETED');
   const b = free('SC');
   const again = e2.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: b }, SC);
   e2.cancelTrip(again.pickupTrip.id, 'Vehicle breakdown', SC);

@@ -1,12 +1,14 @@
 // Orders — Service Centre: all CDS Store Delivery orders across its stores. CDS User: its store's orders, retailer-wise.
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
 import { cdsApi, type OrderRow } from '../../api/services/cds.service';
-import { ORDER_STATUS, TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
-import type { OrderStatus } from '../../cds/types';
+import { ORDER_STATUS } from '../../cds/status';
+import type { OrderStatus, TripType } from '../../cds/types';
 import { RouteMapDialog } from './RouteMap';
-import { askText, Badge, ModuleIntro, Card, DetailHead, DetailTabs, Empty, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, InfoGrid, InfoSection, kg, Loading, money, Pager, RowActions, sumOf, Table, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
+import { askText, Badge, ModuleIntro, Empty, ErrorBox, FiltersDialog, fmtDate, fmtDateTime, Loading, money, Pager, sumOf, Table, useAction, useCdsSession, useLoad, useMeta, type FilterField } from './ui';
+import DataLoading from '../../components/DataLoading';
+import '../orders/OrderDetailsPage.css';
 import '../orders/OrdersPage.css';
 
 /** Orders — same layout as the LBNP Orders screen: header, search + Filters, applied filters, KPI cards, table. */
@@ -17,7 +19,6 @@ export default function OrdersPage() {
   const [params] = useSearchParams();
   const initiate = params.get('initiate') === '1';
   const [f, setF] = useState({ search: '', status: (initiate ? 'DELIVERED' : '') as OrderStatus | '', distributorId: '', cdsStoreId: '', state: '', city: '', fromDate: '', toDate: '', retailerId: params.get('retailer') ?? '' });
-  const [grouped, setGrouped] = useState(!sc);
   const [pageNumber, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [showFilters, setShowFilters] = useState(false);
@@ -25,17 +26,12 @@ export default function OrdersPage() {
   const { busy, run } = useAction();
   const set = (p: Partial<typeof f>) => { setF((x) => ({ ...x, ...p })); setPage(1); };
   const { data, error, loading, reload } = useLoad(
-    () => cdsApi.searchOrders({ ...f, statuses: f.status ? [f.status] : [], pageNumber, pageSize: grouped ? 0 : pageSize }),
-    [f, pageNumber, pageSize, grouped],
+    () => cdsApi.searchOrders({ ...f, statuses: f.status ? [f.status] : [], pageNumber, pageSize }),
+    [f, pageNumber, pageSize],
   );
   // All orders once: the KPI cards (orders still to plan) and the State / City lists.
   const all = useLoad(() => cdsApi.searchOrders({ pageSize: 0 }), []);
   const rows = data?.rows ?? [];
-  const groups = useMemo(() => {
-    const m = new Map<string, OrderRow[]>();
-    rows.forEach((o) => m.set(o.retailerId, [...(m.get(o.retailerId) ?? []), o]));
-    return Array.from(m.values());
-  }, [rows]);
   const allRows = all.data?.rows ?? [];
   const states = Array.from(new Set(allRows.map((o) => o.state).filter(Boolean))).sort();
   const cities = Array.from(new Map(allRows.filter((o) => o.city).map((o) => [o.city, o.state])).entries()).sort((a, b) => a[0].localeCompare(b[0]));
@@ -67,26 +63,24 @@ export default function OrdersPage() {
     const r = await askText(`Cancel ${o.orderNo}?`, 'Cancellation reason', 'Cancel order', true);
     if (r && (await run(() => cdsApi.cancelOrder(o.id, r), 'Order cancelled'))) { reload(); all.reload(); }
   };
-  const head = ['Order', 'Confirmed', ...(grouped ? [] : ['Retailer']), 'Distributor', ...(sc ? ['CDS store'] : []), 'Items', 'Value', 'Status', 'Actions'];
+  const head = ['Created Date', 'Order Date', 'Retailer Name', 'Distributor', ...(sc ? ['CDS Store'] : []), 'Sales Person', 'Mobile Number', 'Status', 'Actions'];
   const row = (o: OrderRow) => (
-    <tr key={o.id} className="mat-mdc-row small" role="link" style={{ cursor: 'pointer' }} onClick={() => navigate(`/cds/orders/${o.id}`)}>
-      <td className="fw-semibold text-primary">{o.orderNo}<div className="text-muted text-xs fw-normal" title="Seller Store order"><i className="fas fa-store me-1" />{o.sellerOrderRef}</div></td>
-      <td className="small">{fmtDateTime(o.confirmedAt)}</td>
-      {!grouped && <td className="small">{o.retailerName}<div className="text-muted text-xs">{o.locality}, {o.city}</div></td>}
+    <tr key={o.id} className="mat-mdc-row small">
+      <td className="small text-center">{fmtDateTime(o.createdAt)}</td>
+      <td className="small text-center">{fmtDate(o.confirmedAt)}</td>
+      <td className="small">{o.retailerName}</td>
       <td className="small">{o.distributorName}</td>
       {sc && <td className="small">{o.storeName}</td>}
-      <td className="small" title={o.lines.map((l) => `${l.name} × ${l.qty}`).join('\n')}>{o.lines.length} item{o.lines.length === 1 ? '' : 's'}<div className="text-muted text-xs">{o.units} units · {kg(o.weightKg)}</div></td>
-      <td className="small">{money(o.orderValue)}<div className="text-muted text-xs">{o.paymentMode}</div></td>
-      <td><Badge meta={ORDER_STATUS[o.status]} /></td>
-      <td>
-        <RowActions
-          onView={() => navigate(`/cds/orders/${o.id}`)}
-          items={[
-            { label: 'View details', icon: 'fa-eye', onClick: () => navigate(`/cds/orders/${o.id}`) },
-            { label: 'Initiate return', icon: 'fa-rotate-left', hidden: sc || !['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status), onClick: () => navigate(`/cds/orders/${o.id}`) },
-            { label: 'Cancel order', icon: 'fa-circle-xmark', tone: 'danger', hidden: !sc || o.status !== 'CONFIRMED' || busy, onClick: () => void cancel(o) },
-          ]}
-        />
+      <td className="small">{o.salesPersonName}</td>
+      <td className="small">{o.salesPersonPhone}</td>
+      <td className="text-center"><Badge meta={ORDER_STATUS[o.status]} /></td>
+      <td className="text-center">
+        <div className="d-flex align-items-center justify-content-center gap-2 flex-nowrap">
+          <button className="btn btn-sm text-primary cds-icon-btn" title="View Order" aria-label={`View order ${o.orderNo}`} onClick={() => navigate(`/cds/orders/${o.id}`)}><i className="fas fa-eye" /></button>
+          {sc && o.status === 'CONFIRMED' && (
+            <button className="btn btn-sm text-danger cds-icon-btn cds-icon-btn--danger" title="Cancel Order" aria-label={`Cancel order ${o.orderNo}`} disabled={busy} onClick={() => void cancel(o)}><i className="fas fa-times" /></button>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -115,16 +109,15 @@ export default function OrdersPage() {
             </div>
             <p className="text-muted small mb-0">{sc ? 'CDS Store Delivery orders confirmed in the Seller Store, across your CDS stores.' : 'Seller Store orders for your CDS store, retailer-wise.'}</p>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            {sc
-              ? <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate('/cds/planning/pickup/create')}><i className="fas fa-truck-ramp-box me-1 fs-6" /><span className="fs-6">Create Pickup Plan</span></button>
-              : <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate('/cds/delivery-planning')}><i className="fas fa-truck me-1 fs-6" /><span className="fs-6">Delivery Planning</span></button>}
-          </div>
+          {!sc && (
+            <div className="d-flex align-items-center gap-2">
+              <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate('/cds/delivery-planning')}><i className="fas fa-truck me-1 fs-6" /><span className="fs-6">Delivery Planning</span></button>
+            </div>
+          )}
         </div>
 
         {/* B. Search row */}
         <div className="d-flex align-items-center gap-2">
-          <div className="form-check form-switch small mb-0 me-auto"><input id="grp" className="form-check-input" type="checkbox" checked={grouped} onChange={(e) => { setGrouped(e.target.checked); setPage(1); }} /><label htmlFor="grp" className="form-check-label">Retailer-wise</label></div>
           <div className="position-relative flex-grow-1">
             <input type="text" className="form-control form-control-sm pe-4 retailer-search" autoComplete="off" placeholder="Search by order number, seller reference, retailer name or mobile number" aria-label="Search" value={f.search} onChange={(e) => set({ search: e.target.value })} />
             {f.search && (
@@ -154,11 +147,11 @@ export default function OrdersPage() {
 
       {/* D. KPI cards (same as LBNP Orders) */}
       <div className="stats-grid px-3 mt-3">
-        {kpi(sc ? 'No. of Retailers' : 'No. of Customers', retailersToPlan.length, 'fa-users', 'customers', sc ? 'Retailers whose orders wait for pickup' : 'Retailers to deliver to')}
-        {kpi('Total Orders', toPlan.length, 'fa-chart-line', 'orders', sc ? 'Confirmed orders waiting for pickup' : 'Ready orders waiting for delivery')}
-        {kpi('Total Weight', `${(Math.round(sumOf(toPlan, (o) => o.weightKg) * 10) / 10).toLocaleString('en-IN')} Kgs`, 'fa-weight-hanging', 'weight', sc ? 'Total load to pick up from sellers' : 'Total load to deliver')}
-        {kpi('No. of Distributors', new Set(toPlan.map((o) => o.distributorId)).size, 'fa-industry', 'distributors', sc ? 'Sellers to pick up from' : 'Distributors of the ready orders')}
-        {sc && kpi('No. of CDS Stores', new Set(toPlan.map((o) => o.cdsStoreId)).size, 'fa-warehouse', 'stores', 'CDS stores to deliver these orders to')}
+        {kpi(sc ? 'No. of Retailers' : 'No. of Customers', retailersToPlan.length, 'fa-users', 'customers', sc ? 'Waiting for pickup' : 'To deliver to')}
+        {kpi('Total Orders', toPlan.length, 'fa-chart-line', 'orders', sc ? 'Waiting for pickup' : 'Waiting for delivery')}
+        {kpi('Total Weight', `${(Math.round(sumOf(toPlan, (o) => o.weightKg) * 10) / 10).toLocaleString('en-IN')} Kgs`, 'fa-weight-hanging', 'weight', sc ? 'Load to pick up' : 'Load to deliver')}
+        {kpi('No. of Distributors', new Set(toPlan.map((o) => o.distributorId)).size, 'fa-industry', 'distributors', sc ? 'Sellers to pick up from' : 'Of the ready orders')}
+        {sc && kpi('No. of CDS Stores', new Set(toPlan.map((o) => o.cdsStoreId)).size, 'fa-warehouse', 'stores', 'CDS stores to drop at')}
       </div>
 
       {/* E. Table card */}
@@ -168,14 +161,9 @@ export default function OrdersPage() {
           {loading && !data ? <Loading text="Loading orders..." /> : (
             <>
               <Table head={head} empty={!rows.length && <Empty text="No orders found" />}>
-                {grouped ? groups.flatMap((g) => [
-                  <tr key={`h${g[0].retailerId}`} className="mat-mdc-row cds-retailer-row">
-                    <td colSpan={head.length}><i className="fas fa-store me-2" />{g[0].retailerName}<span className="fw-normal text-muted ms-2">{g[0].retailerPhone} · {g[0].retailerAddress} · {g.length} order(s)</span></td>
-                  </tr>,
-                  ...g.map(row),
-                ]) : rows.map(row)}
+                {rows.map(row)}
               </Table>
-              {!grouped && data && <div className="d-flex justify-content-end p-1 bg-white"><Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} /></div>}
+              {data && <div className="d-flex justify-content-end p-1 bg-white"><Pager total={data.total} pageNumber={data.pageNumber} pageSize={pageSize} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1); }} /></div>}
             </>
           )}
         </div>
@@ -195,7 +183,7 @@ export default function OrdersPage() {
           title={sc ? 'Orders to pick up · Map View' : 'Orders to deliver · Map View'}
           subtitle={`${retailersToPlan.length} retailers · ${toPlan.length} orders · ${toPlanSub.toLowerCase()}`}
           line={false}
-          stops={retailersToPlan.map((o, i) => ({ seq: i + 1, name: o.retailerName, detail: `${o.locality}, ${o.city} · ${toPlan.filter((x) => x.retailerId === o.retailerId).length} order(s)`, lat: o.retailerLat, lng: o.retailerLng }))}
+          stops={retailersToPlan.map((o, i) => ({ seq: i + 1, name: o.retailerName, detail: `${o.locality}, ${o.city}`, lat: o.retailerLat, lng: o.retailerLng, orders: toPlan.filter((x) => x.retailerId === o.retailerId).map((x) => `${x.orderNo} · ${x.distributorName} · ₹${Math.round(x.orderValue).toLocaleString('en-IN')}`) }))}
           onClose={() => setMapOpen(false)}
         />
       )}
@@ -203,20 +191,19 @@ export default function OrdersPage() {
   );
 }
 
+/** Order view — same layout as the LBNP Order Details screen: header with back button, tabs, info sections. */
 export function OrderDetailsPage() {
   const { id = '' } = useParams();
   const { sc } = useCdsSession();
   const navigate = useNavigate();
   const meta = useMeta();
   const { busy, run } = useAction();
-  const [tab, setTab] = useState<'summary' | 'items' | 'trips' | 'history'>('summary');
+  const [tab, setTab] = useState<'summary' | 'products'>('summary');
   const { data, error, loading, reload } = useLoad(() => cdsApi.order(id), [id]);
   if (error) return <div className="cds-page"><ErrorBox text={error} onRetry={reload} /></div>;
-  if (loading && !data) return <div className="cds-page"><Loading /></div>;
-  if (!data) return null;
+  if (!data) return <div className="order-details-page order-details-container"><DataLoading message="Loading order details..." showTip overlay={false} /></div>;
   const o = data.order;
   const returnable = data.returnable.filter((r) => r.max > 0);
-  const anyDamaged = o.lines.some((l) => l.damagedQty > 0);
   const cancel = async () => {
     const r = await askText(`Cancel ${o.orderNo}?`, 'Cancellation reason', 'Cancel order', true);
     if (r && (await run(() => cdsApi.cancelOrder(o.id, r), 'Order cancelled'))) reload();
@@ -242,79 +229,126 @@ export function OrderDetailsPage() {
     });
     if (res.isConfirmed && (await run(() => cdsApi.initiateReturn({ orderId: o.id, lines: res.value }), 'Return initiated'))) reload();
   };
-  const linked = (data.returns.length > 0 || data.collections.length > 0 || !!data.grn);
+  const tripLink = (type: TripType) => {
+    const t = data.trips.find((x) => x.type === type);
+    return t ? <a href={`#/cds/trips/${t.id}`} onClick={(e) => { e.preventDefault(); navigate(`/cds/trips/${t.id}`); }}>{t.tripNo}</a> : 'N/A';
+  };
+  const pickup = data.trips.find((x) => x.type === 'DISTRIBUTOR_PICKUP');
+  const delivery = data.trips.find((x) => x.type === 'RETAILER_DELIVERY');
+  const total = sumOf(o.lines, (l) => l.qty * l.unitPrice);
+  const linked = data.returns.length > 0 || data.collections.length > 0 || !!data.grn;
+  const section = (icon: string, title: string, rows: [string, string, ReactNode][]) => (
+    <div className="details-section">
+      <h3><i className={`fas ${icon}`} /> {title}</h3>
+      <table className="info-table">
+        <tbody>
+          {rows.map(([ic, label, value]) => <tr key={label}><td><i className={`fas ${ic}`} /> {label}</td><td>{value || value === 0 ? value : 'N/A'}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+  );
   return (
-    <div className="cds-page">
-      <DetailHead icon="fa-file-invoice" title="Order Details" back="/cds/orders" subtitle={<>Order #{o.orderNo} · {fmtDateTime(o.confirmedAt)} <Badge meta={ORDER_STATUS[o.status]} /></>}>
-        {sc && o.status === 'CONFIRMED' && <button className="btn btn-outline-danger d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void cancel()}><i className="fas fa-circle-xmark me-2" />Cancel Order</button>}
-        {!sc && ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status) && returnable.length > 0 && <button className="btn btn-primary d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void initiate()}><i className="fas fa-rotate-left me-2" />Initiate Return</button>}
-      </DetailHead>
-      {o.note && <div className="cds-note warn mb-3"><i className="fas fa-circle-exclamation mt-1" />{o.note}</div>}
-      <DetailTabs value={tab} onChange={setTab} tabs={[
-        { id: 'summary', label: 'Order Summary', icon: 'fa-info-circle' },
-        { id: 'items', label: 'Items', icon: 'fa-boxes-stacked', count: o.lines.length },
-        { id: 'trips', label: 'Trips', icon: 'fa-route', count: data.trips.length },
-        { id: 'history', label: 'Status History', icon: 'fa-clock-rotate-left' },
-      ]}>
-        {tab === 'summary' && (
-          <InfoGrid>
-            <InfoSection icon="fa-file-invoice" title="Order Information" rows={[
-              ['fa-hashtag', 'Order Number', o.orderNo],
-              ['fa-store', 'Source', 'Seller Store'],
-              ['fa-receipt', 'Seller Order', o.sellerOrderRef],
-              ['fa-circle-info', 'Order Status', <Badge key="s" meta={ORDER_STATUS[o.status]} />],
-              ['fa-indian-rupee-sign', 'Order Value', `${money(o.orderValue)} · ${o.paymentMode}`],
-              ['fa-weight-hanging', 'Weight', kg(o.weightKg)],
-              ['fa-calendar-check', 'Delivered', o.deliveredAt ? fmtDateTime(o.deliveredAt) : ''],
-            ]} />
-            <InfoSection icon="fa-store" title="Retailer Information" rows={[
-              ['fa-building', 'Business Name', data.retailer?.name],
-              ['fa-phone', 'Contact Number', data.retailer?.phone],
-              ['fa-location-dot', 'Address', data.retailer?.address],
-            ]} />
-            <InfoSection icon="fa-warehouse" title="Pickup & CDS" rows={[
-              ['fa-industry', 'Distributor', data.distributor.name],
-              ['fa-location-dot', 'Pickup Address', data.distributor.address],
-              ['fa-warehouse', 'CDS Store', <span key="c">{data.store.name} <span className="cds-auto-tag" title="The retailer is inside this CDS store's service area"><i className="fas fa-location-crosshairs me-1" />Auto · service area</span></span>],
-            ]} />
-            {linked && (
-              <InfoSection icon="fa-link" title="Linked Records" rows={[
-                ['fa-clipboard-check', 'GRN', data.grn ? `${data.grn.grnNo} · ${data.grn.status === 'PENDING' ? 'Pending' : 'Generated'}` : ''],
-                ['fa-rotate-left', 'Returns', data.returns.map((r) => r.returnNo).join(', ')],
-                ['fa-indian-rupee-sign', 'Collections', data.collections.map((c) => `${money(c.amount)} ${c.mode}`).join(', ')],
-              ]} />
-            )}
-          </InfoGrid>
-        )}
-        {tab === 'items' && (
-          <Table head={['Item', 'Ordered', 'Picked up', 'At CDS', ...(anyDamaged ? ['Damaged'] : []), 'Delivered', 'Returned', 'Value']}>
-            {o.lines.map((l) => (
-              <tr key={l.sku} className="mat-mdc-row">
-                <td className="small">{l.name}</td>
-                <td className="fw-semibold">{l.qty}</td><td>{l.pickedQty}</td><td>{l.acceptedQty || l.receivedQty}</td>
-                {anyDamaged && <td className={l.damagedQty ? 'text-danger' : ''}>{l.damagedQty}</td>}
-                <td>{l.deliveredQty}</td><td>{l.returnedQty}</td><td>{money(l.qty * l.unitPrice)}</td>
-              </tr>
-            ))}
-          </Table>
-        )}
-        {tab === 'trips' && (
-          <Table head={['Trip', 'Type', 'Date', 'Status', 'Actions']} empty={!data.trips.length && <Empty icon="fa-route" text="Not on a trip yet" />}>
-            {data.trips.map((t) => (
-              <tr key={t.id} className="mat-mdc-row">
-                <td className="fw-semibold text-primary">{t.tripNo}</td>
-                <td className="small">{TRIP_TYPE[t.type].label}<div className="text-muted text-xs">{TRIP_TYPE[t.type].direction}</div></td><td className="small">{fmtDate(t.plannedDate)}</td><td><Badge meta={TRIP_STATUS[t.status]} /></td>
-                <td><RowActions onView={() => navigate(`/cds/trips/${t.id}`)} /></td>
-              </tr>
-            ))}
-          </Table>
-        )}
-        {tab === 'history' && (
-          <ul className="cds-timeline">
-            {[...o.history].reverse().map((h, k) => <li key={k}><div className="fw-semibold">{ORDER_STATUS[h.to as OrderStatus]?.label ?? h.to}</div><div className="when">{fmtDateTime(h.at)} · {h.by}</div>{h.note && <div className="text-muted">{h.note}</div>}</li>)}
-          </ul>
-        )}
-      </DetailTabs>
+    <div className="order-details-page order-details-container">
+      <header className="orders-header">
+        <div className="header-left">
+          <button className="back-btn" onClick={() => navigate('/cds/orders')} aria-label="Back"><i className="fas fa-arrow-left" /></button>
+          <div className="title-section">
+            <h1><i className="fas fa-file-invoice" /> Order Details</h1>
+            <p className="subtitle">Order #{o.orderNo} - Order Date {fmtDate(o.confirmedAt)}</p>
+          </div>
+        </div>
+        <div className="header-actions">
+          {sc && o.status === 'CONFIRMED' && <button className="btn btn-outline-danger d-flex align-items-center text-nowrap gap-2" disabled={busy} onClick={() => void cancel()}><i className="fas fa-times" /><span className="fs-6">Cancel Order</span></button>}
+          {!sc && ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status) && returnable.length > 0 && <button className="btn btn-primary d-flex align-items-center text-nowrap gap-2" disabled={busy} onClick={() => void initiate()}><i className="fas fa-rotate-left" /><span className="fs-6">Initiate Return</span></button>}
+        </div>
+      </header>
+
+      {o.note && <div className="cds-note warn"><i className="fas fa-circle-exclamation mt-1" />{o.note}</div>}
+
+      <div className="main-layout">
+        <div className="content-container">
+          <div className="tabs-container">
+            <div className={`tab${tab === 'summary' ? ' active' : ''}`} onClick={() => setTab('summary')}><i className="fas fa-info-circle" /> Order Summary</div>
+            <div className={`tab${tab === 'products' ? ' active' : ''}`} onClick={() => setTab('products')}><i className="fas fa-box" /> Product Details</div>
+          </div>
+
+          {tab === 'summary' && (
+            <div className="order-details-content">
+              <div className="details-grid">
+                {section('fa-user', 'Customer Information', [
+                  ['fa-building', 'Business Name', data.retailer?.name],
+                  ['fa-phone', 'Contact Number', data.retailer?.phone],
+                  ['fa-map-marker-alt', 'Address', data.retailer?.address],
+                ])}
+                {section('fa-calendar-day', 'Delivery Information', [
+                  ['fa-calendar-day', 'Delivery Date', o.deliveredAt ? fmtDate(o.deliveredAt) : delivery ? fmtDate(delivery.plannedDate) : ''],
+                  ['fa-warehouse', 'CDS Store', data.store.name],
+                  ['fa-truck', 'Pickup Trip', pickup ? tripLink('DISTRIBUTOR_PICKUP') : ''],
+                  ['fa-truck-fast', 'Delivery Trip', delivery ? tripLink('RETAILER_DELIVERY') : ''],
+                ])}
+                {section('fa-clipboard-list', 'Order Information', [
+                  ['fa-hashtag', 'Order Number', o.orderNo],
+                  ['fa-receipt', 'Seller Order', o.sellerOrderRef],
+                  ['fa-info-circle', 'Order Status', <Badge key="s" meta={ORDER_STATUS[o.status]} />],
+                  ['fa-money-bill-wave', 'Total Amount', `${money(o.orderValue)} · ${o.paymentMode}`],
+                ])}
+                {section('fa-industry', 'Seller Information', [
+                  ['fa-industry', 'Distributor', data.distributor.name],
+                  ['fa-map-marker-alt', 'Pickup Address', data.distributor.address],
+                  ['fa-user-tie', 'Sales Person', data.salesPerson.salesPersonName],
+                  ['fa-phone', 'Mobile Number', data.salesPerson.salesPersonPhone],
+                ])}
+                {linked && section('fa-link', 'Linked Records', [
+                  ['fa-clipboard-check', 'GRN', data.grn ? `${data.grn.grnNo} · ${data.grn.status === 'PENDING' ? 'Pending' : 'Generated'}` : ''],
+                  ['fa-rotate-left', 'Returns', data.returns.map((r) => r.returnNo).join(', ')],
+                  ['fa-indian-rupee-sign', 'Collections', data.collections.map((c) => `${money(c.amount)} ${c.mode}`).join(', ')],
+                ])}
+              </div>
+            </div>
+          )}
+
+          {tab === 'products' && (
+            <div className="p-3">
+              <div className="mat-card mat-elevation-z3">
+                <div className="mat-card-content p-0">
+                  <div className="table-responsive">
+                    <table className="mat-mdc-table w-100">
+                      <thead>
+                        <tr className="mat-mdc-header-row small">
+                          <th className="text-uppercase small text-start py-2 px-3"><i className="fas fa-box me-1 text-primary" />Product Name</th>
+                          <th className="text-uppercase small text-center"><i className="fas fa-layer-group me-1 text-primary" />Quantity</th>
+                          <th className="text-uppercase small text-center"><i className="fas fa-truck me-1 text-primary" />Delivered</th>
+                          <th className="text-uppercase small text-center"><i className="fas fa-tag me-1 text-primary" />MRP</th>
+                          <th className="text-uppercase small text-center"><i className="fas fa-calculator me-1 text-primary" />Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {o.lines.map((l) => (
+                          <tr className="mat-mdc-row" key={l.sku}>
+                            <td className="text-start py-2 px-3 small">{l.name}</td>
+                            <td className="text-center small">{l.qty}</td>
+                            <td className="text-center small">{l.deliveredQty}</td>
+                            <td className="text-center small">{money(l.unitPrice)}</td>
+                            <td className="text-center small">{money(l.qty * l.unitPrice)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="mat-mdc-footer-row small bg-light">
+                          <td className="fw-bold text-start py-2 px-3">Total:</td>
+                          <td /><td /><td />
+                          <td className="fw-bold text-center">{money(total)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }

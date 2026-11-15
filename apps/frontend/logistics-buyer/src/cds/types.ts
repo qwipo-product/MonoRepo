@@ -123,14 +123,23 @@ export interface CdsSettings {
   returnRoute?: RouteConfig;
 }
 
+export type CdsRouteEngine = 'route_optimize' | 'store_optimized' | 'seller_optimized';
 export interface RouteConfig {
   serviceMinutes: number;
   maxTravelHours: number;
-  maxStops: number;
+  /** Most CDS store stops on one route. */
+  maxCdsStops: number;
+  /** Most distributor (seller) stops on one route. */
+  maxDistributorStops: number;
   maxDistanceKm: number;
   maxWeightKg: number;
+  routeEngine: CdsRouteEngine;
+  /** Proof of Delivery: OTP at the seller (distributor) stops. */
+  sellerOtp: boolean;
+  /** Proof of Delivery: OTP at the CDS store stops. */
+  cdsOtp: boolean;
 }
-export const DEFAULT_ROUTE_CONFIG: RouteConfig = { serviceMinutes: 15, maxTravelHours: 8, maxStops: 12, maxDistanceKm: 120, maxWeightKg: 1500 };
+export const DEFAULT_ROUTE_CONFIG: RouteConfig = { serviceMinutes: 15, maxTravelHours: 8, maxCdsStops: 6, maxDistributorStops: 8, maxDistanceKm: 120, maxWeightKg: 1500, routeEngine: 'route_optimize', sellerOtp: true, cdsOtp: true };
 
 // ---------------------------------------------------------------- orders
 
@@ -262,6 +271,9 @@ export interface Trip extends Stamp {
   deliveryPersonId: string;
   deliveryPersonName: string;
   deliveryPersonPhone: string;
+  /** Helper on the trip (Update Helper, planned trips only). */
+  helperName?: string | null;
+  helperPhone?: string | null;
   status: TripStatus;
   stops: TripStop[];
   orderIds: string[];

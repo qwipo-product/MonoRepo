@@ -6,11 +6,35 @@ import L from 'leaflet';
 import { CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import { pointInPolygon, ringAreaKm2 } from '../../cds/planning';
 
-/** Trip stops → map stops (number, name, address, done / pending). */
-export const mapStops = (stops: { seq: number; name: string; address: string; lat: number; lng: number; status: MapStop['status'] }[]): MapStop[] =>
-  stops.map((s) => ({ seq: s.seq, name: s.name, detail: s.address, lat: s.lat, lng: s.lng, status: s.status }));
+type StopRef = { no: string; retailer: string; units: number; value: number };
+const STATUS_TEXT = { PENDING: 'Pending', DONE: 'Done', PARTIAL: 'Partial', FAILED: 'Failed' } as const;
+/** Trip stops → map stops (number, name, address, status and the orders / returns at the stop). */
+export const mapStops = (stops: { seq: number; name: string; address: string; lat: number; lng: number; status: MapStop['status']; action?: string; refs?: StopRef[] }[]): MapStop[] =>
+  stops.map((s) => ({
+    seq: s.seq, name: s.name, detail: s.address, lat: s.lat, lng: s.lng, status: s.status,
+    sub: s.status ? STATUS_TEXT[s.status] : undefined,
+    orders: s.refs?.map((r) => `${r.no}${r.retailer ? ` · ${r.retailer}` : ''} · ${r.units} units · ₹${Math.round(r.value).toLocaleString('en-IN')}`),
+  }));
 
-export interface MapStop { seq: number; name: string; detail?: string; lat: number; lng: number; status?: 'PENDING' | 'DONE' | 'PARTIAL' | 'FAILED' }
+export interface MapStop { seq: number; name: string; detail?: string; lat: number; lng: number; status?: 'PENDING' | 'DONE' | 'PARTIAL' | 'FAILED'; sub?: string; orders?: string[] }
+
+/** Hover card of a map point: name, address, status and its orders. */
+function StopTip({ s }: { s: MapStop }) {
+  return (
+    <div className="cds-map-tip">
+      <div className="tip-title">{s.seq}. {s.name}</div>
+      {s.detail && <div className="tip-line">{s.detail}</div>}
+      {s.sub && <div className="tip-line"><b>Status:</b> {s.sub}</div>}
+      {!!s.orders?.length && (
+        <>
+          <div className="tip-head">Orders ({s.orders.length})</div>
+          {s.orders.slice(0, 8).map((o) => <div key={o} className="tip-order">{o}</div>)}
+          {s.orders.length > 8 && <div className="tip-line">+{s.orders.length - 8} more</div>}
+        </>
+      )}
+    </div>
+  );
+}
 
 /** OpenStreetMap tiles: they show area and street names (the CARTO tiles now need an API key). */
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -48,7 +72,7 @@ export function RouteMap({ stops, height = 420, groups, line = true }: { stops: 
         {line && lines.map((p, i) => <Polyline key={i} positions={p} pathOptions={{ color: groups ? STORE_COLORS[i % STORE_COLORS.length] : '#2563eb', weight: 3, opacity: 0.8, dashArray: '8 6' }} />)}
         {shown.map((s, i) => (
           <Marker key={`${i}-${s.seq}-${s.name}`} position={[s.lat, s.lng]} icon={pin(s)}>
-            <Tooltip direction="top" offset={[0, -12]}><b>{s.seq}. {s.name}</b>{s.detail && <div>{s.detail}</div>}</Tooltip>
+            <Tooltip direction="top" offset={[0, -12]} className="cds-map-tooltip"><StopTip s={s} /></Tooltip>
           </Marker>
         ))}
         <Fit points={points} />
@@ -57,7 +81,7 @@ export function RouteMap({ stops, height = 420, groups, line = true }: { stops: 
   );
 }
 
-/** "Map View" dialog with the stop list beside the map. */
+/** "Map View" dialog: the map only. Hover a point to see its details and orders. */
 export function RouteMapDialog({ title, subtitle, stops, onClose, groups, line }: { title: string; subtitle?: string; stops: MapStop[]; onClose: () => void; groups?: MapStop[][]; line?: boolean }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -72,15 +96,7 @@ export function RouteMapDialog({ title, subtitle, stops, onClose, groups, line }
           <button className="close-btn" onClick={onClose} aria-label="Close"><i className="fas fa-times" /></button>
         </div>
         <div className="cds-map-dialog-body">
-          <ol className="cds-map-stops">
-            {stops.map((s, i) => (
-              <li key={`${i}-${s.seq}-${s.name}`}>
-                <span className="dot" style={{ background: COLORS[s.status ?? 'PENDING'] }}>{s.seq}</span>
-                <div><div className="fw-semibold">{s.name}</div>{s.detail && <div className="text-muted text-xs">{s.detail}</div>}</div>
-              </li>
-            ))}
-          </ol>
-          <RouteMap stops={stops} height={460} groups={groups} line={line} />
+          <div className="flex-grow-1"><RouteMap stops={stops} height={520} groups={groups} line={line} /></div>
         </div>
       </div>
     </div>,

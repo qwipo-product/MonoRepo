@@ -93,12 +93,12 @@ export function cdsErrorText(e: unknown): string {
 }
 
 export interface Paged<T> { rows: T[]; total: number; pageNumber: number; pageSize: number }
-export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; city: string; state: string; retailerLat: number; retailerLng: number; distributorName: string; storeName: string; units: number };
+export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; city: string; state: string; retailerLat: number; retailerLng: number; distributorName: string; storeName: string; units: number; salesPersonName: string; salesPersonPhone: string };
 export interface ReportRunRow { id: string; reportId: string; filters: Record<string, string>; rows: number; at: string; by: string }
 export interface NewStore { code: string; name: string; address: string; city: string; state: string; lat: number; lng: number; polygon: [number, number][]; localities: string[]; managerName: string; managerPhone: string }
-export type StopView = TripStop & { otp: Omit<OtpTxn, 'code'> | null };
+export type StopView = TripStop & { otp: OtpTxn | null; refs: { id: string; no: string; retailer: string; units: number; value: number }[] };
 /** `shown`: the status shown (Assigned / In Progress / Completed / Cancelled) and what the vehicle is doing now. */
-export type TripView = Omit<Trip, 'stops'> & { ownerName: string; units: number; stops: StopView[]; shown: { status: TripShown; note: string } };
+export type TripView = Omit<Trip, 'stops'> & { ownerName: string; providerName: string; collected: { cod: number; digital: number }; units: number; stops: StopView[]; shown: { status: TripShown; note: string } };
 export type ReturnRow = ReturnRecord & { retailerName: string; distributorName: string; storeName: string; units: number; accepted: number; weightKg: number };
 export type GrnRow = Grn & { distributorName: string; cdsTripNo: string; pickupTripNos: string[]; received: number; dispatched: number; issues: boolean };
 export type CollectionRow = Collection & { retailerName: string };
@@ -125,7 +125,7 @@ export const cdsApi = {
   resources: (date: string) => call<Resources>('GET', '/cds/resources', undefined, { date }),
 
   searchOrders: (f: { cdsStoreId?: string; statuses?: OrderStatus[]; distributorId?: string; retailerId?: string; state?: string; city?: string; search?: string; fromDate?: string; toDate?: string; noActiveCdsTrip?: boolean; pageNumber?: number; pageSize?: number }) => call<Paged<OrderRow>>('POST', '/cds/orders/search', f),
-  order: (id: string) => call<{ order: CdsOrder; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
+  order: (id: string) => call<{ order: CdsOrder; salesPerson: { salesPersonName: string; salesPersonPhone: string }; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
   cancelOrder: (id: string, reason: string) => call<CdsOrder>('POST', `/cds/orders/${id}/cancel`, { reason }),
 
   createPickupPlan: (b: { orders: { orderId: string; cdsStoreId?: string }[]; plannedDate: string; slot?: string; pickup: { vehicleId: string; deliveryPersonId: string }; cdsDelivery?: { vehicleId: string; deliveryPersonId: string } | null; remarks?: string }) =>
@@ -137,9 +137,11 @@ export const cdsApi = {
   plans: (kind?: Plan['kind']) => call<PlanRow[]>('GET', '/cds/plans', undefined, { kind }),
 
   searchTrips: (f: { types?: TripType[]; statuses?: TripStatus[]; date?: string; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<TripView>>('POST', '/cds/trips/search', f),
-  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; distributorName: string; storeName: string; lines: CdsOrder['lines'] }[]; returns: { id: string; returnNo: string; status: ReturnStatus; orderNo: string }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
+  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; retailerAddress: string; distributorName: string; storeName: string; deliveredAt: string | null; lines: CdsOrder['lines'] }[]; returns: { id: string; returnNo: string; status: ReturnStatus; orderNo: string; orderId: string; retailerId: string | null; retailerName: string; retailerAddress: string; storeName: string; lines: { sku: string; name: string; unitPrice: number; qty: number; orderedQty: number }[]; distributorName: string; units: number; value: number }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
   startTrip: (id: string) => call<Trip>('POST', `/cds/trips/${id}/start`),
   cancelTrip: (id: string, reason: string) => call<Trip>('POST', `/cds/trips/${id}/cancel`, { reason }),
+  updateTripResources: (id: string, body: { vehicleId: string; deliveryPersonId: string }) => call<Trip>('POST', `/cds/trips/${id}/resources`, body),
+  updateTripHelper: (id: string, helperId: string) => call<Trip>('POST', `/cds/trips/${id}/helper`, { helperId }),
   sendStopOtp: (id: string, stopId: string) => call<{ otpId: string; sentToName: string; sentToPhone: string; expiresAt: string; demoSms: string }>('POST', `/cds/trips/${id}/stops/${stopId}/otp`),
   completeStop: (id: string, stopId: string, b: StopCompleteInput) => call<Trip>('POST', `/cds/trips/${id}/stops/${stopId}/complete`, b),
   failStop: (id: string, stopId: string, reason: string) => call<Trip>('POST', `/cds/trips/${id}/stops/${stopId}/fail`, { reason }),

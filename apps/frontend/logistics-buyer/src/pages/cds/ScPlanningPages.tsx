@@ -1,7 +1,7 @@
 // CDS Service Centre planning: Pickup Planning (distributors → CDS stores), Deliver to CDS, Return Planning
 // (CDS stores → distributors). Each plan generates its trips (see Trips). Screens follow Delivery Planning:
 // section cards with a count, short item lists, and a plan panel on the right.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
@@ -11,13 +11,13 @@ import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
-import { cdsApi, type OrderRow, type PlanRow, type ReturnRow, type TripView } from '../../api/services/cds.service';
-import { TRIP_SHOWN, TRIP_STATUS, TRIP_TYPE, type TripShown } from '../../cds/status';
+import { cdsApi, type OrderRow, type PlanRow, type ReturnRow } from '../../api/services/cds.service';
+import { TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
 import { SC_HUB } from '../../cds/engine';
 import { routeMetrics, sequenceStops } from '../../cds/planning';
-import { DEFAULT_ROUTE_CONFIG, type Plan, type RouteConfig, type TripStatus } from '../../cds/types';
-import { RouteMap, RouteMapDialog, STORE_COLORS, mapStops } from './RouteMap';
-import { AssignFields, Badge, ModuleIntro, Card, DetailHead, downloadCsv, Empty, ErrorBox, fmtDate, fmtDateTime, kg, Loading, money, PageHead, RowActions, SectionCard, SLOTS, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
+import { DEFAULT_ROUTE_CONFIG, type Plan, type RouteConfig } from '../../cds/types';
+import { RouteMap } from './RouteMap';
+import { AssignFields, Badge, ModuleIntro, downloadCsv, Empty, ErrorBox, fmtDate, fmtDateTime, kg, Loading, money, SectionCard, sumOf, Table, Tabs, useAction, useLoad, useMeta, type Assign } from './ui';
 import '../delivery-routes/DeliveryRoutesPage.css';
 import '../delivery-routes/CreateDeliveryRoutePage.css';
 import '../delivery-routes/OptimizedRoutesModal.css';
@@ -29,14 +29,14 @@ const products = <L extends { name: string }>(lines: L[], qty: (l: L) => number)
   return `${shown[0].name} × ${qty(shown[0])}${shown.length > 1 ? `, +${shown.length - 1} more` : ''}`;
 };
 
-/** Planning direction wording — the same "start to end" wording as Trips. */
+/** Planning direction wording — the same wording as the Trips tabs. */
 export const PLAN_DIRECTION = {
-  pickups: `${TRIP_TYPE.DISTRIBUTOR_PICKUP.direction} to CDS Stores`,
-  returns: TRIP_TYPE.CDS_RETURN.direction,
+  pickups: 'Seller to CDS Stores',
+  returns: 'CDS Stores to Sellers',
 };
 
-/** Planning — same layout as LBNP Delivery Planning: header with Create / Auto Plan Route, then section cards.
- *  Tabs: Consolidated Pickups (CDS Service Centre to Sellers to CDS Stores) and Consolidated Returns (CDS Stores to Sellers). */
+/** Planning — same screen as LBNP Delivery Planning: header with the create buttons, then the planning table.
+ *  Two tabs: Pickups (Seller to CDS Stores) and Returns (CDS Stores to Sellers). Created plans go to Trips. */
 export function PlanningPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -49,9 +49,9 @@ export function PlanningPage() {
         <div className="col-md-6">
           <div className="d-flex align-items-center">
             <i className="fas fa-shopping-bag text-primary me-2 fs-5" />
-            <h1 className="fs-3 mb-0 fw-bold">Planning</h1><ModuleIntro text="Plan pickups from sellers and returns to sellers, and assign the vehicle and delivery person." />
+            <h1 className="fs-3 mb-0 fw-bold">Planning</h1><ModuleIntro text="Plan pickups from sellers and returns to sellers. Each plan becomes a trip in Trips." />
           </div>
-          <p className="text-muted small">Manage and track your consolidated pickups and returns</p>
+          <p className="text-muted small">Manage and track your pickup and return routes</p>
         </div>
         <div className="col-md-6 d-flex justify-content-md-end justify-content-start align-items-end gap-2 pt-3">
           <button className="btn btn-sm btn-outline-success d-flex align-items-center text-nowrap" title="Select every waiting item and build the route automatically" onClick={() => navigate(`${create}?auto=1`)}>
@@ -60,17 +60,45 @@ export function PlanningPage() {
           </button>
           <button className="btn btn-sm btn-primary d-flex align-items-center text-nowrap" onClick={() => navigate(create)}>
             <i className="fas fa-upload me-1 fs-6" />
-            <span className="fs-6">{pickups ? 'Create Pickup Plan' : 'Create Return Plan'}</span>
+            <span className="fs-6">{pickups ? 'Create Manual Pickup Plan' : 'Create Manual Return Plan'}</span>
           </button>
         </div>
       </div>
       <div className="px-3">
-        <Tabs value={tab} onChange={(t) => setParams({ tab: t })} tabs={[
-          { id: 'pickups', label: 'Consolidated Pickups', sub: PLAN_DIRECTION.pickups, icon: 'fa-truck-ramp-box' },
-          { id: 'returns', label: 'Consolidated Returns', sub: PLAN_DIRECTION.returns, icon: 'fa-rotate-left' },
+        <Tabs value={tab} onChange={(v) => setParams({ tab: v })} tabs={[
+          { id: 'pickups', label: 'Pickups', sub: PLAN_DIRECTION.pickups, icon: 'fa-truck-ramp-box' },
+          { id: 'returns', label: 'Returns', sub: PLAN_DIRECTION.returns, icon: 'fa-rotate-left' },
         ]} />
       </div>
-      <div className="p-3 pt-0">{pickups ? <PickupPlans /> : <ReturnPlans />}</div>
+      <div className="p-3 pt-0">
+        <div className="mat-card mat-elevation-z3 mb-4">
+          <div className="mat-card-content p-0">
+            <table className="mat-mdc-table w-100">
+              <thead>
+                <tr className="mat-mdc-header-row">
+                  <Th icon="fa-calendar" label="Created Date" />
+                  <Th icon="fa-hashtag" label="Route ID" />
+                  <Th icon="fa-map-marker-alt" label={pickups ? 'Pickup Points' : 'Drop Points'} align="center" />
+                  <Th icon="fa-calendar-check" label={pickups ? 'Pickup Date' : 'Return Date'} align="center" />
+                  <Th icon="fa-weight-hanging" label="Weight / Vol" align="right" />
+                  <Th icon="fa-info-circle" label="Status" align="center" />
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="text-center py-4" colSpan={6}>
+                    <i className="fas fa-inbox mb-3 text-muted" style={{ fontSize: '2rem' }} />
+                    <p className="mb-0">{pickups ? 'No pickup plannings found' : 'No return plannings found'}</p>
+                    <p className="mb-0 small text-muted mt-1">
+                      Created plans move to <a role="button" className="text-primary" onClick={() => navigate(`/cds/trips?tab=${pickups ? 'DISTRIBUTOR_PICKUP' : 'CDS_RETURN'}`)}>Trips › {pickups ? 'Pickups' : 'Returns'}</a>.
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -79,72 +107,6 @@ export function PlanningPage() {
 const Th = ({ icon, label, align = 'left' }: { icon: string; label: string; align?: 'left' | 'center' | 'right' }) => (
   <th className={`mat-mdc-header-cell text-uppercase py-2 small ${align === 'center' ? 'px-2 text-center' : 'px-3'} ${align === 'right' ? 'text-end' : ''}`}><i className={`fas ${icon} me-1 text-primary`} /> {label}</th>
 );
-
-/** LBNP section card: coloured band (icon, title, one line, count pill) and a table. */
-function PlanSection({ tone, icon, title, sub, count, head, children, empty, filters }: { tone: 'self-fleet' | 'rfq' | 'done'; icon: string; title: string; sub: string; count: number; head: ReactNode; children: ReactNode; empty: string; filters?: ReactNode }) {
-  return (
-    <div className={`mat-card mat-elevation-z3 mb-4 ${tone}-card`}>
-      <div className={`section-header ${tone}-header`}>
-        <div className="section-left">
-          <div className="section-icon"><i className={`fas ${icon}`} /></div>
-          <div><h2>{title}</h2><p>{sub}</p></div>
-        </div>
-        <div className="section-right"><span className="count-pill">{count}</span><span className="count-label">plans</span></div>
-      </div>
-      {filters}
-      <div className="mat-card-content p-0 table-responsive">
-        <table className="mat-mdc-table w-100">
-          <thead>{head}</thead>
-          <tbody>
-            {children}
-            {!count && <tr><td className="text-center py-4" colSpan={12}><i className="fas fa-inbox mb-2 text-muted d-block" style={{ fontSize: '2rem' }} /><p className="mb-0 small">{empty}</p></td></tr>}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-type PlanFilter = 'ALL' | TripShown;
-/** Status filter for the plan list: All, Assigned, In Progress, Completed, Cancelled — each with its count. */
-function StatusFilter({ value, onChange, counts }: { value: PlanFilter; onChange: (v: PlanFilter) => void; counts: Record<PlanFilter, number> }) {
-  const opts: PlanFilter[] = ['ALL', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-  return (
-    <div className="cds-plan-filter" role="group" aria-label="Filter by status">
-      <span className="filter-label"><i className="fas fa-filter me-1" />Status</span>
-      {opts.map((o) => (
-        <button key={o} type="button" className={`plan-filter-chip${value === o ? ' active' : ''}`} aria-pressed={value === o} onClick={() => onChange(o)}>
-          {o === 'ALL' ? 'All' : TRIP_SHOWN[o].label}<span className="n">{counts[o]}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-const countBy = <T,>(rows: T[], status: (r: T) => TripShown) => {
-  const c = { ALL: rows.length, ASSIGNED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 } as Record<PlanFilter, number>;
-  rows.forEach((r) => { c[status(r)] += 1; });
-  return c;
-};
-
-/** Trip status pill, like the LBNP "Trip Created" pill; opens the trip. */
-function TripPill({ trip }: { trip: TripView }) {
-  const navigate = useNavigate();
-  const st = trip.shown.status;
-  const cls = st === 'CANCELLED' ? 'status-failed' : st === 'COMPLETED' ? 'status-trip-created' : 'status-generating';
-  const icon = st === 'CANCELLED' ? 'fa-ban' : st === 'COMPLETED' ? 'fa-check-circle' : st === 'IN_PROGRESS' ? 'fa-truck-fast' : 'fa-calendar-check';
-  return <><span className={`${cls} cds-trip-pill`} role="link" title={`Open ${trip.tripNo}`} onClick={() => navigate(`/cds/trips/${trip.id}`)}><i className={`fas ${icon} me-1`} />{trip.tripNo} · {TRIP_SHOWN[st].label}</span>{trip.shown.note && <div className="cds-trip-note">{trip.shown.note}</div>}</>;
-}
-
-/** The waiting-items line above the cards (LBNP note look). Planning actions are in the page header. */
-function WaitingNote({ count, text }: { count: number; text: string }) {
-  if (!count) return null;
-  return (
-    <div className="cds-note mb-3 align-items-center">
-      <i className="fas fa-box" />
-      <div className="flex-grow-1"><b>{count}</b> {text}</div>
-    </div>
-  );
-}
 
 /** Recently created plans with the trips they generated. */
 export function RecentPlans({ kind, title }: { kind: Plan['kind']; title: string }) {
@@ -174,38 +136,35 @@ export function RecentPlans({ kind, title }: { kind: Plan['kind']; title: string
   );
 }
 
-const check = (label: string, on: boolean, toggle: () => void) => <input type="checkbox" className="form-check-input" aria-label={label} checked={on} onChange={toggle} />;
 
 // ---------------------------------------------------------------- Pickup Planning (like Delivery Planning)
 
 const dayKey = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
 
 type Place = { id: string; name: string; address: string; lat: number; lng: number };
-/** The pickup route the plan creates (same rules as the engine): distributors of the orders from the Service Centre
- *  hub in the shortest order, then the CDS stores of the orders (fixed by each retailer's location). */
+/** The pickup route the plan creates (same rules as the engine): one trip from the Service Centre hub to the
+ *  sellers (distributors) in the shortest order, then on to the CDS stores of the orders. */
 function autoRoute(orders: OrderRow[], distributors: Place[], stores: Place[]) {
-  const leg = (start: Place | typeof SC_HUB, places: Place[], key: (o: OrderRow) => string) =>
+  const leg = (start: { lat: number; lng: number }, places: Place[], key: (o: OrderRow) => string, from: number) =>
     sequenceStops(start, places).map((i, k) => {
       const p = places[i];
       const os = orders.filter((o) => key(o) === p.id);
-      return { ...p, seq: k + 1, orders: os.length, kg: sumOf(os, (o) => o.weightKg) };
+      return { ...p, seq: from + k + 1, orders: os.length, kg: sumOf(os, (o) => o.weightKg) };
     });
   const dists = distributors.filter((d) => orders.some((o) => o.distributorId === d.id));
   const sts = stores.filter((s) => orders.some((o) => o.cdsStoreId === s.id));
-  const pickups = leg(SC_HUB, dists, (o) => o.distributorId);
-  const first = distributors.find((d) => d.id === orders[0]?.distributorId) ?? SC_HUB;
-  const drops = leg(first, sts, (o) => o.cdsStoreId);
+  const pickups = leg(SC_HUB, dists, (o) => o.distributorId, 0);
+  const drops = leg(pickups[pickups.length - 1] ?? SC_HUB, sts, (o) => o.cdsStoreId, pickups.length);
   const m = routeMetrics([SC_HUB, ...pickups, ...drops], pickups.length + drops.length);
-  const leg1 = routeMetrics([SC_HUB, ...pickups], pickups.length);
-  const leg2 = routeMetrics([first, ...drops], drops.length);
-  return { pickups, drops, start2: first, leg1, leg2, km: m.distanceKm, minutes: m.etaMinutes };
+  return { pickups, drops, km: m.distanceKm, minutes: m.etaMinutes };
 }
 
 /** Where a route goes past the Settings › Pick up / Return limits. */
-function routeLimitWarnings(cfg: RouteConfig | undefined, stops: number, km: number, minutes: number, loadKg: number) {
-  const c = cfg ?? DEFAULT_ROUTE_CONFIG;
+function routeLimitWarnings(cfg: RouteConfig | undefined, stops: { cds: number; distributor: number }, km: number, minutes: number, loadKg: number) {
+  const c = { ...DEFAULT_ROUTE_CONFIG, ...cfg };
   return [
-    stops > c.maxStops && `${stops} stops (limit ${c.maxStops})`,
+    stops.cds > c.maxCdsStops && `${stops.cds} CDS stops (limit ${c.maxCdsStops})`,
+    stops.distributor > c.maxDistributorStops && `${stops.distributor} distributor stops (limit ${c.maxDistributorStops})`,
     km > c.maxDistanceKm && `~${km} km (limit ${c.maxDistanceKm} km)`,
     loadKg > c.maxWeightKg && `${Math.round(loadKg * 10) / 10} kg (limit ${c.maxWeightKg} kg)`,
     minutes > c.maxTravelHours * 60 && `~${Math.round((minutes / 60) * 10) / 10} h (limit ${c.maxTravelHours} h)`,
@@ -221,84 +180,6 @@ function RouteLimitNote({ warnings, kind }: { warnings: string[]; kind: 'pickup'
   );
 }
 
-/** Consolidated Pickups — LBNP Delivery Planning cards: Planned Pickups (blue) and Completed Pickups (green). Each plan
- *  has two trips: the Distributor Pickup Trip (CDS Service Centre to Sellers) and the CDS Delivery Trip (Sellers to CDS Stores). */
-function PickupPlans() {
-  const navigate = useNavigate();
-  const plans = useLoad(() => cdsApi.plans('PICKUP'), []);
-  const trips = useLoad(() => cdsApi.searchTrips({ types: ['DISTRIBUTOR_PICKUP', 'CDS_DELIVERY'], pageSize: 0 }), []);
-  const waiting = useLoad(() => cdsApi.searchOrders({ statuses: ['CONFIRMED'], pageSize: 1 }), []);
-  const [map, setMap] = useState<TripView[] | null>(null);
-  const byId = useMemo(() => new Map((trips.data?.rows ?? []).map((t) => [t.id, t])), [trips.data]);
-  const rows = (plans.data ?? []).map((p) => {
-    const pt = p.trips.find((t) => t.type === 'DISTRIBUTOR_PICKUP');
-    const cdt = p.trips.find((t) => t.type === 'CDS_DELIVERY');
-    return { p, trip: pt ? byId.get(pt.id) : undefined, cdsTrip: cdt ? byId.get(cdt.id) : undefined };
-  });
-  // A pickup plan's status follows its CDS Delivery Trip, which is In Progress from the first seller pickup to the last CDS drop.
-  const planStatus = (r: (typeof rows)[number]): TripShown => (r.trip?.shown.status === 'CANCELLED' ? 'CANCELLED' : r.cdsTrip?.shown.status ?? r.trip?.shown.status ?? 'ASSIGNED');
-  const [filter, setFilter] = useState<PlanFilter>('ALL');
-  const shown = rows.filter((r) => filter === 'ALL' || planStatus(r) === filter);
-  const head = (
-    <tr className="mat-mdc-header-row">
-      <Th icon="fa-calendar" label="Created Date" />
-      <Th icon="fa-hashtag" label="Plan ID" />
-      <Th icon="fa-map-marker-alt" label="Pickup Points" align="center" />
-      <Th icon="fa-warehouse" label="CDS Stores" align="center" />
-      <Th icon="fa-calendar-check" label="Pickup Date" align="center" />
-      <Th icon="fa-weight-hanging" label="Weight / Orders" align="right" />
-      <Th icon="fa-user" label="Delivery Person" />
-      <Th icon="fa-info-circle" label="Status" align="center" />
-      <Th icon="fa-cogs" label="Actions" align="center" />
-    </tr>
-  );
-  const row = ({ p, trip, cdsTrip }: (typeof rows)[number]) => (
-    <tr key={p.id} className="mat-mdc-row">
-      <td className="mat-mdc-cell py-2 px-3 small">{fmtDateTime(p.createdAt)}</td>
-      <td className="mat-mdc-cell py-2 px-3 small fw-semibold">{p.planNo}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{trip ? `${trip.stops.length} point${trip.stops.length === 1 ? '' : 's'}` : '—'}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{cdsTrip ? cdsTrip.stops.filter((s) => s.action === 'CDS_HANDOVER').length : '—'}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{fmtDate(p.plannedDate)}</td>
-      <td className="mat-mdc-cell py-2 px-3 small text-end">{trip ? kg(trip.loadKg) : '—'} / {p.orderIds.length} orders</td>
-      <td className="mat-mdc-cell py-2 px-3 small">{trip?.deliveryPersonName ?? '—'}<div className="text-muted text-xs">{trip?.vehicleRegNo}</div></td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">
-        <div className="d-flex flex-column align-items-center gap-1">
-          {trip && <TripPill trip={trip} />}
-          {cdsTrip && <TripPill trip={cdsTrip} />}
-        </div>
-      </td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">
-        <div className="d-flex align-items-center justify-content-center gap-1">
-          {trip && <button className="btn btn-sm text-primary" title="View trip" aria-label={`View ${trip.tripNo}`} onClick={() => navigate(`/cds/trips/${trip.id}`)}><i className="fas fa-eye" /></button>}
-          {trip && <button className="btn btn-sm text-primary" title="Map view" aria-label={`Map view of ${p.planNo}`} onClick={() => setMap([trip, cdsTrip].filter((x): x is TripView => !!x))}><i className="fas fa-map-location-dot" /></button>}
-        </div>
-      </td>
-    </tr>
-  );
-  return (
-    <>
-      <WaitingNote count={waiting.data?.total ?? 0} text={`confirmed order${waiting.data?.total === 1 ? '' : 's'} from the Seller Store waiting for a pickup plan.`} />
-      {(plans.error || trips.error) && <ErrorBox text={plans.error || trips.error} onRetry={() => { plans.reload(); trips.reload(); }} />}
-      {(plans.loading && !plans.data) || (trips.loading && !trips.data) ? <Loading text="Loading pickup plans..." /> : (
-        <>
-          <PlanSection tone="self-fleet" icon="fa-truck" title="Pickup Plans" sub={`${TRIP_TYPE.DISTRIBUTOR_PICKUP.direction}, then ${TRIP_TYPE.CDS_DELIVERY.direction}`} count={shown.length} head={head}
-            empty={filter === 'ALL' ? 'No pickup plans yet' : `No ${TRIP_SHOWN[filter].label.toLowerCase()} pickup plans`}
-            filters={<StatusFilter value={filter} onChange={setFilter} counts={countBy(rows, planStatus)} />}>{shown.map(row)}</PlanSection>
-        </>
-      )}
-      {map && (
-        <RouteMapDialog
-          title={`${map.map((t) => t.tripNo).join(' + ')} · Map View`}
-          subtitle={map.map((t) => `${TRIP_TYPE[t.type].label} (${TRIP_TYPE[t.type].direction})`).join(' · ')}
-          stops={map.flatMap((t) => mapStops(t.stops))}
-          groups={map.length > 1 ? map.map((t) => mapStops(t.stops)) : undefined}
-          onClose={() => setMap(null)}
-        />
-      )}
-    </>
-  );
-}
-
 type SortKey = 'confirmedAt' | 'retailerName' | 'city' | 'distributorName' | 'orderNo' | 'storeName' | 'orderValue' | 'weightKg';
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -307,7 +188,7 @@ const ORD = (n: number) => (n % 100 >= 11 && n % 100 <= 13 ? 'th' : n % 10 === 1
 const longDate = (d: Date) => `${d.toLocaleDateString('en-US', { month: 'long' })} ${d.getDate()}${ORD(d.getDate())}, ${d.getFullYear()}`;
 const dmy = (iso: string) => { const d = new Date(iso); return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`; };
 
-/** Create Pickup Plan — same layout as LBNP Create Delivery Route: Pickup Date, State / City / Distributor, Order
+/** Create Manual Pickup Plan — same layout as LBNP Create Delivery Route: Pickup Date, State / City / Distributor, Order
  *  Dates, Available Orders, then "Plan Pickup Route" opens the Auto Pickup Route (like Optimized Delivery Routes). */
 export function CreatePickupPlanPage() {
   const navigate = useNavigate();
@@ -373,7 +254,7 @@ export function CreatePickupPlanPage() {
     <div className="cds-page create-delivery-route-page create-route-container">
       <header className="orders-header">
         <button className="back-btn" aria-label="Back" onClick={() => navigate('/cds/planning?tab=pickups')}><i className="fas fa-arrow-left" /></button>
-        <h1><i className="fas fa-route" /> Create Pickup Plan</h1>
+        <h1><i className="fas fa-route" /> Create Manual Pickup Plan</h1>
       </header>
 
       <div className="route-card">
@@ -488,7 +369,7 @@ export function CreatePickupPlanPage() {
                       <td>{o.city}<div className="text-muted text-xs">{o.state}</div></td>
                       <td>{o.distributorName}</td>
                       <td>{o.orderNo}<div className="text-muted text-xs">{o.sellerOrderRef}</div></td>
-                      <td>{o.storeName} <span className="cds-auto-tag" title="The retailer is inside this CDS store's service area (polygon)"><i className="fas fa-location-crosshairs me-1" />Auto</span></td>
+                      <td>{o.storeName}</td>
                       <td className="text-center">{money(o.orderValue)}</td>
                       <td className="text-center">{kg(o.weightKg)}</td>
                       <td className="text-center"><span className="cds-wait-badge">Confirmed</span><div className="cds-trip-note">Waiting for pickup</div></td>
@@ -521,41 +402,34 @@ export function CreatePickupPlanPage() {
           distributors={meta.data.distributors}
           stores={meta.data.allStores ?? meta.data.stores}
           onClose={() => setPlanning(false)}
-          onDone={() => navigate('/cds/planning?tab=pickups')}
+          onDone={() => navigate('/cds/trips?tab=DISTRIBUTOR_PICKUP')}
         />
       )}
     </div>
   );
 }
 
-/** Auto Pickup Route — the routes the plan creates, same look as LBNP "Optimized Delivery Routes": summary, one card
- *  per trip (stops, distance, load, vehicle and delivery person), Map View, then Confirm Routes. */
+/** Auto Pickup Route — the one Pickup Trip the plan creates (LBNP "Optimized Delivery Routes" look): summary, the trip
+ *  card with its seller pickups and CDS store drops, vehicle and delivery person, Map View, then Confirm Routes. */
 function AutoPickupRouteModal({ orders, plannedDate, distributors, stores, onClose, onDone }: { orders: OrderRow[]; plannedDate: string; distributors: Place[]; stores: Place[]; onClose: () => void; onDone: () => void }) {
   const { busy, run } = useAction();
   const [view, setView] = useState<'routes' | 'map'>('routes');
-  const [open, setOpen] = useState<Set<number>>(new Set([1, 2]));
-  const [pickup, setPickup] = useState<Assign>({ vehicleId: '', deliveryPersonId: '' });
-  const [same, setSame] = useState(true);
-  const [leg, setLeg] = useState<Assign>({ vehicleId: '', deliveryPersonId: '' });
+  const [open, setOpen] = useState(true);
+  const [a, setA] = useState<Assign>({ vehicleId: '', deliveryPersonId: '' });
   const res = useLoad(() => cdsApi.resources(plannedDate), [plannedDate]);
   const route = useMemo(() => autoRoute(orders, distributors, stores), [orders, distributors, stores]);
   const loadKg = sumOf(orders, (o) => o.weightKg);
-  const vehicle = (id: string) => res.data?.vehicles.find((v) => v.id === id);
-  const util = (id: string) => { const v = vehicle(id); return v ? Math.round((loadKg / v.capacityKg) * 1000) / 10 : 0; };
-  const legs = [
-    { no: 1, type: TRIP_TYPE.DISTRIBUTOR_PICKUP, stops: route.pickups, km: route.leg1.distanceKm, min: route.leg1.etaMinutes, assign: pickup },
-    { no: 2, type: TRIP_TYPE.CDS_DELIVERY, stops: route.drops, km: route.leg2.distanceKm, min: route.leg2.etaMinutes, assign: same ? pickup : leg },
-  ];
+  const v = res.data?.vehicles.find((x) => x.id === a.vehicleId);
+  const util = v ? Math.round((loadKg / v.capacityKg) * 1000) / 10 : 0;
+  const stops = [...route.pickups.map((s) => ({ ...s, kind: 'Pickup from seller' })), ...route.drops.map((s) => ({ ...s, kind: 'Drop at CDS store' }))];
   const meta = useMeta();
-  const limits = legs.flatMap((l) => routeLimitWarnings(meta.data?.settings.pickupRoute, l.stops.length, l.km, l.min, loadKg).map((w) => `Trip ${l.no}: ${w}`));
-  const ready = !!pickup.vehicleId && !!pickup.deliveryPersonId && (same || (!!leg.vehicleId && !!leg.deliveryPersonId));
+  const limits = routeLimitWarnings(meta.data?.settings.pickupRoute, { cds: route.drops.length, distributor: route.pickups.length }, route.km, route.minutes, loadKg);
   const confirmRoutes = async () => {
-    const r = await run(() => cdsApi.createPickupPlan({ orders: orders.map((o) => ({ orderId: o.id })), plannedDate, pickup, cdsDelivery: same ? pickup : leg }), 'Pickup plan created with its CDS delivery trip');
+    const r = await run(() => cdsApi.createPickupPlan({ orders: orders.map((o) => ({ orderId: o.id })), plannedDate, pickup: a }), 'Pickup plan created. See it in Trips › Pickups.');
     if (r) onDone();
   };
-  const downloadCsvRoutes = () => downloadCsv(`pickup-route-${plannedDate}`, [{ key: 'trip', label: 'Trip' }, { key: 'seq', label: 'Stop' }, { key: 'name', label: 'Name' }, { key: 'address', label: 'Address' }, { key: 'orders', label: 'Orders' }, { key: 'kg', label: 'Weight (kg)' }],
-    legs.flatMap((l) => l.stops.map((s) => ({ trip: `${l.type.label} (${l.type.direction})`, seq: s.seq, name: s.name, address: s.address, orders: s.orders, kg: Math.round(s.kg * 10) / 10 }))));
-  const allStops = [...route.pickups, ...route.drops.map((d) => ({ ...d, seq: d.seq + route.pickups.length }))];
+  const csv = () => downloadCsv(`pickup-route-${plannedDate}`, [{ key: 'seq', label: 'Stop' }, { key: 'kind', label: 'Action' }, { key: 'name', label: 'Name' }, { key: 'address', label: 'Address' }, { key: 'orders', label: 'Orders' }, { key: 'kg', label: 'Weight (kg)' }],
+    stops.map((s) => ({ seq: s.seq, kind: s.kind, name: s.name, address: s.address, orders: s.orders, kg: Math.round(s.kg * 10) / 10 })));
   return createPortal(
     <div className="optimized-routes-modal modal-overlay">
       <div className={`modal-container${view === 'map' ? ' modal-container-wide' : ''}`} role="dialog" aria-modal="true" aria-label="Auto Pickup Route">
@@ -569,7 +443,7 @@ function AutoPickupRouteModal({ orders, plannedDate, distributors, stores, onClo
               <div className={`sub-tab${view === 'routes' ? ' active' : ''}`} role="tab" onClick={() => setView('routes')}> Routes </div>
               <div className={`sub-tab${view === 'map' ? ' active' : ''}`} role="tab" onClick={() => setView('map')}><i className="fas fa-map-marked-alt" style={{ marginRight: 4 }} /> Map View </div>
             </div>
-            <button className="cds-csv-btn" onClick={downloadCsvRoutes}> Download CSV </button>
+            <button className="cds-csv-btn" onClick={csv}> Download CSV </button>
           </div>
 
           {view === 'routes' && (
@@ -584,64 +458,48 @@ function AutoPickupRouteModal({ orders, plannedDate, distributors, stores, onClo
                 <div className="summary-item"><div className="summary-label">Total Order Value</div><div className="summary-value">{money(sumOf(orders, (o) => o.orderValue))}</div></div>
                 <div className="summary-item"><div className="summary-label">Total Distance / Time</div><div className="summary-value">~{route.km} km / ~{route.minutes} min</div></div>
               </div>
-
-              {legs.map((l) => (
-                <div key={l.no} className="route-card">
-                  <div className="route-header">
-                    <div className="route-title"><i className={`fas ${l.type.icon}`} /> Trip {l.no} · {l.type.label} <span className="cds-route-chip ms-2">{l.type.direction}</span></div>
-                    <div className="route-meta"><span className="meta-date">{fmtDate(plannedDate)}</span></div>
+              <div className="route-card">
+                <div className="route-header">
+                  <div className="route-title"><i className={`fas ${TRIP_TYPE.DISTRIBUTOR_PICKUP.icon}`} /> {TRIP_TYPE.DISTRIBUTOR_PICKUP.label} <span className="cds-route-chip ms-2">{TRIP_TYPE.DISTRIBUTOR_PICKUP.direction}</span></div>
+                  <div className="route-meta"><span className="meta-date">{fmtDate(plannedDate)}</span></div>
+                </div>
+                <div className="route-stats">
+                  <div className="stat">
+                    <div className="stat-label">Vehicle / Load / Vehicle Utilization</div>
+                    <div className="stat-value">{v?.type ?? 'Not selected'} /<span>{kg(loadKg)}</span> /<span>{util}%</span></div>
                   </div>
-                  <div className="route-stats">
-                    <div className="stat">
-                      <div className="stat-label">Vehicle / Load / Vehicle Utilization</div>
-                      <div className="stat-value">{vehicle(l.assign.vehicleId)?.type ?? 'Not selected'} /<span>{kg(loadKg)}</span> /<span>{util(l.assign.vehicleId)}%</span></div>
-                    </div>
-                    <div className="stat">
-                      <div className="stat-label">Stops / Distance / Time</div>
-                      <div className="stat-value">{l.stops.length} /<span>~{l.km} km</span> /<span>~{l.min} min</span></div>
-                    </div>
-                  </div>
-                  <div className="cds-route-assign">
-                    {l.no === 1 ? (
-                      <AssignFields label="Vehicle & Delivery Person" date={plannedDate} loadKg={loadKg} value={pickup} onChange={setPickup} />
-                    ) : (
-                      <div className="d-flex flex-column gap-2">
-                        <div className="form-check"><input id="same" className="form-check-input" type="checkbox" checked={same} onChange={(e) => setSame(e.target.checked)} /><label htmlFor="same" className="form-check-label">Same vehicle and delivery person as Trip 1</label></div>
-                        {!same && <AssignFields label="Vehicle & Delivery Person" date={plannedDate} loadKg={loadKg} value={leg} onChange={setLeg} allowBusy={pickup} />}
-                      </div>
-                    )}
-                  </div>
-                  <div className="orders-section">
-                    <div className="orders-header" role="button" onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(l.no)) n.delete(l.no); else n.add(l.no); return n; })}>
-                      {l.no === 1 ? 'Pickup Points' : 'CDS Stores'} ({l.stops.length}) <i className={`fas ${open.has(l.no) ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
-                    </div>
-                    {open.has(l.no) && (
-                      <div className="customer-list">
-                        {l.stops.map((s) => (
-                          <div key={s.id} className="customer-row">
-                            <div><i className="fas fa-map-marker-alt" /> <b>{s.seq}.</b> {s.name}<div className="text-muted text-xs ms-4">{s.address}</div></div>
-                            <span className="order-pill">{s.orders} order{s.orders === 1 ? '' : 's'} · {kg(s.kg)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="stat">
+                    <div className="stat-label">Stops / Distance / Time</div>
+                    <div className="stat-value">{stops.length} /<span>~{route.km} km</span> /<span>~{route.minutes} min</span></div>
                   </div>
                 </div>
-              ))}
+                <div className="cds-route-assign"><AssignFields label="Vehicle & Driver" date={plannedDate} loadKg={loadKg} value={a} onChange={setA} /></div>
+                <div className="orders-section">
+                  <div className="orders-header" role="button" onClick={() => setOpen((x) => !x)}>Stops ({stops.length}) <i className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'}`} /></div>
+                  {open && (
+                    <div className="customer-list">
+                      {stops.map((s) => (
+                        <div key={`${s.kind}-${s.id}`} className="customer-row">
+                          <div><i className="fas fa-map-marker-alt" /> <b>{s.seq}.</b> {s.name} <span className="text-muted small">· {s.kind}</span><div className="text-muted text-xs ms-4">{s.address}</div></div>
+                          <span className="order-pill">{s.orders} order{s.orders === 1 ? '' : 's'} · {kg(s.kg)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
           {view === 'map' && (
             <div className="pt-3">
-              <RouteMap height={520} groups={[[{ seq: 0, name: SC_HUB.name, lat: SC_HUB.lat, lng: SC_HUB.lng }, ...route.pickups.map((p) => ({ seq: p.seq, name: p.name, lat: p.lat, lng: p.lng }))], [{ seq: 0, name: route.start2.name, lat: route.start2.lat, lng: route.start2.lng }, ...route.drops.map((d) => ({ seq: d.seq + route.pickups.length, name: d.name, lat: d.lat, lng: d.lng }))]]}
-                stops={allStops.map((x) => ({ seq: x.seq, name: x.name, detail: x.address, lat: x.lat, lng: x.lng }))} />
-              <div className="text-muted small mt-2"><span className="cds-legend-dot" style={{ background: STORE_COLORS[0] }} />Trip 1 · {TRIP_TYPE.DISTRIBUTOR_PICKUP.label} <span className="cds-legend-dot ms-3" style={{ background: STORE_COLORS[1] }} />Trip 2 · {TRIP_TYPE.CDS_DELIVERY.label}</div>
+              <RouteMap height={520} stops={[{ seq: 0, name: SC_HUB.name, detail: 'Start', lat: SC_HUB.lat, lng: SC_HUB.lng }, ...stops.map((s) => ({ seq: s.seq, name: s.name, detail: `${s.kind} · ${s.address}`, lat: s.lat, lng: s.lng }))]} />
             </div>
           )}
         </div>
         <div className="modal-footer">
           <button className="btn-back" onClick={onClose}>Back</button>
-          <button className="btn-confirm-routes" disabled={!ready || busy} onClick={() => void confirmRoutes()}>{busy ? <><span className="spinner-border spinner-border-sm me-2" />Creating…</> : ' Confirm Routes '}</button>
+          <button className="btn-confirm-routes" disabled={!a.vehicleId || !a.deliveryPersonId || busy} onClick={() => void confirmRoutes()}>{busy ? <><span className="spinner-border spinner-border-sm me-2" />Creating…</> : ' Confirm Routes '}</button>
         </div>
       </div>
     </div>,
@@ -654,75 +512,6 @@ function AutoPickupRouteModal({ orders, plannedDate, distributors, stores, onClo
 const returnValue = (r: ReturnRow) => sumOf(r.lines, (l) => (l.acceptedQty ?? 0) * l.unitPrice);
 /** When the return reached the CDS (accepted there), else when it was last updated. */
 const receivedAt = (r: ReturnRow) => [...r.history].reverse().find((h) => h.to === 'RECEIVED_AT_CDS')?.at ?? r.updatedAt;
-
-/** Consolidated Returns — LBNP Delivery Planning cards: Planned Returns (purple) and Completed Returns (green). */
-function ReturnPlans() {
-  const navigate = useNavigate();
-  const plans = useLoad(() => cdsApi.plans('RETURN'), []);
-  const trips = useLoad(() => cdsApi.searchTrips({ types: ['CDS_RETURN'], pageSize: 0 }), []);
-  const rets = useLoad(() => cdsApi.searchReturns({ pageSize: 0 }), []);
-  const waiting = useLoad(() => cdsApi.searchReturns({ statuses: ['RECEIVED_AT_CDS'], unplanned: true, pageSize: 0 }), []);
-  const [map, setMap] = useState<TripView | null>(null);
-  const tripById = useMemo(() => new Map((trips.data?.rows ?? []).map((t) => [t.id, t])), [trips.data]);
-  const retById = useMemo(() => new Map((rets.data?.rows ?? []).map((r) => [r.id, r])), [rets.data]);
-  const toPlan = (waiting.data?.rows ?? []).filter((r) => r.accepted > 0).length;
-  const rows = (plans.data ?? []).map((p) => {
-    const ref = p.trips.find((t) => t.type === 'CDS_RETURN');
-    const list = p.returnIds.map((id) => retById.get(id)).filter((r): r is ReturnRow => !!r);
-    return { p, trip: ref ? tripById.get(ref.id) : undefined, list };
-  });
-  const planStatus = (r: (typeof rows)[number]): TripShown => r.trip?.shown.status ?? 'ASSIGNED';
-  const [filter, setFilter] = useState<PlanFilter>('ALL');
-  const shown = rows.filter((r) => filter === 'ALL' || planStatus(r) === filter);
-  const head = (
-    <tr className="mat-mdc-header-row">
-      <Th icon="fa-calendar" label="Created Date" />
-      <Th icon="fa-hashtag" label="Plan ID" />
-      <Th icon="fa-warehouse" label="CDS Pickups" align="center" />
-      <Th icon="fa-industry" label="Sellers" align="center" />
-      <Th icon="fa-calendar-check" label="Return Date" align="center" />
-      <Th icon="fa-weight-hanging" label="Weight / Returns" align="right" />
-      <Th icon="fa-indian-rupee-sign" label="Return Value" align="right" />
-      <Th icon="fa-user" label="Delivery Person" />
-      <Th icon="fa-info-circle" label="Status" align="center" />
-      <Th icon="fa-cogs" label="Actions" align="center" />
-    </tr>
-  );
-  const row = ({ p, trip, list: rs }: (typeof rows)[number]) => (
-    <tr key={p.id} className="mat-mdc-row">
-      <td className="mat-mdc-cell py-2 px-3 small">{fmtDateTime(p.createdAt)}</td>
-      <td className="mat-mdc-cell py-2 px-3 small fw-semibold">{p.planNo}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{new Set(rs.map((r) => r.cdsStoreId)).size || '—'}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{new Set(rs.map((r) => r.distributorId)).size || '—'}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{fmtDate(p.plannedDate)}</td>
-      <td className="mat-mdc-cell py-2 px-3 small text-end">{trip ? kg(trip.loadKg) : '—'} / {p.returnIds.length} returns</td>
-      <td className="mat-mdc-cell py-2 px-3 small text-end">{money(sumOf(rs, returnValue))}</td>
-      <td className="mat-mdc-cell py-2 px-3 small">{trip?.deliveryPersonName ?? '—'}<div className="text-muted text-xs">{trip?.vehicleRegNo}</div></td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">{trip ? <TripPill trip={trip} /> : '—'}</td>
-      <td className="mat-mdc-cell py-2 px-2 small text-center">
-        <div className="d-flex align-items-center justify-content-center gap-1">
-          {trip && <button className="btn btn-sm text-primary" title="View trip" aria-label={`View ${trip.tripNo}`} onClick={() => navigate(`/cds/trips/${trip.id}`)}><i className="fas fa-eye" /></button>}
-          {trip && <button className="btn btn-sm text-primary" title="Map view" aria-label={`Map view of ${p.planNo}`} onClick={() => setMap(trip)}><i className="fas fa-map-location-dot" /></button>}
-        </div>
-      </td>
-    </tr>
-  );
-  const err = plans.error || trips.error || rets.error;
-  return (
-    <>
-      <WaitingNote count={toPlan} text={`accepted return${toPlan === 1 ? '' : 's'} at the CDS stores waiting for a return plan.`} />
-      {err && <ErrorBox text={err} onRetry={() => { plans.reload(); trips.reload(); rets.reload(); }} />}
-      {(plans.loading && !plans.data) || (trips.loading && !trips.data) || (rets.loading && !rets.data) ? <Loading text="Loading return plans..." /> : (
-        <>
-          <PlanSection tone="rfq" icon="fa-truck-moving" title="Return Plans" sub={`${TRIP_TYPE.CDS_RETURN.label}s (${TRIP_TYPE.CDS_RETURN.direction})`} count={shown.length} head={head}
-            empty={filter === 'ALL' ? 'No return plans yet' : `No ${TRIP_SHOWN[filter].label.toLowerCase()} return plans`}
-            filters={<StatusFilter value={filter} onChange={setFilter} counts={countBy(rows, planStatus)} />}>{shown.map(row)}</PlanSection>
-        </>
-      )}
-      {map && <RouteMapDialog title={`${map.tripNo} · Map View`} subtitle={`${TRIP_TYPE.CDS_RETURN.label} (${TRIP_TYPE.CDS_RETURN.direction}) · ${fmtDate(map.plannedDate)} · ${map.deliveryPersonName}`} stops={mapStops(map.stops)} onClose={() => setMap(null)} />}
-    </>
-  );
-}
 
 /** The return route the plan creates (same rules as the engine): from the Service Centre to the CDS stores of the
  *  returns in the shortest order, then from the last CDS store to the sellers (distributors). */
@@ -805,7 +594,7 @@ export function CreateReturnPlanPage() {
     <div className="cds-page create-delivery-route-page create-route-container">
       <header className="orders-header">
         <button className="back-btn" aria-label="Back" onClick={() => navigate('/cds/planning?tab=returns')}><i className="fas fa-arrow-left" /></button>
-        <h1><i className="fas fa-route" /> Create Return Plan <small className="cds-route-chip ms-2">{TRIP_TYPE.CDS_RETURN.direction}</small></h1>
+        <h1><i className="fas fa-route" /> Create Manual Return Plan <small className="cds-route-chip ms-2">{TRIP_TYPE.CDS_RETURN.direction}</small></h1>
       </header>
 
       <div className="route-card">
@@ -948,7 +737,7 @@ export function CreateReturnPlanPage() {
           stores={meta.data.allStores ?? meta.data.stores}
           distributors={meta.data.distributors}
           onClose={() => setPlanning(false)}
-          onDone={() => navigate('/cds/planning?tab=returns')}
+          onDone={() => navigate('/cds/trips?tab=CDS_RETURN')}
         />
       )}
     </div>
@@ -969,9 +758,9 @@ function AutoReturnRouteModal({ returns, plannedDate, stores, distributors, onCl
   const util = v ? Math.round((loadKg / v.capacityKg) * 1000) / 10 : 0;
   const stops = [...route.pickups.map((s) => ({ ...s, kind: 'Pickup at CDS' })), ...route.handovers.map((s) => ({ ...s, kind: 'Handover to seller' }))];
   const meta = useMeta();
-  const limits = routeLimitWarnings(meta.data?.settings.returnRoute, stops.length, route.km, route.minutes, loadKg);
+  const limits = routeLimitWarnings(meta.data?.settings.returnRoute, { cds: route.pickups.length, distributor: route.handovers.length }, route.km, route.minutes, loadKg);
   const confirmRoutes = async () => {
-    const r = await run(() => cdsApi.createReturnPlan({ returnIds: returns.map((x) => x.id), plannedDate, ...a }), 'Return plan created');
+    const r = await run(() => cdsApi.createReturnPlan({ returnIds: returns.map((x) => x.id), plannedDate, ...a }), 'Return plan created. See it in Trips › Returns.');
     if (r) onDone();
   };
   const csv = () => downloadCsv(`return-route-${plannedDate}`, [{ key: 'seq', label: 'Stop' }, { key: 'kind', label: 'Action' }, { key: 'name', label: 'Name' }, { key: 'address', label: 'Address' }, { key: 'returns', label: 'Returns' }, { key: 'kg', label: 'Weight (kg)' }],
@@ -1006,7 +795,7 @@ function AutoReturnRouteModal({ returns, plannedDate, stores, distributors, onCl
               </div>
               <div className="route-card">
                 <div className="route-header">
-                  <div className="route-title"><i className={`fas ${TRIP_TYPE.CDS_RETURN.icon}`} /> Trip 1 · {TRIP_TYPE.CDS_RETURN.label} <span className="cds-route-chip ms-2">{TRIP_TYPE.CDS_RETURN.direction}</span></div>
+                  <div className="route-title"><i className={`fas ${TRIP_TYPE.CDS_RETURN.icon}`} /> {TRIP_TYPE.CDS_RETURN.label} <span className="cds-route-chip ms-2">{TRIP_TYPE.CDS_RETURN.direction}</span></div>
                   <div className="route-meta"><span className="meta-date">{fmtDate(plannedDate)}</span></div>
                 </div>
                 <div className="route-stats">
@@ -1019,7 +808,7 @@ function AutoReturnRouteModal({ returns, plannedDate, stores, distributors, onCl
                     <div className="stat-value">{stops.length} /<span>~{route.km} km</span> /<span>~{route.minutes} min</span></div>
                   </div>
                 </div>
-                <div className="cds-route-assign"><AssignFields label="Vehicle & Delivery Person" date={plannedDate} loadKg={loadKg} value={a} onChange={setA} /></div>
+                <div className="cds-route-assign"><AssignFields label="Vehicle & Driver" date={plannedDate} loadKg={loadKg} value={a} onChange={setA} /></div>
                 <div className="orders-section">
                   <div className="orders-header" role="button" onClick={() => setOpen((x) => !x)}>Stops ({stops.length}) <i className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'}`} /></div>
                   {open && (
