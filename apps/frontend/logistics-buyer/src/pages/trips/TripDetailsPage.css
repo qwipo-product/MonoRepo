@@ -90,10 +90,9 @@
 .trip-details-container .mat-mdc-table tfoot td { padding: 8px 12px; border-top: 1px solid #dee2e6; background: #f8f9fa; font-size: 13px; }
 .trip-details-container .mat-mdc-table .text-right { text-align: right; }
 
-/* CDS Wise Orders tab: one card per CDS drop point */
-.trip-details-container .cds-group + .cds-group { margin-top: 16px; }
-.trip-details-container .cds-group-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 16px; background: #eff6ff; border-bottom: 1px solid #dbeafe; }
-.trip-details-container .cds-group-name { font-size: 15px; font-weight: 600; color: #1e3a8a; display: flex; align-items: center; gap: 8px; }
-.trip-details-container .cds-group-address { font-size: 12px; color: #64748b; margin-top: 2px; }
-.trip-details-container .cds-group-totals { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.trip-details-container .cds-group-totals span { font-size: 12px; font-weight: 500; color: #1e40af; background: #fff; border: 1px solid #bfdbfe; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+/* Consolidated Delivery Points tab: the retailers of one CDS, shown under its row */
+.trip-details-container .cds-retailers-row > td { background: #f8fafc; padding: 8px 16px 12px 32px; }
+.trip-details-container .cds-retailers { font-size: 12px; border-collapse: collapse; }
+.trip-details-container .cds-retailers th { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #475569; text-align: center; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
+.trip-details-container .cds-retailers th.text-start { text-align: left; }
+.trip-details-container .cds-retailers td { padding: 6px 8px; border-bottom: 1px solid #eef2f7; }

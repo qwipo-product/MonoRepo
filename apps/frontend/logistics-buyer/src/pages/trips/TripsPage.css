@@ -18,6 +18,12 @@
 @media (max-width: 768px) {
   .trips-container .page-header { flex-direction: column; gap: 16px; align-items: stretch; }
 }
+
+/* trip type tabs: Direct Delivery · Consolidated Delivery · Consolidated Returns */
+.trips-container .trip-type-tabs { display: flex; gap: 4px; margin: -8px 0 20px; border-bottom: 1px solid #e5e7eb; overflow-x: auto; overflow-y: hidden; }
+.trips-container .trip-type-tab { padding: 10px 18px; font-size: 14px; font-weight: 500; color: #6b7280; text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .2s, border-color .2s; }
+.trips-container .trip-type-tab:hover { color: #374151; }
+.trips-container .trip-type-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
 .map-view-tooltip.MuiTooltip-tooltip { background: #fff1f2 !important; color: #dc2626 !important; font-size: 12px !important; font-weight: 500 !important; border: 1px solid #fecaca; border-radius: 6px !important; padding: 6px 12px !important; box-shadow: 0 2px 8px #0000001a; }
 
 /* KPI cards */
@@ -102,8 +108,8 @@
 .trips-container .details-container { display: flex; flex-wrap: nowrap; gap: 20px; }
 .trips-container .detail-card { flex: 1 1 0; min-width: 360px; background: #fff; border-radius: 12px; box-shadow: 0 4px 8px #00000014; padding: 20px; transition: transform .2s; }
 .trips-container .detail-card:hover { transform: translateY(-2px); }
-/* CDS tab: the expanded row shows only the Route Overview card. */
-.trips-container .details-container.single .detail-card { flex: 0 1 560px; }
+/* Consolidated tabs: fewer cards in the expanded row, so each keeps a readable width. */
+.trips-container .details-container.compact .detail-card { flex: 0 1 560px; }
 .trips-container .detail-card h3 { font-size: 16px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
 .trips-container .detail-card h3::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: currentColor; display: inline-block; }
 .trips-container .route-overview h3 { color: #305fe3; }

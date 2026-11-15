@@ -68,7 +68,8 @@ export default function TripOrderDetailsPage() {
   const orderIdsParam = query.getAll('orderIds');
   const deliveryTime = query.has('deliveryTime') ? (query.get('deliveryTime') as string) : undefined;
   const orderIdsKey = orderIdsParam.join('|');
-  // Opened from a CDS list (?from=cds-pickups | cds-credit-notes) → Trip Details keeps its CDS tabs and back arrow.
+  // Opened from a consolidated Trips tab (?from=consolidated-delivery | consolidated-returns) → the back arrow of
+  // Trip Details still returns to that tab.
   const from = query.get('from');
   const tripDetailsUrl = `/trip-details/${tripId}${from ? `?from=${encodeURIComponent(from)}` : ''}`;
 

@@ -73,11 +73,14 @@ export default function App() {
               </Route>
               <Route path="sse-test" element={<SseTestPage />} />
               <Route element={<RequireAuth requiredPage="trips" />}>
+                {/* Trips page tabs: Direct Delivery (3PL), Consolidated Delivery and Consolidated Returns (CDS). */}
                 <Route path="trips" element={<TripsPage key="trips" />} />
-                {/* CDS tab: trips the CDS service center created for orders already confirmed as CDS (never on /trips). */}
-                <Route path="cds" element={<Navigate to="/cds/pickup-indents" replace />} />
-                <Route path="cds/pickup-indents" element={<TripsPage key="cds-pickups" view="cds-pickups" />} />
-                <Route path="cds/credit-notes" element={<TripsPage key="cds-credit-notes" view="cds-credit-notes" />} />
+                <Route path="trips/consolidated-delivery" element={<TripsPage key="consolidated-delivery" view="consolidated-delivery" />} />
+                <Route path="trips/consolidated-returns" element={<TripsPage key="consolidated-returns" view="consolidated-returns" />} />
+                {/* Earlier CDS tab links open the matching Trips tab. */}
+                <Route path="cds" element={<Navigate to="/trips/consolidated-delivery" replace />} />
+                <Route path="cds/pickup-indents" element={<Navigate to="/trips/consolidated-delivery" replace />} />
+                <Route path="cds/credit-notes" element={<Navigate to="/trips/consolidated-returns" replace />} />
                 <Route path="trip-details/:id" element={<TripDetailsPage />} />
                 <Route path="trip-order-details/:tripId" element={<TripOrderDetailsPage />} />
               </Route>

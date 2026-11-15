@@ -276,9 +276,10 @@ export interface DbTrip {
   orderIds: string[];
   routePlanComboId: string | null;
   cancelReason: string | null;
-  /** "cds" — created by the CDS service center for orders confirmed as CDS. Shown only on the CDS tab,
-   *  never on the Trips page (which lists 3PL trips). Absent on every other trip. */
-  channel?: 'cds';
+  /** CDS flow trips, created by the CDS service center (Trips page tabs): "cds" = Consolidated Delivery (collects the
+   *  distributor's goods for CDS orders), "cds-returns" = Consolidated Returns (brings retailers' returns back).
+   *  Absent on 3PL trips (Direct Delivery tab). */
+  channel?: 'cds' | 'cds-returns';
 }
 
 export interface DbSalesPerson {

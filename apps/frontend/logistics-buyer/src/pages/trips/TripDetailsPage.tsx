@@ -3,7 +3,7 @@
 // SSE live refresh on ("trip", API orderId).
 //
 // ID swap (spec 05 §0.3): route `:id` = API logisticsOrderId (uuid); tripDetails.id = API orderId (trip number).
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import Swal from 'sweetalert2';
 import DataLoading from '../../components/DataLoading';
@@ -76,10 +76,13 @@ export default function TripDetailsPage() {
   const { id: tripId = '' } = useParams();
   const navigate = useNavigate();
   const { hasView, buyerId } = usePagePermissions('buyer_trips');
-  // Opened from the CDS tab (?from=cds-pickups | cds-credit-notes) → the back arrow returns to that CDS list.
+  // Opened from a consolidated Trips tab (?from=consolidated-delivery | consolidated-returns) → the back arrow
+  // returns to that tab.
   const [searchParams] = useSearchParams();
   const from = searchParams.get('from');
-  const backTo = from === 'cds-pickups' ? '/cds/pickup-indents' : from === 'cds-credit-notes' ? '/cds/credit-notes' : '/trips';
+  const backTo = from === 'consolidated-delivery' || from === 'consolidated-returns' ? `/trips/${from}` : '/trips';
+  // Consolidated Delivery Points tab: the CDS whose retailers are shown under its row.
+  const [openCdsId, setOpenCdsId] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('summary');
@@ -212,7 +215,7 @@ export default function TripDetailsPage() {
     const qs = new URLSearchParams();
     (row.orderIds || []).forEach((id) => qs.append('orderIds', id));
     if (row.deliveryTime !== undefined && row.deliveryTime !== null) qs.append('deliveryTime', row.deliveryTime);
-    // Keep the CDS list this page was opened from, so the back arrows return through the CDS tab.
+    // Keep the Trips tab this page was opened from, so the back arrows return to that tab.
     if (from) qs.append('from', from);
     navigate(`/trip-order-details/${tripId}${qs.toString() ? `?${qs.toString()}` : ''}`);
   };
@@ -266,12 +269,15 @@ export default function TripDetailsPage() {
 
   if (!hasView) return null; // whole template is *ngIf="hasView" (no redirect; data + SSE still load)
 
-  // CDS trips: add CDS Wise Orders (retailers grouped by the CDS point where the service center drops their goods).
-  // Return Products shows for 3PL trips, and for CDS trips only when opened from CDS → Credit Notes.
-  const isCdsTrip = tripSummaryInfo?.channel === 'cds';
-  const tabs: [TabKey, string][] = [['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['product', 'Ordered Products']];
-  if (isCdsTrip) tabs.push(['cds', 'CDS Wise Orders']);
-  if (!isCdsTrip || from === 'cds-credit-notes') tabs.push(['return', 'Return Products']);
+  // Tabs by trip type. Consolidated Delivery: Consolidated Delivery Points (one row per CDS where the service center
+  // drops the goods) and Customer Wise Orders last. Consolidated Returns: the returns first. Direct Delivery: as-built.
+  const isDeliveryTrip = tripSummaryInfo?.channel === 'cds';
+  const isReturnTrip = tripSummaryInfo?.channel === 'cds-returns';
+  const tabs: [TabKey, string][] = isDeliveryTrip
+    ? [['summary', 'Summary'], ['cds', 'Consolidated Delivery Points'], ['product', 'Ordered Products'], ['customer', 'Customer Wise Orders']]
+    : isReturnTrip
+      ? [['summary', 'Summary'], ['return', 'Return Products'], ['customer', 'Customer Wise Orders']]
+      : [['summary', 'Summary'], ['customer', 'Customer Wise Orders'], ['product', 'Ordered Products'], ['return', 'Return Products']];
   const cdsGroups = (() => {
     const m = new Map<string, { point: CdsPointInfo; rows: CustomerOrderRow[] }>();
     customerOrders.forEach((r) => {
@@ -356,7 +362,10 @@ export default function TripDetailsPage() {
                       ['access_time', 'Estimated Completion', calculateEstimatedCompletion(tripDetails)],
                       ['vpn_key', 'Pickup OTP', tripDetails.pickupOTP || 'N/A'],
                       ['vpn_key', 'Return OTP', tripDetails.returnOTP || 'N/A'],
-                    ] as [string, string, string][]).map(([icon, label, value]) => (
+                    ] as [string, string, string][])
+                      // A Consolidated Delivery trip carries no returns; a Consolidated Returns trip has no pickup OTP.
+                      .filter(([, label]) => !(isDeliveryTrip && label === 'Return OTP') && !(isReturnTrip && label === 'Pickup OTP'))
+                      .map(([icon, label, value]) => (
                       <div className="info-row" key={label}>
                         <div className="info-item full-width">
                           <i className="material-icons">{icon}</i>
@@ -562,58 +571,87 @@ export default function TripDetailsPage() {
             </div>
           )}
 
-          {activeTab === 'cds' && isCdsTrip && (
+          {activeTab === 'cds' && isDeliveryTrip && (
             <div className="trip-details-content">
-              {cdsGroups.map(({ point, rows }) => (
-                <div className="mat-card mat-elevation-z3 cds-group" key={point.id}>
-                  <div className="cds-group-header">
-                    <div>
-                      <div className="cds-group-name"><i className="fas fa-warehouse" /> {point.name}</div>
-                      <div className="cds-group-address">{point.address}</div>
-                    </div>
-                    <div className="cds-group-totals">
-                      <span>{`${rows.length} ${rows.length === 1 ? 'retailer' : 'retailers'}`}</span>
-                      <span>{`${rows.reduce((s, r) => s + r.orderCount, 0)} orders`}</span>
-                      <span>{addCurrency(rows.reduce((s, r) => s + (Number(r.amount) || 0), 0))}</span>
-                    </div>
-                  </div>
-                  <div className="mat-card-content p-0">
-                    <div className="table-responsive">
-                      <table className="mat-mdc-table w-100">
-                        <thead>
-                          <tr className="mat-mdc-header-row small bg-light">
-                            {th('fa-hashtag', 'Stop No.')}
-                            {th('fa-store', 'Customer Business Name', 'text-start')}
-                            {th('fa-map-marker-alt', 'Address', 'text-start')}
-                            {th('fa-info-circle', 'Status')}
-                            {th('fa-rupee-sign', 'Orders/Amount')}
-                            {th('fa-cogs', 'Actions')}
+              <div className="mat-card mat-elevation-z3">
+                <div className="mat-card-content p-0">
+                  <div className="table-responsive">
+                    <table className="mat-mdc-table w-100">
+                      <thead>
+                        <tr className="mat-mdc-header-row small bg-light">
+                          {th('fa-warehouse', 'CDS Name', 'text-start')}
+                          {th('fa-map-marker-alt', 'Address', 'text-start')}
+                          {th('fa-store', 'Retailers')}
+                          {th('fa-rupee-sign', 'Orders/Amount')}
+                          {th('fa-cogs', 'Actions')}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cdsGroups.map(({ point, rows }) => {
+                          const isOpen = openCdsId === point.id;
+                          const orderCount = rows.reduce((s, r) => s + r.orderCount, 0);
+                          const amount = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+                          return (
+                            <Fragment key={point.id}>
+                              <tr className="mat-mdc-row small">
+                                <td className="text-start fw-semibold">{point.name}</td>
+                                <td className="text-start">{point.address}</td>
+                                <td className="text-center">{rows.length}</td>
+                                <td className="text-center">{`${orderCount}/₹ ${safeNumber(amount)}`}</td>
+                                <td className="text-center">
+                                  <button
+                                    className="btn btn-sm text-primary"
+                                    title={isOpen ? 'Hide retailers' : 'View retailers'}
+                                    aria-expanded={isOpen}
+                                    onClick={() => setOpenCdsId(isOpen ? null : point.id)}
+                                  >
+                                    <i className={`fas ${isOpen ? 'fa-eye-slash' : 'fa-eye'}`} />
+                                  </button>
+                                </td>
+                              </tr>
+                              {isOpen && (
+                                <tr className="cds-retailers-row">
+                                  <td colSpan={5}>
+                                    <table className="cds-retailers w-100">
+                                      <thead>
+                                        <tr>
+                                          <th>Stop No.</th>
+                                          <th className="text-start">Customer Business Name</th>
+                                          <th>Status</th>
+                                          <th>Orders/Amount</th>
+                                          <th>Actions</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {rows.map((row) => (
+                                          <tr key={row.stopNo}>
+                                            <td className="text-center">{row.stopNo}</td>
+                                            <td className="text-start">{row.customerName}</td>
+                                            <td className="text-center"><span className={`status-badge ${statusClass(row.status)}`}>{row.status || 'N/A'}</span></td>
+                                            <td className="text-center">{`${row.orderCount}/₹ ${safeNumber(row.amount)}`}</td>
+                                            <td className="text-center">
+                                              <button className="btn btn-sm text-primary" title="View orders" onClick={() => viewOrder(row)}><i className="fas fa-eye" /></button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        })}
+                        {cdsGroups.length === 0 && (
+                          <tr className="mat-mdc-row">
+                            <td colSpan={5} className="text-center py-4"><i className="fas fa-inbox me-2 text-muted" /> No consolidated delivery points found </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {rows.map((row) => (
-                            <tr className="mat-mdc-row small" key={row.stopNo}>
-                              <td className="text-center">{row.stopNo}</td>
-                              <td className="text-start">{row.customerName}</td>
-                              <td className="text-start">{row.address}</td>
-                              <td className="text-center"><span className={`status-badge ${statusClass(row.status)}`}>{row.status || 'N/A'}</span></td>
-                              <td className="text-center">{`${row.orderCount}/₹ ${safeNumber(row.amount)}`}</td>
-                              <td className="text-center">
-                                <button className="btn btn-sm text-primary" title="View orders" onClick={() => viewOrder(row)}><i className="fas fa-eye" /></button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              ))}
-              {cdsGroups.length === 0 && (
-                <div className="mat-card mat-elevation-z3">
-                  <div className="text-center py-4 small"><i className="fas fa-inbox me-2 text-muted" /> No CDS orders found </div>
-                </div>
-              )}
+              </div>
             </div>
           )}
 

@@ -2,7 +2,7 @@
 // 14-column table with expandable rows, kebab menu + Download submenu, cancel modal, single / multi trip maps,
 // paginator and localStorage filter persistence (`trips_filters`).
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
 import Tooltip from '@mui/material/Tooltip';
 import DataLoading from '../../components/DataLoading';
@@ -11,7 +11,7 @@ import Paginator from '../../components/Paginator';
 import { usePagePermissions } from '../../hooks/usePagePermissions';
 import { buyerService } from '../../api/services/buyer.service';
 import { filterPersistence } from '../../api/services/filterPersistence.service';
-import { logisticsOrdersService as svc, type TripRow, type TripStats } from '../../api/services/logisticsOrders.service';
+import { logisticsOrdersService as svc, type TripChannel, type TripRow, type TripStats } from '../../api/services/logisticsOrders.service';
 import { getTripStatusLabel } from '../../utils/helpers';
 import { addCurrency } from '../../utils/pipes';
 import TripMapModal from './components/TripMapModal';
@@ -39,32 +39,38 @@ const SUBMENU_HEIGHT = 320;
 const KEBAB_WIDTH = 230;
 
 /**
- * Which list this screen shows. `trips` is the Trips page (3PL trips). The CDS tab reuses the same screen:
- * `cds-pickups` lists the trips the CDS service center created for orders already confirmed as CDS, and
- * `cds-credit-notes` lists the CDS trips where a retailer returned goods. CDS trips never appear on `trips`.
+ * The Trips page tabs. They share this screen and its columns, and each trip appears on one tab only:
+ * `trips` = Direct Delivery (3PL trips: one vehicle delivers and brings returns back in the same trip),
+ * `consolidated-delivery` = trips the CDS service center creates to collect the goods for CDS orders, and
+ * `consolidated-returns` = trips that bring retailers' returns back from the CDS (they close with the return OTP).
  */
-export type TripsView = 'trips' | 'cds-pickups' | 'cds-credit-notes';
+export type TripsView = 'trips' | 'consolidated-delivery' | 'consolidated-returns';
 
-const VIEW_TEXT: Record<TripsView, { title: string; description: string; icon: string; empty: string }> = {
-  trips: { title: 'Trips', description: 'Track and manage delivery trips, routes, and drivers.', icon: 'local_shipping', empty: 'No trips found' },
-  'cds-pickups': {
-    title: 'Pickup Indents',
-    description: 'Trips the CDS service center created to collect your CDS orders.',
-    icon: 'inventory_2',
-    empty: 'No CDS pickup indents yet.',
+const TRIP_TABS: { view: TripsView; label: string; to: string; channel?: TripChannel; description: string; empty: string }[] = [
+  { view: 'trips', label: 'Direct Delivery', to: '/trips', description: 'Track and manage delivery trips, routes, and drivers.', empty: 'No trips found' },
+  {
+    view: 'consolidated-delivery',
+    label: 'Consolidated Delivery',
+    to: '/trips/consolidated-delivery',
+    channel: 'cds',
+    description: 'Trips the CDS service center creates to collect your goods for CDS orders.',
+    empty: 'No consolidated delivery trips yet.',
   },
-  'cds-credit-notes': {
-    title: 'Credit Notes',
-    description: 'CDS trips where retailers returned goods, with the credit for each retailer.',
-    icon: 'receipt_long',
-    empty: 'No credit notes yet.',
+  {
+    view: 'consolidated-returns',
+    label: 'Consolidated Returns',
+    to: '/trips/consolidated-returns',
+    channel: 'cds-returns',
+    description: "Trips that bring retailers' returns back from the CDS service center. Each trip closes with the return OTP.",
+    empty: 'No consolidated return trips yet.',
   },
-};
+];
 
 export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
-  const isCds = view !== 'trips';
-  const isCreditNotes = view === 'cds-credit-notes';
-  const text = VIEW_TEXT[view];
+  const tab = TRIP_TABS.find((t) => t.view === view) ?? TRIP_TABS[0];
+  const isConsolidated = view !== 'trips';
+  const isDelivery = view === 'consolidated-delivery';
+  const isReturns = view === 'consolidated-returns';
   const navigate = useNavigate();
   const { buyerId } = usePagePermissions('buyer_trips');
   // ngOnInit force-sets hasView = hasCreate = true, so the *ngIf="hasView" wrapper always renders.
@@ -113,12 +119,12 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     filtersRef.current = f;
     _setTempFilters(f);
   };
-  // The saved `trips_filters` belong to the Trips page; the CDS lists start unfiltered and do not save filters.
+  // The saved `trips_filters` belong to the Direct Delivery tab; the consolidated tabs start unfiltered.
   const saveFilters = (f: TempFilters) => {
-    if (!isCds) filterPersistence.saveTripFilters(f);
+    if (!isConsolidated) filterPersistence.saveTripFilters(f);
   };
   const clearSavedFilters = () => {
-    if (!isCds) filterPersistence.clearTripFilters();
+    if (!isConsolidated) filterPersistence.clearTripFilters();
   };
 
   const resetData = () => {
@@ -141,8 +147,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
         providerNames: f.providerNames && f.providerNames.length > 0 ? f.providerNames : undefined,
         pageSize: sizeRef.current,
         pageNumber: pageRef.current,
-        channel: isCds ? 'cds' : undefined,
-        withReturns: isCreditNotes || undefined,
+        channel: tab.channel,
       };
       const res = await svc.getLogisticOrdersDetails(body);
       if (!aliveRef.current) return;
@@ -183,16 +188,16 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
   // ------------------------------------------------------------ init (ngOnInit)
   useEffect(() => {
     aliveRef.current = true;
-    // DARKSTORE detection (fire-and-forget). The dark-store seller actions are for 3PL trips, not the CDS lists.
-    if (!isCds) {
+    // DARKSTORE detection (fire-and-forget). The dark-store seller actions are for 3PL trips (Direct Delivery).
+    if (!isConsolidated) {
       buyerService
         .getBuyerById(buyerId)
         .then((data: any) => aliveRef.current && setIsDarkStoreBuyer((data?.buyerType ?? data?.buyer_type) === 'DARKSTORE'))
         .catch(() => aliveRef.current && setIsDarkStoreBuyer(false));
     }
-    // Restore filters (pageNumber restored, pageSize forced back to 10 — as-built). Trips page only.
+    // Restore filters (pageNumber restored, pageSize forced back to 10 — as-built). Direct Delivery tab only.
     try {
-      const saved = isCds ? null : filterPersistence.getTripFilters();
+      const saved = isConsolidated ? null : filterPersistence.getTripFilters();
       if (saved) {
         const raw = saved.statuses ?? saved.status;
         const statuses = Array.isArray(raw) ? raw : raw === 0 || raw === undefined || raw === null || raw === '' ? [] : [raw];
@@ -210,7 +215,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     (async () => {
       await loadTrips();
       if (!aliveRef.current) return;
-      const names = await svc.getProviderNames(buyerId, isCds ? 'cds' : undefined);
+      const names = await svc.getProviderNames(buyerId, tab.channel);
       if (aliveRef.current) setProviderNameOptions(names || []);
     })();
     return () => {
@@ -415,15 +420,6 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     }
   };
 
-  const downloadCreditNote = async (row: TripRow) => {
-    try {
-      await svc.downloadCreditNote(row.logisticsOrderId);
-      Swal.fire('Credit note downloaded successfully', 'success');
-    } catch {
-      Swal.fire('Error downloading credit note', 'error');
-    }
-  };
-
   const downloadSellerPickupList = (format: 'excel' | 'pdf') => {
     setShowSellerActionsMenu(false);
     setShowPickupFormats(false);
@@ -458,16 +454,32 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
       ['vpn_key', 'Pickup OTP', row.pickupOTP || 'Not Available'],
       ['vpn_key', 'Return OTP', row.returnOTP || 'N/A'],
     ];
+    // A Consolidated Delivery trip carries no returns (no Return OTP); a Consolidated Returns trip has no pickup
+    // from the distributor (no Pickup OTP).
+    const routeOverview = routeRows.filter(([, label]) => !(isDelivery && label === 'Return OTP') && !(isReturns && label === 'Pickup OTP'));
+    const collectionSummary = (
+      <div className="info-card collection-card">
+        <div className="info-row no-icon"><span className="label">Total Sale Value</span><span className="value">{addCurrency(row.totalSaleValue)}</span></div>
+        <div className="info-row no-icon dashed"><span className="label">Total Delivered Value</span><span className="value">{addCurrency(row.totalDeliveryValue)}</span></div>
+        <div className="info-row no-icon"><span className="label">Total Partial Value</span><span className="value">{addCurrency(row.totalPartialValue)}</span></div>
+        <div className="info-row no-icon"><span className="label">Total Return Value</span><span className="value">{addCurrency(row.totalReturnValue)}</span></div>
+        <div className="info-row"><i className="material-icons">location_on</i><span className="label">Total Delivery Points</span><span className="value">{row.dropPoints || '0'}</span></div>
+        <div className="info-row"><i className="material-icons">payments</i><span className="label">COD Collection</span><span className="value">{inrSymbol0(row.summary.codCollection)}</span></div>
+        <div className="info-row"><i className="material-icons">smartphone</i><span className="label">Digital Collection</span><span className="value">{inrSymbol0(row.summary.digitalCollection)}</span></div>
+        <div className="info-row"><i className="material-icons">account_balance_wallet</i><span className="label">Net Sale Collection</span><span className="value">{inrSymbol0(row.summary.netSaleCollection)}</span></div>
+      </div>
+    );
     return (
       <tr className="trip-details-row">
         <td colSpan={14}>
           <div className="trip-details">
-            {/* CDS tab: Route Overview only (no Order Summary or Delivery Route card). */}
-            <div className={`details-container${isCds ? ' single' : ''}`}>
+            {/* Direct Delivery: every card. Consolidated Delivery: Route Overview only. Consolidated Returns: Route
+                Overview and Collection Summary (the return value). */}
+            <div className={`details-container${isConsolidated ? ' compact' : ''}`}>
               <div className="detail-card route-overview">
                 <h3>Route Overview</h3>
                 <div className="info-card">
-                  {routeRows.map(([icon, label, value]) => (
+                  {routeOverview.map(([icon, label, value]) => (
                     <div className="info-row" key={label}>
                       <i className="material-icons">{icon}</i>
                       <span className="label">{label}</span>
@@ -477,7 +489,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                 </div>
               </div>
 
-              {!isCds && (
+              {!isConsolidated && (
                 <div className="detail-card trip-summary">
                   <h3>Order Summary</h3>
                   <div className="order-summary-grid">
@@ -505,20 +517,18 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                   )}
 
                   <h3 className="collection-title">Collection Summary</h3>
-                  <div className="info-card collection-card">
-                    <div className="info-row no-icon"><span className="label">Total Sale Value</span><span className="value">{addCurrency(row.totalSaleValue)}</span></div>
-                    <div className="info-row no-icon dashed"><span className="label">Total Delivered Value</span><span className="value">{addCurrency(row.totalDeliveryValue)}</span></div>
-                    <div className="info-row no-icon"><span className="label">Total Partial Value</span><span className="value">{addCurrency(row.totalPartialValue)}</span></div>
-                    <div className="info-row no-icon"><span className="label">Total Return Value</span><span className="value">{addCurrency(row.totalReturnValue)}</span></div>
-                    <div className="info-row"><i className="material-icons">location_on</i><span className="label">Total Delivery Points</span><span className="value">{row.dropPoints || '0'}</span></div>
-                    <div className="info-row"><i className="material-icons">payments</i><span className="label">COD Collection</span><span className="value">{inrSymbol0(row.summary.codCollection)}</span></div>
-                    <div className="info-row"><i className="material-icons">smartphone</i><span className="label">Digital Collection</span><span className="value">{inrSymbol0(row.summary.digitalCollection)}</span></div>
-                    <div className="info-row"><i className="material-icons">account_balance_wallet</i><span className="label">Net Sale Collection</span><span className="value">{inrSymbol0(row.summary.netSaleCollection)}</span></div>
-                  </div>
+                  {collectionSummary}
                 </div>
               )}
 
-              {!isCds && (
+              {isReturns && (
+                <div className="detail-card trip-summary">
+                  <h3>Collection Summary</h3>
+                  {collectionSummary}
+                </div>
+              )}
+
+              {!isConsolidated && (
                 <div className="detail-card delivery-route">
                   <h3>Delivery Route</h3>
                   <div className="delivery-stops">
@@ -594,15 +604,15 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
 
       <div className="page-header">
         <div className="header-content">
-          <div className="header-icon"><i className="material-icons">{text.icon}</i></div>
+          <div className="header-icon"><i className="material-icons">local_shipping</i></div>
           <div>
-            <h1>{text.title}</h1>
-            <p className="header-description">{text.description}</p>
+            <h1>Trips</h1>
+            <p className="header-description">{tab.description}</p>
           </div>
         </div>
         <div className="actions">
-          {/* The CDS tab has no map view. */}
-          {!isCds && (
+          {/* The consolidated tabs have no map view. */}
+          {!isConsolidated && (
             <Tooltip
               title={selectedCount === 0 ? 'Select one or more trips to view on map' : ''}
               placement="bottom"
@@ -620,6 +630,14 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
           </button>
         </div>
       </div>
+
+      <nav className="trip-type-tabs" aria-label="Trip type">
+        {TRIP_TABS.map((t) => (
+          <NavLink key={t.view} to={t.to} end className={({ isActive }) => `trip-type-tab${isActive ? ' active' : ''}`}>
+            {t.label}
+          </NavLink>
+        ))}
+      </nav>
 
       <div className="stats-grid">
         {([
@@ -787,7 +805,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
         {!isLoading && trips.length === 0 && (
           <div className="no-trips-message">
             <i className="fas fa-inbox" />
-            <p>{text.empty}</p>
+            <p>{tab.empty}</p>
           </div>
         )}
         {!isLoading && trips.length > 0 && (
@@ -803,8 +821,8 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
       {/* Kebab dropdown (position:fixed, does not follow page scroll) */}
       {kebabRow && (
         <div className="kebab-dropdown" style={{ top: kebabPos.top, right: kebabPos.right }} onClick={(e) => e.stopPropagation()}>
-          {/* CDS trips belong to the CDS service center, so the distributor cannot cancel them. */}
-          {kebabRow.showCancelBtn && !isCds && (
+          {/* Consolidated trips belong to the CDS service center, so the distributor cannot cancel them. */}
+          {kebabRow.showCancelBtn && !isConsolidated && (
             <div
               className="kebab-item"
               onClick={() => {
@@ -816,7 +834,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
               <span>Cancel</span>
             </div>
           )}
-          {!isCds && (
+          {!isConsolidated && (
             <div
               className={`kebab-item${kebabRow.logisticsOrderStatus === 'Cancelled' ? ' disabled' : ''}`}
               onClick={() => {
@@ -832,7 +850,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
             className="kebab-item"
             onClick={() => {
               closeAllMenus();
-              navigate(isCds ? `/trip-details/${kebabRow.id}?from=${view}` : `/trip-details/${kebabRow.id}`);
+              navigate(isConsolidated ? `/trip-details/${kebabRow.id}?from=${view}` : `/trip-details/${kebabRow.id}`);
             }}
           >
             <i className="material-icons" style={{ color: '#3b82f6' }}>visibility</i>
@@ -847,13 +865,13 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
       )}
       {kebabRow && showDownloadSubmenu && (
         <div className="download-submenu" style={{ top: submenuPos.top, right: submenuPos.right }} onClick={(e) => e.stopPropagation()}>
-          {isCreditNotes ? (
-            // CDS → Credit Notes: the credit note replaces the Return Report.
-            <div className="submenu-item" onClick={() => { downloadCreditNote(kebabRow); closeAllMenus(); }}>
-              <i className="fas fa-file-alt" /><span>Credit Note</span>
+          {isReturns ? (
+            // Consolidated Returns: the returns as the Excel Return Report.
+            <div className="submenu-item" onClick={() => { downloadReturnReport(kebabRow); closeAllMenus(); }}>
+              <i className="fas fa-file-alt" /><span>Return Report</span>
             </div>
-          ) : isCds ? (
-            // CDS → Pickup Indents: the three pickup lists the CDS service center needs.
+          ) : isDelivery ? (
+            // Consolidated Delivery: the three pickup lists the CDS service center needs.
             <>
               <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, false); closeAllMenus(); }}>
                 <i className="fas fa-file-alt" /><span>Consolidated Pickup List</span>
