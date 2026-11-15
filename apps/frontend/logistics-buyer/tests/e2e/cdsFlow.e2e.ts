@@ -1,7 +1,9 @@
 // In-app end-to-end check of the CDS workflow through its HTTP API (the same calls the screens make): Seller Store
-// allocation → pickup planning → distributor pickup trip → CDS delivery trip → GRN → next-day retailer delivery →
-// collections → returns → return planning → CDS return trip, with OTPs at all 8 checkpoints, role-based access,
-// CDS-store isolation, the Delivery Partner App endpoints, and the existing LBNP data untouched.
+// allocation → pickup planning → distributor pickup trip → CDS delivery trip → handover OTP at the CDS (no GRN; orders
+// Ready for Delivery) → LBNP-style Delivery Planning (Plan Routes → Confirm Routes → Generate Trip) → retailer delivery
+// with cash collection, with OTPs at all 4 checkpoints, role-based access, CDS-store isolation, the Delivery Partner
+// App endpoints, the Performance Report, and the existing LBNP data untouched. There are no returns.
+// Note: it adds orders and trips to the CDS demo data in this browser (use "Reset demo data" afterwards if needed).
 // Run in the browser console on the dev server, from a /cds page (restores your CDS session afterwards):
 //   window.__cdsE2e = null; (await import('/tests/e2e/cdsFlow.e2e.ts')).run().then(r => window.__cdsE2e = r, e => window.__cdsE2e = { error: String(e) })
 import { http, HttpError } from '../../src/api/http';
@@ -63,12 +65,12 @@ export async function run() {
     await fails('Unregistered mobile cannot sign in to CDS', () => cdsApi.sendOtp('9876543210'), 404);
     await fails('Integration endpoints need the integration key', () => http.post(`${BASE}/cds/inbound/seller-orders`, {}, { skipAuth: true }), 401);
     const sc = await as('9100000001');
-    ok('Service Centre menu: Orders, Pickup Planning, Deliver to CDS, Return Planning, Trips, Reports, Settings, CDS Stores', sc.pages.join() === 'sc-orders,sc-pickup,sc-deliver,sc-returns,sc-trips,sc-reports,sc-settings,sc-stores', sc.pages.join());
-    await fails('Service Centre cannot open GRN', () => cdsApi.searchGrns({}), 403);
-    await fails('Service Centre cannot open Collections', () => cdsApi.searchCollections({}), 403);
+    ok('Service Centre menu: Orders, Pickup Planning, Deliver to CDS, Trips, Reports, Settings, CDS Stores', sc.pages.join() === 'sc-orders,sc-pickup,sc-deliver,sc-trips,sc-reports,sc-settings,sc-stores', sc.pages.join());
+    await fails('Service Centre cannot open the CDS User delivery routes', () => cdsApi.deliveryRoutes(), 403);
+    await fails('Service Centre cannot open the CDS User customers', () => cdsApi.customers(), 403);
     await fails('Service Centre Trips never include retailer trips', () => cdsApi.searchTrips({ types: ['RETAILER_DELIVERY'] }), 403);
     const cu = await as('9100000002');
-    ok('CDS User menu: GRN, Orders, Delivery Planning, Trips, Collections & Payments, Returns, Reports & Settings, Retailers', cu.pages.join() === 'cu-grn,cu-orders,cu-delivery,cu-trips,cu-collections,cu-returns,cu-reports,cu-retailers', cu.pages.join());
+    ok('CDS User menu (as LBNP): Orders, Delivery Planning, Trips, Reports, Customers, Settings', cu.pages.join() === 'cu-orders,cu-delivery,cu-trips,cu-reports,cu-customers,cu-settings', cu.pages.join());
     await fails('CDS User cannot open Pickup Planning', () => cdsApi.createPickupPlan({ orders: [], plannedDate: '', pickup: { vehicleId: '', deliveryPersonId: '' } }), 403);
     await fails('CDS User Trips show only retailer trips', () => cdsApi.searchTrips({ types: ['DISTRIBUTOR_PICKUP'] }), 403);
     await fails('CDS User cannot read another store’s orders', () => cdsApi.searchOrders({ cdsStoreId: 'cds-kkp' }), 403);
@@ -76,6 +78,8 @@ export async function run() {
     await fails('CDS User cannot open another store’s order', () => cdsApi.order(otherOrder.id), 403);
     const mine = await cdsApi.searchOrders({ pageSize: 0 });
     ok('CDS User sees only its own store’s orders', mine.rows.length > 0 && mine.rows.every((o) => o.cdsStoreId === 'cds-upl'));
+    const custs = await cdsApi.customers();
+    ok('Customers: the retailers in the store’s service area (view only)', custs.length > 0 && custs.every((c) => c.code && c.name && typeof c.lat === 'number'));
 
     // ---------------------------------------------------------------- 1. Seller Store allocation
     const servedBy = (id: string) => st().stores.find((x) => x.id === id)!.localities;
@@ -138,103 +142,74 @@ export async function run() {
     ok('CDS User sees the handover OTP sent to their store', myOtps.some((x) => x.stopId === cdsStopU.id && x.code === otpCode(ho)));
     await fails('CDS User cannot run Service Centre trips', () => cdsApi.completeStop(ct.id, cdsStopU.id, { otp: otpCode(ho) }), 403);
     await as('9100000001');
+    await fails('The store cannot accept more than was dispatched', () => cdsApi.completeStop(ct.id, cdsStopU.id, { otp: otpCode(ho), lines: cdsStopU.lines.map((l, i) => ({ idx: i, actualQty: l.plannedQty + 1 })) }), 400, /cannot be more/);
     await cdsApi.completeStop(ct.id, cdsStopU.id, { otp: otpCode(ho), lines: cdsStopU.lines.map((l, i) => ({ idx: i, actualQty: i === 0 ? l.plannedQty - 1 : l.plannedQty })) });
     await doStop(ct, 'CDS_HANDOVER');
-    ok('CDS delivery trip finished (partially — one unit short at handover); orders Received at CDS', (await cdsApi.trip(ct.id)).trip.status === 'PARTIALLY_COMPLETED' && (await cdsApi.order(a1.order.id)).order.status === 'RECEIVED_AT_CDS');
+    const h1 = await cdsApi.order(a1.order.id);
+    ok('No GRN: the handover OTP makes the order Ready for Delivery with the accepted units', (await cdsApi.trip(ct.id)).trip.status === 'PARTIALLY_COMPLETED' && h1.order.status === 'READY_FOR_DELIVERY' && h1.order.lines[0].acceptedQty === 8);
+    ok('Short at handover = picked − accepted', h1.order.lines[0].pickedQty - h1.order.lines[0].acceptedQty === 1);
 
-    // ---------------------------------------------------------------- 4. GRN distributor-wise
+    // ---------------------------------------------------------------- 6. Delivery Planning (LBNP routes) → retailer trip
     await as('9100000002');
-    const grns = (await cdsApi.searchGrns({ status: 'PENDING', pageSize: 0 })).rows.filter((g) => g.cdsTripNo === ct.tripNo);
-    ok('Uppal received from two distributors → two GRNs, linked to CDS trip and pickup trip', grns.length === 2 && grns.every((g) => g.pickupTripNos.includes(pt.tripNo)));
-    const gRice = grns.find((g) => g.distributorId === 'dst-01')!;
-    const riceLine = gRice.lines.findIndex((l) => l.name === 'E2E Rice');
-    ok('GRN carries the handover shortage', gRice.lines[riceLine].shortQty === 1 && gRice.lines[riceLine].receivedQty === 8);
-    await fails('Shortage / damage needs a remark', () => cdsApi.completeGrn(gRice.id, { lines: gRice.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) }), 400, /remark/);
-    await cdsApi.completeGrn(gRice.id, { lines: gRice.lines.map((l, i) => ({ idx: i, acceptedQty: i === riceLine ? l.receivedQty - 1 : l.receivedQty, damagedQty: i === riceLine ? 1 : 0, remarks: i === riceLine ? '1 short, 1 torn' : '' })) });
-    const gOil = grns.find((g) => g.distributorId === 'dst-02')!;
-    await cdsApi.completeGrn(gOil.id, { lines: gOil.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) });
-    const od1 = await cdsApi.order(a1.order.id);
-    ok('GRN generated → order Ready for Delivery with accepted quantities', od1.order.status === 'READY_FOR_DELIVERY' && od1.order.lines[0].acceptedQty === 7);
-    ok('Damaged at GRN becomes a return to the distributor', (await cdsApi.searchReturns({ statuses: ['RECEIVED_AT_CDS'], pageSize: 0 })).rows.some((r) => r.orderId === a1.order.id && r.source === 'GRN'));
-
-    // ---------------------------------------------------------------- 6–8. next-day retailer delivery, OTPs, collections, returns
     const m2 = await cdsApi.meta();
-    const r2 = await cdsApi.resources(m2.tomorrow);
-    const cv = r2.vehicles.find((x) => x.available)!;
-    const cp = r2.deliveryPersons.find((x) => x.available)!;
-    await fails('Retailer delivery must be planned for the next day', () => cdsApi.createDeliveryPlan({ orderIds: [a1.order.id], returnIds: [], plannedDate: m2.today, vehicleId: cv.id, deliveryPersonId: cp.id }), 400, /next day/);
-    const dp = await cdsApi.createDeliveryPlan({ orderIds: [a1.order.id, a2.order.id], returnIds: [], plannedDate: m2.tomorrow, vehicleId: cv.id, deliveryPersonId: cp.id });
-    const rt = dp.trip;
-    ok('Delivery plan → retailer trip: CDS order pickup, then the retailer stop', rt.type === 'RETAILER_DELIVERY' && rt.stops[0].action === 'CDS_ORDER_PICKUP' && rt.stops.some((s) => s.action === 'RETAILER_DELIVERY'));
-    ok('Retailer trip shows in the CDS User’s Trips', (await cdsApi.searchTrips({ types: ['RETAILER_DELIVERY'], pageSize: 0 })).rows.some((t) => t.id === rt.id));
+    await fails('Delivery routes are planned for the next day', () => cdsApi.planRoutes({ orderIds: [a1.order.id], plannedDate: m2.today }), 400, /next day/);
+    const proposal = await cdsApi.planRoutes({ orderIds: [a1.order.id, a2.order.id], plannedDate: m2.tomorrow });
+    ok('Plan Routes: routes by locality on the store’s own vehicles, within capacity', proposal.routes.some((r) => r.orderIds.includes(a1.order.id)) && proposal.routes.every((r) => r.loadKg <= r.capacityKg && r.localities.length > 0));
+    ok('Plan Routes saves nothing', (await cdsApi.order(a1.order.id)).order.status === 'READY_FOR_DELIVERY');
+    const veh = proposal.routes[0].vehicleId;
+    const [route] = await cdsApi.confirmRoutes({ plannedDate: m2.tomorrow, routes: [{ vehicleId: veh, orderIds: [a1.order.id, a2.order.id] }] });
+    ok('Confirm Routes: orders Delivery Planned; the route waits for its trip', (await cdsApi.order(a1.order.id)).order.status === 'DELIVERY_PLANNED' && (await cdsApi.deliveryRoutes()).some((x) => x.id === route.id && !x.trip));
+    await fails('Planned orders cannot be put on a second route', () => cdsApi.confirmRoutes({ plannedDate: m2.tomorrow, routes: [{ vehicleId: veh, orderIds: [a1.order.id] }] }), 409);
+    const cres = await cdsApi.resources(m2.tomorrow);
+    ok('A confirmed route reserves its vehicle for the day', cres.vehicles.find((x) => x.id === veh)?.available === false);
+    const cp = cres.deliveryPersons.find((x) => x.available)!;
+    const rt = await cdsApi.generateRouteTrip(route.id, { deliveryPersonId: cp.id });
+    ok('Generate Trip: retailer trip with the chosen delivery person, loading at the CDS first', rt.type === 'RETAILER_DELIVERY' && rt.deliveryPersonId === cp.id && rt.vehicleId === veh && rt.stops[0].action === 'CDS_ORDER_PICKUP');
+    await fails('A route generates one trip only', () => cdsApi.generateRouteTrip(route.id, { deliveryPersonId: cp.id }), 409);
     await cdsApi.startTrip(rt.id);
     const lo = await doStop(rt, 'CDS_ORDER_PICKUP');
-    ok('Order pickup at CDS: OTP to the CDS User', /\(CDS Uppal\)/.test(lo.sentToName), lo.sentToName);
-    ok('Orders Out for Delivery after the CDS pickup OTP', (await cdsApi.order(a1.order.id)).order.status === 'OUT_FOR_DELIVERY');
-    // prepaid order at the second retailer; the retailer hands back 2 units during the visit (ad-hoc return)
+    ok('Order pickup at CDS: OTP to the CDS User', /CDS Uppal/.test(lo.sentToName));
     await doStop(rt, 'RETAILER_DELIVERY', (s) => s.partyId === retU2.id);
     ok('Prepaid order delivered (no collection)', (await cdsApi.order(a2.order.id)).order.status === 'DELIVERED');
-    const delStop = (await cdsApi.trip(rt.id)).trip.stops.find((s) => s.action === 'RETAILER_DELIVERY' && s.partyId === retU2.id)!;
-    await cdsApi.addReturnAtStop(rt.id, delStop.id, { orderId: a2.order.id, lines: [{ sku: `E2E-${tag}-Oil`, qty: 2, reason: 'Quality issue', condition: 'DAMAGED' }] });
-    ok('Return collected during the visit adds a return-collection stop and a return handover at the CDS', (await cdsApi.trip(rt.id)).trip.stops.some((s) => s.action === 'RETAILER_RETURN' && s.partyId === retU2.id) && (await cdsApi.trip(rt.id)).trip.stops.at(-1)!.action === 'RETURN_HANDOVER_CDS');
     const dl = await doStop(rt, 'RETAILER_DELIVERY', (s) => s.partyId === retU.id, { collections: [{ orderId: a1.order.id, amount: 1000, mode: 'CASH' }] });
     ok('Retailer delivery: OTP to the retailer', dl.sentToPhone === retU.phone);
-    ok('COD order partially delivered (short at GRN)', (await cdsApi.order(a1.order.id)).order.status === 'PARTIALLY_DELIVERED');
-    const rr = await doStop(rt, 'RETAILER_RETURN');
-    ok('Return collection: OTP to the retailer', rr.sentToPhone === retU2.phone);
-    const hs = (await cdsApi.trip(rt.id)).trip.stops.find((s) => s.action === 'RETURN_HANDOVER_CDS')!;
-    const hsOtp = await cdsApi.sendStopOtp(rt.id, hs.id);
-    await fails('Return handover: accepted + rejected must equal received', () => cdsApi.completeStop(rt.id, hs.id, { otp: otpCode(hsOtp), lines: [{ idx: 0, actualQty: 2, acceptedQty: 2, rejectedQty: 1 }] }), 400, /accepted \+ rejected/);
-    await cdsApi.completeStop(rt.id, hs.id, { otp: otpCode(hsOtp), lines: [{ idx: 0, actualQty: 2, acceptedQty: 1, rejectedQty: 1 }] });
-    const ret = (await cdsApi.searchReturns({ pageSize: 0 })).rows.find((r) => r.orderId === a2.order.id)!;
-    ok('Return Received at CDS with accepted / rejected quantities', ret.status === 'RECEIVED_AT_CDS' && ret.lines[0].acceptedQty === 1 && ret.lines[0].rejectedQty === 1);
-    ok('Retailer trip finished', ['COMPLETED', 'PARTIALLY_COMPLETED'].includes((await cdsApi.trip(rt.id)).trip.status));
+    ok('COD order partially delivered (short at handover)', (await cdsApi.order(a1.order.id)).order.status === 'PARTIALLY_DELIVERED');
+    const tv = await cdsApi.trip(rt.id);
+    ok('Cash collected is recorded on the trip', tv.collections.some((c) => c.orderId === a1.order.id && c.amount === 1000 && c.mode === 'CASH' && c.deliveryPersonName === cp.name));
+    ok('Retailer trip completed', tv.trip.status === 'COMPLETED');
 
-    // ---------------------------------------------------------------- collections (manual)
-    const col = (await cdsApi.searchCollections({ status: 'WITH_DELIVERY_PERSON', pageSize: 0 })).rows.find((c) => c.orderId === a1.order.id)!;
-    ok('Collection recorded with retailer, order, delivery person and amount', !!col && col.amount === 1000 && col.deliveryPersonName === cp.name);
-    await fails('Hand over to Qwipo needs the CDS receipt first', () => cdsApi.handToQwipo([col.id], 'DEP-X'), 409);
-    await cdsApi.receiveCollections([{ id: col.id, amount: 1000 }]);
-    await cdsApi.handToQwipo([col.id], `DEP-${tag}`);
-    await cdsApi.recordSettlement([col.id], `STL-${tag}`);
-    const colDone = (await cdsApi.searchCollections({ status: 'SETTLED', pageSize: 0 })).rows.find((c) => c.id === col.id);
-    ok('Collection: delivery person → CDS → Qwipo (SNP) → settled, with references', !!colDone && colDone.qwipoHandoverRef === `DEP-${tag}` && colDone.settlementRef === `STL-${tag}`);
-
-    // ---------------------------------------------------------------- 10. return planning → CDS return trip
-    await as('9100000001');
+    // ---------------------------------------------------------------- Delivery Partner App
+    await as('9100000003');
     const m3 = await cdsApi.meta();
-    const r3 = await cdsApi.resources(m3.tomorrow);
-    const rv = r3.vehicles.find((x) => x.available)!;
-    const rp = r3.deliveryPersons.find((x) => x.available)!;
-    const toPlan = (await cdsApi.searchReturns({ statuses: ['RECEIVED_AT_CDS'], unplanned: true, pageSize: 0 })).rows.filter((r) => r.orderId === a1.order.id || r.orderId === a2.order.id);
-    ok('Returns across CDS stores, grouped distributor-wise for planning', toPlan.length === 2 && new Set(toPlan.map((r) => r.distributorId)).size === 2);
-    const crt = (await cdsApi.createReturnPlan({ returnIds: toPlan.map((r) => r.id), plannedDate: m3.tomorrow, vehicleId: rv.id, deliveryPersonId: rp.id })).trip;
-    ok('CDS return trip: CDS pickup then distributor handovers', crt.type === 'CDS_RETURN' && crt.stops[0].action === 'CDS_RETURN_PICKUP' && crt.stops.filter((s) => s.action === 'SELLER_RETURN_HANDOVER').length === 2);
-    await cdsApi.startTrip(crt.id);
-    const pu = await doStop(crt, 'CDS_RETURN_PICKUP');
-    ok('Return pickup at CDS: OTP to the CDS User', /CDS Uppal/.test(pu.sentToName));
-    const h1 = await doStop(crt, 'SELLER_RETURN_HANDOVER');
-    ok('Return handover to seller: OTP to the seller', ['9848011101', '9848011102'].includes(h1.sentToPhone));
-    const last = (await cdsApi.trip(crt.id)).trip.stops.find((s) => s.status === 'PENDING')!;
-    const ev = (type: string, extra: Record<string, unknown> = {}) => post<{ duplicate: boolean }>(`/cds/dp/trips/${crt.id}/events`, { eventId: `e2e-${tag}-${type}`, deliveryPersonId: rp.id, type, stopId: last.id, ...extra });
-    await fails('Delivery Partner App: only the assigned delivery person', () => post(`/cds/dp/trips/${crt.id}/events`, { eventId: `e2e-${tag}-x`, deliveryPersonId: 'dp-SC-99', type: 'SEND_OTP', stopId: last.id }), 403);
+    const pk = await cdsApi.planRoutes({ orderIds: [a3.order.id], plannedDate: m3.tomorrow });
+    const [rk] = await cdsApi.confirmRoutes({ plannedDate: m3.tomorrow, routes: pk.routes.map((r) => ({ vehicleId: r.vehicleId, orderIds: r.orderIds })) });
+    const kp = (await cdsApi.resources(m3.tomorrow)).deliveryPersons.find((x) => x.available)!;
+    const kt = await cdsApi.generateRouteTrip(rk.id, { deliveryPersonId: kp.id });
+    const first = kt.stops[0];
+    const ev = (type: string, extra: Record<string, unknown> = {}) => post<{ duplicate: boolean }>(`/cds/dp/trips/${kt.id}/events`, { eventId: `e2e-${tag}-${type}`, deliveryPersonId: kp.id, type, stopId: first.id, ...extra });
+    await fails('Delivery Partner App: only the assigned delivery person', () => post(`/cds/dp/trips/${kt.id}/events`, { eventId: `e2e-${tag}-x`, deliveryPersonId: 'dp-SC-99', type: 'SEND_OTP', stopId: first.id }), 403);
+    await ev('START');
     await ev('SEND_OTP');
-    const code = st().otps.filter((o) => o.stopId === last.id && o.status === 'ACTIVE')[0].code;
+    const code = st().otps.filter((o) => o.stopId === first.id && o.status === 'ACTIVE')[0].code;
     const c1 = await ev('COMPLETE', { otp: code });
     const c2 = await ev('COMPLETE', { otp: code });
     ok('Delivery Partner App events are processed once (duplicate ignored)', !c1.duplicate && c2.duplicate);
-    const rets = (await cdsApi.searchReturns({ pageSize: 0 })).rows.filter((r) => toPlan.some((x) => x.id === r.id));
-    ok('CDS return trip completed; returns Completed (Retailer → CDS → Seller)', (await cdsApi.trip(crt.id)).trip.status === 'COMPLETED' && rets.every((r) => r.status === 'COMPLETED'));
+    ok('Loaded through the Delivery Partner App: order Out for Delivery', (await cdsApi.order(a3.order.id)).order.status === 'OUT_FOR_DELIVERY');
 
     // ---------------------------------------------------------------- reports, OTP history, LBNP data
-    const rep = await cdsApi.report('trips-CDS_RETURN', {});
-    ok('Reports: CDS return trips report includes the trip', rep.rows.some((r) => r.tripNo === crt.tripNo));
+    await as('9100000002');
+    const perf = await cdsApi.report('performance', { from: m2.today, to: m2.tomorrow });
+    ok('CDS User Performance Report: one row per day with totals', perf.rows.length === 2 && perf.columns[0].label === 'Date' && !!perf.totals);
+    await fails('CDS User has only the Performance Report', () => cdsApi.report('trips-RETAILER_DELIVERY', {}), 404);
+    await as('9100000001');
+    const rep = await cdsApi.report('trips-CDS_DELIVERY', {});
+    ok('Reports: CDS delivery trips report includes the trip', rep.rows.some((r) => r.tripNo === ct.tripNo));
     const sum = await cdsApi.summary();
-    ok('Service Centre dashboard figures from live data', sum.length === 7 && sum.every((k) => typeof k.value === 'number'));
+    ok('Service Centre dashboard figures from live data', sum.length === 5 && sum.every((k) => typeof k.value === 'number'));
     const otps = (await cdsApi.trip(pt.id)).otps;
     ok('OTP history kept with verification time and user; codes never exposed in trip views', otps.some((o) => o.status === 'VERIFIED' && o.verifiedAt && o.verifiedBy) && otps.every((o) => !('code' in o)));
-    const purposes = new Set(st().otps.filter((o) => o.status === 'VERIFIED' && [pt.id, ct.id, rt.id, crt.id].includes(o.tripId)).map((o) => o.purpose));
-    ok('All 8 OTP checkpoints verified in this run', purposes.size === 8, [...purposes].join());
+    const purposes = new Set(st().otps.filter((o) => o.status === 'VERIFIED' && [pt.id, ct.id, rt.id].includes(o.tripId)).map((o) => o.purpose));
+    ok('All 4 OTP checkpoints verified in this run', purposes.size === 4, [...purposes].join());
     const after = coreSnap();
     const changed = (Object.keys(coreBefore) as (keyof typeof coreBefore)[]).filter((k) => coreBefore[k] !== after[k]);
     ok('Existing LBNP trips, vehicles, drivers, permissions untouched', !changed.length, changed.join());

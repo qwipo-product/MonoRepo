@@ -30,7 +30,6 @@ import {
   CheckCircle2,
   XCircle,
   Warehouse,
-  RotateCcw,
   Truck,
   Package,
   ShoppingCart,
@@ -65,7 +64,6 @@ import { isCdsEnabled, useCds } from "../../lib/cds/store";
 import { PickupPersonLine, PrintPickupListButton, pickupInfo } from "../../components/cds/pickup-info";
 import { SELLER_CANCELLABLE } from "../../lib/cds/calc";
 import { CdsOrdersTab } from "../../components/cds/cds-orders-tab";
-import { CdsReturnsTab, useCdsReturnComingCount, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
 import { useCdsOrderIds, useCdsOrderMap } from "../../components/cds/cds-order-sync";
 import { areaFromAddress, isCdsServiceable } from "../../lib/cds/order-bridge";
 import type { CdsOrderStatus } from "../../lib/cds/types";
@@ -130,8 +128,7 @@ type TabType =
   | "delivered"
   | "cancelled"
   // Cross Dock Store orders — only when the Darkstore Connector is on.
-  | "cds"
-  | "returns";
+  | "cds";
 
 // ---- Bulk "Actions" menu --------------------------------------------
 // After selecting orders the seller sees "N selected" and one Actions
@@ -186,7 +183,7 @@ const WORK_TONE = {
   purple: "text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100",
 } as const;
 
-/** One row: "5 to confirm · 3 waiting for pickup · 2 returns coming back". */
+/** One row: "5 to confirm · 3 waiting for pickup". */
 function TodaysWork({ items }: { items: { key: string; label: string; count: number; tone: keyof typeof WORK_TONE; onClick: () => void }[] }) {
   const nothing = items.every((i) => i.count === 0);
   return (
@@ -219,17 +216,13 @@ export function Orders() {
   // CdsOrderSync) — they stay on Confirmed and show their CDS stage.
   const cdsOrderIds = useCdsOrderIds();
   const cdsOrderMap = useCdsOrderMap();
-  // Tabs that draw their own summary + filters (CDS, 3PL for CDS sellers, Returns).
-  const ownHeaderTab = (tab: string) => tab === "cds" || tab === "returns" || (cdsEnabled && tab === "logistics");
+  // Tabs that draw their own summary + filters (CDS, 3PL for CDS sellers). The CDS flow has no returns.
+  const ownHeaderTab = (tab: string) => tab === "cds" || (cdsEnabled && tab === "logistics");
   // CDS sellers: the order type comes from CDS serviceability (buyer inside
   // the CDS polygon → CDS Store Delivery, else 3PL Logistics Delivery).
   // Other sellers keep Beat / Non-Beat.
   const isRouteA = (o: Order) => (cdsEnabled ? isCdsServiceable(o) : isBeatOrder(o));
-  const cdsReturnCount = useCdsReturnCount();
-  const cdsReturnComingCount = useCdsReturnComingCount();
   const cdsState = useCds();
-  // Today's work strip → Returns opens on "Coming back to you".
-  const [returnsPreset, setReturnsPreset] = useState<"all" | "coming">("all");
   const location = useLocation();
 
   // Read logistics enabled flag for the current seller, and keep it
@@ -272,7 +265,7 @@ export function Orders() {
   const tabFromSearch = (search: string): TabType => {
     const t = new URLSearchParams(search).get("tab");
     const ok: string[] = ["all", "new", "confirmed", "delivered", "cancelled"];
-    if (cdsEnabled) ok.push("pickedup", "returns");
+    if (cdsEnabled) ok.push("pickedup");
     else if (threePlEnabled) ok.push("logistics");
     return t && ok.includes(t) ? (t as TabType) : "all";
   };
@@ -460,7 +453,7 @@ export function Orders() {
   // Get orders for active tab
   const getTabOrders = (tab: TabType): Order[] => {
     const statusMap: Record<
-      Exclude<TabType, "all" | "logistics" | "cds" | "returns" | "pickedup">,
+      Exclude<TabType, "all" | "logistics" | "cds" | "pickedup">,
       Order["status"]
     > = {
       new: "New",
@@ -469,7 +462,7 @@ export function Orders() {
       cancelled: "Cancelled",
     };
 
-    if (tab === "cds" || tab === "returns") return [];
+    if (tab === "cds") return [];
     return orders.filter((order) => {
       // "all" bypasses the status filter; "logistics" is keyed off the
       // hand-off flag rather than a status, since those rows are still
@@ -960,7 +953,6 @@ export function Orders() {
 
   // Clear selection when changing tabs
   const handleTabChange = (tab: string) => {
-    if (tab !== "returns") setReturnsPreset("all");
     setActiveTab(tab as TabType);
     // Keep the URL in step with the open tab so Back from an order page
     // returns here (All = plain /orders).
@@ -1476,10 +1468,10 @@ export function Orders() {
       timeZone: "UTC",
     });
 
-  // CDS / 3PL / Returns tabs show the same table as Confirmed, for the
+  // CDS / 3PL tabs show the same table as Confirmed, for the
   // orders those tabs pick (ids from the CDS store).
   // Filter panel (Company, Status, Marketplace, Date Range) as a check on
-  // one order id — used by the CDS / 3PL / Returns tabs.
+  // one order id — used by the CDS / 3PL tabs.
   const matchesPanelFilters = (id: string) => {
     const o = orders.find((x) => x.id === id);
     if (!o) return true;
@@ -1508,9 +1500,7 @@ export function Orders() {
           ? "No orders yet"
           : activeTab === "cds"
             ? "No Cross Dock Store orders here"
-            : activeTab === "returns"
-              ? "No returns here"
-              : activeTab === "logistics"
+            : activeTab === "logistics"
                 ? cdsEnabled ? "No 3PL Logistics orders here" : "Nothing with the logistics partner"
                 : `No ${activeTab} orders`;
       const description = hasActiveFilters
@@ -1519,9 +1509,7 @@ export function Orders() {
           ? "Once retailers start placing orders on ONDC and connected marketplaces, they'll show up here ready for you to confirm and dispatch."
           : cdsEnabled && (activeTab === "cds" || activeTab === "logistics")
             ? "Orders you confirm land here automatically, already sent to LBNP."
-            : activeTab === "returns"
-              ? "Returns raised by the delivery app will appear here."
-              : activeTab === "logistics"
+            : activeTab === "logistics"
             ? "Orders you send from Confirmed using Request 3PL Logistics will appear here until the delivery partner completes them."
             : `You don't have any ${activeTab} orders right now — new ones will land here automatically.`;
       return (
@@ -1969,18 +1957,6 @@ export function Orders() {
                   tone: "amber",
                   onClick: () => handleTabChange("confirmed"),
                 },
-                ...(cdsEnabled
-                  ? [{
-                      key: "returns",
-                      label: cdsReturnComingCount === 1 ? "return coming back" : "returns coming back",
-                      count: cdsReturnComingCount,
-                      tone: "purple" as const,
-                      onClick: () => {
-                        setReturnsPreset("coming");
-                        handleTabChange("returns");
-                      },
-                    }]
-                  : []),
               ]}
             />
           )}
@@ -2053,15 +2029,6 @@ export function Orders() {
                       <XCircle className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
                       <span className="font-medium">Cancelled ({summary.cancelled})</span>
                     </TabsTrigger>
-                    {cdsEnabled && (
-                      <TabsTrigger
-                        value="returns"
-                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-3 py-2 transition-all whitespace-nowrap"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1.5 hidden 2xl:inline-block" />
-                        <span className="font-medium">Returns ({cdsReturnCount})</span>
-                      </TabsTrigger>
-                    )}
                   </TabsList>
                   </div>
 
@@ -2544,11 +2511,6 @@ export function Orders() {
               {renderOrderTable(paginatedOrders)}
             </TabsContent>
 
-            {cdsEnabled && (
-              <TabsContent value="returns" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-                <CdsReturnsTab key={returnsPreset} initialFilter={returnsPreset} renderTable={renderLinkedTable} keep={matchesPanelFilters} />
-              </TabsContent>
-            )}
           </Tabs>
         </Card>
         </div>

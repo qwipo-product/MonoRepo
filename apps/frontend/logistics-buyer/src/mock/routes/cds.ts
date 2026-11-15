@@ -17,7 +17,7 @@ import { buildReport, REPORTS, summary, type ReportFilters } from '../../cds/rep
 import { ACTIVE_TRIP, STOP_ACTION } from '../../cds/status';
 import { buildCdsState } from '../../cds/seed';
 import { serviceStoreFor } from '../../cds/planning';
-import { RETURN_REASONS, ROLE_PAGES, SETTLEMENT_PARTIES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripType } from '../../cds/types';
+import { ROLE_PAGES, type CdsPage, type CdsState, type CdsUser, type Trip, type TripType } from '../../cds/types';
 import { seedInputs } from '../extensions/cds';
 
 const SVC = 'cds-svc';
@@ -162,8 +162,6 @@ route('GET', SVC, '/cds/meta', (req) => {
     allStores: isSC(u) ? s.stores : s.stores.filter((x) => u.cdsStoreIds.includes(x.id)),
     distributors: s.distributors,
     settings: s.settings,
-    returnReasons: RETURN_REASONS,
-    settlementParties: SETTLEMENT_PARTIES,
     reports: (isSC(u) ? REPORTS.SERVICE_CENTRE : REPORTS.CDS_USER),
     today: e.today(),
     tomorrow: e.tomorrow(),
@@ -202,7 +200,7 @@ route('GET', SVC, '/cds/resources', (req) => {
 // ---------------------------------------------------------------- orders
 
 route('POST', SVC, '/cds/orders/search', (req) => {
-  const u = need(req, ['sc-orders', 'sc-pickup', 'sc-deliver', 'cu-orders', 'cu-delivery', 'cu-grn', 'cu-returns']);
+  const u = need(req, ['sc-orders', 'sc-pickup', 'sc-deliver', 'cu-orders', 'cu-delivery']);
   const b = req.body ?? {};
   const stores = scopeOf(u, b.cdsStoreId || undefined);
   const s = cdsState();
@@ -227,7 +225,6 @@ route('POST', SVC, '/cds/orders/search', (req) => {
 route('GET', SVC, '/cds/orders/:id', (req) => {
   const u = need(req, ['sc-orders', 'cu-orders']);
   const s = cdsState();
-  const e = engine();
   const o = read((x) => x.order(req.params.id));
   ownStore(u, o.cdsStoreId);
   const n = names(s);
@@ -235,10 +232,7 @@ route('GET', SVC, '/cds/orders/:id', (req) => {
   return {
     order: o, retailer: n.r(o.retailerId), distributor: s.distributors.find((d) => d.id === o.distributorId), store: s.stores.find((x) => x.id === o.cdsStoreId),
     trips: s.trips.filter((t) => tripsOf.includes(t.id)).map((t) => ({ id: t.id, tripNo: t.tripNo, type: t.type, status: t.status, plannedDate: t.plannedDate })),
-    grn: o.grnId ? s.grns.find((g) => g.id === o.grnId) ?? null : null,
-    returns: s.returns.filter((r) => r.orderId === o.id),
     collections: s.collections.filter((c) => c.orderId === o.id),
-    returnable: o.lines.map((l) => ({ sku: l.sku, max: e.returnableQty(o, l.sku) })),
   };
 });
 route('POST', SVC, '/cds/orders/:id/cancel', (req) => {
@@ -257,16 +251,46 @@ route('POST', SVC, '/cds/deliver-to-cds/plans', (req) => {
   const u = need(req, 'sc-deliver');
   return cdsTx((e) => e.createCdsDeliveryPlan(req.body, u.name));
 });
-route('POST', SVC, '/cds/return-planning/plans', (req) => {
-  const u = need(req, 'sc-returns');
-  return cdsTx((e) => e.createReturnPlan(req.body, u.name));
-});
-route('POST', SVC, '/cds/delivery/plans', (req) => {
+/** CDS User Delivery Planning (LBNP style): Plan Routes → review → Confirm Routes → Generate Trip per route. */
+const routeView = (s: CdsState, p: CdsState['plans'][number]) => {
+  const t = p.tripIds.length ? s.trips.find((x) => x.id === p.tripIds[p.tripIds.length - 1]) ?? null : null;
+  return { ...p, dropPoints: p.route?.retailerIds.length ?? 0, trip: t ? { id: t.id, tripNo: t.tripNo, status: t.status, deliveryPersonName: t.deliveryPersonName } : null };
+};
+route('POST', SVC, '/cds/delivery-routes/plan', (req) => {
   const u = need(req, 'cu-delivery');
-  return cdsTx((e) => e.createDeliveryPlan({ ...req.body, cdsStoreId: myStore(u) }, u.name));
+  return read((e) => {
+    const out = e.proposeRoutes(myStore(u), req.body?.orderIds ?? [], req.body?.plannedDate);
+    const n = names(e.s);
+    return { ...out, routes: out.routes.map((r) => ({ ...r, retailers: r.retailerIds.map((id) => n.r(id)) })) };
+  });
+});
+route('POST', SVC, '/cds/delivery-routes', (req) => {
+  const u = need(req, 'cu-delivery');
+  return cdsTx((e) => e.confirmRoutes({ ...req.body, cdsStoreId: myStore(u) }, u.name));
+});
+route('GET', SVC, '/cds/delivery-routes', (req) => {
+  const u = need(req, ['cu-delivery', 'cu-trips']);
+  const s = cdsState();
+  return s.plans.filter((p) => p.kind === 'RETAILER_DELIVERY' && p.owner === myStore(u) && p.route).sort(newest).map((p) => routeView(s, p));
+});
+route('GET', SVC, '/cds/delivery-routes/:id', (req) => {
+  const u = need(req, ['cu-delivery', 'cu-trips']);
+  const s = cdsState();
+  const p = read((e) => e.plan(req.params.id));
+  if (p.kind !== 'RETAILER_DELIVERY' || !p.route) throw new MockError(404, 'Route not found');
+  ownStore(u, p.owner);
+  const n = names(s);
+  const orders = s.orders.filter((o) => p.orderIds.includes(o.id)).map((o) => ({ ...o, retailerName: n.r(o.retailerId)?.name ?? '', distributorName: n.d(o.distributorId) }));
+  return { route: routeView(s, p), retailers: p.route.retailerIds.map((id) => n.r(id)), orders };
+});
+route('POST', SVC, '/cds/delivery-routes/:id/trip', (req) => {
+  const u = need(req, 'cu-delivery');
+  const p = read((e) => e.plan(req.params.id));
+  ownStore(u, p.owner);
+  return cdsTx((e) => e.generateRouteTrip(p.id, req.body ?? {}, u.name));
 });
 route('GET', SVC, '/cds/plans', (req) => {
-  const u = need(req, ['sc-pickup', 'sc-deliver', 'sc-returns', 'cu-delivery']);
+  const u = need(req, ['sc-pickup', 'sc-deliver', 'cu-delivery']);
   const s = cdsState();
   const owner = isSC(u) ? 'SC' : myStore(u);
   return s.plans.filter((p) => p.owner === owner && (!req.query.kind || p.kind === req.query.kind)).sort(newest).slice(0, Number(req.query.limit) || 50)
@@ -298,7 +322,7 @@ function tripView(s: CdsState, t: Trip) {
   return {
     ...t, ownerName: n.st(t.owner),
     stops: t.stops.map((x) => ({ ...x, otp: x.otpId ? (({ code: _code, ...rest }) => rest)(s.otps.find((o) => o.id === x.otpId)!) : null })),
-    units: t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP', 'CDS_RETURN_PICKUP'].includes(x.action)).reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0)
+    units: t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP'].includes(x.action)).reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0)
       || t.stops.reduce((a, x) => a + x.lines.reduce((b, l) => b + l.plannedQty, 0), 0),
   };
 }
@@ -308,7 +332,7 @@ route('POST', SVC, '/cds/trips/search', (req) => {
   const types: TripType[] = b.types ?? [];
   if (isSC(u) && types.includes('RETAILER_DELIVERY')) throw new MockError(403, 'Retailer trips are managed by the CDS Users');
   if (!isSC(u) && types.some((x) => x !== 'RETAILER_DELIVERY')) throw new MockError(403, 'CDS Users see only retailer delivery trips');
-  need(req, isSC(u) ? ['sc-trips', 'sc-pickup', 'sc-deliver', 'sc-returns'] : ['cu-trips', 'cu-delivery']);
+  need(req, isSC(u) ? ['sc-trips', 'sc-pickup', 'sc-deliver'] : ['cu-trips', 'cu-delivery']);
   const s = cdsState();
   const rows = s.trips
     .filter((t) => (isSC(u) ? t.owner === 'SC' : t.owner === myStore(u)))
@@ -331,7 +355,6 @@ route('GET', SVC, '/cds/trips/:id', (req) => {
     canRun: (isSC(u) && t.owner === 'SC') || (!isSC(u) && t.owner === myStore(u)),
     otps: s.otps.filter((o) => o.tripId === t.id).map(({ code: _code, ...rest }) => rest).reverse(),
     orders: s.orders.filter((o) => t.orderIds.includes(o.id)).map((o) => ({ id: o.id, orderNo: o.orderNo, status: o.status, paymentMode: o.paymentMode, retailerId: o.retailerId, retailerName: n.r(o.retailerId)?.name ?? '', distributorName: n.d(o.distributorId), storeName: n.st(o.cdsStoreId), lines: o.lines })),
-    returns: s.returns.filter((r) => t.returnIds.includes(r.id)).map((r) => ({ id: r.id, returnNo: r.returnNo, status: r.status, orderNo: r.orderNo })),
     collections: s.collections.filter((c) => c.tripId === t.id),
   };
 });
@@ -355,7 +378,6 @@ route('POST', SVC, '/cds/trips/:id/stops/:stopId/complete', (req) => {
   return completeStop(t.id, req.params.stopId, req.body ?? {}, `${u.name} (for ${t.deliveryPersonName})`);
 });
 route('POST', SVC, '/cds/trips/:id/stops/:stopId/fail', tripWrite((e, t, b, by, req) => e.failStop(t.id, req.params.stopId, b.reason, by)));
-route('POST', SVC, '/cds/trips/:id/stops/:stopId/returns', tripWrite((e, t, b, by, req) => e.addReturnAtStop(t.id, req.params.stopId, b, by)));
 
 /** OTP failures are saved (attempt count / lock) before the error is reported. */
 function completeStop(tripId: string, stopId: string, body: StopInput, by: string) {
@@ -366,7 +388,7 @@ function completeStop(tripId: string, stopId: string, body: StopInput, by: strin
 
 /** CDS User: OTPs sent to this CDS (handovers and pickups at the store) — to read out to the delivery person. */
 route('GET', SVC, '/cds/otps/mine', (req) => {
-  const u = need(req, ['cu-grn', 'cu-trips', 'cu-returns']);
+  const u = need(req, ['cu-orders', 'cu-trips']);
   const s = engine().s;
   persist();
   return s.otps.filter((o) => o.sentToType === 'CDS' && o.sentToId === myStore(u) && o.status === 'ACTIVE').map((o) => {
@@ -375,121 +397,17 @@ route('GET', SVC, '/cds/otps/mine', (req) => {
   });
 });
 
-/** CDS User: Service Centre trips arriving at / collecting from this store. */
-route('GET', SVC, '/cds/incoming', (req) => {
-  const u = need(req, ['cu-grn', 'cu-returns']);
-  const s = cdsState();
-  const st = myStore(u);
-  return s.trips.filter((t) => t.owner === 'SC' && t.status !== 'CANCELLED' && t.stops.some((x) => x.partyId === st && x.partyType === 'CDS'))
-    .filter((t) => req.query.type ? t.type === req.query.type : true)
-    .sort((a, b) => b.plannedDate.localeCompare(a.plannedDate)).slice(0, 30)
-    .map((t) => {
-      const x = t.stops.find((y) => y.partyId === st && y.partyType === 'CDS')!;
-      return { tripId: t.id, tripNo: t.tripNo, type: t.type, status: t.status, plannedDate: t.plannedDate, deliveryPersonName: t.deliveryPersonName, deliveryPersonPhone: t.deliveryPersonPhone, vehicleRegNo: t.vehicleRegNo, stopStatus: x.status, verifiedAt: x.verifiedAt, units: x.lines.reduce((a, l) => a + l.plannedQty, 0), handled: x.lines.reduce((a, l) => a + (l.actualQty ?? 0), 0), orders: Array.from(new Set(x.lines.map((l) => l.orderId).filter(Boolean))).length, returns: Array.from(new Set(x.lines.map((l) => l.returnId).filter(Boolean))).length };
-    });
-});
-
-// ---------------------------------------------------------------- GRN
-
-route('POST', SVC, '/cds/grns/search', (req) => {
-  const u = need(req, 'cu-grn');
-  const b = req.body ?? {};
-  const s = cdsState();
-  const n = names(s);
-  const rows = s.grns.filter((g) => g.cdsStoreId === myStore(u) && (!b.status || g.status === b.status) && (!b.distributorId || g.distributorId === b.distributorId))
-    .map((g) => ({ ...g, distributorName: n.d(g.distributorId), cdsTripNo: s.trips.find((t) => t.id === g.cdsTripId)?.tripNo ?? '', pickupTripNos: g.pickupTripIds.map((id) => s.trips.find((t) => t.id === id)?.tripNo ?? ''), received: g.lines.reduce((a, l) => a + l.receivedQty, 0), dispatched: g.lines.reduce((a, l) => a + l.dispatchedQty, 0), issues: g.lines.some((l) => l.shortQty || l.excessQty || l.damagedQty) }))
-    .filter((g) => has(b.search, g.grnNo, g.distributorName, g.cdsTripNo, ...g.lines.map((l) => l.orderNo)))
-    .sort(newest);
-  return page(rows, b);
-});
-route('GET', SVC, '/cds/grns/:id', (req) => {
-  const u = need(req, 'cu-grn');
-  const s = cdsState();
-  const g = read((e) => e.grn(req.params.id));
-  ownStore(u, g.cdsStoreId);
-  const n = names(s);
-  return { grn: g, distributor: s.distributors.find((d) => d.id === g.distributorId), store: s.stores.find((x) => x.id === g.cdsStoreId), cdsTrip: s.trips.find((t) => t.id === g.cdsTripId), pickupTrips: s.trips.filter((t) => g.pickupTripIds.includes(t.id)).map((t) => ({ id: t.id, tripNo: t.tripNo })), orders: s.orders.filter((o) => g.orderIds.includes(o.id)).map((o) => ({ id: o.id, orderNo: o.orderNo, status: o.status, retailerName: n.r(o.retailerId)?.name ?? '' })) };
-});
-route('POST', SVC, '/cds/grns/:id/complete', (req) => {
-  const u = need(req, 'cu-grn');
-  const g = read((e) => e.grn(req.params.id));
-  ownStore(u, g.cdsStoreId);
-  return cdsTx((e) => e.completeGrn(g.id, req.body ?? {}, u.name));
-});
-
-// ---------------------------------------------------------------- returns
-
-route('POST', SVC, '/cds/returns/search', (req) => {
-  const u = need(req, ['sc-returns', 'cu-returns', 'cu-delivery']);
-  const b = req.body ?? {};
-  const stores = scopeOf(u, b.cdsStoreId || undefined);
-  const s = cdsState();
-  const n = names(s);
-  const rows = s.returns.filter((r) => stores.includes(r.cdsStoreId))
-    .filter((r) => !b.statuses?.length || b.statuses.includes(r.status))
-    .filter((r) => !b.distributorId || r.distributorId === b.distributorId)
-    // not yet on a trip for its current leg: retailer pickup (initiated) or the return trip to the seller (at CDS)
-    .filter((r) => !b.unplanned || (r.status === 'RETURN_INITIATED' ? !r.retailerTripId : !r.returnTripId))
-    .map((r) => ({ ...r, retailerName: r.source === 'GRN' ? 'Damaged at GRN' : n.r(r.retailerId)?.name ?? '', distributorName: n.d(r.distributorId), storeName: n.st(r.cdsStoreId), units: r.lines.reduce((a, l) => a + l.qty, 0), accepted: r.lines.reduce((a, l) => a + (l.acceptedQty ?? 0), 0), weightKg: Math.round(r.lines.reduce((a, l) => a + (l.acceptedQty ?? l.qty) * l.unitWeightKg, 0) * 10) / 10 }))
-    .filter((r) => has(b.search, r.returnNo, r.orderNo, r.retailerName, r.distributorName))
-    .sort(newest);
-  return page(rows, b);
-});
-route('POST', SVC, '/cds/returns', (req) => {
-  const u = need(req, ['cu-returns', 'cu-orders']);
-  const o = read((e) => e.order(req.body?.orderId));
-  ownStore(u, o.cdsStoreId);
-  return cdsTx((e) => e.initiateReturn(req.body, u.name));
-});
-route('POST', SVC, '/cds/returns/:id/cancel', (req) => {
-  const u = need(req, 'cu-returns');
-  const r = read((e) => e.ret(req.params.id));
-  ownStore(u, r.cdsStoreId);
-  return cdsTx((e) => e.cancelReturn(r.id, req.body?.reason, u.name));
-});
-
-// ---------------------------------------------------------------- collections & payments
-
-route('POST', SVC, '/cds/collections/search', (req) => {
-  const u = need(req, 'cu-collections');
-  const b = req.body ?? {};
-  const s = cdsState();
-  const n = names(s);
-  const rows = s.collections.filter((c) => c.cdsStoreId === myStore(u) && (!b.status || c.status === b.status))
-    .map((c) => ({ ...c, retailerName: n.r(c.retailerId)?.name ?? '' }))
-    .filter((c) => has(b.search, c.collectionNo, c.orderNo, c.retailerName, c.deliveryPersonName, c.tripNo))
-    .sort((a, z) => z.collectedAt.localeCompare(a.collectedAt));
-  return page(rows, b);
-});
-route('POST', SVC, '/cds/collections/receive', (req) => {
-  const u = need(req, 'cu-collections');
-  return cdsTx((e) => e.receiveCollections(myStore(u), req.body ?? {}, u.name));
-});
-route('POST', SVC, '/cds/collections/handover', (req) => {
-  const u = need(req, 'cu-collections');
-  return cdsTx((e) => e.handToQwipo(myStore(u), req.body?.ids, req.body?.ref, u.name));
-});
-route('POST', SVC, '/cds/collections/settle', (req) => {
-  const u = need(req, 'cu-collections');
-  return cdsTx((e) => e.recordSettlement(myStore(u), req.body?.ids, req.body?.ref, u.name));
-});
 
 // ---------------------------------------------------------------- retailers, stores, settings
 
-route('GET', SVC, '/cds/retailers', (req) => {
-  const u = need(req, 'cu-retailers');
+/** CDS User Customers (view only): the retailers inside the store's service area. */
+route('GET', SVC, '/cds/customers', (req) => {
+  const u = need(req, 'cu-customers');
   const s = cdsState();
-  const st = s.stores.find((x) => x.id === myStore(u))!;
-  return s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === st.id).map((r) => {
-    const os = s.orders.filter((o) => o.retailerId === r.id && o.cdsStoreId === st.id);
-    return {
-      ...r, orders: os.length, openOrders: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status)).length,
-      deliveredValue: Math.round(os.reduce((a, o) => a + o.lines.reduce((b, l) => b + l.deliveredQty * l.unitPrice, 0), 0) * 100) / 100,
-      returns: s.returns.filter((x) => x.retailerId === r.id && x.cdsStoreId === st.id).length,
-      collected: Math.round(s.collections.filter((c) => c.retailerId === r.id && c.cdsStoreId === st.id).reduce((a, c) => a + c.amount, 0) * 100) / 100,
-      lastOrder: os.map((o) => o.confirmedAt).sort().reverse()[0] ?? null,
-    };
-  }).sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name));
+  const st = myStore(u);
+  return s.retailers.filter((r) => serviceStoreFor(s.stores, r)?.id === st)
+    .map((r) => ({ id: r.id, code: r.code, name: r.name, ownerName: r.ownerName, phone: r.phone, address: r.address, locality: r.locality, lat: r.lat, lng: r.lng }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 /** Service Centre: every retailer with the CDS store whose service area holds it (null → outside every area → 3PL). */
@@ -501,7 +419,7 @@ route('GET', SVC, '/cds/coverage', (req) => {
     return {
       id: r.id, code: r.code, name: r.name, ownerName: r.ownerName, phone: r.phone, locality: r.locality, address: r.address, lat: r.lat, lng: r.lng,
       storeId: serviceStoreFor(s.stores, r)?.id ?? null,
-      orders: os.length, openOrders: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status)).length,
+      orders: os.length, openOrders: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'CANCELLED'].includes(o.status)).length,
       lastOrder: os.map((o) => o.confirmedAt).sort().reverse()[0] ?? null,
     };
   });
@@ -516,11 +434,9 @@ route('GET', SVC, '/cds/stores', (req) => {
     return {
       ...st, user: user ? { name: user.name, mobile: user.mobile, active: user.active } : null,
       incoming: os.filter((o) => ['PICKUP_PLANNED', 'PICKED_UP', 'IN_TRANSIT_TO_CDS'].includes(o.status)).length,
-      grnPending: s.grns.filter((g) => g.cdsStoreId === st.id && g.status === 'PENDING').length,
       ready: os.filter((o) => o.status === 'READY_FOR_DELIVERY').length,
       outForDelivery: os.filter((o) => o.status === 'OUT_FOR_DELIVERY').length,
       delivered: os.filter((o) => ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status)).length,
-      returnsAtCds: s.returns.filter((r) => r.cdsStoreId === st.id && r.status === 'RECEIVED_AT_CDS').length,
       vehicles: s.vehicles.filter((v) => v.owner === st.id).length, deliveryPersons: s.deliveryPersons.filter((p) => p.owner === st.id).length,
     };
   });
@@ -546,7 +462,7 @@ route('PUT', SVC, '/cds/stores/:id', (req) => {
       st.polygon = (ring as [number, number][]).map(([la, ln]) => [Math.round(Number(la) * 1e6) / 1e6, Math.round(Number(ln) * 1e6) / 1e6]);
     }
     if (b.active !== undefined) {
-      if (!b.active && e.s.orders.some((o) => o.cdsStoreId === st.id && !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status))) throw new CdsError(409, `${st.name} has open orders; it cannot be deactivated`);
+      if (!b.active && e.s.orders.some((o) => o.cdsStoreId === st.id && !['DELIVERED', 'PARTIALLY_DELIVERED', 'CANCELLED'].includes(o.status))) throw new CdsError(409, `${st.name} has open orders; it cannot be deactivated`);
       st.active = !!b.active;
     }
     e.audit('STORE', st.id, u.name, 'UPDATED', JSON.stringify(b));
@@ -555,13 +471,13 @@ route('PUT', SVC, '/cds/stores/:id', (req) => {
 });
 
 route('GET', SVC, '/cds/fleet', (req) => {
-  const u = need(req, ['sc-settings', 'cu-reports']);
+  const u = need(req, ['sc-settings', 'cu-settings']);
   const s = cdsState();
   const owner = isSC(u) ? 'SC' : myStore(u);
   return { vehicles: s.vehicles.filter((v) => v.owner === owner), deliveryPersons: s.deliveryPersons.filter((p) => p.owner === owner), settings: s.settings };
 });
 route('POST', SVC, '/cds/fleet/:kind/:id/active', (req) => {
-  const u = need(req, ['sc-settings', 'cu-reports']);
+  const u = need(req, ['sc-settings', 'cu-settings']);
   const owner = isSC(u) ? 'SC' : myStore(u);
   return cdsTx((e) => {
     const list = req.params.kind === 'vehicles' ? e.s.vehicles : e.s.deliveryPersons;
@@ -575,7 +491,7 @@ route('POST', SVC, '/cds/fleet/:kind/:id/active', (req) => {
   });
 });
 route('POST', SVC, '/cds/fleet/:kind', (req) => {
-  const u = need(req, ['sc-settings', 'cu-reports']);
+  const u = need(req, ['sc-settings', 'cu-settings']);
   const owner = isSC(u) ? 'SC' : myStore(u);
   const b = req.body ?? {};
   return cdsTx((e) => {

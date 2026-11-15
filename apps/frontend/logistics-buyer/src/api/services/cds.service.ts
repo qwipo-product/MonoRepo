@@ -2,8 +2,8 @@
 import { http, HttpError } from '../http';
 import type { Column, Report } from '../../cds/reports';
 import type {
-  AuditEntry, CdsOrder, CdsPage, CdsRole, CdsSettings, CdsStore, Collection, CollectionStatus, DeliveryPerson, Distributor, Grn, ItemCondition,
-  OrderStatus, OtpTxn, Plan, Retailer, ReturnRecord, ReturnStatus, Trip, TripStatus, TripStop, TripType, Vehicle,
+  AuditEntry, CdsOrder, CdsPage, CdsRole, CdsSettings, CdsStore, Collection, DeliveryPerson, DeliveryRoute, Distributor,
+  OrderStatus, OtpTxn, Plan, Retailer, Trip, TripStatus, TripStop, TripType, Vehicle,
 } from '../../cds/types';
 
 const BASE = 'mock://cds-svc/api/v1';
@@ -43,8 +43,9 @@ export const cdsAuth = {
   isSC() {
     return this.user?.role === 'SERVICE_CENTRE';
   },
+  /** Both roles start on Orders, the first item of their menu. */
   home() {
-    return this.isSC() ? '/cds/orders' : '/cds/grn';
+    return '/cds/orders';
   },
   set(token: string, user: CdsSessionUser) {
     localStorage.setItem(K.token, token);
@@ -95,17 +96,18 @@ export interface Paged<T> { rows: T[]; total: number; pageNumber: number; pageSi
 export type OrderRow = CdsOrder & { retailerName: string; retailerPhone: string; retailerAddress: string; locality: string; distributorName: string; storeName: string; units: number };
 export type StopView = TripStop & { otp: Omit<OtpTxn, 'code'> | null };
 export type TripView = Omit<Trip, 'stops'> & { ownerName: string; units: number; stops: StopView[] };
-export type ReturnRow = ReturnRecord & { retailerName: string; distributorName: string; storeName: string; units: number; accepted: number; weightKg: number };
-export type GrnRow = Grn & { distributorName: string; cdsTripNo: string; pickupTripNos: string[]; received: number; dispatched: number; issues: boolean };
-export type CollectionRow = Collection & { retailerName: string };
 export interface Resources { vehicles: (Vehicle & { available: boolean; busyTripNo: string | null })[]; deliveryPersons: (DeliveryPerson & { available: boolean; busyTripNo: string | null })[] }
-export interface Meta { stores: CdsStore[]; allStores: CdsStore[]; distributors: Distributor[]; settings: CdsSettings; returnReasons: string[]; settlementParties: string[]; reports: { id: string; title: string; filters: string[] }[]; today: string; tomorrow: string }
+export interface Meta { stores: CdsStore[]; allStores: CdsStore[]; distributors: Distributor[]; settings: CdsSettings; reports: { id: string; title: string; filters: string[] }[]; today: string; tomorrow: string }
 export interface CoverageRetailer { id: string; code: string; name: string; ownerName: string; phone: string; locality: string; address: string; lat: number; lng: number; storeId: string | null; orders: number; openOrders: number; lastOrder: string | null }
 export interface Kpi { key: string; label: string; value: number; tone: string; to: string }
-export interface Incoming { tripId: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string; deliveryPersonName: string; deliveryPersonPhone: string; vehicleRegNo: string; stopStatus: string; verifiedAt: string | null; units: number; handled: number; orders: number; returns: number }
 export type MyOtp = OtpTxn & { deliveryPersonName: string; vehicleRegNo: string; label: string };
 export type PlanRow = Plan & { trips: { id: string; tripNo: string; type: TripType; status: TripStatus; deliveryPersonName: string; vehicleRegNo: string }[] };
-export interface StopCompleteInput { otp: string; lines?: { idx: number; actualQty: number; acceptedQty?: number; rejectedQty?: number }[]; collections?: { orderId: string; amount: number; mode: 'CASH' | 'UPI' }[]; note?: string }
+export interface StopCompleteInput { otp: string; lines?: { idx: number; actualQty: number }[]; collections?: { orderId: string; amount: number; mode: 'CASH' | 'UPI' }[]; note?: string }
+/** Plan Routes result: one proposed route per vehicle (not saved until Confirm Routes). */
+export type RouteProposal = DeliveryRoute & { orderIds: string[]; retailers: (Retailer | null)[] };
+/** A confirmed delivery route (Delivery Planning list) and its trip once generated. */
+export type RouteRow = Plan & { route: DeliveryRoute; dropPoints: number; trip: { id: string; tripNo: string; status: TripStatus; deliveryPersonName: string } | null };
+export type CustomerRow = Pick<Retailer, 'id' | 'code' | 'name' | 'ownerName' | 'phone' | 'address' | 'locality' | 'lat' | 'lng'>;
 export type { Column, Report };
 
 export const cdsApi = {
@@ -120,43 +122,35 @@ export const cdsApi = {
   resources: (date: string) => call<Resources>('GET', '/cds/resources', undefined, { date }),
 
   searchOrders: (f: { cdsStoreId?: string; statuses?: OrderStatus[]; distributorId?: string; retailerId?: string; search?: string; fromDate?: string; toDate?: string; noActiveCdsTrip?: boolean; pageNumber?: number; pageSize?: number }) => call<Paged<OrderRow>>('POST', '/cds/orders/search', f),
-  order: (id: string) => call<{ order: CdsOrder; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; grn: Grn | null; returns: ReturnRecord[]; collections: Collection[]; returnable: { sku: string; max: number }[] }>('GET', `/cds/orders/${id}`),
+  order: (id: string) => call<{ order: CdsOrder; retailer: Retailer | null; distributor: Distributor; store: CdsStore; trips: { id: string; tripNo: string; type: TripType; status: TripStatus; plannedDate: string }[]; collections: Collection[] }>('GET', `/cds/orders/${id}`),
   cancelOrder: (id: string, reason: string) => call<CdsOrder>('POST', `/cds/orders/${id}/cancel`, { reason }),
 
   createPickupPlan: (b: { orders: { orderId: string; cdsStoreId?: string }[]; plannedDate: string; slot?: string; pickup: { vehicleId: string; deliveryPersonId: string }; cdsDelivery?: { vehicleId: string; deliveryPersonId: string } | null; remarks?: string }) =>
     call<{ plan: Plan; pickupTrip: Trip; cdsDeliveryTrip: Trip | null }>('POST', '/cds/pickup/plans', b),
   createCdsDeliveryPlan: (b: { orderIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/deliver-to-cds/plans', b),
   deliverOverview: () => call<{ store: CdsStore; awaiting: number; trips: { tripId: string; tripNo: string; tripStatus: TripStatus; plannedDate: string; deliveryPersonName: string; vehicleRegNo: string; stopStatus: string; verifiedAt: string | null; orders: number; dispatched: number; received: number }[] }[]>('GET', '/cds/deliver-to-cds/overview'),
-  createReturnPlan: (b: { returnIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/return-planning/plans', b),
-  createDeliveryPlan: (b: { orderIds: string[]; returnIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }) => call<{ plan: Plan; trip: Trip }>('POST', '/cds/delivery/plans', b),
+  /** CDS User Delivery Planning: proposes routes by locality on the store's free vehicles (nothing saved). */
+  planRoutes: (b: { orderIds: string[]; plannedDate: string }) => call<{ plannedDate: string; routes: RouteProposal[]; unplannedOrderIds: string[] }>('POST', '/cds/delivery-routes/plan', b),
+  /** Confirm Routes: saves the routes; their orders become Delivery Planned. */
+  confirmRoutes: (b: { plannedDate: string; routes: { vehicleId: string; orderIds: string[] }[]; remarks?: string }) => call<Plan[]>('POST', '/cds/delivery-routes', b),
+  deliveryRoutes: () => call<RouteRow[]>('GET', '/cds/delivery-routes'),
+  deliveryRoute: (id: string) => call<{ route: RouteRow; retailers: (Retailer | null)[]; orders: (CdsOrder & { retailerName: string; distributorName: string })[] }>('GET', `/cds/delivery-routes/${id}`),
+  /** Generate Trip: the route becomes a Retailer Delivery Trip with the chosen delivery person. */
+  generateRouteTrip: (id: string, b: { deliveryPersonId: string; slot?: string }) => call<Trip>('POST', `/cds/delivery-routes/${id}/trip`, b),
   plans: (kind?: Plan['kind']) => call<PlanRow[]>('GET', '/cds/plans', undefined, { kind }),
 
   searchTrips: (f: { types?: TripType[]; statuses?: TripStatus[]; date?: string; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<TripView>>('POST', '/cds/trips/search', f),
-  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; distributorName: string; storeName: string; lines: CdsOrder['lines'] }[]; returns: { id: string; returnNo: string; status: ReturnStatus; orderNo: string }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
+  trip: (id: string) => call<{ trip: TripView; canRun: boolean; otps: Omit<OtpTxn, 'code'>[]; orders: { id: string; orderNo: string; status: OrderStatus; paymentMode: 'COD' | 'PREPAID'; retailerId: string; retailerName: string; distributorName: string; storeName: string; lines: CdsOrder['lines'] }[]; collections: Collection[] }>('GET', `/cds/trips/${id}`),
   startTrip: (id: string) => call<Trip>('POST', `/cds/trips/${id}/start`),
   cancelTrip: (id: string, reason: string) => call<Trip>('POST', `/cds/trips/${id}/cancel`, { reason }),
   sendStopOtp: (id: string, stopId: string) => call<{ otpId: string; sentToName: string; sentToPhone: string; expiresAt: string; demoSms: string }>('POST', `/cds/trips/${id}/stops/${stopId}/otp`),
   completeStop: (id: string, stopId: string, b: StopCompleteInput) => call<Trip>('POST', `/cds/trips/${id}/stops/${stopId}/complete`, b),
   failStop: (id: string, stopId: string, reason: string) => call<Trip>('POST', `/cds/trips/${id}/stops/${stopId}/fail`, { reason }),
-  addReturnAtStop: (id: string, stopId: string, b: { orderId: string; lines: { sku: string; qty: number; reason: string; condition: ItemCondition }[] }) => call<ReturnRecord>('POST', `/cds/trips/${id}/stops/${stopId}/returns`, b),
   myOtps: () => call<MyOtp[]>('GET', '/cds/otps/mine'),
-  incoming: (type?: TripType) => call<Incoming[]>('GET', '/cds/incoming', undefined, { type }),
 
-  searchGrns: (f: { status?: 'PENDING' | 'COMPLETED'; distributorId?: string; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<GrnRow>>('POST', '/cds/grns/search', f),
-  grn: (id: string) => call<{ grn: Grn; distributor: Distributor; store: CdsStore; cdsTrip: Trip; pickupTrips: { id: string; tripNo: string }[]; orders: { id: string; orderNo: string; status: OrderStatus; retailerName: string }[] }>('GET', `/cds/grns/${id}`),
-  completeGrn: (id: string, b: { lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[]; remarks?: string }) => call<Grn>('POST', `/cds/grns/${id}/complete`, b),
-
-  searchReturns: (f: { cdsStoreId?: string; statuses?: ReturnStatus[]; distributorId?: string; unplanned?: boolean; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<ReturnRow>>('POST', '/cds/returns/search', f),
-  initiateReturn: (b: { orderId: string; lines: { sku: string; qty: number; reason: string; condition: ItemCondition }[] }) => call<ReturnRecord>('POST', '/cds/returns', b),
-  cancelReturn: (id: string, reason: string) => call<ReturnRecord>('POST', `/cds/returns/${id}/cancel`, { reason }),
-
-  searchCollections: (f: { status?: CollectionStatus; search?: string; pageNumber?: number; pageSize?: number }) => call<Paged<CollectionRow>>('POST', '/cds/collections/search', f),
-  receiveCollections: (items: { id: string; amount: number }[], note?: string) => call<Collection[]>('POST', '/cds/collections/receive', { items, note }),
-  handToQwipo: (ids: string[], ref: string) => call<Collection[]>('POST', '/cds/collections/handover', { ids, ref }),
-  recordSettlement: (ids: string[], ref: string) => call<Collection[]>('POST', '/cds/collections/settle', { ids, ref }),
-
-  retailers: () => call<(Retailer & { orders: number; openOrders: number; deliveredValue: number; returns: number; collected: number; lastOrder: string | null })[]>('GET', '/cds/retailers'),
-  stores: () => call<(CdsStore & { user: { name: string; mobile: string; active: boolean } | null; incoming: number; grnPending: number; ready: number; outForDelivery: number; delivered: number; returnsAtCds: number; vehicles: number; deliveryPersons: number })[]>('GET', '/cds/stores'),
+  /** CDS User Customers (view only). */
+  customers: () => call<CustomerRow[]>('GET', '/cds/customers'),
+  stores: () => call<(CdsStore & { user: { name: string; mobile: string; active: boolean } | null; incoming: number; ready: number; outForDelivery: number; delivered: number; vehicles: number; deliveryPersons: number })[]>('GET', '/cds/stores'),
   coverage: () => call<CoverageRetailer[]>('GET', '/cds/coverage'),
   updateStore: (id: string, b: Partial<Pick<CdsStore, 'managerName' | 'managerPhone' | 'active' | 'polygon'>>) => call<CdsStore>('PUT', `/cds/stores/${id}`, b),
   fleet: () => call<{ vehicles: Vehicle[]; deliveryPersons: DeliveryPerson[]; settings: CdsSettings }>('GET', '/cds/fleet'),

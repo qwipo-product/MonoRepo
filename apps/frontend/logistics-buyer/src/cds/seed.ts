@@ -70,7 +70,7 @@ export function buildCdsMasters(retailers: SeedRetailer[]): CdsState {
     sessions: [],
     vehicles: [...sc.vehicles, ...upl.vehicles, ...kkp.vehicles, ...dsn.vehicles],
     deliveryPersons: [...sc.deliveryPersons, ...upl.deliveryPersons, ...kkp.deliveryPersons, ...dsn.deliveryPersons],
-    orders: [], plans: [], trips: [], otps: [], grns: [], returns: [], collections: [], dpEventIds: [], audit: [],
+    orders: [], plans: [], trips: [], otps: [], collections: [], dpEventIds: [], audit: [],
   };
 }
 
@@ -85,9 +85,9 @@ const ASSORTMENT: Record<string, string[]> = {
 };
 
 /**
- * Four days of operations so every module and status has records: completed / short pickups, CDS handovers,
- * GRNs pending and generated, deliveries full / partial / failed, retailer returns at every step, a completed and
- * a running CDS Return Trip, collections at every stage, and today's live trips and planning queues.
+ * Four days of operations so every module and status has records: completed / short pickups, CDS handovers (one
+ * short at handover), deliveries full / partial / failed with cash and UPI collections, a confirmed route waiting for
+ * its trip, and today's live trips, incoming CDS deliveries and planning queues. There is no GRN and no returns flow.
  */
 export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[], now = new Date()): CdsState {
   const s = buildCdsMasters(retailers);
@@ -152,26 +152,15 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
     e.startTrip(tripId, DP);
     e.trip(tripId).stops.forEach((st, i) => stop(tripId, i, i === shortAt ? short(st, by) : {}));
   };
-  const completeGrns = (damage: boolean) => {
-    s.grns.filter((g) => g.status === 'PENDING').forEach((g, gi) => {
-      tick(20);
-      e.completeGrn(g.id, {
-        lines: g.lines.map((l, i) => {
-          const dmg = damage && gi === 0 && i === 0 && l.receivedQty >= 3 ? 1 : 0;
-          return { idx: i, acceptedQty: l.receivedQty - dmg, damagedQty: dmg, remarks: dmg ? 'Pack torn during unloading' : l.shortQty ? 'Short received from vehicle' : l.excessQty ? 'Extra unit received' : '' };
-        }),
-      }, USER[g.cdsStoreId]);
-    });
-  };
   const ready = (store: string) => s.orders.filter((o) => o.cdsStoreId === store && o.status === 'READY_FOR_DELIVERY').map((o) => o.id);
-  const deliveryPlan = (store: string, date: string, orderIds: string[], returnIds: string[] = []) => {
-    if (!orderIds.length && !returnIds.length) return null;
+  const deliveryPlan = (store: string, date: string, orderIds: string[]) => {
+    if (!orderIds.length) return null;
     const kg = orderIds.reduce((a, id) => a + e.order(id).lines.reduce((x, l) => x + (l.acceptedQty - l.deliveredQty) * l.unitWeightKg, 0), 0);
     tick(10);
-    return e.createDeliveryPlan({ cdsStoreId: store, orderIds, returnIds, plannedDate: date, slot: '09:00 – 13:00', ...res(store, date, kg) }, USER[store]).trip;
+    return e.createDeliveryPlan({ cdsStoreId: store, orderIds, plannedDate: date, slot: '09:00 – 13:00', ...res(store, date, kg) }, USER[store]).trip;
   };
-  /** Runs a retailer trip: load at the CDS, then each retailer stop by `plan`, returns collected and handed over. */
-  const runRetailerTrip = (tripId: string, plan: ('full' | 'partial' | 'fail')[], adHocReturn = false, upTo = Infinity) => {
+  /** Runs a retailer trip: load at the CDS, then each retailer stop by `plan` (cash / UPI collected for COD). */
+  const runRetailerTrip = (tripId: string, plan: ('full' | 'partial' | 'fail')[], upTo = Infinity) => {
     e.startTrip(tripId, DP);
     let k = 0;
     let n = 0;
@@ -179,123 +168,74 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
       const st = e.trip(tripId).stops[i];
       if (st.status !== 'PENDING') continue;
       n++;
-      if (st.action === 'RETAILER_DELIVERY') {
-        const mode = plan[k++] ?? 'full';
-        if (mode === 'fail') {
-          fail(tripId, i, rng.pick(['Shop closed', 'Retailer not available', 'Payment not ready']));
-          continue;
-        }
-        const qty = (j: number, q: number) => (mode === 'partial' && j === 0 ? Math.max(1, q - 2) : q);
-        const orders = Array.from(new Set(st.lines.map((l) => l.orderId!)));
-        const collections = orders.filter((oid) => e.order(oid).paymentMode === 'COD').map((oid) => ({
-          orderId: oid, mode: (rng.int(0, 2) ? 'CASH' : 'UPI') as 'CASH' | 'UPI',
-          amount: Math.round(st.lines.reduce((a, l, j) => a + (l.orderId === oid ? qty(j, l.plannedQty) * l.unitPrice : 0), 0) * 100) / 100,
-        }));
-        stop(tripId, i, { ...(mode === 'partial' ? short(st, 2) : {}), collections });
-        if (adHocReturn && k === 1) {
-          // the retailer hands back a damaged unit during the visit
-          const o = e.order(orders[0]);
-          const l = o.lines.find((x) => x.deliveredQty >= 2);
-          if (l) e.addReturnAtStop(tripId, st.id, { orderId: o.id, lines: [{ sku: l.sku, qty: 1, reason: 'Damaged in transit', condition: 'DAMAGED' }] }, DP);
-        }
-      } else if (st.action === 'RETURN_HANDOVER_CDS') {
-        stop(tripId, i, { lines: st.lines.map((l, j) => ({ idx: j, actualQty: l.plannedQty, acceptedQty: j === 0 && l.plannedQty > 1 ? l.plannedQty - 1 : l.plannedQty, rejectedQty: j === 0 && l.plannedQty > 1 ? 1 : 0 })) });
-      } else stop(tripId, i);
+      if (st.action !== 'RETAILER_DELIVERY') {
+        stop(tripId, i);
+        continue;
+      }
+      const mode = plan[k++] ?? 'full';
+      if (mode === 'fail') {
+        fail(tripId, i, rng.pick(['Shop closed', 'Retailer not available', 'Payment not ready']));
+        continue;
+      }
+      const qty = (j: number, q: number) => (mode === 'partial' && j === 0 ? Math.max(1, q - 2) : q);
+      const orders = Array.from(new Set(st.lines.map((l) => l.orderId!)));
+      const collections = orders.filter((oid) => e.order(oid).paymentMode === 'COD').map((oid) => ({
+        orderId: oid, mode: (rng.int(0, 2) ? 'CASH' : 'UPI') as 'CASH' | 'UPI',
+        amount: Math.round(st.lines.reduce((a, l, j) => a + (l.orderId === oid ? qty(j, l.plannedQty) * l.unitPrice : 0), 0) * 100) / 100,
+      }));
+      stop(tripId, i, { ...(mode === 'partial' ? short(st, 2) : {}), collections });
     }
-  };
-  const initiate = (store: string, n: number) => {
-    const out: string[] = [];
-    for (const o of s.orders.filter((x) => x.cdsStoreId === store && ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(x.status))) {
-      if (out.length >= n) break;
-      const l = o.lines.find((x) => e.returnableQty(o, x.sku) >= 2);
-      if (!l) continue;
-      tick(15);
-      out.push(e.initiateReturn({ orderId: o.id, lines: [{ sku: l.sku, qty: rng.int(1, 2), reason: rng.pick(['Expired / near expiry', 'Wrong item', 'Quality issue', 'Excess quantity']), condition: 'GOOD' }] }, USER[store]).id);
-    }
-    return out;
-  };
-  const collectionsOf = (store: string, status: string) => s.collections.filter((c) => c.cdsStoreId === store && c.status === status);
-  const received = () => s.returns.filter((r) => r.status === 'RECEIVED_AT_CDS' && !r.returnTripId && r.lines.some((l) => (l.acceptedQty ?? 0) > 0)).map((r) => r.id);
-  const returnPlan = (ids: string[], date: string) => {
-    const kg = ids.reduce((a, id) => a + e.ret(id).lines.reduce((x, l) => x + (l.acceptedQty ?? 0) * l.unitWeightKg, 0), 0);
-    tick(10);
-    return e.createReturnPlan({ returnIds: ids, plannedDate: date, slot: '14:00 – 18:00', ...res('SC', date, kg) }, SC).trip;
   };
 
-  // ---------------------------------------------------------------- day -3: multi-distributor pickup → 3 CDS stores; GRNs; delivery plans for day -2
+  // ---------------------------------------------------------------- day -3: multi-distributor pickup → 3 CDS stores; delivery plans for day -2
   t = at(-3, 7);
   const a1 = ['dst-01', 'dst-02', 'dst-03'].flatMap((d) => STORES.map((st) => place(d, st)));
   const p1 = pickupPlan(a1.map((o) => o.id), day(-3), true);
   runAll(p1.pickupTrip.id, 0); // first distributor short by 2 on one line
-  runAll(p1.cdsDeliveryTrip!.id, 1, 1); // one unit short at the second CDS
-  completeGrns(true); // one torn pack → GRN return to the distributor
+  runAll(p1.cdsDeliveryTrip!.id, 1, 1); // the second CDS accepts one unit less (short at handover)
   t = at(-3, 18);
   STORES.forEach((st) => deliveryPlan(st, day(-2), ready(st)));
 
-  // ---------------------------------------------------------------- day -2: deliveries (partial, failed, ad-hoc return), collections, second pickup plan
+  // ---------------------------------------------------------------- day -2: deliveries (partial, failed), second pickup plan
   t = at(-2, 7);
   STORES.forEach((st, i) => {
     const tr = s.trips.find((x) => x.type === 'RETAILER_DELIVERY' && x.owner === st && x.plannedDate === day(-2));
-    if (tr) runRetailerTrip(tr.id, i === 0 ? ['full', 'partial', 'fail'] : i === 1 ? ['full', 'full', 'partial'] : ['full', 'fail', 'full'], true);
-  });
-  STORES.forEach((st) => {
-    tick(30);
-    const cs = collectionsOf(st, 'WITH_DELIVERY_PERSON');
-    if (cs.length) e.receiveCollections(st, { items: cs.map((c) => ({ id: c.id, amount: c.amount })) }, USER[st]);
+    if (tr) runRetailerTrip(tr.id, i === 0 ? ['full', 'partial', 'fail'] : i === 1 ? ['full', 'full', 'partial'] : ['full', 'fail', 'full']);
   });
   const a2 = ['dst-04', 'dst-05', 'dst-06'].flatMap((d) => STORES.map((st) => place(d, st)));
   const p2 = pickupPlan(a2.map((o) => o.id), day(-2), true);
   runAll(p2.pickupTrip.id);
   runAll(p2.cdsDeliveryTrip!.id);
-  completeGrns(false);
   // Seller Store orders confirmed late on day -2 — still waiting for a pickup plan (older order date in Pickup Planning).
   t = Math.max(t, at(-2, 17));
   ['dst-01', 'dst-06'].forEach((d) => { place(d, 'cds-upl'); place(d, 'cds-kkp'); });
   t = at(-2, 18);
-  STORES.forEach((st) => deliveryPlan(st, day(-1), ready(st), initiate(st, 2)));
-  const rp1 = received().length ? returnPlan(received(), day(-1)) : null;
+  STORES.forEach((st) => deliveryPlan(st, day(-1), ready(st)));
 
-  // ---------------------------------------------------------------- day -1: deliveries with returns, return trip completed, collections to Qwipo, GRNs pending
+  // ---------------------------------------------------------------- day -1: deliveries, third pickup plan
   t = at(-1, 7);
   STORES.forEach((st) => {
     const tr = s.trips.find((x) => x.type === 'RETAILER_DELIVERY' && x.owner === st && x.plannedDate === day(-1));
     if (tr) runRetailerTrip(tr.id, st === 'cds-kkp' ? ['full', 'full', 'full', 'full'] : ['full', 'full', 'partial']);
   });
-  if (rp1) runAll(rp1.id);
-  STORES.forEach((st) => {
-    tick(20);
-    const rec = collectionsOf(st, 'RECEIVED_BY_CDS');
-    if (rec.length) e.handToQwipo(st, rec.map((c) => c.id), `DEP-${st.slice(-3).toUpperCase()}-${day(-1).replace(/-/g, '')}`, USER[st]);
-    const cs = collectionsOf(st, 'WITH_DELIVERY_PERSON');
-    if (cs.length) e.receiveCollections(st, { items: cs.map((c, j) => ({ id: c.id, amount: j === 0 && st === 'cds-kkp' ? Math.max(0, c.amount - 50) : c.amount })), note: st === 'cds-kkp' ? '₹50 short — delivery person to pay tomorrow' : undefined }, USER[st]);
-  });
   const a3 = ['dst-01', 'dst-01', 'dst-01', 'dst-06'].flatMap((d) => STORES.map((st) => place(d, st)));
   const p3 = pickupPlan(a3.map((o) => o.id), day(-1), true);
   runAll(p3.pickupTrip.id);
   runAll(p3.cdsDeliveryTrip!.id);
-  // Annapurna GRNs verified; Telangana Staples GRNs stay Pending Verification
-  s.grns.filter((g) => g.status === 'PENDING' && g.distributorId === 'dst-01').forEach((g) => {
-    tick(20);
-    e.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) }, USER[g.cdsStoreId]);
-  });
   // Seller Store orders confirmed on day -1 evening — waiting for a pickup plan.
   t = Math.max(t, at(-1, 17));
   ['dst-02', 'dst-03', 'dst-04', 'dst-05'].forEach((d, i) => place(d, STORES[i % 3]));
   // planning for today, done yesterday evening (next-day rule)
   t = at(-1, 18);
-  const todayTrips = STORES.map((st) => deliveryPlan(st, day(0), ready(st).slice(0, 2), initiate(st, 1))); // the rest stay Ready for Delivery
-  const rp2 = received().length ? returnPlan(received().slice(0, 3), day(0)) : null;
+  // Uppal sends one order today so more of its orders stay Ready for Delivery for the demo route planning
+  const todayTrips = STORES.map((st) => deliveryPlan(st, day(0), ready(st).slice(0, st === 'cds-upl' ? 1 : 2))); // the rest stay Ready for Delivery
 
-  // ---------------------------------------------------------------- today: live trips and planning queues
+  // ---------------------------------------------------------------- today: live trips, incoming deliveries and planning queues
   t = Math.min(at(0, 7), Math.max(at(0, 0) + 60000, now.getTime() - 3 * 3600000));
-  if (todayTrips[0]) runRetailerTrip(todayTrips[0].id, ['full'], false, 2); // loaded at the CDS, first retailer delivered
-  // Kukatpally: two retailers delivered (cash still with the delivery person); Dilsukhnagar: loaded, not yet delivered
-  if (todayTrips[1]) runRetailerTrip(todayTrips[1].id, ['full', 'full'], false, 3);
-  if (todayTrips[2]) runRetailerTrip(todayTrips[2].id, [], false, 1);
-  if (rp2) {
-    e.startTrip(rp2.id, DP);
-    stop(rp2.id, 0); // returns loaded at the first CDS
-  }
+  if (todayTrips[0]) runRetailerTrip(todayTrips[0].id, [], 1); // loaded at the CDS, on the way to the retailer
+  // Kukatpally: two retailers delivered; Dilsukhnagar: loaded, not yet delivered
+  if (todayTrips[1]) runRetailerTrip(todayTrips[1].id, ['full', 'full'], 3);
+  if (todayTrips[2]) runRetailerTrip(todayTrips[2].id, [], 1);
   const fresh = ['dst-02', 'dst-03', 'dst-04', 'dst-05'].flatMap((d) => STORES.map((st) => place(d, st)));
   // today's pickup is running: first distributor collected; the CDS delivery leg waits
   const p4 = pickupPlan(fresh.filter((o) => ['dst-02', 'dst-03'].includes(o.distributorId)).slice(0, 4).map((o) => o.id), day(0), true);
@@ -309,10 +249,12 @@ export function buildCdsState(retailers: SeedRetailer[], products: SeedProduct[]
   runAll(p6.pickupTrip.id);
   e.startTrip(p6.cdsDeliveryTrip!.id, DP);
   stop(p6.cdsDeliveryTrip!.id, 0);
-  // Qwipo (SNP) settled the earliest handovers
-  STORES.slice(0, 2).forEach((st) => {
-    const h = collectionsOf(st, 'HANDED_TO_QWIPO');
-    if (h.length) e.recordSettlement(st, h.map((c) => c.id), `QWP-STL-${day(0).replace(/-/g, '')}-${st.slice(-3).toUpperCase()}`, USER[st]);
-  });
+  // Uppal confirmed a route for tomorrow; it waits for "Generate Trip" (delivery person not chosen yet)
+  const upReady = ready('cds-upl');
+  if (upReady.length > 2) {
+    tick(20);
+    const v = res('cds-upl', day(1), upReady.reduce((a, id) => a + e.order(id).lines.reduce((x, l) => x + (l.acceptedQty - l.deliveredQty) * l.unitWeightKg, 0), 0));
+    e.confirmRoutes({ cdsStoreId: 'cds-upl', plannedDate: day(1), routes: [{ vehicleId: v.vehicleId, orderIds: upReady.slice(0, 1) }] }, USER['cds-upl']);
+  }
   return s;
 }

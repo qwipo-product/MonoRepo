@@ -385,14 +385,11 @@ const KPI_LOOK: Record<string, { icon: string; title?: string; sub: string }> = 
   transit: { icon: 'fa-truck-fast', title: 'In Transit to CDS', sub: 'On the way to the CDS' },
   pickupTrips: { icon: 'fa-truck-ramp-box', title: 'Distributor Pickup Trips', sub: 'Active · CDS to Distributor' },
   cdsTrips: { icon: 'fa-warehouse', title: 'CDS Delivery Trips', sub: 'Active · Distributor to CDS' },
-  returnTrips: { icon: 'fa-rotate-left', title: 'CDS Return Trips', sub: 'Active · CDS to Seller' },
-  returns: { icon: 'fa-arrow-rotate-left', sub: 'Waiting for action' },
-  grn: { icon: 'fa-clipboard-check', title: 'GRNs to Verify', sub: 'Handed over at your CDS' },
+  incoming: { icon: 'fa-warehouse', title: 'Coming to the Store', sub: 'Picked up or in transit to your CDS' },
   ready: { icon: 'fa-box', title: 'Ready for Delivery', sub: 'Waiting for a delivery plan' },
-  planned: { icon: 'fa-calendar-check', title: 'Delivery Planned', sub: 'On a delivery trip' },
+  planned: { icon: 'fa-calendar-check', title: 'Delivery Planned', sub: 'On a delivery route' },
   out: { icon: 'fa-truck', title: 'Out for Delivery', sub: 'On the road' },
   delivered: { icon: 'fa-circle-check', title: 'Delivered', sub: 'Delivered to retailers' },
-  cash: { icon: 'fa-indian-rupee-sign', title: 'Cash with Delivery Persons', sub: 'To receive at your CDS' },
 };
 
 export interface StatCard { key: string; title: string; value: ReactNode; sub?: string; icon: string; tone: string; onClick?: () => void }

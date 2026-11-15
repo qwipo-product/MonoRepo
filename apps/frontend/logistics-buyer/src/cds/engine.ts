@@ -2,14 +2,14 @@
 // code runs behind the API (src/mock/routes/cds.ts), in the demo seed and in Node unit tests.
 // Every status change goes through the flow tables in ./status.ts; every pickup / handover goes through an OTP.
 import { routeMetrics, round2, sequenceStops, serviceStoreFor } from './planning.ts';
-import { ACTIVE_TRIP, ORDER_FLOW, RETURN_FLOW, STOP_ACTION, TRIP_FLOW, TRIP_TYPE } from './status.ts';
+import { ACTIVE_TRIP, ORDER_FLOW, STOP_ACTION, TRIP_FLOW, TRIP_TYPE } from './status.ts';
 import type {
-  CdsOrder, CdsState, CdsStore, Collection, DeliveryPerson, Distributor, Grn, ItemCondition, OrderStatus, OtpTxn, PartyType, Plan,
-  Retailer, ReturnRecord, ReturnStatus, StopAction, StopLine, Trip, TripStatus, TripStop, TripType, Vehicle,
+  CdsOrder, CdsState, CdsStore, Collection, DeliveryPerson, DeliveryRoute, Distributor, OrderStatus, OtpTxn, PartyType, Plan,
+  Retailer, StopAction, StopLine, Trip, TripStatus, TripStop, TripType, Vehicle,
 } from './types.ts';
 
 /** Bump when the demo data changes: stored CDS data of an older version is rebuilt on next use. */
-export const CDS_STATE_VERSION = 6;
+export const CDS_STATE_VERSION = 7;
 
 export class CdsError extends Error {
   status: number;
@@ -39,8 +39,8 @@ export interface SellerOrderInput {
 export interface Assignment { vehicleId: string; deliveryPersonId: string }
 export interface StopInput {
   otp: string;
-  /** Per stop line (by index): actual quantity, plus accepted / rejected for return handover at the CDS. */
-  lines?: { idx: number; actualQty: number; acceptedQty?: number; rejectedQty?: number }[];
+  /** Per stop line (by index): actual quantity (at a CDS handover: the units the store accepts). */
+  lines?: { idx: number; actualQty: number }[];
   /** RETAILER_DELIVERY: money collected per COD order. */
   collections?: { orderId: string; amount: number; mode: 'CASH' | 'UPI' }[];
   note?: string;
@@ -111,19 +111,9 @@ export class CdsEngine {
     if (!x) throw notFound(`Trip ${id} not found`);
     return x;
   }
-  grn(id: string): Grn {
-    const x = this.s.grns.find((v) => v.id === id || v.grnNo === id);
-    if (!x) throw notFound(`GRN ${id} not found`);
-    return x;
-  }
-  ret(id: string): ReturnRecord {
-    const x = this.s.returns.find((v) => v.id === id || v.returnNo === id);
-    if (!x) throw notFound(`Return ${id} not found`);
-    return x;
-  }
-  collection(id: string): Collection {
-    const x = this.s.collections.find((v) => v.id === id || v.collectionNo === id);
-    if (!x) throw notFound(`Collection ${id} not found`);
+  plan(id: string): Plan {
+    const x = this.s.plans.find((v) => v.id === id || v.planNo === id);
+    if (!x) throw notFound(`Route ${id} not found`);
     return x;
   }
   /** CDS store whose service area polygon holds the retailer's location (nearest when areas overlap). */
@@ -151,13 +141,6 @@ export class CdsEngine {
     if (to === 'COMPLETED' || to === 'PARTIALLY_COMPLETED' || to === 'CANCELLED') t.completedAt = this.now();
     this.touch(t, by);
   }
-  private setReturn(r: ReturnRecord, to: ReturnStatus, by: string, note?: string) {
-    if (r.status === to) return;
-    if (!RETURN_FLOW[r.status].includes(to)) throw conflict(`Return ${r.returnNo}: cannot change ${r.status} → ${to}`);
-    r.history.push({ from: r.status, to, at: this.now(), by, note });
-    r.status = to;
-    this.touch(r, by);
-  }
 
   // ---------------------------------------------------------------- 1. Seller order allocation (CDS Store Delivery)
 
@@ -172,13 +155,13 @@ export class CdsEngine {
     if (!input.lines?.length || input.lines.some((l) => !isQty(l.qty) || l.qty === 0)) throw bad('Every order line needs a quantity of at least 1');
     const lines = input.lines.map((l) => ({
       sku: l.sku, name: l.name, qty: l.qty, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg,
-      pickedQty: 0, receivedQty: 0, acceptedQty: 0, damagedQty: 0, deliveredQty: 0, returnedQty: 0,
+      pickedQty: 0, acceptedQty: 0, deliveredQty: 0,
     }));
     const o: CdsOrder = {
       id: `ord-${this.seq()}`, orderNo: `CDS-${this.seq()}`, sellerOrderRef: input.sellerOrderRef, confirmedAt: this.now(),
       distributorId: input.distributorId, cdsStoreId: store.id, retailerId: r.id, lines,
       orderValue: round2(sum(lines, (l) => l.qty * l.unitPrice)), weightKg: round2(sum(lines, (l) => l.qty * l.unitWeightKg)),
-      paymentMode: input.paymentMode ?? 'COD', status: 'CONFIRMED', pickupTripId: null, cdsTripId: null, grnId: null, deliveryTripId: null,
+      paymentMode: input.paymentMode ?? 'COD', status: 'CONFIRMED', pickupTripId: null, cdsTripId: null, deliveryTripId: null,
       deliveredAt: null, note: null, history: [{ from: null, to: 'CONFIRMED', at: this.now(), by, note: `Seller order ${input.sellerOrderRef}` }], ...this.stamp(by),
     };
     this.s.orders.push(o);
@@ -196,8 +179,18 @@ export class CdsEngine {
 
   // ---------------------------------------------------------------- vehicles & delivery persons
 
-  private busyOn(kind: 'vehicleId' | 'deliveryPersonId', id: string, date: string) {
-    return this.s.trips.find((t) => t[kind] === id && t.plannedDate === date && ACTIVE_TRIP.includes(t.status)) ?? null;
+  /** A confirmed delivery route that still waits for its trip reserves its vehicle for that day. */
+  private waitingRoutes(date: string) {
+    return this.s.plans.filter((p) => p.kind === 'RETAILER_DELIVERY' && p.route && p.plannedDate === date && !p.tripIds.length);
+  }
+  private busyOn(kind: 'vehicleId' | 'deliveryPersonId', id: string, date: string, exceptPlanId?: string): { tripNo: string } | null {
+    const t = this.s.trips.find((x) => x[kind] === id && x.plannedDate === date && ACTIVE_TRIP.includes(x.status));
+    if (t) return t;
+    if (kind === 'vehicleId') {
+      const r = this.waitingRoutes(date).find((p) => p.route!.vehicleId === id && p.id !== exceptPlanId);
+      if (r) return { tripNo: r.planNo };
+    }
+    return null;
   }
   resources(owner: string, date: string) {
     return {
@@ -211,14 +204,14 @@ export class CdsEngine {
       }),
     };
   }
-  private assign(owner: string, date: string, a: Assignment, loadKg: number): { v: Vehicle; p: DeliveryPerson } {
+  private assign(owner: string, date: string, a: Assignment, loadKg: number, exceptPlanId?: string): { v: Vehicle; p: DeliveryPerson } {
     const v = this.s.vehicles.find((x) => x.id === a?.vehicleId);
     if (!v || v.owner !== owner) throw bad('Select a vehicle');
     if (!v.active) throw conflict(`Vehicle ${v.regNo} is inactive`);
     const p = this.s.deliveryPersons.find((x) => x.id === a?.deliveryPersonId);
     if (!p || p.owner !== owner) throw bad('Select a delivery person');
     if (!p.active) throw conflict(`${p.name} is inactive`);
-    const vb = this.busyOn('vehicleId', v.id, date);
+    const vb = this.busyOn('vehicleId', v.id, date, exceptPlanId);
     if (vb) throw conflict(`Vehicle ${v.regNo} is already on ${vb.tripNo} on ${date}`);
     const pb = this.busyOn('deliveryPersonId', p.id, date);
     if (pb) throw conflict(`${p.name} is already on ${pb.tripNo} on ${date}`);
@@ -242,7 +235,7 @@ export class CdsEngine {
     return { id: st.id, name: st.name, address: st.address, phone: u?.mobile ?? st.managerPhone, lat: st.lat, lng: st.lng };
   }
   private newTrip(type: TripType, owner: string, plan: Plan, date: string, slot: string, a: { v: Vehicle; p: DeliveryPerson }, stops: TripStop[], by: string, origin: { lat: number; lng: number }): Trip {
-    const loading: StopAction[] = ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP', 'CDS_RETURN_PICKUP', 'RETAILER_RETURN'];
+    const loading: StopAction[] = ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP'];
     const loadKg = round2(sum(stops.filter((s) => loading.includes(s.action)), (s) => sum(s.lines, (l) => l.plannedQty * l.unitWeightKg)))
       || round2(sum(stops, (s) => sum(s.lines, (l) => l.plannedQty * l.unitWeightKg)));
     const m = routeMetrics([origin, ...stops], stops.length);
@@ -251,27 +244,24 @@ export class CdsEngine {
       vehicleId: a.v.id, vehicleRegNo: a.v.regNo, vehicleType: a.v.type, capacityKg: a.v.capacityKg,
       deliveryPersonId: a.p.id, deliveryPersonName: a.p.name, deliveryPersonPhone: a.p.phone, status: 'ASSIGNED', stops,
       orderIds: uniq(stops.flatMap((s) => s.lines.map((l) => l.orderId).filter((x): x is string => !!x))),
-      returnIds: uniq(stops.flatMap((s) => s.lines.map((l) => l.returnId).filter((x): x is string => !!x))),
       loadKg, distanceKm: m.distanceKm, etaMinutes: m.etaMinutes, startedAt: null, completedAt: null, cancelReason: null,
       history: [{ from: null, to: 'PLANNED', at: this.now(), by }, { from: 'PLANNED', to: 'ASSIGNED', at: this.now(), by, note: `${a.v.regNo} · ${a.p.name}` }],
       ...this.stamp(by),
     };
-    if (type === 'CDS_RETURN') t.orderIds = []; // return trips carry returns, not orders
     this.s.trips.push(t);
     plan.tripIds.push(t.id);
     this.audit('TRIP', t.id, by, 'TRIP_GENERATED', `${t.tripNo} (${TRIP_TYPE[type].label}) · ${a.v.regNo} · ${a.p.name}`);
     return t;
   }
-  private newPlan(kind: Plan['kind'], owner: string, date: string, orderIds: string[], returnIds: string[], remarks: string, by: string): Plan {
-    const p: Plan = { id: `pln-${this.seq()}`, planNo: `PLN-${this.seq()}`, kind, owner, plannedDate: date, orderIds, returnIds, tripIds: [], remarks: remarks ?? '', ...this.stamp(by) };
+  private newPlan(kind: Plan['kind'], owner: string, date: string, orderIds: string[], remarks: string, by: string, route?: DeliveryRoute): Plan {
+    const seq = this.seq();
+    const planNo = kind === 'RETAILER_DELIVERY' ? `RT-${seq}` : `PLN-${seq}`;
+    const p: Plan = { id: `pln-${this.seq()}`, planNo, kind, owner, plannedDate: date, orderIds, tripIds: [], remarks: remarks ?? '', ...(route ? { route } : {}), ...this.stamp(by) };
     this.s.plans.push(p);
     return p;
   }
   private orderLines(o: CdsOrder, qty: (l: CdsOrder['lines'][number]) => number): StopLine[] {
-    return o.lines.map((l) => ({ orderId: o.id, returnId: null, sku: l.sku, name: l.name, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg, plannedQty: qty(l), actualQty: null })).filter((l) => l.plannedQty > 0);
-  }
-  private returnLines(r: ReturnRecord, qty: (l: ReturnRecord['lines'][number]) => number): StopLine[] {
-    return r.lines.map((l) => ({ orderId: r.orderId, returnId: r.id, sku: l.sku, name: l.name, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg, plannedQty: qty(l), actualQty: null })).filter((l) => l.plannedQty > 0);
+    return o.lines.map((l) => ({ orderId: o.id, sku: l.sku, name: l.name, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg, plannedQty: qty(l), actualQty: null })).filter((l) => l.plannedQty > 0);
   }
   private sequence<T extends { lat: number; lng: number }>(origin: { lat: number; lng: number }, xs: T[], end?: { lat: number; lng: number }) {
     return sequenceStops(origin, xs, end).map((i) => xs[i]);
@@ -305,7 +295,7 @@ export class CdsEngine {
       const sameP = b.cdsDelivery.deliveryPersonId === b.pickup.deliveryPersonId;
       deliveryA = sameV && sameP ? pickupA : this.assignLeg(b.plannedDate, b.cdsDelivery, loadKg, sameV ? pickupA.v : null, sameP ? pickupA.p : null);
     }
-    const plan = this.newPlan('PICKUP', 'SC', b.plannedDate, orders.map((o) => o.id), [], b.remarks ?? '', by);
+    const plan = this.newPlan('PICKUP', 'SC', b.plannedDate, orders.map((o) => o.id), b.remarks ?? '', by);
     const dists = uniq(orders.map((o) => o.distributorId)).map((id) => this.distributor(id));
     const stops = this.sequence(SC_HUB, dists).map((d, i) =>
       this.newStop(i + 1, 'DISTRIBUTOR_PICKUP', 'DISTRIBUTOR', d, orders.filter((o) => o.distributorId === d.id).flatMap((o) => this.orderLines(o, (l) => l.qty))));
@@ -356,150 +346,159 @@ export class CdsEngine {
       if (t && ACTIVE_TRIP.includes(t.status)) throw conflict(`${o.orderNo} is already on ${t.tripNo}`);
     });
     const a = this.assign('SC', b.plannedDate, b, sum(orders, (o) => sum(o.lines, (l) => l.pickedQty * l.unitWeightKg)));
-    const plan = this.newPlan('CDS_DELIVERY', 'SC', b.plannedDate, orders.map((o) => o.id), [], b.remarks ?? '', by);
+    const plan = this.newPlan('CDS_DELIVERY', 'SC', b.plannedDate, orders.map((o) => o.id), b.remarks ?? '', by);
     return { plan, trip: this.buildCdsDeliveryTrip(plan, orders, b.plannedDate, b.slot ?? '12:00 – 17:00', a, by, (l) => l.pickedQty) };
   }
 
-  // ---------------------------------------------------------------- 6. CDS User Delivery Planning (next day) → Retailer Delivery Trip
+  // ---------------------------------------------------------------- 6. CDS User Delivery Planning (LBNP-style routes, next day) → Retailer Delivery Trip
 
-  createDeliveryPlan(b: { cdsStoreId: string; orderIds: string[]; returnIds?: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }, by: string) {
-    const st = this.store(b.cdsStoreId);
-    this.checkDate(b.plannedDate, true);
-    const orders = uniq(b.orderIds ?? []).map((id) => this.order(id));
-    const rets = uniq(b.returnIds ?? []).map((id) => this.ret(id));
-    if (!orders.length && !rets.length) throw bad('Select at least one order or return');
+  /** Weight still to deliver (accepted at the CDS, not yet delivered). */
+  private deliverableKg(o: CdsOrder) {
+    return round2(sum(o.lines, (l) => (l.acceptedQty - l.deliveredQty) * l.unitWeightKg));
+  }
+  private readyOrders(storeId: string, ids: string[]) {
+    const orders = uniq(ids ?? []).map((id) => this.order(id));
     orders.forEach((o) => {
-      if (o.cdsStoreId !== st.id) throw new CdsError(403, `${o.orderNo} belongs to another CDS`);
+      if (o.cdsStoreId !== storeId) throw new CdsError(403, `${o.orderNo} belongs to another CDS`);
       if (o.status !== 'READY_FOR_DELIVERY') throw conflict(`${o.orderNo} is ${o.status}; only Ready for Delivery orders can be planned`);
     });
-    rets.forEach((r) => {
-      if (r.cdsStoreId !== st.id) throw new CdsError(403, `${r.returnNo} belongs to another CDS`);
-      if (r.status !== 'RETURN_INITIATED' || r.retailerTripId) throw conflict(`${r.returnNo} is ${r.status}${r.retailerTripId ? ' and already on a trip' : ''}`);
-    });
-    const loadKg = sum(orders, (o) => sum(o.lines, (l) => (l.acceptedQty - l.deliveredQty) * l.unitWeightKg));
-    const a = this.assign(st.id, b.plannedDate, b, loadKg);
-    const plan = this.newPlan('RETAILER_DELIVERY', st.id, b.plannedDate, orders.map((o) => o.id), rets.map((r) => r.id), b.remarks ?? '', by);
-    const stops: TripStop[] = [];
-    if (orders.length) stops.push(this.newStop(1, 'CDS_ORDER_PICKUP', 'CDS', this.storeParty(st), orders.flatMap((o) => this.orderLines(o, (l) => l.acceptedQty - l.deliveredQty))));
-    const retailerIds = uniq([...orders.map((o) => o.retailerId), ...rets.map((r) => r.retailerId!)]);
-    this.sequence(st, retailerIds.map((id) => this.retailer(id))).forEach((rt) => {
-      const os = orders.filter((o) => o.retailerId === rt.id);
-      if (os.length) stops.push(this.newStop(stops.length + 1, 'RETAILER_DELIVERY', 'RETAILER', rt, os.flatMap((o) => this.orderLines(o, (l) => l.acceptedQty - l.deliveredQty))));
-      const rs = rets.filter((r) => r.retailerId === rt.id);
-      if (rs.length) stops.push(this.newStop(stops.length + 1, 'RETAILER_RETURN', 'RETAILER', rt, rs.flatMap((r) => this.returnLines(r, (l) => l.qty))));
-    });
-    if (rets.length) stops.push(this.newStop(stops.length + 1, 'RETURN_HANDOVER_CDS', 'CDS', this.storeParty(st), rets.flatMap((r) => this.returnLines(r, (l) => l.qty))));
-    const t = this.newTrip('RETAILER_DELIVERY', st.id, plan, b.plannedDate, b.slot ?? '09:00 – 13:00', a, stops, by, st);
-    orders.forEach((o) => {
-      o.deliveryTripId = t.id;
-      this.setOrder(o, 'DELIVERY_PLANNED', by, t.tripNo);
-    });
-    rets.forEach((r) => (r.retailerTripId = t.id));
-    return { plan, trip: t };
+    return orders;
   }
-
-  // ---------------------------------------------------------------- 10. Return Planning (next day) → CDS Return Trip
-
-  createReturnPlan(b: { returnIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }, by: string) {
-    this.checkDate(b.plannedDate, true);
-    if (!b.returnIds?.length) throw bad('Select at least one return');
-    const rets = uniq(b.returnIds).map((id) => this.ret(id));
-    rets.forEach((r) => {
-      if (r.status !== 'RECEIVED_AT_CDS') throw conflict(`${r.returnNo} is ${r.status}; only returns Received at CDS can be planned`);
-      if (!sum(r.lines, (l) => l.acceptedQty ?? 0)) throw conflict(`${r.returnNo} has no accepted quantity to return`);
-    });
-    const loadKg = sum(rets, (r) => sum(r.lines, (l) => (l.acceptedQty ?? 0) * l.unitWeightKg));
-    const a = this.assign('SC', b.plannedDate, b, loadKg);
-    const plan = this.newPlan('RETURN', 'SC', b.plannedDate, [], rets.map((r) => r.id), b.remarks ?? '', by);
-    const stores = this.sequence(SC_HUB, uniq(rets.map((r) => r.cdsStoreId)).map((id) => this.store(id)));
-    const stops = stores.map((st, i) => this.newStop(i + 1, 'CDS_RETURN_PICKUP', 'CDS', this.storeParty(st), rets.filter((r) => r.cdsStoreId === st.id).flatMap((r) => this.returnLines(r, (l) => l.acceptedQty ?? 0))));
-    const last = stores[stores.length - 1];
-    this.sequence(last, uniq(rets.map((r) => r.distributorId)).map((id) => this.distributor(id))).forEach((d) => {
-      stops.push(this.newStop(stops.length + 1, 'SELLER_RETURN_HANDOVER', 'DISTRIBUTOR', d, rets.filter((r) => r.distributorId === d.id).flatMap((r) => this.returnLines(r, (l) => l.acceptedQty ?? 0))));
-    });
-    const t = this.newTrip('CDS_RETURN', 'SC', plan, b.plannedDate, b.slot ?? '09:00 – 14:00', a, stops, by, SC_HUB);
-    rets.forEach((r) => {
-      r.returnTripId = t.id;
-      this.setReturn(r, 'RETURN_PLANNED', by, t.tripNo);
-    });
-    return { plan, trip: t };
-  }
-
-  // ---------------------------------------------------------------- returns raised by the CDS User / at the retailer
-
-  returnableQty(o: CdsOrder, sku: string) {
-    const l = o.lines.find((x) => x.sku === sku);
-    if (!l) return 0;
-    const open = sum(this.s.returns.filter((r) => r.source === 'RETAILER' && r.orderId === o.id && r.status !== 'CANCELLED'), (r) => {
-      const x = r.lines.find((y) => y.sku === sku);
-      if (!x) return 0;
-      return r.status === 'RETURN_INITIATED' ? x.qty : x.pickedQty ?? 0;
-    });
-    return Math.max(0, l.deliveredQty - open);
-  }
-
-  initiateReturn(b: { orderId: string; lines: { sku: string; qty: number; reason: string; condition?: ItemCondition }[] }, by: string) {
-    const o = this.order(b.orderId);
-    if (!['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status)) throw conflict(`${o.orderNo} is ${o.status}; returns can be raised only on delivered orders`);
-    const lines = (b.lines ?? []).filter((x) => x.qty > 0).map((x) => {
-      const l = o.lines.find((y) => y.sku === x.sku);
-      if (!l) throw bad(`${o.orderNo} has no SKU ${x.sku}`);
-      if (!isQty(x.qty)) throw bad(`Invalid quantity for ${l.name}`);
-      const max = this.returnableQty(o, l.sku);
-      if (x.qty > max) throw conflict(`${l.name}: only ${max} unit(s) can be returned on ${o.orderNo}`);
-      if (!x.reason?.trim()) throw bad(`Select a return reason for ${l.name}`);
-      return { sku: l.sku, name: l.name, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg, qty: x.qty, reason: x.reason, condition: x.condition ?? 'GOOD', pickedQty: null, acceptedQty: null, rejectedQty: null, handedToSellerQty: null };
-    });
-    if (!lines.length) throw bad('Enter a return quantity for at least one SKU');
-    const r: ReturnRecord = {
-      id: `ret-${this.seq()}`, returnNo: `RET-${this.seq()}`, source: 'RETAILER', orderId: o.id, orderNo: o.orderNo, cdsStoreId: o.cdsStoreId,
-      distributorId: o.distributorId, retailerId: o.retailerId, lines, status: 'RETURN_INITIATED', retailerTripId: null, returnTripId: null,
-      history: [{ from: null, to: 'RETURN_INITIATED', at: this.now(), by }], ...this.stamp(by),
+  /** A route for one vehicle: the orders' retailers in visiting order from the store, with load, value, distance and time. */
+  routeFor(st: CdsStore, v: Vehicle, orders: CdsOrder[]): DeliveryRoute {
+    const retailers = this.sequence(st, uniq(orders.map((o) => o.retailerId)).map((id) => this.retailer(id)));
+    const m = routeMetrics([st, st, ...retailers], retailers.length + 1);
+    return {
+      vehicleId: v.id, vehicleRegNo: v.regNo, vehicleType: v.type, capacityKg: v.capacityKg,
+      localities: uniq(retailers.map((r) => r.locality)), retailerIds: retailers.map((r) => r.id),
+      loadKg: round2(sum(orders, (o) => this.deliverableKg(o))),
+      orderValue: round2(sum(orders, (o) => sum(o.lines, (l) => (l.acceptedQty - l.deliveredQty) * l.unitPrice))),
+      distanceKm: m.distanceKm, etaMinutes: m.etaMinutes,
     };
-    this.s.returns.push(r);
-    this.audit('RETURN', r.id, by, 'RETURN_INITIATED', `${r.returnNo} on ${o.orderNo}`);
-    return r;
-  }
-
-  cancelReturn(id: string, reason: string, by: string) {
-    const r = this.ret(id);
-    if (!reason?.trim()) throw bad('A reason is required');
-    if (r.retailerTripId) throw conflict(`${r.returnNo} is on trip ${this.trip(r.retailerTripId).tripNo}`);
-    this.setReturn(r, 'CANCELLED', by, reason);
-    return r;
   }
 
   /**
-   * Delivery person collects a return during a retailer visit (not planned in advance) — before or after confirming the
-   * delivery at that stop, for any order already delivered to that retailer. Adds the return-collection stop and the
-   * return handover at the CDS.
+   * Plan Routes: groups the selected Ready for Delivery orders by retailer locality (CDS has no beats) and packs the
+   * groups onto the store's own free vehicles — largest groups first, into a route that already serves the locality,
+   * else any route with room, else a new vehicle. A locality heavier than the largest vehicle is split by retailer.
+   * Each route then gets the smallest free vehicle that carries it. Nothing is saved: the CDS User reviews, moves
+   * retailers between routes and confirms.
    */
-  addReturnAtStop(tripId: string, stopId: string, b: { orderId: string; lines: { sku: string; qty: number; reason: string; condition?: ItemCondition }[] }, by: string) {
-    const t = this.trip(tripId);
-    const st = t.stops.find((x) => x.id === stopId);
-    if (!st || st.action !== 'RETAILER_DELIVERY') throw bad('Returns are collected at a retailer delivery stop');
-    if (!['STARTED', 'IN_PROGRESS'].includes(t.status)) throw conflict(`${t.tripNo} is ${t.status}`);
-    if (st.status === 'FAILED') throw conflict(`The visit to ${st.name} failed`);
-    const o = this.order(b.orderId);
-    if (o.retailerId !== st.partyId) throw bad(`${o.orderNo} is not an order of ${st.name}`);
-    const r = this.initiateReturn(b, by);
-    r.retailerTripId = t.id;
-    t.returnIds.push(r.id);
-    let rs = t.stops.find((x) => x.action === 'RETAILER_RETURN' && x.partyId === st.partyId && x.status === 'PENDING');
-    if (!rs) {
-      rs = this.newStop(0, 'RETAILER_RETURN', 'RETAILER', this.retailer(st.partyId), []);
-      t.stops.splice(t.stops.indexOf(st) + 1, 0, rs);
-    }
-    rs.lines.push(...this.returnLines(r, (l) => l.qty));
-    let h = t.stops.find((x) => x.action === 'RETURN_HANDOVER_CDS' && x.status === 'PENDING');
-    if (!h) {
-      h = this.newStop(0, 'RETURN_HANDOVER_CDS', 'CDS', this.storeParty(this.store(t.owner)), []);
-      t.stops.push(h);
-    }
-    h.lines.push(...this.returnLines(r, (l) => l.qty));
-    t.stops.forEach((x, i) => (x.seq = i + 1));
-    this.audit('TRIP', t.id, by, 'RETURN_ADDED', `${r.returnNo} at ${st.name}`);
-    return r;
+  proposeRoutes(storeId: string, orderIds: string[], date: string) {
+    const st = this.store(storeId);
+    this.checkDate(date, true);
+    const orders = this.readyOrders(st.id, orderIds);
+    if (!orders.length) throw bad('Select at least one order');
+    const free = this.resources(st.id, date).vehicles.filter((v) => v.available).sort((a, b) => b.capacityKg - a.capacityKg);
+    if (!free.length) throw conflict(`No vehicle of ${st.name} is free on ${date}`);
+    const loc = (o: CdsOrder) => this.retailer(o.retailerId).locality;
+    const maxCap = free[0].capacityKg;
+    type Group = { locality: string; orders: CdsOrder[]; kg: number };
+    const groups: Group[] = [];
+    uniq(orders.map(loc)).forEach((l) => {
+      const os = orders.filter((o) => loc(o) === l);
+      let cur: Group = { locality: l, orders: [], kg: 0 };
+      uniq(os.map((o) => o.retailerId)).forEach((rid) => {
+        const ro = os.filter((o) => o.retailerId === rid);
+        const kg = sum(ro, (o) => this.deliverableKg(o));
+        if (cur.orders.length && cur.kg + kg > maxCap) {
+          groups.push(cur);
+          cur = { locality: l, orders: [], kg: 0 };
+        }
+        cur.orders.push(...ro);
+        cur.kg += kg;
+      });
+      if (cur.orders.length) groups.push(cur);
+    });
+    groups.sort((a, b) => b.kg - a.kg);
+    const bins: { v: (typeof free)[number]; orders: CdsOrder[]; kg: number }[] = [];
+    const unplanned: string[] = [];
+    groups.forEach((g) => {
+      const fit = bins.filter((b) => b.kg + g.kg <= b.v.capacityKg);
+      const bin = fit.find((b) => b.orders.some((o) => loc(o) === g.locality)) ?? fit[0];
+      if (bin) {
+        bin.orders.push(...g.orders);
+        bin.kg += g.kg;
+        return;
+      }
+      const v = free.find((x) => !bins.some((b) => b.v.id === x.id) && x.capacityKg >= g.kg);
+      if (!v) {
+        unplanned.push(...g.orders.map((o) => o.id));
+        return;
+      }
+      bins.push({ v, orders: [...g.orders], kg: g.kg });
+    });
+    // right-size: each route gets the smallest free vehicle that carries it
+    bins.sort((a, b) => a.kg - b.kg).forEach((b) => {
+      const v = free.filter((x) => x.capacityKg >= b.kg && !bins.some((o) => o !== b && o.v.id === x.id)).sort((x, y) => x.capacityKg - y.capacityKg)[0];
+      if (v) b.v = v;
+    });
+    return {
+      plannedDate: date,
+      routes: bins.sort((a, b) => b.kg - a.kg).map((b) => ({ ...this.routeFor(st, b.v, b.orders), orderIds: b.orders.map((o) => o.id) })),
+      unplannedOrderIds: unplanned,
+    };
+  }
+
+  /** Confirm Routes: saves each route (its vehicle is reserved for the day); the orders become Delivery Planned. */
+  confirmRoutes(b: { cdsStoreId: string; plannedDate: string; routes: { vehicleId: string; orderIds: string[] }[]; remarks?: string }, by: string) {
+    const st = this.store(b.cdsStoreId);
+    this.checkDate(b.plannedDate, true);
+    const routes = (b.routes ?? []).filter((r) => r.orderIds?.length);
+    if (!routes.length) throw bad('Plan at least one route');
+    const all = routes.flatMap((r) => r.orderIds);
+    if (uniq(all).length !== all.length) throw bad('An order can be on one route only');
+    if (uniq(routes.map((r) => r.vehicleId)).length !== routes.length) throw bad('Each route needs its own vehicle');
+    const checked = routes.map((r) => {
+      const orders = this.readyOrders(st.id, r.orderIds);
+      const v = this.s.vehicles.find((x) => x.id === r.vehicleId);
+      if (!v || v.owner !== st.id) throw bad('Select a vehicle for every route');
+      if (!v.active) throw conflict(`Vehicle ${v.regNo} is inactive`);
+      const busy = this.busyOn('vehicleId', v.id, b.plannedDate);
+      if (busy) throw conflict(`Vehicle ${v.regNo} is already on ${busy.tripNo} on ${b.plannedDate}`);
+      const route = this.routeFor(st, v, orders);
+      if (route.loadKg > v.capacityKg) throw conflict(`Vehicle ${v.regNo} carries ${v.capacityKg} kg; this route weighs ${Math.ceil(route.loadKg)} kg`);
+      return { orders, route, v };
+    });
+    return checked.map(({ orders, route, v }) => {
+      const plan = this.newPlan('RETAILER_DELIVERY', st.id, b.plannedDate, orders.map((o) => o.id), b.remarks ?? '', by, route);
+      orders.forEach((o) => this.setOrder(o, 'DELIVERY_PLANNED', by, `Route ${plan.planNo}`));
+      this.audit('PLAN', plan.id, by, 'ROUTE_CONFIRMED', `${plan.planNo} · ${v.regNo} · ${orders.length} orders`);
+      return plan;
+    });
+  }
+
+  /** Generate Trip: a confirmed route becomes a Retailer Delivery Trip with the chosen delivery person. */
+  generateRouteTrip(planId: string, b: { deliveryPersonId: string; slot?: string }, by: string) {
+    const plan = this.plan(planId);
+    if (plan.kind !== 'RETAILER_DELIVERY' || !plan.route) throw bad('Only delivery routes generate retailer trips');
+    if (plan.tripIds.length) throw conflict(`${plan.planNo} already has a trip`);
+    const st = this.store(plan.owner);
+    const orders = plan.orderIds.map((id) => this.order(id));
+    orders.forEach((o) => {
+      if (o.status !== 'DELIVERY_PLANNED' || o.deliveryTripId) throw conflict(`${o.orderNo} is ${o.status}`);
+    });
+    const a = this.assign(st.id, plan.plannedDate, { vehicleId: plan.route.vehicleId, deliveryPersonId: b?.deliveryPersonId }, plan.route.loadKg, plan.id);
+    const left = (l: CdsOrder['lines'][number]) => l.acceptedQty - l.deliveredQty;
+    const stops: TripStop[] = [this.newStop(1, 'CDS_ORDER_PICKUP', 'CDS', this.storeParty(st), orders.flatMap((o) => this.orderLines(o, left)))];
+    plan.route.retailerIds.forEach((rid) => {
+      const os = orders.filter((o) => o.retailerId === rid);
+      if (os.length) stops.push(this.newStop(stops.length + 1, 'RETAILER_DELIVERY', 'RETAILER', this.retailer(rid), os.flatMap((o) => this.orderLines(o, left))));
+    });
+    const t = this.newTrip('RETAILER_DELIVERY', st.id, plan, plan.plannedDate, b?.slot || '09:00 – 13:00', a, stops, by, st);
+    orders.forEach((o) => (o.deliveryTripId = t.id));
+    return t;
+  }
+
+  /** One route on one vehicle, confirmed and turned into a trip in one step (demo seed and tests). */
+  createDeliveryPlan(b: { cdsStoreId: string; orderIds: string[]; plannedDate: string; slot?: string; vehicleId: string; deliveryPersonId: string; remarks?: string }, by: string) {
+    const st = this.store(b.cdsStoreId);
+    this.checkDate(b.plannedDate, true);
+    if (!b.orderIds?.length) throw bad('Select at least one order');
+    const orders = this.readyOrders(st.id, b.orderIds);
+    this.assign(st.id, b.plannedDate, b, sum(orders, (o) => this.deliverableKg(o)));
+    const [plan] = this.confirmRoutes({ cdsStoreId: st.id, plannedDate: b.plannedDate, routes: [{ vehicleId: b.vehicleId, orderIds: b.orderIds }], remarks: b.remarks }, by);
+    return { plan, trip: this.generateRouteTrip(plan.id, { deliveryPersonId: b.deliveryPersonId, slot: b.slot }, by) };
   }
 
   // ---------------------------------------------------------------- trip execution (Delivery Partner App / on its behalf)
@@ -537,12 +536,7 @@ export class CdsEngine {
         o.deliveryTripId = null;
         this.setOrder(o, 'READY_FOR_DELIVERY', by, `${t.tripNo} cancelled`);
       });
-      t.returnIds.map((x) => this.ret(x)).forEach((r) => (r.retailerTripId = null));
     }
-    if (t.type === 'CDS_RETURN') t.returnIds.map((x) => this.ret(x)).forEach((r) => {
-      r.returnTripId = null;
-      this.setReturn(r, 'RECEIVED_AT_CDS', by, `${t.tripNo} cancelled`);
-    });
     this.audit('TRIP', t.id, by, 'CANCELLED', reason);
     return t;
   }
@@ -578,11 +572,6 @@ export class CdsEngine {
       if (notPicked.length) throw conflict(`Collect ${uniq(notPicked.map((o) => o.orderNo)).join(', ')} from the distributor first`);
     }
     if (st.action === 'RETAILER_DELIVERY' && pending('CDS_ORDER_PICKUP')) throw conflict('Load the orders at the CDS first');
-    if (st.action === 'RETURN_HANDOVER_CDS' && pending('RETAILER_RETURN')) throw conflict('Finish the return collection stops first');
-    if (st.action === 'SELLER_RETURN_HANDOVER') {
-      const waiting = t.stops.filter((x) => x.action === 'CDS_RETURN_PICKUP' && x.status === 'PENDING' && x.lines.some((l) => st.lines.some((m) => m.returnId === l.returnId)));
-      if (waiting.length) throw conflict(`Collect the returns at ${waiting.map((x) => x.name).join(', ')} first`);
-    }
   }
 
   /** Who receives the OTP for a stop (the party other than the delivery person). */
@@ -661,23 +650,14 @@ export class CdsEngine {
     const t = this.trip(tripId);
     const st = this.stopOf(t, stopId);
     this.ready(t, st);
-    // validate quantities before consuming the OTP; excess at a CDS handover is allowed (the GRN records it)
+    // validate quantities before consuming the OTP; at a CDS handover this is the count the store accepts
     const qtys = st.lines.map((l, i) => {
       const x = input.lines?.find((y) => y.idx === i);
-      const max = st.action === 'CDS_HANDOVER' ? l.plannedQty * 2 + 10 : l.plannedQty;
       const q = x ? x.actualQty : l.plannedQty;
       if (!isQty(q)) throw bad(`${l.name}: enter a valid quantity`);
-      if (q > max) throw bad(`${l.name}: quantity cannot be more than ${l.plannedQty}`);
+      if (q > l.plannedQty) throw bad(`${l.name}: quantity cannot be more than ${l.plannedQty}`);
       return q;
     });
-    if (st.action === 'RETURN_HANDOVER_CDS') {
-      st.lines.forEach((l, i) => {
-        const x = input.lines?.find((y) => y.idx === i);
-        const acc = x?.acceptedQty ?? qtys[i];
-        const rej = x?.rejectedQty ?? 0;
-        if (!isQty(acc) || !isQty(rej) || acc + rej !== qtys[i]) throw bad(`${l.name}: accepted + rejected must equal received (${qtys[i]})`);
-      });
-    }
     (input.collections ?? []).forEach((c) => {
       if (!(Number(c.amount) >= 0)) throw bad('Enter a valid collected amount');
       if (!['CASH', 'UPI'].includes(c.mode)) throw bad('Collection mode must be Cash or UPI');
@@ -719,7 +699,6 @@ export class CdsEngine {
 
   private apply(t: Trip, st: TripStop, input: StopInput, by: string) {
     const ordersAt = uniq(st.lines.map((l) => l.orderId).filter((x): x is string => !!x)).map((id) => this.order(id));
-    const returnsAt = uniq(st.lines.map((l) => l.returnId).filter((x): x is string => !!x)).map((id) => this.ret(id));
     const line = (o: CdsOrder, sku: string) => o.lines.find((x) => x.sku === sku)!;
     const renumber = () => t.stops.forEach((s, i) => (s.seq = i + 1));
     switch (st.action) {
@@ -748,25 +727,18 @@ export class CdsEngine {
         });
         break;
       case 'CDS_HANDOVER':
+        // no GRN: the OTP-verified count the store accepts is deliverable at once; picked − accepted is short at handover
         ordersAt.forEach((o) => {
-          st.lines.filter((l) => l.orderId === o.id).forEach((l) => (line(o, l.sku).receivedQty = l.actualQty ?? 0));
-          this.setOrder(o, 'RECEIVED_AT_CDS', by, `${t.tripNo} · OTP verified`);
-        });
-        // one GRN per distributor at this CDS — GRN is maintained distributor-wise
-        uniq(ordersAt.map((o) => o.distributorId)).forEach((dId) => {
-          const os = ordersAt.filter((o) => o.distributorId === dId);
-          const g: Grn = {
-            id: `grn-${this.seq()}`, grnNo: `GRN-${this.seq()}`, cdsStoreId: st.partyId, distributorId: dId, cdsTripId: t.id,
-            pickupTripIds: uniq(os.map((o) => o.pickupTripId).filter((x): x is string => !!x)), orderIds: os.map((o) => o.id), status: 'PENDING',
-            lines: st.lines.filter((l) => os.some((o) => o.id === l.orderId)).map((l) => ({
-              orderId: l.orderId!, orderNo: this.order(l.orderId!).orderNo, sku: l.sku, name: l.name, dispatchedQty: l.plannedQty, receivedQty: l.actualQty ?? 0,
-              acceptedQty: null, damagedQty: null, shortQty: Math.max(0, l.plannedQty - (l.actualQty ?? 0)), excessQty: Math.max(0, (l.actualQty ?? 0) - l.plannedQty), remarks: '',
-            })),
-            remarks: '', completedAt: null, history: [{ from: null, to: 'PENDING', at: this.now(), by, note: `Handed over on ${t.tripNo}` }], ...this.stamp(by),
-          };
-          this.s.grns.push(g);
-          os.forEach((o) => (o.grnId = g.id));
-          this.audit('GRN', g.id, by, 'GRN_RAISED', `${g.grnNo} · ${this.distributor(dId).name} → ${this.store(st.partyId).name}`);
+          st.lines.filter((l) => l.orderId === o.id).forEach((l) => (line(o, l.sku).acceptedQty = l.actualQty ?? 0));
+          const accepted = sum(o.lines, (l) => l.acceptedQty);
+          if (!accepted) {
+            o.cdsTripId = null;
+            o.note = `Nothing handed over at ${st.name}`;
+            this.setOrder(o, 'PICKED_UP', by, `${o.note} — send to the CDS again`);
+            return;
+          }
+          const short = accepted < sum(o.lines, (l) => l.pickedQty);
+          this.setOrder(o, 'READY_FOR_DELIVERY', by, `${t.tripNo} · handover OTP verified${short ? ' (short at handover)' : ''}`);
         });
         break;
       case 'CDS_ORDER_PICKUP':
@@ -804,82 +776,11 @@ export class CdsEngine {
             const col: Collection = {
               id: `col-${this.seq()}`, collectionNo: `COL-${this.seq()}`, cdsStoreId: t.owner, tripId: t.id, tripNo: t.tripNo, orderId: o.id, orderNo: o.orderNo,
               retailerId: o.retailerId, deliveryPersonId: t.deliveryPersonId, deliveryPersonName: t.deliveryPersonName, expectedAmount: due,
-              amount: round2(c ? Number(c.amount) : due), mode: c?.mode ?? 'CASH', collectedAt: this.now(), status: 'WITH_DELIVERY_PERSON',
-              cdsReceivedAmount: null, cdsReceivedAt: null, cdsReceivedBy: null, mismatchNote: null, qwipoHandoverRef: null, qwipoHandedAt: null, settlementRef: null, settledAt: null,
-              history: [{ from: null, to: 'WITH_DELIVERY_PERSON', at: this.now(), by, note: `${t.tripNo} · ${st.name}` }], ...this.stamp(by),
+              amount: round2(c ? Number(c.amount) : due), mode: c?.mode ?? 'CASH', collectedAt: this.now(), ...this.stamp(by),
             };
             this.s.collections.push(col);
             st.collectionId = col.id;
           }
-        });
-        break;
-      case 'RETAILER_RETURN':
-        returnsAt.forEach((r) => {
-          st.lines.filter((l) => l.returnId === r.id).forEach((l) => (r.lines.find((x) => x.sku === l.sku)!.pickedQty = l.actualQty ?? 0));
-          const picked = sum(r.lines, (l) => l.pickedQty ?? 0);
-          // the CDS handover stop expects what was collected
-          t.stops.filter((s) => s.action === 'RETURN_HANDOVER_CDS' && s.status === 'PENDING').forEach((s) => {
-            s.lines.filter((l) => l.returnId === r.id).forEach((l) => (l.plannedQty = r.lines.find((x) => x.sku === l.sku)!.pickedQty ?? 0));
-            s.lines = s.lines.filter((l) => l.plannedQty > 0);
-          });
-          if (!picked) {
-            r.retailerTripId = null;
-            r.lines.forEach((l) => (l.pickedQty = null));
-            r.history.push({ from: r.status, to: r.status, at: this.now(), by, note: `Not collected on ${t.tripNo}: ${st.failReason ?? ''} — plan again` });
-            return;
-          }
-          this.setReturn(r, 'PICKED_UP_FROM_RETAILER', by, `${t.tripNo} · OTP verified`);
-        });
-        t.stops = t.stops.filter((s) => s.action !== 'RETURN_HANDOVER_CDS' || s.lines.length || s.status !== 'PENDING');
-        renumber();
-        break;
-      case 'RETURN_HANDOVER_CDS':
-        st.lines.forEach((l, i) => {
-          const x = input.lines?.find((y) => y.idx === i);
-          l.acceptedQty = x?.acceptedQty ?? l.actualQty ?? 0;
-          l.rejectedQty = x?.rejectedQty ?? 0;
-        });
-        returnsAt.forEach((r) => {
-          st.lines.filter((l) => l.returnId === r.id).forEach((l) => {
-            const rl = r.lines.find((x) => x.sku === l.sku)!;
-            rl.acceptedQty = l.acceptedQty ?? 0;
-            rl.rejectedQty = l.rejectedQty ?? 0;
-            const ol = this.order(r.orderId).lines.find((x) => x.sku === l.sku);
-            if (ol) ol.returnedQty += l.actualQty ?? 0;
-          });
-          this.setReturn(r, 'RECEIVED_AT_CDS', by, `${t.tripNo} · OTP verified`);
-          if (!sum(r.lines, (l) => l.acceptedQty ?? 0)) this.setReturn(r, 'COMPLETED', by, 'Nothing accepted — closed at the CDS');
-          const o = this.order(r.orderId);
-          if (sum(o.lines, (l) => l.deliveredQty) > 0 && o.lines.every((l) => l.returnedQty >= l.deliveredQty)) this.setOrder(o, 'RETURNED', by, r.returnNo);
-        });
-        break;
-      case 'CDS_RETURN_PICKUP':
-        returnsAt.forEach((r) => {
-          st.lines.filter((l) => l.returnId === r.id).forEach((l) => {
-            t.stops.filter((s) => s.action === 'SELLER_RETURN_HANDOVER' && s.status === 'PENDING').forEach((s) => s.lines.filter((m) => m.returnId === r.id && m.sku === l.sku).forEach((m) => (m.plannedQty = l.actualQty ?? 0)));
-          });
-          t.stops.forEach((s) => { if (s.action === 'SELLER_RETURN_HANDOVER' && s.status === 'PENDING') s.lines = s.lines.filter((l) => l.plannedQty > 0); });
-          if (!sum(st.lines.filter((l) => l.returnId === r.id), (l) => l.actualQty ?? 0)) {
-            r.returnTripId = null;
-            this.setReturn(r, 'RECEIVED_AT_CDS', by, `Not loaded on ${t.tripNo}`);
-            return;
-          }
-          this.setReturn(r, 'PICKED_UP_FROM_CDS', by, `${t.tripNo} · OTP verified`);
-        });
-        t.stops = t.stops.filter((s) => s.action !== 'SELLER_RETURN_HANDOVER' || s.lines.length || s.status !== 'PENDING');
-        renumber();
-        break;
-      case 'SELLER_RETURN_HANDOVER':
-        returnsAt.forEach((r) => {
-          st.lines.filter((l) => l.returnId === r.id).forEach((l) => (r.lines.find((x) => x.sku === l.sku)!.handedToSellerQty = l.actualQty ?? 0));
-          if (st.status === 'FAILED') {
-            // seller did not take the goods: they go back to the CDS and can be planned again
-            r.returnTripId = null;
-            r.history.push({ from: r.status, to: 'RECEIVED_AT_CDS', at: this.now(), by, note: `Seller did not accept on ${t.tripNo}: ${st.failReason} — back to the CDS` });
-            r.status = 'RECEIVED_AT_CDS';
-            return;
-          }
-          this.setReturn(r, 'DELIVERED_TO_SELLER', by, `${t.tripNo} · OTP verified`);
         });
         break;
     }
@@ -890,115 +791,6 @@ export class CdsEngine {
     if (t.status === 'STARTED') this.setTrip(t, 'IN_PROGRESS', by);
     const clean = t.stops.every((s) => s.status === 'DONE');
     this.setTrip(t, clean ? 'COMPLETED' : 'PARTIALLY_COMPLETED', by);
-    if (t.type === 'CDS_RETURN') t.returnIds.map((x) => this.ret(x)).filter((r) => r.status === 'DELIVERED_TO_SELLER').forEach((r) => this.setReturn(r, 'COMPLETED', by, `${t.tripNo} completed`));
     this.audit('TRIP', t.id, by, clean ? 'COMPLETED' : 'PARTIALLY_COMPLETED');
-  }
-
-  // ---------------------------------------------------------------- 4. GRN (distributor-wise)
-
-  completeGrn(id: string, b: { lines: { idx: number; acceptedQty: number; damagedQty: number; remarks?: string }[]; remarks?: string }, by: string) {
-    const g = this.grn(id);
-    if (g.status !== 'PENDING') throw conflict(`${g.grnNo} is already generated`);
-    g.lines.forEach((l, i) => {
-      const x = b.lines?.find((y) => y.idx === i);
-      if (!x) throw bad(`Enter the verified quantities for ${l.name} (${l.orderNo})`);
-      if (!isQty(x.acceptedQty) || !isQty(x.damagedQty)) throw bad(`${l.name}: enter valid quantities`);
-      if (x.acceptedQty + x.damagedQty !== l.receivedQty) throw bad(`${l.name} (${l.orderNo}): accepted + damaged must equal received (${l.receivedQty})`);
-      if ((l.shortQty || l.excessQty || x.damagedQty) && !(x.remarks ?? '').trim()) throw bad(`${l.name} (${l.orderNo}): add a remark for the shortage / excess / damage`);
-    });
-    g.lines.forEach((l, i) => {
-      const x = b.lines.find((y) => y.idx === i)!;
-      l.acceptedQty = Math.min(x.acceptedQty, l.dispatchedQty); // excess units are recorded but are not deliverable
-      l.damagedQty = x.damagedQty;
-      l.remarks = x.remarks ?? '';
-    });
-    g.remarks = b.remarks ?? '';
-    g.status = 'COMPLETED';
-    g.completedAt = this.now();
-    g.history.push({ from: 'PENDING', to: 'COMPLETED', at: this.now(), by });
-    this.touch(g, by);
-    g.orderIds.map((x) => this.order(x)).forEach((o) => {
-      g.lines.filter((l) => l.orderId === o.id).forEach((l) => {
-        const ol = o.lines.find((y) => y.sku === l.sku)!;
-        ol.acceptedQty = l.acceptedQty ?? 0;
-        ol.damagedQty = l.damagedQty ?? 0;
-      });
-      this.setOrder(o, 'GRN_COMPLETED', by, g.grnNo);
-      if (sum(o.lines, (l) => l.acceptedQty) > 0) this.setOrder(o, 'READY_FOR_DELIVERY', by);
-      else o.note = 'Nothing accepted at GRN';
-      // damaged goods go back to the distributor through Return Planning
-      const dmg = o.lines.filter((l) => g.lines.some((x) => x.orderId === o.id && x.sku === l.sku && (x.damagedQty ?? 0) > 0));
-      if (dmg.length) {
-        const r: ReturnRecord = {
-          id: `ret-${this.seq()}`, returnNo: `RET-${this.seq()}`, source: 'GRN', orderId: o.id, orderNo: o.orderNo, cdsStoreId: o.cdsStoreId, distributorId: o.distributorId,
-          retailerId: null, status: 'RECEIVED_AT_CDS', retailerTripId: null, returnTripId: null,
-          lines: dmg.map((l) => ({ sku: l.sku, name: l.name, unitPrice: l.unitPrice, unitWeightKg: l.unitWeightKg, qty: l.damagedQty, reason: 'Damaged in transit', condition: 'DAMAGED' as const, pickedQty: l.damagedQty, acceptedQty: l.damagedQty, rejectedQty: 0, handedToSellerQty: null })),
-          history: [{ from: null, to: 'RECEIVED_AT_CDS', at: this.now(), by, note: `Damaged at ${g.grnNo}` }], ...this.stamp(by),
-        };
-        this.s.returns.push(r);
-      }
-    });
-    this.audit('GRN', g.id, by, 'GRN_GENERATED', g.lines.map((l) => `${l.orderNo}/${l.sku}: rcv ${l.receivedQty} ok ${l.acceptedQty} dmg ${l.damagedQty} short ${l.shortQty} excess ${l.excessQty}`).join('; '));
-    return g;
-  }
-
-  // ---------------------------------------------------------------- collections & payments (manual)
-
-  private collectionsAt(ids: string[] | undefined, storeId: string) {
-    if (!ids?.length) throw bad('Select at least one collection');
-    return uniq(ids).map((id) => {
-      const c = this.collection(id);
-      if (c.cdsStoreId !== storeId) throw new CdsError(403, `${c.collectionNo} belongs to another CDS`);
-      return c;
-    });
-  }
-  receiveCollections(storeId: string, b: { items: { id: string; amount: number }[]; note?: string }, by: string) {
-    const cs = this.collectionsAt(b.items?.map((x) => x.id), storeId);
-    cs.forEach((c) => {
-      if (c.status !== 'WITH_DELIVERY_PERSON') throw conflict(`${c.collectionNo} is already received`);
-      const amt = Number(b.items.find((x) => x.id === c.id)!.amount);
-      if (!(amt >= 0)) throw bad(`${c.collectionNo}: enter the amount received`);
-      if (round2(amt) !== c.amount && !b.note?.trim()) throw bad(`${c.collectionNo}: ₹${amt} received differs from ₹${c.amount} collected — add a note`);
-    });
-    cs.forEach((c) => {
-      const amt = round2(Number(b.items.find((x) => x.id === c.id)!.amount));
-      c.cdsReceivedAmount = amt;
-      c.cdsReceivedAt = this.now();
-      c.cdsReceivedBy = by;
-      if (amt !== c.amount) c.mismatchNote = b.note ?? null;
-      c.history.push({ from: c.status, to: 'RECEIVED_BY_CDS', at: this.now(), by, note: amt !== c.amount ? `₹${amt} received vs ₹${c.amount}: ${b.note}` : undefined });
-      c.status = 'RECEIVED_BY_CDS';
-      this.touch(c, by);
-      this.audit('COLLECTION', c.id, by, 'RECEIVED_BY_CDS', `₹${amt}`);
-    });
-    return cs;
-  }
-  handToQwipo(storeId: string, ids: string[], ref: string, by: string) {
-    if (!ref?.trim()) throw bad('Enter the handover reference (deposit slip / UTR)');
-    const cs = this.collectionsAt(ids, storeId);
-    cs.forEach((c) => { if (c.status !== 'RECEIVED_BY_CDS') throw conflict(`${c.collectionNo} must be received by the CDS first`); });
-    cs.forEach((c) => {
-      c.qwipoHandoverRef = ref.trim();
-      c.qwipoHandedAt = this.now();
-      c.history.push({ from: c.status, to: 'HANDED_TO_QWIPO', at: this.now(), by, note: ref });
-      c.status = 'HANDED_TO_QWIPO';
-      this.touch(c, by);
-      this.audit('COLLECTION', c.id, by, 'HANDED_TO_QWIPO', ref);
-    });
-    return cs;
-  }
-  recordSettlement(storeId: string, ids: string[], ref: string, by: string) {
-    if (!ref?.trim()) throw bad('Enter the settlement reference from Qwipo (SNP)');
-    const cs = this.collectionsAt(ids, storeId);
-    cs.forEach((c) => { if (c.status !== 'HANDED_TO_QWIPO') throw conflict(`${c.collectionNo} must be handed to Qwipo first`); });
-    cs.forEach((c) => {
-      c.settlementRef = ref.trim();
-      c.settledAt = this.now();
-      c.history.push({ from: c.status, to: 'SETTLED', at: this.now(), by, note: ref });
-      c.status = 'SETTLED';
-      this.touch(c, by);
-      this.audit('COLLECTION', c.id, by, 'SETTLED', ref);
-    });
-    return cs;
   }
 }

@@ -15,21 +15,19 @@ const MENU: Record<'SERVICE_CENTRE' | 'CDS_USER', MenuItem[]> = {
   SERVICE_CENTRE: [
     { page: 'sc-orders', to: '/cds/orders', icon: 'fa-box', label: 'Orders' },
     { page: 'sc-pickup', to: '/cds/pickup-planning', icon: 'fa-truck-ramp-box', label: 'Pickup Planning' },
-    { page: 'sc-returns', to: '/cds/return-planning', icon: 'fa-rotate-left', label: 'Return Planning' },
     { page: 'sc-trips', to: '/cds/trips', icon: 'fa-paper-plane', label: 'Trips' },
     { page: 'sc-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports' },
     { page: 'sc-settings', to: '/cds/settings', icon: 'fa-cog', label: 'Settings' },
     { page: 'sc-stores', to: '/cds/stores', icon: 'fa-store', label: 'CDS Stores' },
   ],
+  /** Same menu, order and icons as the LBNP app. */
   CDS_USER: [
-    { page: 'cu-grn', to: '/cds/grn', icon: 'fa-clipboard-check', label: 'GRN' },
     { page: 'cu-orders', to: '/cds/orders', icon: 'fa-box', label: 'Orders' },
     { page: 'cu-delivery', to: '/cds/delivery-planning', icon: 'fa-truck', label: 'Delivery Planning' },
     { page: 'cu-trips', to: '/cds/trips', icon: 'fa-paper-plane', label: 'Trips' },
-    { page: 'cu-collections', to: '/cds/collections', icon: 'fa-indian-rupee-sign', label: 'Collections & Payments' },
-    { page: 'cu-returns', to: '/cds/returns', icon: 'fa-rotate-left', label: 'Returns' },
-    { page: 'cu-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports & Settings' },
-    { page: 'cu-retailers', to: '/cds/retailers', icon: 'fa-users', label: 'Retailers' },
+    { page: 'cu-reports', to: '/cds/reports', icon: 'fa-chart-bar', label: 'Reports' },
+    { page: 'cu-customers', to: '/cds/customers', icon: 'fa-users', label: 'Customers' },
+    { page: 'cu-settings', to: '/cds/settings', icon: 'fa-cog', label: 'Settings' },
   ],
 };
 
@@ -48,6 +46,11 @@ function NoAccess() {
     <div className="cds-page"><div className="cds-empty"><i className="fas fa-lock" />Your role does not have access to this module.
       <div className="mt-2"><button className="btn btn-sm btn-primary" onClick={() => navigate(cdsAuth.home())}>Go to my home page</button></div></div></div>
   );
+}
+/** Shared /cds paths: the Service Centre and the CDS User (LBNP-style screens) see different screens. */
+export function ByRole({ sc, cu }: { sc: React.ReactNode; cu: React.ReactNode }) {
+  useCdsSession();
+  return <>{cdsAuth.isSC() ? sc : cu}</>;
 }
 export function CdsHome() {
   return <Navigate to={cdsAuth.home()} replace />;
@@ -76,7 +79,7 @@ export default function CdsLayout() {
   };
   const resetDemo = async () => {
     setMenuOpen(false);
-    const ok = await Swal.fire({ icon: 'warning', title: 'Reset demo data?', text: 'Orders, plans, trips, GRNs, returns and collections go back to the starting demo data. You stay signed in.', showCancelButton: true, confirmButtonText: 'Reset', confirmButtonColor: '#1e3a8a', reverseButtons: true });
+    const ok = await Swal.fire({ icon: 'warning', title: 'Reset demo data?', text: 'Orders, routes, trips and collections go back to the starting demo data. You stay signed in.', showCancelButton: true, confirmButtonText: 'Reset', confirmButtonColor: '#1e3a8a', reverseButtons: true });
     if (!ok.isConfirmed) return;
     try {
       await cdsApi.resetDemo();

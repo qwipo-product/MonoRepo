@@ -1,7 +1,7 @@
-// Orders — Service Centre: all CDS Store Delivery orders across its stores. CDS User: its store's orders, retailer-wise.
+// Orders — Service Centre: all CDS Store Delivery orders across its stores. The CDS User has its own LBNP-style
+// Orders screens (src/pages/cds/user).
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import Swal from 'sweetalert2';
 import { cdsApi, type OrderRow } from '../../api/services/cds.service';
 import { ORDER_STATUS, TRIP_STATUS, TRIP_TYPE } from '../../cds/status';
 import type { OrderStatus } from '../../cds/types';
@@ -12,8 +12,7 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const meta = useMeta();
   const [params] = useSearchParams();
-  const initiate = params.get('initiate') === '1';
-  const [f, setF] = useState({ search: '', status: (initiate ? 'DELIVERED' : '') as OrderStatus | '', distributorId: '', cdsStoreId: '', fromDate: '', toDate: '', retailerId: params.get('retailer') ?? '' });
+  const [f, setF] = useState({ search: '', status: '' as OrderStatus | '', distributorId: '', cdsStoreId: '', fromDate: '', toDate: '', retailerId: params.get('retailer') ?? '' });
   const [grouped, setGrouped] = useState(!sc);
   const [pageNumber, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
@@ -56,7 +55,6 @@ export default function OrdersPage() {
           onView={() => navigate(`/cds/orders/${o.id}`)}
           items={[
             { label: 'View details', icon: 'fa-eye', onClick: () => navigate(`/cds/orders/${o.id}`) },
-            { label: 'Initiate return', icon: 'fa-rotate-left', hidden: sc || !['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status), onClick: () => navigate(`/cds/orders/${o.id}`) },
             { label: 'Cancel order', icon: 'fa-circle-xmark', tone: 'danger', hidden: !sc || o.status !== 'CONFIRMED' || busy, onClick: () => void cancel(o) },
           ]}
         />
@@ -67,7 +65,6 @@ export default function OrdersPage() {
     <div className="cds-page">
       <PageHead icon="fa-box" title="Orders" subtitle={sc ? 'CDS Store Delivery orders confirmed in the Seller Store, across your CDS stores.' : 'Seller Store orders for your CDS store, retailer-wise.'} />
       <KpiStrip />
-      {initiate && <div className="cds-note mb-3"><i className="fas fa-rotate-left mt-1" />Open a delivered order and use <b className="mx-1">Initiate Return</b> to raise a retailer return.</div>}
       {f.retailerId && <div className="cds-note mb-3"><i className="fas fa-store mt-1" />Showing one retailer's orders. <button className="btn btn-link btn-sm p-0 ms-2" onClick={() => set({ retailerId: '' })}>Show all</button></div>}
       <FilterBar
         title="Order Filters"
@@ -104,7 +101,6 @@ export function OrderDetailsPage() {
   const { id = '' } = useParams();
   const { sc } = useCdsSession();
   const navigate = useNavigate();
-  const meta = useMeta();
   const { busy, run } = useAction();
   const [tab, setTab] = useState<'summary' | 'items' | 'trips' | 'history'>('summary');
   const { data, error, loading, reload } = useLoad(() => cdsApi.order(id), [id]);
@@ -112,39 +108,18 @@ export function OrderDetailsPage() {
   if (loading && !data) return <div className="cds-page"><Loading /></div>;
   if (!data) return null;
   const o = data.order;
-  const returnable = data.returnable.filter((r) => r.max > 0);
-  const anyDamaged = o.lines.some((l) => l.damagedQty > 0);
+  /** Units picked at the distributor but not accepted at the CDS handover (no GRN — the handover count is final). */
+  const pastHandover = !['CONFIRMED', 'PICKUP_PLANNED', 'PICKED_UP', 'IN_TRANSIT_TO_CDS', 'CANCELLED'].includes(o.status);
+  const anyShort = pastHandover && o.lines.some((l) => l.pickedQty > l.acceptedQty);
   const cancel = async () => {
     const r = await askText(`Cancel ${o.orderNo}?`, 'Cancellation reason', 'Cancel order', true);
     if (r && (await run(() => cdsApi.cancelOrder(o.id, r), 'Order cancelled'))) reload();
   };
-  const initiate = async () => {
-    const reasons = meta.data?.returnReasons ?? [];
-    const res = await Swal.fire({
-      title: `Initiate return · ${o.orderNo}`, width: 640,
-      html: `<div class="text-start small">${returnable.map((r) => {
-        const l = o.lines.find((x) => x.sku === r.sku)!;
-        return `<div class="border rounded p-2 mb-2"><div class="fw-semibold mb-1">${l.name} <span class="text-muted">(up to ${r.max})</span></div>
-          <div class="d-flex gap-2"><input id="q-${r.sku}" type="number" min="0" max="${r.max}" value="0" class="form-control form-control-sm" style="width:80px" aria-label="Quantity">
-          <select id="r-${r.sku}" class="form-select form-select-sm">${reasons.map((x) => `<option>${x}</option>`).join('')}</select>
-          <select id="c-${r.sku}" class="form-select form-select-sm" style="width:120px"><option value="GOOD">Good</option><option value="DAMAGED">Damaged</option><option value="EXPIRED">Expired</option></select></div></div>`;
-      }).join('')}<div class="text-muted">The return is collected on the next delivery trip to this retailer.</div></div>`,
-      showCancelButton: true, confirmButtonText: 'Initiate return', confirmButtonColor: '#1e3a8a', reverseButtons: true,
-      preConfirm: () => {
-        const v = (k: string) => (document.getElementById(k) as HTMLInputElement).value;
-        const lines = returnable.map((r) => ({ sku: r.sku, qty: Math.floor(Number(v(`q-${r.sku}`))), reason: v(`r-${r.sku}`), condition: v(`c-${r.sku}`) as 'GOOD' })).filter((x) => x.qty > 0);
-        if (!lines.length) return Swal.showValidationMessage('Enter a quantity for at least one item');
-        return lines;
-      },
-    });
-    if (res.isConfirmed && (await run(() => cdsApi.initiateReturn({ orderId: o.id, lines: res.value }), 'Return initiated'))) reload();
-  };
-  const linked = (data.returns.length > 0 || data.collections.length > 0 || !!data.grn);
+  const linked = data.collections.length > 0;
   return (
     <div className="cds-page">
       <DetailHead icon="fa-file-invoice" title="Order Details" back="/cds/orders" subtitle={<>Order #{o.orderNo} · {fmtDateTime(o.confirmedAt)} <Badge meta={ORDER_STATUS[o.status]} /></>}>
         {sc && o.status === 'CONFIRMED' && <button className="btn btn-outline-danger d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void cancel()}><i className="fas fa-circle-xmark me-2" />Cancel Order</button>}
-        {!sc && ['DELIVERED', 'PARTIALLY_DELIVERED'].includes(o.status) && returnable.length > 0 && <button className="btn btn-primary d-flex align-items-center text-nowrap" disabled={busy} onClick={() => void initiate()}><i className="fas fa-rotate-left me-2" />Initiate Return</button>}
       </DetailHead>
       {o.note && <div className="cds-note warn mb-3"><i className="fas fa-circle-exclamation mt-1" />{o.note}</div>}
       <DetailTabs value={tab} onChange={setTab} tabs={[
@@ -176,21 +151,19 @@ export function OrderDetailsPage() {
             ]} />
             {linked && (
               <InfoSection icon="fa-link" title="Linked Records" rows={[
-                ['fa-clipboard-check', 'GRN', data.grn ? `${data.grn.grnNo} · ${data.grn.status === 'PENDING' ? 'Pending' : 'Generated'}` : ''],
-                ['fa-rotate-left', 'Returns', data.returns.map((r) => r.returnNo).join(', ')],
                 ['fa-indian-rupee-sign', 'Collections', data.collections.map((c) => `${money(c.amount)} ${c.mode}`).join(', ')],
               ]} />
             )}
           </InfoGrid>
         )}
         {tab === 'items' && (
-          <Table head={['Item', 'Ordered', 'Picked up', 'At CDS', ...(anyDamaged ? ['Damaged'] : []), 'Delivered', 'Returned', 'Value']}>
+          <Table head={['Item', 'Ordered', 'Picked up', 'Accepted at CDS', ...(anyShort ? ['Short at handover'] : []), 'Delivered', 'Value']}>
             {o.lines.map((l) => (
               <tr key={l.sku} className="mat-mdc-row">
                 <td className="small">{l.name}</td>
-                <td className="fw-semibold">{l.qty}</td><td>{l.pickedQty}</td><td>{l.acceptedQty || l.receivedQty}</td>
-                {anyDamaged && <td className={l.damagedQty ? 'text-danger' : ''}>{l.damagedQty}</td>}
-                <td>{l.deliveredQty}</td><td>{l.returnedQty}</td><td>{money(l.qty * l.unitPrice)}</td>
+                <td className="fw-semibold">{l.qty}</td><td>{l.pickedQty}</td><td>{pastHandover ? l.acceptedQty : '—'}</td>
+                {anyShort && <td className={l.pickedQty > l.acceptedQty ? 'text-danger fw-semibold' : ''}>{Math.max(0, l.pickedQty - l.acceptedQty)}</td>}
+                <td>{l.deliveredQty}</td><td>{money(l.qty * l.unitPrice)}</td>
               </tr>
             ))}
           </Table>

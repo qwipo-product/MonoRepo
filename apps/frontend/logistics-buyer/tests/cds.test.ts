@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { CdsEngine, CdsError, localDay, type SkuLine } from '../src/cds/engine.ts';
 import { buildCdsMasters, buildCdsState } from '../src/cds/seed.ts';
 import { pointInPolygon, ringAreaKm2, serviceStoreFor } from '../src/cds/planning.ts';
+import { buildReport } from '../src/cds/reports.ts';
 import type { CdsState } from '../src/cds/types.ts';
 import { products, retailers } from './fixtures.ts';
 
@@ -41,9 +42,13 @@ function setup() {
 
 test('seed replays the full workflow without errors', () => {
   const s = buildCdsState(retailers, products);
-  assert.ok(s.trips.some((t) => t.type === 'CDS_RETURN' && t.status === 'COMPLETED'));
-  assert.ok(s.grns.some((g) => g.status === 'PENDING') && s.grns.some((g) => g.status === 'COMPLETED'));
   assert.ok(s.otps.every((o) => o.status === 'VERIFIED'));
+  assert.ok(s.trips.every((t) => ['DISTRIBUTOR_PICKUP', 'CDS_DELIVERY', 'RETAILER_DELIVERY'].includes(t.type)), 'no return trips');
+  assert.ok(s.orders.some((o) => o.status === 'READY_FOR_DELIVERY'));
+  assert.ok(s.orders.some((o) => o.lines.some((l) => l.acceptedQty > 0 && l.acceptedQty < l.pickedQty)), 'one order is short at handover');
+  assert.ok(s.plans.some((p) => p.kind === 'RETAILER_DELIVERY' && p.route && !p.tripIds.length), 'a confirmed route waits for its trip');
+  assert.ok(s.collections.some((c) => c.mode === 'CASH') && s.collections.some((c) => c.mode === 'UPI'));
+  assert.ok(!('grns' in s) && !('returns' in s), 'no GRN or return records');
 });
 
 test('1. allocation: CDS orders go to the store serving the retailer; unserved areas are refused; idempotent', () => {
@@ -77,7 +82,7 @@ test('1b. allocation by service area polygon: inside → that CDS; outside every
   assert.ok(ringAreaKm2(s.stores[1].polygon) > 10);
 });
 
-test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every pickup and handover, distributor-wise GRN', () => {
+test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every pickup and handover; the handover makes orders Ready for Delivery', () => {
   const { e, order, free, done } = setup();
   const o1 = order('dst-01', RT.upl, [sku(0, 2), sku(3, 10)]);
   const o2 = order('dst-02', RT.kkp, [sku(4, 6)]);
@@ -116,44 +121,49 @@ test('2–3. pickup planning: multi-distributor + multi-CDS trips, OTP at every 
   // the CDS leg carries what was collected
   const leg = e.trip(ct!.id).stops.flatMap((x) => x.lines).find((l) => l.orderId === shortOrder.id && l.sku === first.lines[0].sku)!;
   assert.equal(leg.plannedQty, first.lines[0].plannedQty - 1);
-  // handovers: OTP goes to the CDS user of that store
+  // handovers: OTP goes to the CDS user of that store; no GRN — the orders are Ready for Delivery at once
   const h = e.sendOtp(ct!.id, ct!.stops[0].id, DP);
   assert.equal(h.sentToType, 'CDS');
   assert.ok(['9100000002', '9100000003'].includes(h.sentToPhone));
   e.completeStop(ct!.id, ct!.stops[0].id, { otp: h.code }, DP);
   done(ct!.id, 1);
   assert.equal(e.trip(ct!.id).status, 'COMPLETED');
-  assert.equal(e.order(o1.id).status, 'RECEIVED_AT_CDS');
-  const grnsUpl = e.s.grns.filter((g) => g.cdsStoreId === 'cds-upl');
-  assert.equal(grnsUpl.length, 2, 'Uppal received from two distributors → two GRNs');
-  assert.ok(grnsUpl.every((g) => g.pickupTripIds.includes(pt.id) && g.cdsTripId === ct!.id));
+  [o1, o2, o3].forEach((o) => assert.equal(e.order(o.id).status, 'READY_FOR_DELIVERY'));
+  assert.deepEqual(e.order(o1.id).lines.map((l) => l.acceptedQty), e.order(o1.id).lines.map((l) => l.pickedQty));
 });
 
-test('4. GRN: verification rules, shortage / damage remarks, orders ready, damaged goods become a return', () => {
+test('4. handover at the CDS: accepted units are deliverable, short units recorded, nothing handed over goes back to Picked Up', () => {
   const { e, order, free, done } = setup();
   const o = order('dst-01', RT.upl, [sku(3, 10)]);
+  const z = order('dst-01', RT.dsn, [sku(3, 5)]);
   const a = free('SC');
-  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e.createPickupPlan({ orders: [{ orderId: o.id }], plannedDate: today, pickup: a, cdsDelivery: a }, SC);
+  const { pickupTrip: pt, cdsDeliveryTrip: ct } = e.createPickupPlan({ orders: [{ orderId: o.id }, { orderId: z.id }], plannedDate: today, pickup: a, cdsDelivery: a }, SC);
   e.startTrip(pt.id, DP);
   done(pt.id, 0);
   e.startTrip(ct!.id, DP);
-  done(ct!.id, 0, { lines: [{ idx: 0, actualQty: 9 }] }); // 1 short at handover
-  const g = e.s.grns[0];
-  assert.equal(g.lines[0].shortQty, 1);
-  throwsCds(() => e.completeGrn(g.id, { lines: [{ idx: 0, acceptedQty: 9, damagedQty: 1 }] }, 'u'), /must equal received/);
-  throwsCds(() => e.completeGrn(g.id, { lines: [{ idx: 0, acceptedQty: 8, damagedQty: 1 }] }, 'u'), /add a remark/);
-  e.completeGrn(g.id, { lines: [{ idx: 0, acceptedQty: 8, damagedQty: 1, remarks: '1 short, 1 torn' }] }, 'u');
-  assert.equal(e.order(o.id).status, 'READY_FOR_DELIVERY');
-  assert.equal(e.order(o.id).lines[0].acceptedQty, 8);
-  const r = e.s.returns.find((x) => x.source === 'GRN')!;
-  assert.equal(r.status, 'RECEIVED_AT_CDS');
-  assert.equal(r.lines[0].acceptedQty, 1);
-  throwsCds(() => e.completeGrn(g.id, { lines: [] }, 'u'), /already generated/);
+  const up = e.trip(ct!.id).stops.findIndex((s) => s.partyId === 'cds-upl');
+  const dn = e.trip(ct!.id).stops.findIndex((s) => s.partyId === 'cds-dsn');
+  const st = e.trip(ct!.id).stops[up];
+  const h = e.sendOtp(ct!.id, st.id, DP);
+  throwsCds(() => e.completeStop(ct!.id, st.id, { otp: h.code, lines: [{ idx: 0, actualQty: 11 }] }, DP), /cannot be more than 10/);
+  e.completeStop(ct!.id, st.id, { otp: h.code, lines: [{ idx: 0, actualQty: 9 }] }, DP); // 1 short at handover
+  const ready = e.order(o.id);
+  assert.equal(ready.status, 'READY_FOR_DELIVERY');
+  assert.equal(ready.lines[0].pickedQty - ready.lines[0].acceptedQty, 1, 'short at handover');
+  assert.match(ready.history.at(-1)!.note ?? '', /short at handover/);
+  done(ct!.id, dn, { lines: [{ idx: 0, actualQty: 0 }] });
+  const back = e.order(z.id);
+  assert.equal(back.status, 'PICKED_UP', 'nothing handed over → back to Picked Up');
+  assert.equal(back.cdsTripId, null);
+  assert.match(back.note ?? '', /Nothing handed over/);
+  // the Service Centre can send it to the CDS again
+  const { trip } = e.createCdsDeliveryPlan({ orderIds: [z.id], plannedDate: today, ...free('SC') }, SC);
+  assert.equal(trip.type, 'CDS_DELIVERY');
 });
 
 function readyOrders() {
   const x = setup();
-  const { e, order, free, done } = x;
+  const { e, order, done } = x;
   const o1 = order('dst-01', RT.upl, [sku(3, 10), sku(2, 4)]);
   const o2 = order('dst-01', RT.upl2, [sku(3, 6)], 'PREPAID');
   const o3 = order('dst-01', 'rt-2-0', [sku(3, 3)]);
@@ -163,13 +173,39 @@ function readyOrders() {
   done(pt.id, 0);
   e.startTrip(ct!.id, DP);
   done(ct!.id, 0);
-  const g = e.s.grns[0];
-  e.completeGrn(g.id, { lines: g.lines.map((l, i) => ({ idx: i, acceptedQty: l.receivedQty, damagedQty: 0 })) }, 'u');
-  void free;
   return { ...x, o1, o2, o3 };
 }
 
-test('6–8. retailer delivery: next-day plan, OTP at CDS pickup and retailer, partial / failed, collections, ad-hoc return', () => {
+test('6. delivery planning (LBNP style): Plan Routes by locality on own vehicles → Confirm Routes → Generate Trip', () => {
+  const { e, o1, o2, o3 } = readyOrders();
+  const ids = [o1.id, o2.id, o3.id];
+  throwsCds(() => e.proposeRoutes('cds-upl', ids, today), /next day/);
+  throwsCds(() => e.proposeRoutes('cds-kkp', ids, tomorrow), /another CDS/);
+  const p = e.proposeRoutes('cds-upl', ids, tomorrow);
+  assert.deepEqual([...p.routes.flatMap((r) => r.orderIds), ...p.unplannedOrderIds].sort(), [...ids].sort(), 'every order is on a route or reported');
+  assert.ok(p.routes.every((r) => r.loadKg <= r.capacityKg && r.localities.length > 0 && e.s.vehicles.find((v) => v.id === r.vehicleId)!.owner === 'cds-upl'));
+  assert.equal(e.order(o1.id).status, 'READY_FOR_DELIVERY', 'Plan Routes saves nothing');
+  const plans = e.confirmRoutes({ cdsStoreId: 'cds-upl', plannedDate: tomorrow, routes: p.routes.map((r) => ({ vehicleId: r.vehicleId, orderIds: r.orderIds })) }, 'u');
+  assert.equal(plans.length, p.routes.length);
+  assert.ok(plans.every((x) => x.planNo.startsWith('RT-') && x.route && !x.tripIds.length));
+  p.routes.flatMap((r) => r.orderIds).forEach((id) => assert.equal(e.order(id).status, 'DELIVERY_PLANNED'));
+  const vehicle = e.resources('cds-upl', tomorrow).vehicles.find((v) => v.id === plans[0].route!.vehicleId)!;
+  assert.equal(vehicle.available, false, 'a confirmed route reserves its vehicle');
+  assert.equal(vehicle.busyTripNo, plans[0].planNo);
+  throwsCds(() => e.confirmRoutes({ cdsStoreId: 'cds-upl', plannedDate: tomorrow, routes: [{ vehicleId: plans[0].route!.vehicleId, orderIds: [o1.id] }] }, 'u'), /only Ready|already on/);
+  const person = e.resources('cds-upl', tomorrow).deliveryPersons.find((x) => x.available)!;
+  const trip = e.generateRouteTrip(plans[0].id, { deliveryPersonId: person.id }, 'u');
+  assert.equal(trip.type, 'RETAILER_DELIVERY');
+  assert.equal(trip.vehicleId, plans[0].route!.vehicleId);
+  assert.equal(trip.deliveryPersonId, person.id);
+  assert.equal(trip.stops[0].action, 'CDS_ORDER_PICKUP');
+  assert.deepEqual(trip.stops.slice(1).map((s) => s.partyId), plans[0].route!.retailerIds, 'stops follow the route order');
+  throwsCds(() => e.generateRouteTrip(plans[0].id, { deliveryPersonId: person.id }, 'u'), /already has a trip/);
+  e.cancelTrip(trip.id, 'Vehicle breakdown', 'u');
+  plans[0].orderIds.forEach((id) => assert.equal(e.order(id).status, 'READY_FOR_DELIVERY', 'cancelled trip → orders back to planning'));
+});
+
+test('7–8. retailer delivery: OTP at CDS pickup and retailer, partial / failed, cash and UPI collections', () => {
   const { e, o1, o2, o3, free, done } = readyOrders();
   throwsCds(() => e.createDeliveryPlan({ cdsStoreId: 'cds-upl', orderIds: [o1.id], plannedDate: today, ...free('cds-upl') }, 'u'), /next day/);
   throwsCds(() => e.createDeliveryPlan({ cdsStoreId: 'cds-kkp', orderIds: [o1.id], plannedDate: tomorrow, ...free('cds-kkp', tomorrow) }, 'u'), /another CDS/);
@@ -184,15 +220,12 @@ test('6–8. retailer delivery: next-day plan, OTP at CDS pickup and retailer, p
   assert.equal(otp.purpose, 'CDS_ORDER_PICKUP');
   e.completeStop(trip.id, trip.stops[0].id, { otp: otp.code }, DP);
   assert.equal(e.order(o1.id).status, 'OUT_FOR_DELIVERY');
-  // o1 partial with ₹ collected; o2 prepaid full; o3 retailer closed
-  const st1 = e.trip(trip.id).stops[r1];
+  // o1 partial with ₹ collected by UPI; o2 prepaid full; o3 retailer closed
   done(trip.id, r1, { lines: [{ idx: 0, actualQty: 8 }], collections: [{ orderId: o1.id, amount: 500, mode: 'UPI' }] });
   assert.equal(e.order(o1.id).status, 'PARTIALLY_DELIVERED');
   const col = e.s.collections.find((c) => c.orderId === o1.id)!;
   assert.equal(col.amount, 500);
-  assert.equal(col.status, 'WITH_DELIVERY_PERSON');
-  e.addReturnAtStop(trip.id, st1.id, { orderId: o1.id, lines: [{ sku: o1.lines[0].sku, qty: 2, reason: 'Quality issue', condition: 'DAMAGED' }] }, DP);
-  assert.ok(e.trip(trip.id).stops.some((s) => s.action === 'RETAILER_RETURN') && e.trip(trip.id).stops.at(-1)!.action === 'RETURN_HANDOVER_CDS');
+  assert.equal(col.mode, 'UPI');
   const r2 = e.trip(trip.id).stops.findIndex((s) => s.partyId === e.order(o2.id).retailerId);
   done(trip.id, r2);
   assert.equal(e.order(o2.id).status, 'DELIVERED');
@@ -200,63 +233,21 @@ test('6–8. retailer delivery: next-day plan, OTP at CDS pickup and retailer, p
   const r3 = e.trip(trip.id).stops.findIndex((s) => s.partyId === e.order(o3.id).retailerId && s.action === 'RETAILER_DELIVERY');
   e.failStop(trip.id, e.trip(trip.id).stops[r3].id, 'Shop closed', DP);
   assert.equal(e.order(o3.id).status, 'READY_FOR_DELIVERY', 'failed delivery goes back to planning');
-  const rr = e.trip(trip.id).stops.findIndex((s) => s.action === 'RETAILER_RETURN');
-  const ro = e.sendOtp(trip.id, e.trip(trip.id).stops[rr].id, DP);
-  assert.equal(ro.sentToType, 'RETAILER');
-  e.completeStop(trip.id, e.trip(trip.id).stops[rr].id, { otp: ro.code }, DP);
-  const ret = e.s.returns.find((r) => r.orderId === o1.id)!;
-  assert.equal(ret.status, 'PICKED_UP_FROM_RETAILER');
-  const hi = e.trip(trip.id).stops.length - 1;
-  throwsCds(() => done(trip.id, hi, { lines: [{ idx: 0, actualQty: 2, acceptedQty: 2, rejectedQty: 1 }] }), /must equal received/);
-  done(trip.id, hi, { lines: [{ idx: 0, actualQty: 2, acceptedQty: 1, rejectedQty: 1 }] });
-  assert.equal(e.ret(ret.id).status, 'RECEIVED_AT_CDS');
   assert.equal(e.trip(trip.id).status, 'PARTIALLY_COMPLETED');
 });
 
-test('9–10. returns: CDS return trip across stores to distributors, OTP at CDS pickup and seller handover', () => {
-  const { e, o1, free, done } = readyOrders();
-  const { trip } = e.createDeliveryPlan({ cdsStoreId: 'cds-upl', orderIds: [o1.id], plannedDate: tomorrow, ...free('cds-upl', tomorrow) }, 'u');
-  e.startTrip(trip.id, DP);
-  done(trip.id, 0);
-  done(trip.id, 1, { collections: [{ orderId: o1.id, amount: 1, mode: 'CASH' }] });
-  const r = e.initiateReturn({ orderId: o1.id, lines: [{ sku: o1.lines[0].sku, qty: 3, reason: 'Expired / near expiry' }] }, 'u');
-  throwsCds(() => e.initiateReturn({ orderId: o1.id, lines: [{ sku: o1.lines[0].sku, qty: 8, reason: 'x' }] }, 'u'), /only 7/);
-  const d2 = localDay(new Date(Date.now() + 2 * 86400000));
-  const { trip: rt } = e.createDeliveryPlan({ cdsStoreId: 'cds-upl', orderIds: [], returnIds: [r.id], plannedDate: d2, ...free('cds-upl', d2) }, 'u');
-  e.startTrip(rt.id, DP);
-  done(rt.id, 0);
-  done(rt.id, 1, { lines: [{ idx: 0, actualQty: 3, acceptedQty: 3, rejectedQty: 0 }] });
-  assert.equal(e.ret(r.id).status, 'RECEIVED_AT_CDS');
-  throwsCds(() => e.createReturnPlan({ returnIds: [r.id], plannedDate: today, ...free('SC') }, SC), /next day/);
-  const { trip: ct } = e.createReturnPlan({ returnIds: [r.id], plannedDate: tomorrow, ...free('SC', tomorrow) }, SC);
-  assert.deepEqual(ct.stops.map((s) => s.action), ['CDS_RETURN_PICKUP', 'SELLER_RETURN_HANDOVER']);
-  assert.equal(e.ret(r.id).status, 'RETURN_PLANNED');
-  e.startTrip(ct.id, DP);
-  throwsCds(() => e.sendOtp(ct.id, ct.stops[1].id, DP), /Collect the returns/);
-  done(ct.id, 0);
-  assert.equal(e.ret(r.id).status, 'PICKED_UP_FROM_CDS');
-  const so = e.sendOtp(ct.id, ct.stops[1].id, DP);
-  assert.equal(so.sentToPhone, '9848011101', 'OTP to the seller');
-  e.completeStop(ct.id, ct.stops[1].id, { otp: so.code }, DP);
-  assert.equal(e.trip(ct.id).status, 'COMPLETED');
-  assert.equal(e.ret(r.id).status, 'COMPLETED');
-});
-
-test('collections: delivery person → CDS → Qwipo (SNP) → settled, manual with references', () => {
-  const { e, o1, free, done } = readyOrders();
-  const { trip } = e.createDeliveryPlan({ cdsStoreId: 'cds-upl', orderIds: [o1.id], plannedDate: tomorrow, ...free('cds-upl', tomorrow) }, 'u');
-  e.startTrip(trip.id, DP);
-  done(trip.id, 0);
-  done(trip.id, 1, { collections: [{ orderId: o1.id, amount: 1000, mode: 'CASH' }] });
-  const c = e.s.collections[0];
-  throwsCds(() => e.handToQwipo('cds-upl', [c.id], 'DEP-1', 'u'), /received by the CDS first/);
-  throwsCds(() => e.receiveCollections('cds-upl', { items: [{ id: c.id, amount: 900 }] }, 'u'), /add a note/);
-  throwsCds(() => e.receiveCollections('cds-kkp', { items: [{ id: c.id, amount: 1000 }] }, 'u'), /another CDS/);
-  e.receiveCollections('cds-upl', { items: [{ id: c.id, amount: 900 }], note: '₹100 short' }, 'u');
-  e.handToQwipo('cds-upl', [c.id], 'DEP-1', 'u');
-  e.recordSettlement('cds-upl', [c.id], 'QWP-STL-1', 'u');
-  assert.equal(e.collection(c.id).status, 'SETTLED');
-  assert.equal(e.collection(c.id).cdsReceivedAmount, 900);
+test('reports: the CDS User Performance Report has one row per day for the store, with totals', () => {
+  const s = buildCdsState(retailers, products);
+  const r = buildReport(s, 'performance', ['cds-upl'], {});
+  assert.deepEqual(r.columns.map((c) => c.label), ['Date', 'Orders received', 'Orders delivered', 'Orders not delivered', 'Delivery success rate', 'Trips', 'Total km']);
+  assert.ok(r.rows.length >= 4, 'one row per day from the first to the last activity');
+  const trips = s.trips.filter((t) => t.type === 'RETAILER_DELIVERY' && t.owner === 'cds-upl' && t.status !== 'CANCELLED');
+  assert.equal(r.totals?.trips, trips.length);
+  assert.ok(Number(r.totals?.delivered) > 0 && Number(r.totals?.received) > 0);
+  const day = r.rows.find((x) => Number(x.delivered) + Number(x.notDelivered) > 0)!;
+  assert.match(String(day.rate), /^\d+%$/);
+  const one = buildReport(s, 'performance', ['cds-upl'], { from: String(r.rows[0].date), to: String(r.rows[0].date) });
+  assert.equal(one.rows.length, 1);
 });
 
 test('OTP: expiry and no reuse; trips cancel cleanly; failed pickup returns orders to planning', () => {

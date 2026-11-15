@@ -43,23 +43,27 @@ const CdsLoginPage = lazy(() => import('./pages/cds/CdsLoginPage'));
 const CdsLayout = lazy(() => import('./pages/cds/CdsLayout'));
 const RequireCds = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.RequireCds })));
 const CdsHome = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.CdsHome })));
+const CdsByRole = lazy(() => import('./pages/cds/CdsLayout').then((m) => ({ default: m.ByRole })));
 const CdsOrders = lazy(() => import('./pages/cds/OrdersPage'));
 const CdsOrderDetails = lazy(() => import('./pages/cds/OrdersPage').then((m) => ({ default: m.OrderDetailsPage })));
 const CdsPickupPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.PickupPlanningPage })));
 const CdsCreatePickupPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreatePickupPlanPage })));
-const CdsReturnPlanning = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.ReturnPlanningPage })));
-const CdsCreateReturnPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreateReturnPlanPage })));
 const CdsTrips = lazy(() => import('./pages/cds/TripsPage'));
 const CdsTripDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripDetailsPage })));
 const CdsReports = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.ReportsPage })));
 const CdsSettings = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.SettingsPage })));
 const CdsStores = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.StoresPage })));
-const CdsGrn = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.GrnPage })));
-const CdsGrnDetails = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.GrnDetailsPage })));
-const CdsDeliveryPlanning = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.DeliveryPlanningPage })));
-const CdsCollections = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.CollectionsPage })));
-const CdsReturns = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.ReturnsPage })));
-const CdsRetailers = lazy(() => import('./pages/cds/CdsUserPages').then((m) => ({ default: m.RetailersPage })));
+// CDS User: LBNP-style screens with the store's CDS data (src/pages/cds/user).
+const CuOrders = lazy(() => import('./pages/cds/user/CuOrdersPage').then((m) => ({ default: m.CuOrdersPage })));
+const CuOrderDetails = lazy(() => import('./pages/cds/user/CuOrderDetailsPage').then((m) => ({ default: m.CuOrderDetailsPage })));
+const CuDeliveryRoutes = lazy(() => import('./pages/cds/user/CuDeliveryRoutesPage').then((m) => ({ default: m.CuDeliveryRoutesPage })));
+const CuCreateRoute = lazy(() => import('./pages/cds/user/CuCreateRoutePage').then((m) => ({ default: m.CuCreateRoutePage })));
+const CuRouteDetails = lazy(() => import('./pages/cds/user/CuRouteDetailsPage').then((m) => ({ default: m.CuRouteDetailsPage })));
+const CuTrips = lazy(() => import('./pages/cds/user/CuTripsPage').then((m) => ({ default: m.CuTripsPage })));
+const CuTripDetails = lazy(() => import('./pages/cds/user/CuTripDetailsPage').then((m) => ({ default: m.CuTripDetailsPage })));
+const CuReports = lazy(() => import('./pages/cds/user/CuReportsPage').then((m) => ({ default: m.CuReportsPage })));
+const CuCustomers = lazy(() => import('./pages/cds/user/CuCustomersPage').then((m) => ({ default: m.CuCustomersPage })));
+const CuSettings = lazy(() => import('./pages/cds/user/CuSettingsPage').then((m) => ({ default: m.CuSettingsPage })));
 
 /** Route table mirrors the original exactly (spec 00 §4.1). Unknown URLs render nothing (no wildcard route). */
 export default function App() {
@@ -84,25 +88,21 @@ export default function App() {
           <Route path="/cds" element={<RequireCds />}>
             <Route element={<CdsLayout />}>
               <Route index element={<CdsHome />} />
-              <Route path="orders" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrders /></RequireCds>} />
-              <Route path="orders/:id" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsOrderDetails /></RequireCds>} />
+              <Route path="orders" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsByRole sc={<CdsOrders />} cu={<CuOrders />} /></RequireCds>} />
+              <Route path="orders/:id" element={<RequireCds page={['sc-orders', 'cu-orders']}><CdsByRole sc={<CdsOrderDetails />} cu={<CuOrderDetails />} /></RequireCds>} />
               <Route path="pickup-planning" element={<RequireCds page={'sc-pickup'}><CdsPickupPlanning /></RequireCds>} />
               <Route path="pickup-planning/create" element={<RequireCds page={'sc-pickup'}><CdsCreatePickupPlan /></RequireCds>} />
               {/* Deliver to CDS is created with each pickup plan; its trips are in Trips › CDS Delivery Trips. */}
               <Route path="deliver-to-cds" element={<Navigate to="/cds/trips?tab=CDS_DELIVERY" replace />} />
-              <Route path="return-planning" element={<RequireCds page={'sc-returns'}><CdsReturnPlanning /></RequireCds>} />
-              <Route path="return-planning/create" element={<RequireCds page={'sc-returns'}><CdsCreateReturnPlan /></RequireCds>} />
-              <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsTrips /></RequireCds>} />
-              <Route path="trips/:id" element={<CdsTripDetails />} />
-              <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsReports /></RequireCds>} />
-              <Route path="settings" element={<RequireCds page={'sc-settings'}><CdsSettings /></RequireCds>} />
+              <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsByRole sc={<CdsTrips />} cu={<CuTrips />} /></RequireCds>} />
+              <Route path="trips/:id" element={<CdsByRole sc={<CdsTripDetails />} cu={<CuTripDetails />} />} />
+              <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsByRole sc={<CdsReports />} cu={<CuReports />} /></RequireCds>} />
+              <Route path="settings" element={<RequireCds page={['sc-settings', 'cu-settings']}><CdsByRole sc={<CdsSettings />} cu={<CuSettings />} /></RequireCds>} />
               <Route path="stores" element={<RequireCds page={'sc-stores'}><CdsStores /></RequireCds>} />
-              <Route path="grn" element={<RequireCds page={'cu-grn'}><CdsGrn /></RequireCds>} />
-              <Route path="grn/:id" element={<RequireCds page={'cu-grn'}><CdsGrnDetails /></RequireCds>} />
-              <Route path="delivery-planning" element={<RequireCds page={'cu-delivery'}><CdsDeliveryPlanning /></RequireCds>} />
-              <Route path="collections" element={<RequireCds page={'cu-collections'}><CdsCollections /></RequireCds>} />
-              <Route path="returns" element={<RequireCds page={'cu-returns'}><CdsReturns /></RequireCds>} />
-              <Route path="retailers" element={<RequireCds page={'cu-retailers'}><CdsRetailers /></RequireCds>} />
+              <Route path="delivery-planning" element={<RequireCds page={'cu-delivery'}><CuDeliveryRoutes /></RequireCds>} />
+              <Route path="delivery-planning/create" element={<RequireCds page={'cu-delivery'}><CuCreateRoute /></RequireCds>} />
+              <Route path="delivery-planning/:id" element={<RequireCds page={'cu-delivery'}><CuRouteDetails /></RequireCds>} />
+              <Route path="customers" element={<RequireCds page={'cu-customers'}><CuCustomers /></RequireCds>} />
               <Route path="*" element={<CdsHome />} />
             </Route>
           </Route>

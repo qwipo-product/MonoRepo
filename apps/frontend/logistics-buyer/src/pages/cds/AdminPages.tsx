@@ -3,13 +3,13 @@
 import { useRef, useState, type ReactNode } from 'react';
 import Swal from 'sweetalert2';
 import { cdsApi } from '../../api/services/cds.service';
-import { COLLECTION_STATUS, GRN_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS } from '../../cds/status';
+import { TRIP_STATUS } from '../../cds/status';
 import { ringAreaKm2 } from '../../cds/planning';
 import { CoverageMap, OUTSIDE_COLOR, PolygonEditorDialog, STORE_COLORS } from './RouteMap';
 import { Card, confirm, downloadCsv, Empty, ErrorBox, FilterBar, fmtDate, InfoSection, Loading, PageHead, refreshMeta, RowActions, SectionCard, Table, Tabs, useAction, useCdsSession, useLoad, useMeta } from './ui';
 
 const STATUS_OPTIONS: Record<string, Record<string, { label: string }>> = {
-  'trips-': TRIP_STATUS, grn: GRN_STATUS, 'delivery-status': ORDER_STATUS, returns: RETURN_STATUS, collections: COLLECTION_STATUS,
+  'trips-': TRIP_STATUS,
 };
 
 /** Report form (report, dates, filters, Clear Filters / Download) and a preview of the rows. */
@@ -23,7 +23,6 @@ function Reports() {
   const rid = current?.id ?? '';
   const { data, error, loading, reload } = useLoad(() => (rid ? cdsApi.report(rid, f) : Promise.resolve(null)), [rid, f]);
   const statuses = STATUS_OPTIONS[Object.keys(STATUS_OPTIONS).find((k) => rid.startsWith(k)) ?? ''] ?? {};
-  const retailers = useLoad(() => (!sc ? cdsApi.retailers() : Promise.resolve([])), [sc]);
   const set = (p: Record<string, string>) => setF((x) => ({ ...x, ...p }));
   const has = (k: string) => !!current?.filters.includes(k);
   const select = (key: string, label: string, all: string, options: { id: string; name: string }[]) => (
@@ -48,7 +47,6 @@ function Reports() {
           {has('to') && <div><label htmlFor="rf-to">To Date</label><input id="rf-to" type="date" className="form-control form-control-sm" value={f.to ?? ''} onChange={(e) => set({ to: e.target.value })} /></div>}
           {has('cdsStoreId') && sc && select('cdsStoreId', 'CDS Store', 'All CDS stores', meta.data?.stores ?? [])}
           {has('distributorId') && select('distributorId', 'Distributor', 'All distributors', meta.data?.distributors ?? [])}
-          {has('retailerId') && !sc && select('retailerId', 'Retailer', 'All retailers', (retailers.data ?? []).filter((r) => r.orders))}
           {has('status') && select('status', 'Status', 'All statuses', Object.entries(statuses).map(([k, v]) => ({ id: k, name: v.label })))}
         </div>
         <div className="cds-report-actions">
@@ -69,33 +67,9 @@ function Reports() {
   );
 }
 
+/** Service Centre reports. The CDS User has its own LBNP-style Performance Report (src/pages/cds/user). */
 export function ReportsPage() {
-  const { sc } = useCdsSession();
-  const [tab, setTab] = useState<'reports' | 'settings'>('reports');
-  if (sc) return <div className="cds-page"><PageHead icon="fa-chart-bar" title="Reports" subtitle="Download reports across your CDS stores." /><Reports /></div>;
-  return (
-    <div className="cds-page">
-      <PageHead icon="fa-chart-bar" title="Reports & Settings" subtitle="Your CDS store's reports, delivery persons and vehicles." />
-      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'reports', label: 'Reports', icon: 'fa-chart-bar' }, { id: 'settings', label: 'Settings', icon: 'fa-cog' }]} />
-      {tab === 'reports' ? <Reports /> : <><StoreProfile /><div className="row g-3"><div className="col-lg-6"><Fleet show="vehicles" /></div><div className="col-lg-6"><Fleet show="persons" /></div></div></>}
-    </div>
-  );
-}
-
-function StoreProfile() {
-  const { user, store } = useCdsSession();
-  const meta = useMeta();
-  const st = meta.data?.stores.find((x) => x.id === store);
-  return (
-    <div className="mb-3">
-      <InfoSection icon="fa-store" title="Store & Profile" rows={[
-        ['fa-warehouse', 'CDS Store', `${st?.name ?? ''} (${st?.code ?? ''})`],
-        ['fa-location-dot', 'Address', st?.address],
-        ['fa-user', 'Signed in as', `${user?.name ?? ''} · +91 ${user?.mobile ?? ''}`],
-        ['fa-key', 'OTP Rules', `${meta.data?.settings.otpExpiryMinutes} min · ${meta.data?.settings.otpMaxAttempts} attempts`],
-      ]} />
-    </div>
-  );
+  return <div className="cds-page"><PageHead icon="fa-chart-bar" title="Reports" subtitle="Download reports across your CDS stores." /><Reports /></div>;
 }
 
 /** Vehicles or delivery persons, with Add and an Active switch. */
@@ -179,7 +153,7 @@ export function SettingsPage() {
             <div className="cds-tiles">
               {tile('fa-clock', 'OTP Validity', 'Time an OTP stays valid', <><input type="number" min={2} max={60} aria-label="OTP validity in minutes" className="form-control form-control-sm" value={v.otpExpiryMinutes ?? ''} onChange={(e) => setX((p) => ({ ...p, otpExpiryMinutes: Number(e.target.value) }))} /><span className="unit">minutes</span></>)}
               {tile('fa-lock', 'Wrong Attempts', 'Wrong OTPs before the OTP locks', <><input type="number" min={1} max={10} aria-label="Wrong attempts before lock" className="form-control form-control-sm" value={v.otpMaxAttempts ?? ''} onChange={(e) => setX((p) => ({ ...p, otpMaxAttempts: Number(e.target.value) }))} /><span className="unit">attempts</span></>)}
-              {tile('fa-calendar-day', 'Next-day Planning', 'Retailer delivery and return plans for the next day only', <div className="form-check form-switch m-0"><input className="form-check-input" type="checkbox" aria-label="Next-day planning" checked={!!v.nextDayPlanning} onChange={(e) => setX((p) => ({ ...p, nextDayPlanning: e.target.checked }))} /></div>)}
+              {tile('fa-calendar-day', 'Next-day Planning', 'Retailer delivery routes for the next day or later only', <div className="form-check form-switch m-0"><input className="form-check-input" type="checkbox" aria-label="Next-day planning" checked={!!v.nextDayPlanning} onChange={(e) => setX((p) => ({ ...p, nextDayPlanning: e.target.checked }))} /></div>)}
             </div>
           </div>
         </Card>
@@ -279,7 +253,7 @@ export function StoresPage() {
                 ['fa-truck', 'Fleet', `${st.vehicles} vehicles · ${st.deliveryPersons} persons`],
               ]}>
                 <div className="cds-store-stats">
-                  {([['Incoming', st.incoming], ['GRN Pending', st.grnPending], ['Ready', st.ready], ['Returns', st.returnsAtCds]] as [string, number][]).map(([l, n]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}
+                  {([['Incoming', st.incoming], ['Ready', st.ready], ['Out for delivery', st.outForDelivery], ['Delivered', st.delivered]] as [string, number][]).map(([l, n]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}
                 </div>
                 <div className="d-flex justify-content-between align-items-center mt-2">
                   <div className="d-flex gap-2 flex-wrap">

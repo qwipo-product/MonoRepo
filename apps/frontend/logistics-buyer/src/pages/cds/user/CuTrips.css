@@ -1,0 +1,83 @@
+/* CDS User › Trips and Trip details. Small additions on top of the LBNP TripsPage.css / TripDetailsPage.css /
+   TripOrderDetailsPage.css, scoped under .cu-trips (list) and .cu-trip-details (details). */
+
+/* header search (Trips) */
+.cu-trips .cu-trips-search { position: relative; display: flex; align-items: center; }
+.cu-trips .cu-trips-search i { position: absolute; left: 12px; color: #9ca3af; font-size: 13px; pointer-events: none; }
+.cu-trips .cu-trips-search input { height: 42px; width: 300px; padding: 0 12px 0 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: #fff; color: #1f2937; }
+.cu-trips .cu-trips-search input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, .15); }
+@media (max-width: 1100px) { .cu-trips .actions { flex-wrap: wrap; } .cu-trips .cu-trips-search input { width: 220px; } }
+
+/* second line in a table cell */
+.cu-trips .cu-sub, .cu-trip-details .cu-sub { display: block; font-size: 12px; font-weight: 400; color: #94a3b8; }
+
+/* trip status badge: the LBNP trip badge colours per status (Partially Completed and Cancelled readable) */
+.cu-trips .trips-table .status-badge.cu-trip-status, .cu-trip-details .status-badge.cu-trip-status { width: auto; min-width: 80px; padding: 6px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.cu-trips .trips-table .status-badge.cu-trip-status.planned, .cu-trip-details .status-badge.cu-trip-status.planned { background: #e0f2fe; color: #0284c7; }
+.cu-trips .trips-table .status-badge.cu-trip-status.in-progress, .cu-trip-details .status-badge.cu-trip-status.in-progress { background: #fef3c7; color: #d97706; }
+.cu-trips .trips-table .status-badge.cu-trip-status.completed, .cu-trip-details .status-badge.cu-trip-status.completed { background: #dcfce7; color: #16a34a; }
+.cu-trips .trips-table .status-badge.cu-trip-status.partial, .cu-trip-details .status-badge.cu-trip-status.partial { background: #ffedd5; color: #c2410c; }
+.cu-trips .trips-table .status-badge.cu-trip-status.cancelled, .cu-trip-details .status-badge.cu-trip-status.cancelled { background: #fee2e2; color: #dc2626; }
+
+/* stop status (pills, progress spans, table badges) */
+.cu-trips .cu-stop-pending, .cu-trip-details .cu-stop-pending { background: #f1f5f9; color: #475569; }
+.cu-trips .cu-stop-done, .cu-trip-details .cu-stop-done { background: #dcfce7; color: #16a34a; }
+.cu-trips .cu-stop-partial, .cu-trip-details .cu-stop-partial { background: #fef3c7; color: #b45309; }
+.cu-trips .cu-stop-failed, .cu-trip-details .cu-stop-failed { background: #fee2e2; color: #dc2626; }
+.cu-trips .cu-stop-reason, .cu-trip-details .cu-stop-reason { font-size: 12px; color: #dc2626; margin-top: 4px; }
+
+/* expanded row */
+.cu-trips .cu-detail-loading { padding: 24px 8px; text-align: center; font-size: 13px; color: #64748b; }
+.cu-trips .cu-cancel-note { margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: 12px; }
+
+/* Cancel Trip dialog (same look as the LBNP one, usable outside .trips-container) */
+.cu-cancel-trip.trips-modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.cu-cancel-trip .cancel-trip-modal { background: #fff; border-radius: 8px; width: 500px; max-width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, .15); text-align: left; }
+.cu-cancel-trip .ctm-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.cu-cancel-trip .ctm-title { display: flex; align-items: center; gap: 10px; }
+.cu-cancel-trip .ctm-title i { color: #f59e0b; font-size: 20px; }
+.cu-cancel-trip .ctm-title h3 { font-size: 18px; font-weight: 600; color: #1f2937; margin: 0; }
+.cu-cancel-trip .ctm-close { background: none; border: none; color: #6b7280; font-size: 16px; cursor: pointer; }
+.cu-cancel-trip .ctm-body { padding: 20px; color: #4b5563; }
+.cu-cancel-trip .ctm-body p { margin: 0 0 14px; }
+.cu-cancel-trip .ctm-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+.cu-cancel-trip .ctm-body textarea { font-size: 14px; resize: vertical; }
+.cu-cancel-trip .ctm-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 20px; border-top: 1px solid #e5e7eb; }
+.cu-cancel-trip .ctm-footer .cancel-btn { background: #fff; border: 1px solid #d1d5db; color: #4b5563; }
+.cu-cancel-trip .ctm-footer .cancel-btn:hover { background: #f9fafb; }
+
+/* Trip details */
+.cu-trip-details .trip-details-header .header-left { flex-wrap: wrap; }
+.cu-trip-details .trip-details-header .header-right .btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.cu-trip-details .cu-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; font-size: 13px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.cu-trip-details .cu-note.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.cu-trip-details .cu-note i { margin-top: 2px; }
+.cu-trip-details .information-card.cu-map-card { grid-column: 1 / -1; }
+.cu-trip-details .information-card.cu-map-card .cu-map-wrap { padding: 0 24px 24px; }
+.cu-trip-details .cu-stop-actions { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.cu-trip-details .cu-stop-actions .btn { white-space: nowrap; }
+.cu-trip-details .cu-stop-actions .btn-sm { font-size: 12px; padding: 3px 8px; }
+
+/* Stop dialog (Customer Wise Orders): the LBNP filters dialog shell with the Customer Order Details cards inside */
+.cu-stop-dialog.filters-modal { max-width: 1000px; overflow: hidden; }
+.cu-stop-dialog.filters-modal .modal-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding: 16px 20px; background: #f0f4f8; }
+.cu-stop-dialog .modal-header h2 small { display: block; font-size: 13px; font-weight: 400; color: #6b7280; margin-top: 2px; }
+.cu-stop-dialog .mat-card { margin-bottom: 16px; }
+.cu-stop-dialog .mat-card:last-child { margin-bottom: 0; }
+.cu-stop-dialog .cu-qty { width: 84px; text-align: right; display: inline-block; }
+.cu-stop-dialog .cu-qty.is-invalid { border-color: #dc3545; }
+.cu-stop-dialog .cu-amount { width: 120px; text-align: right; display: inline-block; }
+.cu-stop-dialog .cu-mode { width: 100px; display: inline-block; }
+.cu-stop-dialog .cu-otp-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 16px; }
+.cu-stop-dialog .cu-otp-row label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+.cu-stop-dialog .cu-otp-row .cu-otp-input { width: 140px; letter-spacing: 3px; font-weight: 600; }
+.cu-stop-dialog .cu-sms { margin: 0 16px 16px; padding: 10px 14px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 13px; }
+.cu-stop-dialog .cu-sms small { display: block; color: #64748b; margin-top: 4px; }
+.cu-stop-dialog .cu-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; font-size: 13px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+.cu-stop-dialog .modal-footer { flex-wrap: wrap; align-items: center; }
+.cu-stop-dialog .modal-footer .save-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cu-stop-dialog .modal-footer .cu-fail-btn { background: #fff; color: #dc2626; border: 1px solid #fecaca; margin-right: auto; }
+.cu-stop-dialog .modal-footer .cu-fail-btn:hover:not(:disabled) { background: #fef2f2; }
+.cu-stop-dialog .modal-footer .cu-otp-btn { background: #eef2ff; color: #2563eb; }
+.cu-stop-dialog .modal-footer .cu-otp-btn:hover:not(:disabled) { background: #e0e7ff; }
+.cu-stop-dialog .modal-footer button:disabled { cursor: not-allowed; opacity: .6; }

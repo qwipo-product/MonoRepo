@@ -1,0 +1,15 @@
+/* CDS User Orders + Order Details — only what the LBNP OrdersPage.css / OrderDetailsPage.css do not cover. */
+
+/* Order status badge: the LBNP .status-badge shape with the CDS status tones (ORDER_STATUS). */
+.status-badge.cu-order-tone { width: auto; min-width: 130px; }
+.status-badge.cu-order-tone.grey { background: #f1f3f5; color: #495057; }
+.status-badge.cu-order-tone.blue { background: #dbeafe; color: #1e40af; }
+.status-badge.cu-order-tone.amber { background: #fef3c7; color: #92400e; }
+.status-badge.cu-order-tone.green { background: #d1fae5; color: #065f46; }
+.status-badge.cu-order-tone.red { background: #fee2e2; color: #b91c1c; }
+.status-badge.cu-order-tone.purple { background: #ede9fe; color: #5b21b6; }
+.status-badge.cu-order-tone.teal { background: #ccfbf1; color: #0f766e; }
+
+/* Order Details: short at handover */
+.order-details-page .cu-order-short { display: inline-block; min-width: 28px; color: #b91c1c; font-weight: 600; background: #fee2e2; border-radius: 4px; padding: 1px 8px; }
+.order-details-page .cu-order-sub { display: block; font-size: 12px; font-weight: 400; color: #6b7280; margin-top: 2px; }

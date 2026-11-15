@@ -1,10 +1,10 @@
 // Operational reports and dashboard figures, computed from live CDS records. Pure (Node-testable).
-import { ACTIVE_TRIP, COLLECTION_STATUS, ORDER_STATUS, RETURN_STATUS, TRIP_STATUS, TRIP_TYPE } from './status.ts';
+import { ACTIVE_TRIP, ORDER_STATUS, TRIP_STATUS, TRIP_TYPE } from './status.ts';
 import type { CdsRole, CdsState, TripType } from './types.ts';
 
 export interface ReportFilters { from?: string; to?: string; cdsStoreId?: string; distributorId?: string; retailerId?: string; status?: string }
 export interface Column { key: string; label: string; align?: 'end' }
-export interface Report { id: string; title: string; columns: Column[]; rows: Record<string, string | number>[]; totals?: Record<string, number> }
+export interface Report { id: string; title: string; columns: Column[]; rows: Record<string, string | number>[]; totals?: Record<string, number | string> }
 
 export const REPORTS: Record<CdsRole, { id: string; title: string; filters: (keyof ReportFilters)[] }[]> = {
   SERVICE_CENTRE: [
@@ -12,20 +12,12 @@ export const REPORTS: Record<CdsRole, { id: string; title: string; filters: (key
     { id: 'cds-incoming', title: 'CDS-wise incoming orders', filters: ['from', 'to', 'cdsStoreId'] },
     { id: 'trips-DISTRIBUTOR_PICKUP', title: 'Distributor Pickup Trips (CDS to Distributor)', filters: ['from', 'to', 'status'] },
     { id: 'trips-CDS_DELIVERY', title: 'CDS Delivery Trips (Distributor to CDS)', filters: ['from', 'to', 'status'] },
-    { id: 'trips-CDS_RETURN', title: 'CDS Return Trips (CDS to Seller)', filters: ['from', 'to', 'status'] },
     { id: 'pending-ops', title: 'Pending pickup & delivery operations', filters: ['cdsStoreId'] },
-    { id: 'return-quantities', title: 'Return quantities', filters: ['from', 'to', 'cdsStoreId', 'distributorId'] },
     { id: 'trip-completion', title: 'Trip completion', filters: ['from', 'to'] },
   ],
+  /** LBNP-style: one Performance Report (From / To dates, Excel download). */
   CDS_USER: [
-    { id: 'grn', title: 'GRN report', filters: ['from', 'to', 'distributorId', 'status'] },
-    { id: 'distributor-received', title: 'Distributor-wise received goods', filters: ['from', 'to', 'distributorId'] },
-    { id: 'retailer-orders', title: 'Retailer-wise orders', filters: ['from', 'to', 'retailerId'] },
-    { id: 'delivery-plans', title: 'Delivery planning', filters: ['from', 'to'] },
-    { id: 'trips-RETAILER_DELIVERY', title: 'Retailer-wise trips', filters: ['from', 'to', 'status'] },
-    { id: 'delivery-status', title: 'Delivered and pending orders', filters: ['from', 'to', 'retailerId', 'status'] },
-    { id: 'returns', title: 'Retailer returns', filters: ['from', 'to', 'retailerId', 'status'] },
-    { id: 'collections', title: 'Collections & payments', filters: ['from', 'to', 'status'] },
+    { id: 'performance', title: 'Performance Report', filters: ['from', 'to'] },
   ],
 };
 
@@ -36,9 +28,6 @@ const inRange = (iso: string, f: ReportFilters) => (!f.from || day(iso) >= f.fro
 
 export function buildReport(s: CdsState, id: string, stores: string[], f: ReportFilters): Report {
   const storeOk = (x: string) => stores.includes(x) && (!f.cdsStoreId || x === f.cdsStoreId);
-  const dName = (x: string) => s.distributors.find((d) => d.id === x)?.name ?? x;
-  const sName = (x: string) => s.stores.find((d) => d.id === x)?.name ?? x;
-  const rName = (x: string | null) => (x ? s.retailers.find((d) => d.id === x)?.name ?? x : '—');
   const orders = s.orders.filter((o) => storeOk(o.cdsStoreId) && inRange(o.confirmedAt, f) && (!f.distributorId || o.distributorId === f.distributorId) && (!f.retailerId || o.retailerId === f.retailerId));
   const C = (key: string, label: string, align?: 'end'): Column => ({ key, label, align });
 
@@ -52,8 +41,8 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
       rows: trips.map((t) => ({
         tripNo: t.tripNo, date: t.plannedDate, status: TRIP_STATUS[t.status].label, dp: t.deliveryPersonName, vehicle: t.vehicleRegNo, stops: t.stops.length,
         done: t.stops.filter((x) => x.status !== 'PENDING').length, otps: t.stops.filter((x) => x.verifiedAt).length,
-        units: sum(t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP', 'CDS_RETURN_PICKUP'].includes(x.action)), (x) => sum(x.lines, (l) => l.plannedQty)) || sum(t.stops, (x) => sum(x.lines, (l) => l.plannedQty)),
-        handed: sum(t.stops.filter((x) => ['CDS_HANDOVER', 'RETAILER_DELIVERY', 'SELLER_RETURN_HANDOVER', 'RETURN_HANDOVER_CDS'].includes(x.action)), (x) => sum(x.lines, (l) => l.actualQty ?? 0)),
+        units: sum(t.stops.filter((x) => ['DISTRIBUTOR_PICKUP', 'CDS_ORDER_PICKUP'].includes(x.action)), (x) => sum(x.lines, (l) => l.plannedQty)) || sum(t.stops, (x) => sum(x.lines, (l) => l.plannedQty)),
+        handed: sum(t.stops.filter((x) => ['CDS_HANDOVER', 'RETAILER_DELIVERY'].includes(x.action)), (x) => sum(x.lines, (l) => l.actualQty ?? 0)),
         completed: t.completedAt ? t.completedAt.slice(0, 16).replace('T', ' ') : '—',
       })),
     };
@@ -74,7 +63,7 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
       return { id, title: 'Distributor-wise pickups', columns: [C('distributor', 'Distributor'), C('orders', 'Orders', 'end'), C('awaiting', 'Awaiting pickup', 'end'), C('trips', 'Pickup trips', 'end'), C('planned', 'Units planned', 'end'), C('picked', 'Units picked', 'end'), C('short', 'Short', 'end'), C('failed', 'Failed stops', 'end')], rows };
     }
     case 'cds-incoming': {
-      const st: (keyof typeof ORDER_STATUS)[] = ['CONFIRMED', 'PICKUP_PLANNED', 'PICKED_UP', 'IN_TRANSIT_TO_CDS', 'RECEIVED_AT_CDS', 'READY_FOR_DELIVERY'];
+      const st: (keyof typeof ORDER_STATUS)[] = ['CONFIRMED', 'PICKUP_PLANNED', 'PICKED_UP', 'IN_TRANSIT_TO_CDS', 'READY_FOR_DELIVERY'];
       const rows = s.stores.filter((x) => storeOk(x.id)).map((x) => {
         const os = orders.filter((o) => o.cdsStoreId === x.id);
         return { store: x.name, total: os.length, ...Object.fromEntries(st.map((k) => [k, os.filter((o) => o.status === k).length])), value: r2(sum(os, (o) => o.orderValue)) };
@@ -87,28 +76,14 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
         return {
           store: x.name, toPlan: os.filter((o) => o.status === 'CONFIRMED').length, toPick: os.filter((o) => o.status === 'PICKUP_PLANNED').length,
           toDeliverCds: os.filter((o) => o.status === 'PICKED_UP' && !s.trips.some((t) => t.id === o.cdsTripId && ACTIVE_TRIP.includes(t.status))).length,
-          inTransit: os.filter((o) => o.status === 'IN_TRANSIT_TO_CDS').length, grnPending: s.grns.filter((g) => g.cdsStoreId === x.id && g.status === 'PENDING').length,
-          readyRetail: os.filter((o) => o.status === 'READY_FOR_DELIVERY').length, returnsToPlan: s.returns.filter((r) => r.cdsStoreId === x.id && r.status === 'RECEIVED_AT_CDS' && !r.returnTripId).length,
+          inTransit: os.filter((o) => o.status === 'IN_TRANSIT_TO_CDS').length,
+          readyRetail: os.filter((o) => o.status === 'READY_FOR_DELIVERY').length,
         };
       });
-      return { id, title: 'Pending pickup & delivery operations', columns: [C('store', 'CDS store'), C('toPlan', 'Orders to plan', 'end'), C('toPick', 'Awaiting pickup', 'end'), C('toDeliverCds', 'Picked, no CDS trip', 'end'), C('inTransit', 'In transit to CDS', 'end'), C('grnPending', 'GRNs pending', 'end'), C('readyRetail', 'Ready for retailer delivery', 'end'), C('returnsToPlan', 'Returns to plan', 'end')], rows };
-    }
-    case 'return-quantities': {
-      const rets = s.returns.filter((r) => storeOk(r.cdsStoreId) && inRange(r.createdAt, f) && (!f.distributorId || r.distributorId === f.distributorId));
-      const keys = Array.from(new Set(rets.map((r) => `${r.cdsStoreId}|${r.distributorId}`)));
-      const rows = keys.map((k) => {
-        const [c, d] = k.split('|');
-        const rs = rets.filter((r) => r.cdsStoreId === c && r.distributorId === d);
-        return {
-          store: sName(c), distributor: dName(d), returns: rs.length, requested: sum(rs, (r) => sum(r.lines, (l) => l.qty)), picked: sum(rs, (r) => sum(r.lines, (l) => l.pickedQty ?? 0)),
-          accepted: sum(rs, (r) => sum(r.lines, (l) => l.acceptedQty ?? 0)), rejected: sum(rs, (r) => sum(r.lines, (l) => l.rejectedQty ?? 0)), toSeller: sum(rs, (r) => sum(r.lines, (l) => l.handedToSellerQty ?? 0)),
-          open: rs.filter((r) => !['COMPLETED', 'CANCELLED'].includes(r.status)).length,
-        };
-      });
-      return { id, title: 'Return quantities', columns: [C('store', 'CDS store'), C('distributor', 'Distributor'), C('returns', 'Returns', 'end'), C('requested', 'Units requested', 'end'), C('picked', 'Picked from retailer', 'end'), C('accepted', 'Accepted at CDS', 'end'), C('rejected', 'Rejected', 'end'), C('toSeller', 'Delivered to seller', 'end'), C('open', 'Open', 'end')], rows };
+      return { id, title: 'Pending pickup & delivery operations', columns: [C('store', 'CDS store'), C('toPlan', 'Orders to plan', 'end'), C('toPick', 'Awaiting pickup', 'end'), C('toDeliverCds', 'Picked, no CDS trip', 'end'), C('inTransit', 'In transit to CDS', 'end'), C('readyRetail', 'Ready for retailer delivery', 'end')], rows };
     }
     case 'trip-completion': {
-      const types: TripType[] = ['DISTRIBUTOR_PICKUP', 'CDS_DELIVERY', 'CDS_RETURN'];
+      const types: TripType[] = ['DISTRIBUTOR_PICKUP', 'CDS_DELIVERY'];
       const rows = types.map((ty) => {
         const ts = s.trips.filter((t) => t.type === ty && inRange(t.plannedDate, f));
         const fin = ts.filter((t) => ['COMPLETED', 'PARTIALLY_COMPLETED'].includes(t.status)).length;
@@ -120,71 +95,44 @@ export function buildReport(s: CdsState, id: string, stores: string[], f: Report
       });
       return { id, title: 'Trip completion', columns: [C('type', 'Trip type'), C('total', 'Trips', 'end'), C('active', 'Active', 'end'), C('completed', 'Completed', 'end'), C('partial', 'Partially completed', 'end'), C('cancelled', 'Cancelled', 'end'), C('rate', 'Fully completed (of finished)', 'end')], rows };
     }
-    case 'grn': {
-      const gs = s.grns.filter((g) => storeOk(g.cdsStoreId) && inRange(g.createdAt, f) && (!f.distributorId || g.distributorId === f.distributorId) && (!f.status || g.status === f.status));
-      return {
-        id, title: 'GRN report',
-        columns: [C('grnNo', 'GRN'), C('date', 'Received'), C('distributor', 'Distributor'), C('trip', 'CDS trip'), C('orders', 'Orders', 'end'), C('dispatched', 'Dispatched', 'end'), C('received', 'Received', 'end'), C('accepted', 'Accepted', 'end'), C('damaged', 'Damaged', 'end'), C('short', 'Short', 'end'), C('excess', 'Excess', 'end'), C('status', 'Status')],
-        rows: gs.map((g) => ({
-          grnNo: g.grnNo, date: day(g.createdAt), distributor: dName(g.distributorId), trip: s.trips.find((t) => t.id === g.cdsTripId)?.tripNo ?? '', orders: g.orderIds.length,
-          dispatched: sum(g.lines, (l) => l.dispatchedQty), received: sum(g.lines, (l) => l.receivedQty), accepted: sum(g.lines, (l) => l.acceptedQty ?? 0), damaged: sum(g.lines, (l) => l.damagedQty ?? 0),
-          short: sum(g.lines, (l) => l.shortQty), excess: sum(g.lines, (l) => l.excessQty), status: g.status === 'PENDING' ? 'Pending Verification' : 'GRN Generated',
-        })),
-      };
-    }
-    case 'distributor-received': {
-      const gs = s.grns.filter((g) => storeOk(g.cdsStoreId) && inRange(g.createdAt, f) && (!f.distributorId || g.distributorId === f.distributorId));
-      const rows = Array.from(new Set(gs.map((g) => g.distributorId))).map((d) => {
-        const ls = gs.filter((g) => g.distributorId === d).flatMap((g) => g.lines);
-        return { distributor: dName(d), grns: gs.filter((g) => g.distributorId === d).length, received: sum(ls, (l) => l.receivedQty), accepted: sum(ls, (l) => l.acceptedQty ?? 0), damaged: sum(ls, (l) => l.damagedQty ?? 0), short: sum(ls, (l) => l.shortQty), excess: sum(ls, (l) => l.excessQty) };
-      });
-      return { id, title: 'Distributor-wise received goods', columns: [C('distributor', 'Distributor'), C('grns', 'GRNs', 'end'), C('received', 'Received', 'end'), C('accepted', 'Accepted', 'end'), C('damaged', 'Damaged', 'end'), C('short', 'Short', 'end'), C('excess', 'Excess', 'end')], rows };
-    }
-    case 'retailer-orders': {
-      const rows = Array.from(new Set(orders.map((o) => o.retailerId))).map((rid) => {
-        const os = orders.filter((o) => o.retailerId === rid);
+    case 'performance': {
+      // CDS User: one row per day for the store — orders received (handover OTP verified), delivery outcome of that
+      // day's retailer trips, success rate, trips and planned km.
+      const handovers = s.trips.filter((t) => t.type === 'CDS_DELIVERY' && t.status !== 'CANCELLED')
+        .flatMap((t) => t.stops.filter((x) => x.action === 'CDS_HANDOVER' && storeOk(x.partyId) && x.verifiedAt));
+      const rtrips = s.trips.filter((t) => t.type === 'RETAILER_DELIVERY' && t.status !== 'CANCELLED' && storeOk(t.owner));
+      const known = [...handovers.map((x) => day(x.verifiedAt!)), ...rtrips.map((t) => t.plannedDate)].sort();
+      const from = f.from || known[0];
+      const to = f.to || known[known.length - 1];
+      const days: string[] = [];
+      if (from && to) {
+        const d = new Date(`${from}T12:00:00`);
+        while (days.length < 92) {
+          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (iso > to) break;
+          days.push(iso);
+          d.setDate(d.getDate() + 1);
+        }
+      }
+      const ordersAt = (stops: { lines: { orderId: string | null; actualQty: number | null }[] }[], got: boolean) =>
+        new Set(stops.flatMap((x) => x.lines.filter((l) => !got || (l.actualQty ?? 0) > 0).map((l) => l.orderId))).size;
+      const rows = days.map((d) => {
+        const ts = rtrips.filter((t) => t.plannedDate === d);
+        const stops = ts.flatMap((t) => t.stops.filter((x) => x.action === 'RETAILER_DELIVERY'));
+        const delivered = ordersAt(stops.filter((x) => x.status === 'DONE' || x.status === 'PARTIAL'), true);
+        const notDelivered = ordersAt(stops.filter((x) => x.status === 'FAILED'), false);
         return {
-          retailer: rName(rid), orders: os.length, value: r2(sum(os, (o) => o.orderValue)), delivered: os.filter((o) => ['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED'].includes(o.status)).length,
-          pending: os.filter((o) => !['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED', 'CANCELLED'].includes(o.status)).length,
-          deliveredValue: r2(sum(os, (o) => sum(o.lines, (l) => l.deliveredQty * l.unitPrice))),
+          date: d, received: ordersAt(handovers.filter((x) => day(x.verifiedAt!) === d), true), delivered, notDelivered,
+          rate: delivered + notDelivered ? `${Math.round((delivered / (delivered + notDelivered)) * 100)}%` : '—',
+          trips: ts.length, km: Math.round(sum(ts, (t) => t.distanceKm) * 10) / 10,
         };
-      }).sort((a, b) => b.value - a.value);
-      return { id, title: 'Retailer-wise orders', columns: [C('retailer', 'Retailer'), C('orders', 'Orders', 'end'), C('value', 'Order value ₹', 'end'), C('delivered', 'Delivered', 'end'), C('pending', 'Pending', 'end'), C('deliveredValue', 'Delivered value ₹', 'end')], rows };
-    }
-    case 'delivery-plans': {
-      const ps = s.plans.filter((p) => p.kind === 'RETAILER_DELIVERY' && storeOk(p.owner) && inRange(p.plannedDate, f));
+      });
+      const tot = { received: sum(rows, (r) => r.received), delivered: sum(rows, (r) => r.delivered), notDelivered: sum(rows, (r) => r.notDelivered), trips: sum(rows, (r) => r.trips), km: Math.round(sum(rows, (r) => r.km) * 10) / 10 };
       return {
-        id, title: 'Delivery planning',
-        columns: [C('planNo', 'Plan'), C('date', 'Delivery date'), C('created', 'Planned on'), C('orders', 'Orders', 'end'), C('returns', 'Returns to collect', 'end'), C('trip', 'Trip'), C('status', 'Trip status')],
-        rows: ps.map((p) => {
-          const t = s.trips.find((x) => x.id === p.tripIds[0]);
-          return { planNo: p.planNo, date: p.plannedDate, created: day(p.createdAt), orders: p.orderIds.length, returns: p.returnIds.length, trip: t?.tripNo ?? '', status: t ? TRIP_STATUS[t.status].label : '' };
-        }),
-      };
-    }
-    case 'delivery-status': {
-      const os = orders.filter((o) => !f.status || o.status === f.status);
-      return {
-        id, title: 'Delivered and pending orders',
-        columns: [C('orderNo', 'Order'), C('date', 'Confirmed'), C('retailer', 'Retailer'), C('distributor', 'Distributor'), C('status', 'Status'), C('ordered', 'Ordered', 'end'), C('delivered', 'Delivered', 'end'), C('value', 'Value ₹', 'end')],
-        rows: os.map((o) => ({ orderNo: o.orderNo, date: day(o.confirmedAt), retailer: rName(o.retailerId), distributor: dName(o.distributorId), status: ORDER_STATUS[o.status].label, ordered: sum(o.lines, (l) => l.qty), delivered: sum(o.lines, (l) => l.deliveredQty), value: o.orderValue })),
-      };
-    }
-    case 'returns': {
-      const rs = s.returns.filter((r) => storeOk(r.cdsStoreId) && inRange(r.createdAt, f) && (!f.retailerId || r.retailerId === f.retailerId) && (!f.status || r.status === f.status));
-      return {
-        id, title: 'Retailer returns',
-        columns: [C('returnNo', 'Return'), C('date', 'Initiated'), C('order', 'Order'), C('retailer', 'Retailer'), C('reason', 'Reason'), C('qty', 'Units', 'end'), C('picked', 'Picked', 'end'), C('accepted', 'Accepted', 'end'), C('rejected', 'Rejected', 'end'), C('status', 'Status')],
-        rows: rs.map((r) => ({ returnNo: r.returnNo, date: day(r.createdAt), order: r.orderNo, retailer: r.source === 'GRN' ? 'Damaged at GRN' : rName(r.retailerId), reason: r.lines.map((l) => l.reason).join(', '), qty: sum(r.lines, (l) => l.qty), picked: sum(r.lines, (l) => l.pickedQty ?? 0), accepted: sum(r.lines, (l) => l.acceptedQty ?? 0), rejected: sum(r.lines, (l) => l.rejectedQty ?? 0), status: RETURN_STATUS[r.status].label })),
-      };
-    }
-    case 'collections': {
-      const cs = s.collections.filter((c) => storeOk(c.cdsStoreId) && inRange(c.collectedAt, f) && (!f.status || c.status === f.status));
-      return {
-        id, title: 'Collections & payments',
-        columns: [C('collectionNo', 'Collection'), C('date', 'Collected'), C('order', 'Order'), C('retailer', 'Retailer'), C('dp', 'Delivery person'), C('mode', 'Mode'), C('expected', 'Due ₹', 'end'), C('amount', 'Collected ₹', 'end'), C('received', 'Received by CDS ₹', 'end'), C('status', 'Status'), C('ref', 'Handover / settlement ref')],
-        rows: cs.map((c) => ({ collectionNo: c.collectionNo, date: day(c.collectedAt), order: c.orderNo, retailer: rName(c.retailerId), dp: c.deliveryPersonName, mode: c.mode, expected: c.expectedAmount, amount: c.amount, received: c.cdsReceivedAmount ?? 0, status: COLLECTION_STATUS[c.status].label, ref: [c.qwipoHandoverRef, c.settlementRef].filter(Boolean).join(' / ') || '—' })),
-        totals: { expected: r2(sum(cs, (c) => c.expectedAmount)), amount: r2(sum(cs, (c) => c.amount)), received: r2(sum(cs, (c) => c.cdsReceivedAmount ?? 0)) },
+        id, title: 'Performance Report',
+        columns: [C('date', 'Date'), C('received', 'Orders received', 'end'), C('delivered', 'Orders delivered', 'end'), C('notDelivered', 'Orders not delivered', 'end'), C('rate', 'Delivery success rate', 'end'), C('trips', 'Trips', 'end'), C('km', 'Total km', 'end')],
+        rows,
+        totals: { ...tot, rate: tot.delivered + tot.notDelivered ? `${Math.round((tot.delivered / (tot.delivered + tot.notDelivered)) * 100)}%` : '—' },
       };
     }
     default:
@@ -204,18 +152,13 @@ export function summary(s: CdsState, role: CdsRole, stores: string[]) {
       { key: 'transit', label: 'In transit to CDS', value: n(['IN_TRANSIT_TO_CDS']), tone: 'purple', to: '/cds/trips?tab=CDS_DELIVERY' },
       { key: 'pickupTrips', label: 'Active pickup trips', value: tr('DISTRIBUTOR_PICKUP'), tone: 'blue', to: '/cds/trips?tab=DISTRIBUTOR_PICKUP' },
       { key: 'cdsTrips', label: 'Active CDS delivery trips', value: tr('CDS_DELIVERY'), tone: 'blue', to: '/cds/trips?tab=CDS_DELIVERY' },
-      { key: 'returnTrips', label: 'Active CDS return trips', value: tr('CDS_RETURN'), tone: 'blue', to: '/cds/trips?tab=CDS_RETURN' },
-      { key: 'returns', label: 'Returns to plan', value: s.returns.filter((r) => stores.includes(r.cdsStoreId) && r.status === 'RECEIVED_AT_CDS' && !r.returnTripId).length, tone: 'red', to: '/cds/return-planning' },
     ];
   }
-  const st = stores[0];
   return [
-    { key: 'grn', label: 'GRNs to verify', value: s.grns.filter((g) => g.cdsStoreId === st && g.status === 'PENDING').length, tone: 'amber', to: '/cds/grn' },
+    { key: 'incoming', label: 'Coming to the store', value: n(['PICKED_UP', 'IN_TRANSIT_TO_CDS']), tone: 'purple', to: '/cds/orders' },
     { key: 'ready', label: 'Ready for delivery', value: n(['READY_FOR_DELIVERY']), tone: 'teal', to: '/cds/delivery-planning' },
-    { key: 'planned', label: 'Delivery planned', value: n(['DELIVERY_PLANNED']), tone: 'blue', to: '/cds/trips' },
+    { key: 'planned', label: 'Delivery planned', value: n(['DELIVERY_PLANNED']), tone: 'blue', to: '/cds/delivery-planning' },
     { key: 'out', label: 'Out for delivery', value: n(['OUT_FOR_DELIVERY']), tone: 'purple', to: '/cds/trips' },
     { key: 'delivered', label: 'Delivered', value: n(['DELIVERED', 'PARTIALLY_DELIVERED']), tone: 'green', to: '/cds/orders' },
-    { key: 'returns', label: 'Returns open', value: s.returns.filter((r) => r.cdsStoreId === st && ['RETURN_INITIATED', 'PICKED_UP_FROM_RETAILER'].includes(r.status)).length, tone: 'red', to: '/cds/returns' },
-    { key: 'cash', label: 'Cash with delivery persons ₹', value: r2(sum(s.collections.filter((c) => c.cdsStoreId === st && c.status === 'WITH_DELIVERY_PERSON'), (c) => c.amount)), tone: 'amber', to: '/cds/collections' },
   ];
 }
