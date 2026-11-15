@@ -471,7 +471,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
     );
     return (
       <tr className="trip-details-row">
-        <td colSpan={isConsolidated ? 11 : 14}>
+        <td colSpan={isConsolidated ? 10 : 14}>
           <div className="trip-details">
             {/* Direct Delivery: every card. Consolidated Delivery: Route Overview only. Consolidated Returns: Route
                 Overview and Collection Summary (the return value). */}
@@ -524,7 +524,10 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
               {isReturns && (
                 <div className="detail-card trip-summary">
                   <h3>Collection Summary</h3>
-                  {collectionSummary}
+                  {/* Consolidated Returns: only the value of the returned goods. */}
+                  <div className="info-card collection-card">
+                    <div className="info-row no-icon"><span className="label">Total Return Value</span><span className="value">{addCurrency(row.totalReturnValue)}</span></div>
+                  </div>
                 </div>
               )}
 
@@ -753,7 +756,8 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                 <th>Provider</th>
                 <th>Status</th>
                 {/* Consolidated trips: the distributor only hands the goods over (delivery) or receives the returns
-                    (returns), so the service center's route columns (drop points, planned KMs, time covered) are not shown. */}
+                    (returns), so the service center's route columns (drop points, planned KMs, time covered) and the
+                    trip charges are not shown. */}
                 {!isConsolidated && <th>Drop Points</th>}
                 <th>Vol Weight</th>
                 <th>Driver Name</th>
@@ -761,7 +765,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                 <th>Created Date</th>
                 <th>Arrival Time</th>
                 {!isConsolidated && <th>Time Covered</th>}
-                <th>Trip Charges</th>
+                {!isConsolidated && <th>Trip Charges</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -792,7 +796,7 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
                       <td>{row.createdDate}</td>
                       <td>{row.arrivalTime || 'N/A'}</td>
                       {!isConsolidated && <td>{calculateTimeCovered(row)}</td>}
-                      <td>{addCurrency(row.logisticsOrderCharges)}</td>
+                      {!isConsolidated && <td>{addCurrency(row.logisticsOrderCharges)}</td>}
                       <td>
                         <button className="kebab-btn" title="Actions" onClick={(e) => toggleKebabMenu(index, e)}>
                           <i className="material-icons">more_vert</i>
@@ -875,16 +879,13 @@ export default function TripsPage({ view = 'trips' }: { view?: TripsView }) {
               <i className="fas fa-file-alt" /><span>Return Report</span>
             </div>
           ) : isDelivery ? (
-            // Consolidated Delivery: the three pickup lists the CDS service center needs.
+            // Consolidated Delivery: the two pickup lists the CDS service center needs.
             <>
               <div className="submenu-item" onClick={() => { downloadPickupIndent(kebabRow, false); closeAllMenus(); }}>
                 <i className="fas fa-file-alt" /><span>Consolidated Pickup List</span>
               </div>
               <div className="submenu-item" onClick={() => { downloadCdsWisePickupList(kebabRow); closeAllMenus(); }}>
                 <i className="fas fa-file-alt" /><span>CDS Wise Pickup List</span>
-              </div>
-              <div className="submenu-item" onClick={() => { downloadCustomerWisePickupIndent(kebabRow); closeAllMenus(); }}>
-                <i className="fas fa-file-alt" /><span>Customer Wise Pickup List</span>
               </div>
             </>
           ) : (
