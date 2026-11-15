@@ -50,6 +50,7 @@ const CdsCreatePickupPlan = lazy(() => import('./pages/cds/ScPlanningPages').the
 const CdsCreateReturnPlan = lazy(() => import('./pages/cds/ScPlanningPages').then((m) => ({ default: m.CreateReturnPlanPage })));
 const CdsTrips = lazy(() => import('./pages/cds/TripsPage'));
 const CdsTripDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripDetailsPage })));
+const CdsTripOrderDetails = lazy(() => import('./pages/cds/TripsPage').then((m) => ({ default: m.TripOrderDetailsPage })));
 const CdsReports = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.ReportsPage })));
 const CdsSettings = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.SettingsPage })));
 const CdsStores = lazy(() => import('./pages/cds/AdminPages').then((m) => ({ default: m.StoresPage })));
@@ -96,6 +97,7 @@ export default function App() {
               <Route path="return-planning/create" element={<Navigate to="/cds/planning/return/create" replace />} />
               <Route path="trips" element={<RequireCds page={['sc-trips', 'cu-trips']}><CdsTrips /></RequireCds>} />
               <Route path="trips/:id" element={<CdsTripDetails />} />
+              <Route path="trip-order-details/:tripId" element={<CdsTripOrderDetails />} />
               <Route path="reports" element={<RequireCds page={['sc-reports', 'cu-reports']}><CdsReports /></RequireCds>} />
               <Route path="settings" element={<RequireCds page={'sc-settings'}><CdsSettings /></RequireCds>} />
               <Route path="stores" element={<RequireCds page={'sc-stores'}><CdsStores /></RequireCds>} />

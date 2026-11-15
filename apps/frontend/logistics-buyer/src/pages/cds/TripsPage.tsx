@@ -14,6 +14,7 @@ import DataLoading from '../../components/DataLoading';
 import '../trips/TripsPage.css';
 import '../trips/TripDetailsPage.css';
 import '../trips/dialogs/TripDialogs.css';
+import '../trips/TripOrderDetailsPage.css';
 
 const SC_TABS: { id: TripType; label: string; sub: string; icon: string }[] = [
   { id: 'DISTRIBUTOR_PICKUP', label: 'Pickups', sub: PLAN_DIRECTION.pickups, icon: 'fa-truck-ramp-box' },
@@ -490,7 +491,6 @@ export function TripDetailsPage() {
   const [openStop, setOpenStop] = useState<string | null>(null);
   const [tab, setTab] = useState<DetailTab | ''>('');
   const [showAll, setShowAll] = useState(false);
-  const [openRow, setOpenRow] = useState<string | null>(null);
   const [dialog, setDialog] = useState<'resource' | 'helper' | null>(null);
   const t = data?.trip;
   useEffect(() => {
@@ -560,7 +560,7 @@ export function TripDetailsPage() {
       <TabTable cols={8} empty={!rows.length && `No ${kind === 'DISTRIBUTOR' ? 'distributor' : 'CDS store'} orders found`}
         head={<>{th('fa-hashtag', 'Stop No.')}{th(kind === 'DISTRIBUTOR' ? 'fa-industry' : 'fa-warehouse', kind === 'DISTRIBUTOR' ? 'Distributor Name' : 'CDS Store Name', 'text-start')}{th('fa-map-marker-alt', 'Address', 'text-start')}{th('fa-map-marker-alt', 'OTP', 'text-start')}{th('fa-info-circle', 'Status')}{th('fa-clock', timeLabel)}{th('fa-rupee-sign', 'Orders/Amount')}{th('fa-cogs', 'Actions')}</>}
         foot={rows.length > 0 && <><td /><td /><td /><td /><td /><td className="text-center fw-bold"> Total: </td><td className="text-center fw-bold">{`${new Set(rows.flatMap((s) => s.refs.map((r) => r.id))).size}/${money(sumOf(rows, valueOf))}`}</td><td /></>}>
-        {rows.flatMap((s) => [
+        {rows.map((s) => (
           <tr className="mat-mdc-row small" key={s.id}>
             <td className="text-center">{s.seq}</td>
             <td className="text-start">{s.name}</td>
@@ -569,23 +569,9 @@ export function TripDetailsPage() {
             <td className="text-center"><span className={`cds-badge ${s.status === 'DONE' ? 'green' : s.status === 'FAILED' ? 'red' : s.status === 'PARTIAL' ? 'amber' : 'grey'}`}>{STOP_LABEL[s.status]}</span></td>
             <td className="text-center">{s.completedAt ? fmtDateTime(s.completedAt) : 'N/A'}</td>
             <td className="text-center">{`${s.refs.length}/${money(valueOf(s))}`}</td>
-            <td className="text-center"><button className="btn btn-sm text-primary cds-icon-btn" title={openRow === s.id ? 'Hide orders' : 'View orders'} aria-label={`View orders at ${s.name}`} onClick={() => setOpenRow(openRow === s.id ? null : s.id)}><i className={`fas ${openRow === s.id ? 'fa-eye-slash' : 'fa-eye'}`} /></button></td>
-          </tr>,
-          ...(openRow === s.id ? s.refs.map((r) => {
-            const o = data.orders.find((x) => x.id === r.id);
-            const ret = data.returns.find((x) => x.id === r.id);
-            return (
-              <tr key={`${s.id}-${r.id}`} className="mat-mdc-row small cds-sub-row">
-                <td />
-                <td className="text-start" colSpan={2}>{o ? <a role="button" className="text-primary" onClick={() => navigate(`/cds/orders/${o.id}`)}>{r.no}</a> : <>{r.no}{ret && <span className="text-muted"> · {ret.orderNo}</span>}</>}</td>
-                <td className="text-start" colSpan={2}>{r.retailer}</td>
-                <td className="text-center">{o ? <Badge meta={ORDER_STATUS[o.status]} /> : ret ? <Badge meta={RETURN_STATUS[ret.status]} /> : null}</td>
-                <td className="text-center">{`${r.units} units / ${money(r.value)}`}</td>
-                <td />
-              </tr>
-            );
-          }) : []),
-        ])}
+            <td className="text-center"><button className="btn btn-sm text-primary cds-icon-btn" title="View Order" aria-label={`View orders at ${s.name}`} onClick={() => navigate(`/cds/trip-order-details/${t.id}?party=${kind === 'DISTRIBUTOR' ? 'distributor' : 'cds'}&key=${s.id}`)}><i className="fas fa-eye" /></button></td>
+          </tr>
+        ))}
       </TabTable>
     );
   };
@@ -689,7 +675,7 @@ export function TripDetailsPage() {
               <td className="text-center">{c.stop?.completedAt ? fmtDateTime(c.stop.completedAt) : 'N/A'}</td>
               <td className="text-center">{`${c.docs.length}/${money(c.amount)}`}</td>
               <td className="text-center">
-                <button className="btn btn-sm text-primary cds-icon-btn" title="View Order" aria-label={`View orders of ${c.name}`} onClick={() => navigate(c.docs.length === 1 || c.key.startsWith('grn-') ? `/cds/orders/${c.docs[0].orderId}` : `/cds/orders?retailer=${c.key}`)}><i className="fas fa-eye" /></button>
+                <button className="btn btn-sm text-primary cds-icon-btn" title="View Order" aria-label={`View orders of ${c.name}`} onClick={() => navigate(`/cds/trip-order-details/${t.id}?party=customer&key=${encodeURIComponent(c.key)}`)}><i className="fas fa-eye" /></button>
               </td>
             </tr>
           ))}
@@ -769,6 +755,181 @@ export function TripDetailsPage() {
       )}
       {dialog === 'resource' && <EditResourceDialog trip={t} onClose={(saved) => { setDialog(null); if (saved) reload(); }} />}
       {dialog === 'helper' && <UpdateHelperDialog trip={t} onClose={(saved) => { setDialog(null); if (saved) reload(); }} />}
+    </div>
+  );
+}
+
+/** Customer Order Details — same page as the LBNP Trip › Customer Wise Orders › View: KPI cards, the customer card,
+ *  Order Details and Order Products. Opened from Customer / Distributor / CDS Wise Orders of a trip.
+ *  Query: party = customer | distributor | cds, key = retailer id (or grn-<return id>) / stop id. */
+export function TripOrderDetailsPage() {
+  const { tripId = '' } = useParams();
+  const [query] = useSearchParams();
+  const navigate = useNavigate();
+  const party = (query.get('party') ?? 'customer') as 'customer' | 'distributor' | 'cds';
+  const key = query.get('key') ?? '';
+  const { data, error, reload } = useLoad(() => cdsApi.trip(tripId), [tripId]);
+  const back = () => navigate(`/cds/trips/${tripId}`);
+  if (error) return <div className="cds-page"><ErrorBox text={error} onRetry={reload} /></div>;
+  if (!data) return <div className="order-details-container trip-order-details"><DataLoading overlay={false} message="Loading order details..." showTip /></div>;
+  const t = data.trip;
+  const last = lastStops(t);
+  const stop = party === 'customer' ? undefined : t.stops.find((s) => s.id === key);
+  const ids = stop ? stop.refs.map((r) => r.id) : null;
+  const orders = data.orders.filter((o) => (ids ? ids.includes(o.id) : o.retailerId === key));
+  const returns = data.returns.filter((r) => (ids ? ids.includes(r.id) : key.startsWith('grn-') ? r.id === key.slice(4) : r.retailerId === key));
+  const retailer = data.retailers.find((r) => r.id === key);
+  const who = stop
+    ? { name: stop.name, phone: stop.phone, address: stop.address, coords: `${stop.lat}, ${stop.lng}` }
+    : retailer
+      ? { name: retailer.name, phone: retailer.phone, address: retailer.address, coords: `${retailer.lat}, ${retailer.lng}` }
+      : { name: returns[0]?.retailerName ?? 'N/A', phone: 'N/A', address: returns[0]?.storeName ?? 'N/A', coords: 'N/A' };
+  const title = party === 'distributor' ? 'Distributor Order Details' : party === 'cds' ? 'CDS Store Order Details' : 'Customer Order Details';
+  const nameLabel = party === 'distributor' ? 'Distributor Name' : party === 'cds' ? 'CDS Store Name' : 'Customer Business Name';
+  const timeOf = (id: string, fallback: string | null) => {
+    const s = last.get(id)?.stop;
+    return s?.completedAt ? fmtDateTime(s.completedAt) : fallback ? fmtDateTime(fallback) : 'N/A';
+  };
+  type Item = { name: string; sku: string; mrp: number; weight: number; ordered: number; returned: number; net: number; total: number };
+  type View = { id: string; orderId: string; invoice: string; status: ReactNode; statusText: string; time: string; total: number; reason: string; items: Item[] };
+  const views: View[] = [
+    ...orders.map((o) => {
+      const items = o.lines.map((l) => ({ name: l.name, sku: l.sku, mrp: l.unitPrice, weight: l.unitWeightKg, ordered: l.qty, returned: l.returnedQty, net: l.qty - l.returnedQty, total: l.qty * l.unitPrice }));
+      return { id: o.id, orderId: o.orderNo, invoice: o.sellerOrderRef, status: <Badge meta={ORDER_STATUS[o.status]} />, statusText: ORDER_STATUS[o.status].label, time: timeOf(o.id, o.deliveredAt ?? o.confirmedAt), total: sumOf(items, (i) => i.total), reason: '-', items };
+    }),
+    ...returns.map((r) => {
+      const items = r.lines.map((l) => ({ name: l.name, sku: l.sku, mrp: l.unitPrice, weight: l.unitWeightKg, ordered: l.orderedQty, returned: l.qty, net: l.orderedQty - l.qty, total: l.qty * l.unitPrice }));
+      return { id: r.id, orderId: r.returnNo, invoice: r.orderNo, status: <Badge meta={RETURN_STATUS[r.status]} />, statusText: RETURN_STATUS[r.status].label, time: timeOf(r.id, null), total: sumOf(items, (i) => i.total), reason: Array.from(new Set(r.lines.map((l) => l.reason))).join(', ') || '-', items };
+    }),
+  ];
+  const products = new Set(views.flatMap((v) => v.items.map((i) => i.sku))).size;
+  const returnProducts = new Set(views.flatMap((v) => v.items.filter((i) => i.returned > 0).map((i) => i.sku))).size;
+  const kpis: { label: string; icon: string; bg: string; value: string | number; footIcon: string; foot: string }[] = [
+    { label: 'Total Orders', icon: 'fa-shopping-cart text-primary', bg: 'bg-primary-subtle', value: views.length, footIcon: 'fa-calendar-check text-primary', foot: party === 'customer' ? ' Customer Orders' : party === 'distributor' ? ' Distributor Orders' : ' CDS Store Orders' },
+    { label: 'Total Amount', icon: 'fa-rupee-sign text-success', bg: 'bg-success-subtle', value: money(sumOf(views, (v) => v.total)), footIcon: 'fa-arrow-up text-success', foot: ' Order Value' },
+    { label: 'Total Products', icon: 'fa-box text-info', bg: 'bg-info-subtle', value: products, footIcon: 'fa-box-open text-info', foot: ' Product Count' },
+    ...(returnProducts > 0 ? [{ label: 'Return Products', icon: 'fa-undo text-warning', bg: 'bg-warning-subtle', value: returnProducts, footIcon: 'fa-exchange-alt text-warning', foot: ' Return Count' }] : []),
+  ];
+  const h = (icon: string, label: string, align = 'text-start') => <th className={`text-uppercase py-2 px-3 small ${align}`}><i className={`fas ${icon} me-1 text-primary`} />{label}</th>;
+  return (
+    <div className="order-details-container trip-order-details">
+      <header className="orders-header">
+        <div className="d-flex align-items-center gap-3">
+          <button className="back-btn" aria-label="Back" onClick={back}><i className="fas fa-arrow-left" /></button>
+          <div>
+            <h1><i className="fas fa-shopping-bag me-2" /> {title}</h1>
+            <p className="text-muted small mb-0">{party === 'customer' ? 'Customer' : party === 'distributor' ? 'Distributor' : 'CDS Store'}: {who.name} · Trip {t.tripNo}</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="row mb-4 g-3">
+        {kpis.map((k) => (
+          <div className="col-md-3" key={k.label}>
+            <div className="card h-100 border-0 shadow-sm rounded-3 summary-card">
+              <div className="card-body d-flex align-items-center p-3">
+                <div className={`icon-container ${k.bg}`}><i className={`fas ${k.icon}`} /></div>
+                <div className="ms-3"><h6 className="text-muted small mb-1">{k.label}</h6><h3 className="fw-bold mb-0">{k.value}</h3></div>
+              </div>
+              <div className="card-footer bg-light border-0 py-2 px-3"><span className="small"><i className={`fas ${k.footIcon}`} />{k.foot}</span></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mat-card mat-elevation-z3">
+        <div className="mat-card-title py-2"><i className="fas fa-user me-2 text-primary" /> {party === 'customer' ? 'Customer' : party === 'distributor' ? 'Distributor' : 'CDS Store'} Information </div>
+        <div className="mat-card-content">
+          <div className="row g-3 p-3">
+            <div className="col-md-6">
+              <label className="text-muted small">{nameLabel}</label><p className="mb-1 fw-medium">{who.name}</p>
+              <label className="text-muted small">Mobile Number</label><p className="mb-1 fw-medium">{who.phone || 'N/A'}</p>
+            </div>
+            <div className="col-md-6">
+              <label className="text-muted small">Address</label><p className="mb-1 fw-medium">{who.address || 'N/A'}</p>
+              <label className="text-muted small">Coordinates</label><p className="mb-1 fw-medium">{who.coords}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mat-card mat-elevation-z3">
+        <div className="mat-card-title py-2"><i className="fas fa-clipboard-list me-2 text-primary" /> Order Details </div>
+        <div className="mat-card-content p-0">
+          <div className="table-responsive">
+            <table className="mat-mdc-table w-100">
+              <thead><tr className="mat-mdc-header-row small bg-light">{h('fa-hashtag', 'Order ID')}{h('fa-file-invoice', 'Reference Invoice')}{h('fa-info-circle', 'Status', 'text-center')}{h('fa-clock', 'Time', 'text-center')}{h('fa-rupee-sign', 'Order Total', 'text-center')}{h('fa-comment-alt', 'Return Reason', 'text-center')}</tr></thead>
+              <tbody>
+                {views.map((v) => (
+                  <tr className="mat-mdc-row small" key={v.id}>
+                    <td className="text-start">{v.orderId}</td>
+                    <td className="text-start">{v.invoice}</td>
+                    <td className="text-center">{v.status}</td>
+                    <td className="text-center">{v.time}</td>
+                    <td className="text-center">{money(v.total)}</td>
+                    <td className="text-center">{v.reason}</td>
+                  </tr>
+                ))}
+                {views.length === 0 && <tr className="mat-mdc-row"><td colSpan={6} className="text-center py-4"><i className="fas fa-info-circle me-2 text-muted" /> No orders found </td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="mat-card mat-elevation-z3">
+        <div className="mat-card-title py-2"><i className="fas fa-boxes me-2 text-primary" /> Order Products </div>
+        <div className="mat-card-content p-3">
+          {views.map((v) => (
+            <div className="mat-card mat-elevation-z1 mb-3" key={v.id}>
+              <div className="mat-card-header bg-light py-2 px-3">
+                <div className="d-flex justify-content-between align-items-center w-100">
+                  <span className="small">Order #{v.invoice}</span>
+                  <div className="text-end"><span className="me-2 mx-2">{v.status}</span><span className="small text-muted">{v.time}</span></div>
+                </div>
+              </div>
+              <div className="table-responsive">
+                <table className="mat-mdc-table w-100 products-table">
+                  <thead>
+                    <tr className="mat-mdc-header-row small bg-light">
+                      {h('fa-box', 'Product')}{h('fa-hashtag', 'HSN Code')}{h('fa-hashtag', 'Cases')}{h('fa-hashtag', 'UPC')}{h('fa-hashtag', 'pcs')}{h('fa-hashtag', 'MRP')}{h('fa-box-open', 'Packaging')}
+                      {h('fa-shopping-cart', 'Ordered Qty', 'text-center')}{h('fa-undo', 'Return Qty', 'text-center')}{h('fa-balance-scale', 'Net Qty', 'text-center')}{h('fa-balance-scale', 'Unit Weight', 'text-center')}{h('fa-tag', 'Taxable', 'text-center')}{h('fa-tag', 'GST', 'text-center')}{h('fa-rupee-sign', 'Total', 'text-center')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {v.items.map((it) => (
+                      <tr className="mat-mdc-row small" key={it.sku}>
+                        <td className="text-start">{it.name}</td>
+                        <td className="text-start">-</td>
+                        <td className="text-start">0</td>
+                        <td className="text-start">{it.sku}</td>
+                        <td className="text-start">{it.ordered}</td>
+                        <td className="text-start">{money(it.mrp)}</td>
+                        <td className="text-start">PCS</td>
+                        <td className="text-center">{it.ordered}</td>
+                        <td className="text-center">{it.returned || 0}</td>
+                        <td className="text-center">{it.net}</td>
+                        <td className="text-center">{kg(it.weight)}</td>
+                        <td className="text-center">{money(it.total)}</td>
+                        <td className="text-center">-</td>
+                        <td className="text-center">{money(it.total)}</td>
+                      </tr>
+                    ))}
+                    {v.items.length === 0 && <tr className="mat-mdc-row"><td colSpan={14} className="text-center py-4"> No products found for this order </td></tr>}
+                  </tbody>
+                  <tfoot>
+                    <tr className="mat-mdc-footer-row bg-light">
+                      <td className="py-2 px-3 fw-bold">Total:</td>
+                      <td /><td /><td /><td /><td /><td /><td /><td /><td /><td /><td /><td />
+                      <td className="text-center fw-bold">{money(v.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
