@@ -24,9 +24,11 @@ import {
   Inbox,
   Building2,
 } from "lucide-react";
-import { isCdsEnabled } from "../lib/cds/store";
+import { isCdsEnabled, resetCdsDemo } from "../lib/cds/store";
 import { CdsOrderSync } from "./cds/cds-order-sync";
 import { Button } from "@mockups/web-ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@mockups/web-ui";
+import { toast } from "sonner";
 import { Badge } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
 import {
@@ -173,6 +175,8 @@ const getSellerPageTitle = (pathname: string): string => {
   return "SMP Platform";
 };
 
+const DEMO_RESET_FLAG = "qwipo.demoReset";
+
 export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -246,6 +250,27 @@ export function RootLayout() {
     isAdmin ? "User Management" : isCatalogPortal ? null : "Products",
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  // After "Reset demo data" the page reloads; say so once it is back.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(DEMO_RESET_FLAG)) {
+        sessionStorage.removeItem(DEMO_RESET_FLAG);
+        toast.success("Demo data reset", { description: "Orders, pickups, returns and payouts are back to the starting demo data." });
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const resetDemoData = () => {
+    resetCdsDemo();
+    try {
+      sessionStorage.setItem(DEMO_RESET_FLAG, "1");
+    } catch {
+      /* storage unavailable */
+    }
+    window.location.reload();
+  };
 
   const handleLogout = () => {
     logout();
@@ -575,16 +600,7 @@ export function RootLayout() {
                     </DropdownMenuItem>
                     {/* Prototype: start a demo from fresh CDS / 3PL data. */}
                     {!isEmptyMode && isCdsEnabled(user?.id) && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          try {
-                            localStorage.removeItem("qwipo.cds.state");
-                          } catch {
-                            /* storage unavailable */
-                          }
-                          window.location.reload();
-                        }}
-                      >
+                      <DropdownMenuItem onClick={() => setResetOpen(true)}>
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Reset demo data
                       </DropdownMenuItem>
@@ -601,6 +617,20 @@ export function RootLayout() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset demo data?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Orders, pickups, returns and payouts go back to the starting demo data. Use this to start the demo again. You stay signed in.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetDemoData}>Reset demo data</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
 

@@ -65,7 +65,7 @@ import { isCdsEnabled, useCds } from "../../lib/cds/store";
 import { PickupPersonLine, PrintPickupListButton, pickupInfo } from "../../components/cds/pickup-info";
 import { SELLER_CANCELLABLE } from "../../lib/cds/calc";
 import { CdsOrdersTab } from "../../components/cds/cds-orders-tab";
-import { CdsReturnsTab, useCdsReturnComingCount, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
+import { CdsReturnsTab, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
 import { useCdsOrderIds, useCdsOrderMap } from "../../components/cds/cds-order-sync";
 import { areaFromAddress, isCdsServiceable } from "../../lib/cds/order-bridge";
 import type { CdsOrderStatus } from "../../lib/cds/types";
@@ -180,37 +180,6 @@ function SelectionActions({ count, actions }: { count: number; actions: Selectio
   );
 }
 
-const WORK_TONE = {
-  blue: "text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100",
-  amber: "text-amber-800 bg-amber-50 border-amber-200 hover:bg-amber-100",
-  purple: "text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100",
-} as const;
-
-/** One row: "5 to confirm · 3 waiting for pickup · 2 returns coming back". */
-function TodaysWork({ items }: { items: { key: string; label: string; count: number; tone: keyof typeof WORK_TONE; onClick: () => void }[] }) {
-  const nothing = items.every((i) => i.count === 0);
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 flex-shrink-0">
-      <span className="text-sm font-semibold text-gray-900 mr-1">Today's work</span>
-      {nothing ? (
-        <span className="text-sm text-gray-500">All done — nothing waiting for you.</span>
-      ) : (
-        items.map((i) => (
-          <button
-            key={i.key}
-            type="button"
-            onClick={i.onClick}
-            disabled={i.count === 0}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent ${i.count === 0 ? "border-gray-200 text-gray-500" : WORK_TONE[i.tone]}`}
-          >
-            <span className="font-bold">{i.count}</span> {i.label}
-          </button>
-        ))
-      )}
-    </div>
-  );
-}
-
 export function Orders() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -226,10 +195,7 @@ export function Orders() {
   // Other sellers keep Beat / Non-Beat.
   const isRouteA = (o: Order) => (cdsEnabled ? isCdsServiceable(o) : isBeatOrder(o));
   const cdsReturnCount = useCdsReturnCount();
-  const cdsReturnComingCount = useCdsReturnComingCount();
   const cdsState = useCds();
-  // Today's work strip → Returns opens on "Coming back to you".
-  const [returnsPreset, setReturnsPreset] = useState<"all" | "coming">("all");
   const location = useLocation();
 
   // Read logistics enabled flag for the current seller, and keep it
@@ -960,7 +926,6 @@ export function Orders() {
 
   // Clear selection when changing tabs
   const handleTabChange = (tab: string) => {
-    if (tab !== "returns") setReturnsPreset("all");
     setActiveTab(tab as TabType);
     // Keep the URL in step with the open tab so Back from an order page
     // returns here (All = plain /orders).
@@ -1957,33 +1922,6 @@ export function Orders() {
           layout pattern. */}
       <div className="flex-1 overflow-hidden p-6">
         <div className="h-full flex flex-col gap-3">
-          {/* Today's work — what the seller has to do now. Tap a number to open that tab. */}
-          {!isEmptyMode() && (
-            <TodaysWork
-              items={[
-                { key: "new", label: "to confirm", count: summary.new, tone: "blue", onClick: () => handleTabChange("new") },
-                {
-                  key: "confirmed",
-                  label: cdsEnabled ? "waiting for pickup" : "to deliver",
-                  count: summary.confirmed,
-                  tone: "amber",
-                  onClick: () => handleTabChange("confirmed"),
-                },
-                ...(cdsEnabled
-                  ? [{
-                      key: "returns",
-                      label: cdsReturnComingCount === 1 ? "return coming back" : "returns coming back",
-                      count: cdsReturnComingCount,
-                      tone: "purple" as const,
-                      onClick: () => {
-                        setReturnsPreset("coming");
-                        handleTabChange("returns");
-                      },
-                    }]
-                  : []),
-              ]}
-            />
-          )}
           {/* Orders Card with Tabs */}
           <Card className="flex-1 min-h-0 flex flex-col overflow-hidden p-0 gap-0">
             <Tabs
@@ -2546,7 +2484,7 @@ export function Orders() {
 
             {cdsEnabled && (
               <TabsContent value="returns" className="mt-0 flex-1 flex flex-col overflow-hidden data-[state=inactive]:hidden">
-                <CdsReturnsTab key={returnsPreset} initialFilter={returnsPreset} renderTable={renderLinkedTable} keep={matchesPanelFilters} />
+                <CdsReturnsTab renderTable={renderLinkedTable} keep={matchesPanelFilters} />
               </TabsContent>
             )}
           </Tabs>

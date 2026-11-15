@@ -20,6 +20,9 @@ const ENABLED_PREFIX = "qwipo.cds.enabled.";
 
 let state: CdsState | null = null;
 const listeners = new Set<() => void>();
+/** Set by a demo reset: the page reloads, so nothing from the old page may save over the fresh data. */
+let resetting = false;
+const RESET_KEY = "qwipo.cds.resetAt";
 
 function load(): CdsState {
   try {
@@ -37,6 +40,7 @@ function load(): CdsState {
 }
 
 function persist() {
+  if (resetting) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
@@ -103,6 +107,28 @@ export function resetCdsData() {
   ctx.s = state;
   commit();
   toast.success("CDS demo data reset to today's snapshot");
+}
+
+/**
+ * Demo reset: rebuild today's starting demo data and save it at once (no gap in which a late save could
+ * write the old data back), then block saves until the page reloads. Other open tabs reload too, so their
+ * in-memory orders cannot re-create the old data.
+ */
+export function resetCdsDemo() {
+  state = buildSeed();
+  ctx.s = state;
+  persist();
+  try {
+    localStorage.setItem(RESET_KEY, String(Date.now()));
+  } catch {
+    /* storage unavailable */
+  }
+  resetting = true;
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === RESET_KEY) window.location.reload();
+  });
 }
 
 /** Apply engine actions with no toast — used by the Orders ↔ CDS sync.
