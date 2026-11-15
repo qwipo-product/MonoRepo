@@ -23,6 +23,9 @@ export interface PickupInfo {
   by: "CDS" | "3PL";
 }
 
+/** Seller-facing name of the route — the delivery type names: "Self" (CDS) and "3PL Logistics". */
+export const routeLabel = (by: "CDS" | "3PL") => (by === "3PL" ? "3PL Logistics" : "Self");
+
 /** Pickup trip of an order that still waits for pickup, else undefined. */
 export function pickupInfo(s: CdsState, o: CdsOrder | undefined): PickupInfo | undefined {
   if (!o || o.status !== "Pickup Requested" || !o.pickupTripId) return undefined;
@@ -39,9 +42,9 @@ function pickupDay(eta?: string): string {
   return /^(Today|Tomorrow|Yesterday)$/.test(d) ? d.toLowerCase() : `on ${d}`;
 }
 
-/** "Pickup person is assigned, will arrive today" / "Pickup person will be assigned soon" */
+/** "Pickup person is assigned, will arrive today"; before a pickup person is assigned, no pickup-person text. */
 export const pickupText = (info: PickupInfo) =>
-  info.assigned ? `Pickup person is assigned, will arrive ${pickupDay(info.eta)}` : "Pickup person will be assigned soon";
+  info.assigned ? `Pickup person is assigned, will arrive ${pickupDay(info.eta)}` : "";
 
 /** Short line under the status badge in the Orders table. */
 export function PickupPersonLine({ info }: { info: PickupInfo }) {
@@ -49,7 +52,7 @@ export function PickupPersonLine({ info }: { info: PickupInfo }) {
   const tone = info.by === "3PL" ? "text-blue-700" : "text-teal-700";
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${tone}`}>
-      <Icon className="h-3 w-3" /> {info.by} · {pickupText(info)}
+      <Icon className="h-3 w-3" /> {routeLabel(info.by)} · {pickupText(info)}
     </span>
   );
 }
@@ -62,12 +65,11 @@ export function PickupComingCard({ info }: { info: PickupInfo }) {
   return (
     <div className={`rounded-xl border ${border} bg-white p-3 text-sm`}>
       <p className={`text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 ${tone}`}>
-        <Icon className="h-3.5 w-3.5" /> Waiting for {info.by} pickup
+        <Icon className="h-3.5 w-3.5" /> Waiting for pickup · {routeLabel(info.by)}
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5">
         <span className={info.assigned ? "font-semibold text-gray-900" : "text-gray-600"}>
-          {pickupText(info)}
-          {!info.assigned && ". Please keep the order packed."}
+          {info.assigned ? pickupText(info) : "Please keep the order packed."}
         </span>
         <Button variant="outline" size="sm" className="h-7 gap-1.5 ml-auto" onClick={() => printOrderPickupList(info)}>
           <FileText className="h-3.5 w-3.5" /> View Orders PDF
@@ -140,7 +142,7 @@ const dayWithDate = (iso: string) => {
   return d === date ? date : `${d}, ${date}`;
 };
 
-/** Opens the Orders PDF (print dialog) — CDS, 3PL, or both; retailer-wise, with case / piece quantities,
+/** Opens the Orders PDF (print dialog) — Self, 3PL Logistics, or both; retailer-wise, with case / piece quantities,
  *  unit prices and the retailer's phone number. Only orders and products; no pickup person details. */
 export function printPickupList(s: CdsState, groups: { by: Route; orders: CdsOrder[] }[]) {
   const retailer = new Map(s.retailers.map((r) => [r.id, r]));
@@ -185,11 +187,11 @@ export function printPickupList(s: CdsState, groups: { by: Route; orders: CdsOrd
         </div>`;
       })
       .join("");
-    const name = by === "3PL" ? "3PL Logistics" : "Cross Dock Store (CDS)";
+    const name = routeLabel(by);
     const day = dayOf(orders);
     return `
   <div class="route">
-    ${both ? `<h2>${by} orders${day ? ` — ${esc(day)}` : ""}</h2>` : ""}
+    ${both ? `<h2>${name} orders${day ? ` — ${esc(day)}` : ""}</h2>` : ""}
     <div class="head">
       <div>Pickup by: <b>${name}</b></div>
       <div>Total: <b>${plural(byRetailer.size, "retailer")} · ${plural(orders.length, "order")} · ${esc(fmtINR(amount(orders)))}</b></div>
@@ -197,7 +199,7 @@ export function printPickupList(s: CdsState, groups: { by: Route; orders: CdsOrd
     ${blocks}
   </div>`;
   };
-  const title = both ? "Orders — CDS & 3PL" : `${routes[0]?.by ?? ""} Orders`;
+  const title = both ? "Orders — Self & 3PL Logistics" : `${routes[0] ? routeLabel(routes[0].by) : ""} Orders`;
   const day = dayOf(all);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>
@@ -239,7 +241,7 @@ function printOrderPickupList(info: PickupInfo) {
   printPickupList(s, [{ by: info.by, orders: s.orders.filter((o) => ids.has(o.id) && o.status === "Pickup Requested") }]);
 }
 
-/** "View Orders PDF" button for the Confirmed tab — CDS, 3PL, or Both. */
+/** "View Orders PDF" button for the Confirmed tab — Self, 3PL Logistics, or Both. */
 export function PrintPickupListButton({ orders }: { orders: (CdsOrder | undefined)[] }) {
   const s = useCds();
   const waiting = orders.filter((o): o is CdsOrder => !!pickupInfo(s, o));
@@ -264,7 +266,7 @@ export function PrintPickupListButton({ orders }: { orders: (CdsOrder | undefine
           <DropdownMenuItem key={by} onSelect={() => printPickupList(s, [{ by, orders: os }])} className="justify-between">
             <span className="inline-flex items-center gap-2 font-medium text-gray-900">
               {by === "3PL" ? <Truck className="h-4 w-4 text-blue-600" /> : <Warehouse className="h-4 w-4 text-teal-600" />}
-              {by} orders
+              {routeLabel(by)} orders
             </span>
             <span className="text-xs text-gray-500">{plural(os.length, "order")}</span>
           </DropdownMenuItem>
@@ -273,7 +275,7 @@ export function PrintPickupListButton({ orders }: { orders: (CdsOrder | undefine
           <DropdownMenuItem onSelect={() => printPickupList(s, options)} className="justify-between border-t border-gray-100">
             <span className="inline-flex items-center gap-2 font-medium text-gray-900">
               <Printer className="h-4 w-4 text-gray-600" />
-              Both (CDS &amp; 3PL)
+              Both (Self &amp; 3PL Logistics)
             </span>
             <span className="text-xs text-gray-500">{plural(waiting.length, "order")}</span>
           </DropdownMenuItem>

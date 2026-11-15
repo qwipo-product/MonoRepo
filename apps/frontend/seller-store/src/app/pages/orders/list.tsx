@@ -62,7 +62,7 @@ import { ListPagination } from "@mockups/web-ui";
 import { OrdersMapDialog } from "../../components/orders-map-dialog";
 import { useAuth } from "../../lib/auth-context";
 import { isCdsEnabled, useCds } from "../../lib/cds/store";
-import { PickupPersonLine, PrintPickupListButton, pickupInfo } from "../../components/cds/pickup-info";
+import { PickupPersonLine, PrintPickupListButton, pickupInfo, routeLabel } from "../../components/cds/pickup-info";
 import { SELLER_CANCELLABLE } from "../../lib/cds/calc";
 import { CdsOrdersTab } from "../../components/cds/cds-orders-tab";
 import { CdsReturnsTab, useCdsReturnCount } from "../../components/cds/cds-returns-tab";
@@ -1052,7 +1052,7 @@ export function Orders() {
       const n = (k: number) => `${k} order${k === 1 ? "" : "s"}`;
       const toCds = allSelected.filter((o) => isCdsServiceable(o)).length;
       const to3pl = allSelected.length - toCds;
-      const parts = [toCds ? `${n(toCds)} moved to CDS` : "", to3pl ? `${n(to3pl)} moved to 3PL Logistics` : ""].filter(Boolean);
+      const parts = [toCds ? `${n(toCds)} moved to Self` : "", to3pl ? `${n(to3pl)} moved to 3PL Logistics` : ""].filter(Boolean);
       toast.success(parts.join(" · "));
     } else {
       toast.success(
@@ -1122,7 +1122,7 @@ export function Orders() {
       return;
     }
     toast.success(
-      `${moved} order${moved === 1 ? "" : "s"} sent for 3PL delivery.`,
+      `${moved} order${moved === 1 ? "" : "s"} sent to 3PL Logistics.`,
       {
         description:
           "Track them under the 3PL Logistics tab until the delivery partner completes them.",
@@ -1371,11 +1371,11 @@ export function Orders() {
         if (c && cdsStageLabel(c.status) === "Picked up") {
           return c.route === "3pl" ? (
             <Badge className="bg-blue-50 text-blue-700 border-blue-200 gap-1">
-              <Truck className="h-3 w-3" /> Picked up by 3PL
+              <Truck className="h-3 w-3" /> Picked up · {routeLabel("3PL")}
             </Badge>
           ) : (
             <Badge className="bg-teal-50 text-teal-700 border-teal-200 gap-1">
-              <Warehouse className="h-3 w-3" /> Picked up by CDS
+              <Warehouse className="h-3 w-3" /> Picked up · {routeLabel("CDS")}
             </Badge>
           );
         }
@@ -1384,16 +1384,17 @@ export function Orders() {
             <Badge className="bg-green-50 text-green-700 border-green-200">
               Confirmed
             </Badge>
+            {/* Waiting for pickup: the line shows only once a pickup person is assigned. */}
             {c && pickupInfo(cdsState, c) ? (
-              <PickupPersonLine info={pickupInfo(cdsState, c)!} />
+              pickupInfo(cdsState, c)!.assigned ? <PickupPersonLine info={pickupInfo(cdsState, c)!} /> : null
             ) : c &&
               (c.route === "3pl" ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700">
-                  <Truck className="h-3 w-3" /> 3PL · {cdsStageLabel(c.status)}
+                  <Truck className="h-3 w-3" /> {routeLabel("3PL")} · {cdsStageLabel(c.status)}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700">
-                  <Warehouse className="h-3 w-3" /> CDS · {cdsStageLabel(c.status)}
+                  <Warehouse className="h-3 w-3" /> {routeLabel("CDS")} · {cdsStageLabel(c.status)}
                 </span>
               ))}
           </span>
@@ -1472,7 +1473,7 @@ export function Orders() {
         : activeTab === "all"
           ? "No orders yet"
           : activeTab === "cds"
-            ? "No Cross Dock Store orders here"
+            ? "No Self orders here"
             : activeTab === "returns"
               ? "No returns here"
               : activeTab === "logistics"

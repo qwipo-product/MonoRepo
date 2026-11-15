@@ -47,7 +47,7 @@ import { isCdsEnabled, useCds } from "../../lib/cds/store";
 import { isCdsServiceable } from "../../lib/cds/order-bridge";
 import { fmtDayDateTime, sellerOrderStage } from "../../lib/cds/calc";
 import { useCdsOrderMap } from "../../components/cds/cds-order-sync";
-import { PickupComingCard, pickupInfo } from "../../components/cds/pickup-info";
+import { PickupComingCard, pickupInfo, routeLabel } from "../../components/cds/pickup-info";
 import { toast } from "sonner";
 // Shared orders store — the detail page now looks up the right
 // order by URL :orderId rather than rendering a single hard-coded
@@ -555,14 +555,14 @@ export function OrderDetail() {
         if (pickedUpBy === "3PL") {
           return (
             <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-base px-4 py-1 gap-1.5">
-              <Truck className="h-4 w-4" /> Picked up by 3PL
+              <Truck className="h-4 w-4" /> Picked up · {routeLabel("3PL")}
             </Badge>
           );
         }
         if (pickedUpBy === "CDS") {
           return (
             <Badge className="bg-teal-50 text-teal-700 border-teal-200 text-base px-4 py-1 gap-1.5">
-              <Warehouse className="h-4 w-4" /> Picked up by CDS
+              <Warehouse className="h-4 w-4" /> Picked up · {routeLabel("CDS")}
             </Badge>
           );
         }
@@ -766,13 +766,13 @@ export function OrderDetail() {
         {/* Pickup person on the way — shown while the order waits for pickup. */}
         {comingPickup && <PickupComingCard info={comingPickup} />}
 
-        {/* Pickup person — shown once the order is picked up by CDS / 3PL. */}
+        {/* Pickup person — shown once the order is picked up (Self / 3PL Logistics). */}
         {pickedUpBy && pickupPerson && (
           <Card className={pickedUpBy === "3PL" ? "border-blue-200" : "border-teal-200"}>
             <CardContent className="p-3 text-sm">
               <p className={`text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 ${pickedUpBy === "3PL" ? "text-blue-700" : "text-teal-700"}`}>
                 {pickedUpBy === "3PL" ? <Truck className="h-3.5 w-3.5" /> : <Warehouse className="h-3.5 w-3.5" />}
-                Picked up by {pickedUpBy}
+                Picked up · {routeLabel(pickedUpBy)}
                 {pickupStop?.doneAt && <span className="font-normal normal-case tracking-normal text-gray-500">· {fmtDayDateTime(pickupStop.doneAt)}</span>}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5">
