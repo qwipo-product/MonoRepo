@@ -34,13 +34,6 @@
 .create-delivery-route-page .clear-all-link { color: #dc2626; font-size: 12px; font-weight: 600; cursor: pointer; }
 
 .create-delivery-route-page .orders-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-/* Delivery type filter above Available Orders */
-.create-delivery-route-page .delivery-type-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
-.create-delivery-route-page .delivery-type-label { font-size: 13px; font-weight: 500; color: #4b5563; margin-right: 2px; }
-.create-delivery-route-page .delivery-type-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 999px; font-size: 13px; color: #4b5563; cursor: pointer; }
-.create-delivery-route-page .delivery-type-chip:hover { border-color: #a5b4fc; }
-.create-delivery-route-page .delivery-type-chip.active { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; font-weight: 600; }
-.create-delivery-route-page .delivery-type-count { font-size: 11px; font-weight: 600; background: #fff; border-radius: 999px; padding: 1px 7px; color: inherit; }
 .create-delivery-route-page .select-all-checkbox { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; margin: 0; }
 .create-delivery-route-page .orders-table-container { border: 1px solid #e5e7eb; border-radius: 8px; max-height: 520px; overflow: auto; }
 .create-delivery-route-page .orders-table { width: 100%; border-collapse: separate; border-spacing: 0; }

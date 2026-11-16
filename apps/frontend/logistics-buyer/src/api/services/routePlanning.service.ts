@@ -46,7 +46,8 @@ export interface PlannableOrder {
   amount: number;
   salesPerson: string;
   beat: string;
-  /** "cds" = Consolidated Delivery, "3pl" = 3PL Delivery, "self" = Direct (the distributor's own vehicles). */
+  /** "cds" = Consolidated Delivery (Create Delivery Route leaves these out), "3pl" = 3PL Delivery, "self" = Direct
+   *  (the distributor's own vehicles). */
   deliveryType: 'cds' | '3pl' | 'self';
   selected: boolean;
 }

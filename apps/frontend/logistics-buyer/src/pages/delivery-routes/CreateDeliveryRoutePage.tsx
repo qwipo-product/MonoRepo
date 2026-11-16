@@ -19,14 +19,6 @@ import './CreateDeliveryRoutePage.css';
 
 type SortKey = 'orderDate' | 'customerBusinessName' | 'salesPerson' | 'beat' | 'refOrderNumber' | 'amount' | 'totalWeight' | 'volumetricWeight';
 const NUMERIC: SortKey[] = ['amount', 'totalWeight', 'volumetricWeight'];
-/** Filter above Available Orders: how each order is delivered (see PlannableOrder.deliveryType). */
-type DeliveryTypeFilter = 'all' | PlannableOrder['deliveryType'];
-const DELIVERY_TYPE_FILTERS: { value: DeliveryTypeFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'cds', label: 'Consolidated Delivery' },
-  { value: '3pl', label: '3PL Delivery' },
-  { value: 'self', label: 'Direct' },
-];
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 function ordinal(d: number) {
@@ -78,8 +70,6 @@ class CreateRouteController {
   allSalesPersonNames: string[] = [];
   appliedBeatFilters: string[] = [];
   appliedSalesPersonFilters: string[] = [];
-  /** Delivery type filter above Available Orders: all, Consolidated Delivery (cds), 3PL Delivery, Direct (self). */
-  appliedDeliveryType: DeliveryTypeFilter = 'all';
   beatDd: DropdownState = emptyDropdown();
   salesDd: DropdownState = emptyDropdown();
   selectAll = false;
@@ -113,7 +103,8 @@ class CreateRouteController {
   async loadOrders() {
     this.isLoading = true;
     try {
-      const orders = await routeOrdersService.getDeliveryRootOrders({ buyerId: this.buyerId, orderStatus: [1] });
+      // Only orders with Consolidated Delivery = No can be planned here; CDS orders are planned by the CDS service center.
+      const orders = (await routeOrdersService.getDeliveryRootOrders({ buyerId: this.buyerId, orderStatus: [1] })).filter((o) => o.deliveryType !== 'cds');
       this.availableOrders = [...orders].sort((a, b) => {
         const at = a.orderDate ? new Date(a.orderDate).getTime() : NaN;
         const bt = b.orderDate ? new Date(b.orderDate).getTime() : NaN;
@@ -166,20 +157,11 @@ class CreateRouteController {
   applyFilters() {
     this.filteredOrders = this.availableOrders.filter(
       (o) =>
-        (this.appliedDeliveryType === 'all' || o.deliveryType === this.appliedDeliveryType) &&
         (!this.appliedBeatFilters.length || this.appliedBeatFilters.includes(o.beat)) &&
         (!this.appliedSalesPersonFilters.length || this.appliedSalesPersonFilters.includes(o.salesPerson)),
     );
     this.applySorting();
     this.updateSelection();
-  }
-  setDeliveryType(type: DeliveryTypeFilter) {
-    this.appliedDeliveryType = type;
-    this.applyFilters();
-    this.render();
-  }
-  deliveryTypeCount(type: DeliveryTypeFilter) {
-    return type === 'all' ? this.availableOrders.length : this.availableOrders.filter((o) => o.deliveryType === type).length;
   }
 
   private compare(a: PlannableOrder, b: PlannableOrder, key: SortKey): number {
@@ -610,21 +592,6 @@ export default function CreateDeliveryRoutePage() {
               <label className="select-all-checkbox">
                 <input type="checkbox" checked={c.selectAll} onChange={(e) => c.toggleSelectAll(e.target.checked)} /> Select All
               </label>
-            </div>
-            {/* Delivery type of the orders: Consolidated Delivery (CDS), 3PL Delivery or Direct (own vehicles). */}
-            <div className="delivery-type-filter" role="group" aria-label="Filter by delivery type">
-              <span className="delivery-type-label">Delivery type:</span>
-              {DELIVERY_TYPE_FILTERS.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  className={`delivery-type-chip${c.appliedDeliveryType === f.value ? ' active' : ''}`}
-                  aria-pressed={c.appliedDeliveryType === f.value}
-                  onClick={() => c.setDeliveryType(f.value)}
-                >
-                  {f.label} <span className="delivery-type-count">{c.deliveryTypeCount(f.value)}</span>
-                </button>
-              ))}
             </div>
             <div className="orders-table-container">
               <table className="orders-table">
