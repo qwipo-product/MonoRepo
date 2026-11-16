@@ -54,7 +54,8 @@ function cdsRng(seed: number) {
   };
 }
 
-const CDS_CENTERS = ['CDS Service Center - Kukatpally', 'CDS Service Center - Uppal'];
+/** The CDS service centers that create the consolidated trips (the trips' Provider). */
+const CDS_CENTERS = ['CDS Service Center - Hyderabad', 'CDS Service Center - Mumbai'];
 
 // ---------------------------------------------------------------- delivery type of an order
 /**
@@ -131,7 +132,7 @@ const FULL_RETURN_REASON = 'Customer refused – shop closed';
 const PARTIAL_RETURN_REASON = 'Damaged product';
 
 /** Bumped when the CDS demo data changes shape; an older version is replaced on the next request. */
-const CDS_SEED_VERSION = 5;
+const CDS_SEED_VERSION = 6;
 
 type StopPlan = 'assigned' | 'pending' | 'out' | 'at' | 'delivered';
 
