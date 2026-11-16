@@ -10,7 +10,7 @@
 //   carries full and/or partial returns of orders delivered by a completed Consolidated Delivery trip.
 // Neither channel appears on the Direct Delivery tab, which lists 3PL trips.
 // - CDS orders (`deliveryMode: 'cds'`): the seller confirmed them as CDS in Seller Store. LBNP sends them to the CDS
-//   service admin while CDS Order Routing is on (Settings → Delivery), and the Orders page then skips them. Every
+//   service center while CDS Order Routing is on (Settings → Delivery), and the Orders page then skips them. Every
 //   order on a CDS trip is one, plus four sent today that wait for a trip.
 //
 // This file exports no `seed`: buildSeed() calls `ensureCdsTrips()` after every other extension has run, so no
@@ -54,7 +54,7 @@ function cdsRng(seed: number) {
   };
 }
 
-/** The CDS service centers (CDS service admins) this distributor can send CDS orders to. */
+/** The CDS service centers this distributor can send CDS orders to. */
 export const CDS_SERVICE_CENTERS = [
   { id: 'cds-center-1', name: 'CDS Service Center - Kukatpally' },
   { id: 'cds-center-2', name: 'CDS Service Center - Uppal' },
@@ -64,7 +64,7 @@ const CDS_CENTERS = CDS_SERVICE_CENTERS.map((c) => c.name);
 // ---------------------------------------------------------------- CDS Order Routing (Settings → Delivery)
 /**
  * When the seller confirms an order as CDS in Seller Store, the order lands in LBNP. While routing is on, LBNP sends
- * it at once to the selected CDS service admin, and the Orders page does not show it (the service center plans it
+ * it at once to the selected CDS service center, and the Orders page does not show it (the service center plans it
  * into a Consolidated Delivery trip). While routing is off, it stays on the Orders page as Ready for Planning, with
  * a "CDS" label, and the distributor plans it like a 3PL order. Kept in `db.ext`, not in buyer_config, because the
  * Delivery settings page saves buyer_config as one whole object.
@@ -80,7 +80,7 @@ export function cdsRoutingConfig(db: MockDatabase): CdsRoutingConfig {
 export function setCdsRoutingConfig(db: MockDatabase, config: CdsRoutingConfig) {
   db.ext.cdsRouting = { ...config };
 }
-/** A CDS order LBNP already sent to the CDS service admin: not shown on the Orders page or in Delivery Planning. */
+/** A CDS order LBNP already sent to the CDS service center: not shown on the Orders page or in Delivery Planning. */
 export const isSentToCds = (o: DbOrder) => o.deliveryMode === 'cds' && !!o.cdsSentAt;
 
 /** Sends every CDS order still waiting in LBNP (Ready for Planning, on no trip) to the configured service center.

@@ -74,7 +74,7 @@ export default function MockPanel() {
                   icon: 'info',
                   title: `CDS order ${r.refOrderId}`,
                   text: r.sent
-                    ? `${r.retailer}: sent to the CDS service admin (CDS Order Routing is on). It is listed in Settings → Delivery, not on the Orders page.`
+                    ? `${r.retailer}: sent to the CDS service center (CDS Order Routing is on). It does not show on the Orders page.`
                     : `${r.retailer}: kept on the Orders page with a CDS label (CDS Order Routing is off).`,
                 });
               }}

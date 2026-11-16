@@ -96,7 +96,7 @@ route('POST', BUYER, '/orders/search', (req) => {
   const q = String(b.searchText ?? '').trim().toLowerCase();
 
   if (ensureCdsTrips(d)) persist();
-  // CDS orders already sent to the CDS service admin are not LBNP's to plan, so the Orders page (and its KPIs) skip
+  // CDS orders already sent to the CDS service center are not LBNP's to plan, so the Orders page (and its KPIs) skip
   // them (Settings → Delivery → CDS Order Routing).
   const all = d.orders.filter((o) => (!buyerIds.length || buyerIds.includes(o.buyerId)) && !isSentToCds(o));
 

@@ -1,5 +1,5 @@
 // CDS Order Routing (Settings → Delivery). An order the seller confirms as CDS in Seller Store lands in LBNP; while
-// routing is on, LBNP sends it to the selected CDS service admin and the Orders page does not show it.
+// routing is on, LBNP sends it to the selected CDS service center and the Orders page does not show it.
 import { getConfig } from '../config';
 import { http } from '../http';
 

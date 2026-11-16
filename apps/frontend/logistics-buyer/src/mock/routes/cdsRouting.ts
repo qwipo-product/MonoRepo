@@ -1,12 +1,12 @@
 // Mock endpoints for CDS Order Routing (Settings → Delivery → CDS Order Routing).
 //
 // When the seller confirms an order as CDS in Seller Store, the order lands in LBNP. While routing is on, LBNP sends
-// it to the selected CDS service admin, and the Orders page does not show it; the service center plans it into a
+// it to the selected CDS service center, and the Orders page does not show it; the service center plans it into a
 // Consolidated Delivery trip. While routing is off, the order stays on the Orders page as Ready for Planning, with a
 // "CDS" label. Switching routing on sends the CDS orders that are still waiting in LBNP. The rule itself lives in
 // extensions/cds.ts (cdsRoutingConfig, isSentToCds, sendWaitingCdsOrders).
 //
-//   GET /cds-routing/:buyerId   the rule, the CDS service centers and the orders sent to the CDS service admin
+//   GET /cds-routing/:buyerId   the rule, the CDS service centers and the orders sent to the CDS service center
 //   PUT /cds-routing/:buyerId   { enabled, serviceCenterId } → saves the rule; on → sends the waiting CDS orders
 import { db, persist } from '../db';
 import {
