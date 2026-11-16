@@ -146,7 +146,8 @@ function mapOrder(o: any): OrderRow {
     orderReturnItems: o.returnItems,
     orderType: o.orderType || 'Digital',
     salesPerson: o.salesPersonName || 'N/A',
-    beat: o.salesBeatName || 'N/A',
+    // A CDS order (Consolidated Delivery = Yes) is planned by the CDS service center, not on the distributor's beats.
+    beat: o.deliveryMode === 'cds' ? 'N/A' : o.salesBeatName || 'N/A',
     validationErrorCount: o.validationErrorCount || 0,
     isDeliveryAddressUpdated: o.isDeliveryAddressUpdated || false,
     deliveryMode: o.deliveryMode === 'cds' ? 'cds' : null,
