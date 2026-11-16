@@ -24,10 +24,6 @@ import { trendingNearby } from '../data/trending';
 
 const rail = 'flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
-/* ITC's store router — it works out whether the buyer is on Android or iOS and
-   sends them to the right store, so the app doesn't have to. */
-const ITC_APP_LINK = 'https://onestore.link/ymb4cy';
-
 /* Each level-1 group has its own screen: Groceries and FMCG are separate
    trades, so the two lists never share a page. */
 const L1_SCREEN: Record<WholesalerL1, ScreenId> = {
@@ -251,28 +247,6 @@ export function HomeScreen({
                 <ProductTeaserRail items={trendingDistributor} onOpen={onOpenSheet} paused={sheetOpen} />
               </section>
             )}
-
-            {/* ITC's own placement — a fixed banner, not part of the hero rail,
-                so it holds its spot under Trending rather than scrolling past.
-                It leaves the app: the link is a store router that sends the
-                buyer to Play or App Store for whichever phone they're on. */}
-            <div className="px-4">
-              {/* The radius and the clipping live on the container, not the
-                  picture, so the artwork simply fills it and the corners are
-                  cut cleanly — the same 12px the product cards use. */}
-              <a
-                href={ITC_APP_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block overflow-hidden rounded-lg shadow-sm active:scale-[0.99]"
-              >
-                <img
-                  src="./app-banners/itc-shop-from-itc.jpg"
-                  alt="Shop from ITC"
-                  className="block w-full"
-                />
-              </a>
-            </div>
           </>
         ) : (
           <>
