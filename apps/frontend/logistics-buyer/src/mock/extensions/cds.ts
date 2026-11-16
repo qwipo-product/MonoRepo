@@ -9,6 +9,9 @@
 //   return OTP. Recent trips: Planned, In Progress and two Completed; plus six completed trips in the history. Each
 //   carries full and/or partial returns of orders delivered by a completed Consolidated Delivery trip.
 // Neither channel appears on the Direct Delivery tab, which lists 3PL trips.
+// - CDS orders (`deliveryMode: 'cds'`): the seller confirmed them as CDS in Seller Store. LBNP sends them to the CDS
+//   service admin while CDS Order Routing is on (Settings → Delivery), and the Orders page then skips them. Every
+//   order on a CDS trip is one, plus four sent today that wait for a trip.
 //
 // This file exports no `seed`: buildSeed() calls `ensureCdsTrips()` after every other extension has run, so no
 // other demo (issues, orders, trip tweaks) picks a CDS trip or order. Browsers that seeded the mock DB earlier get
@@ -51,7 +54,96 @@ function cdsRng(seed: number) {
   };
 }
 
-const CDS_CENTERS = ['CDS Service Center - Kukatpally', 'CDS Service Center - Uppal'];
+/** The CDS service centers (CDS service admins) this distributor can send CDS orders to. */
+export const CDS_SERVICE_CENTERS = [
+  { id: 'cds-center-1', name: 'CDS Service Center - Kukatpally' },
+  { id: 'cds-center-2', name: 'CDS Service Center - Uppal' },
+];
+const CDS_CENTERS = CDS_SERVICE_CENTERS.map((c) => c.name);
+
+// ---------------------------------------------------------------- CDS Order Routing (Settings → Delivery)
+/**
+ * When the seller confirms an order as CDS in Seller Store, the order lands in LBNP. While routing is on, LBNP sends
+ * it at once to the selected CDS service admin, and the Orders page does not show it (the service center plans it
+ * into a Consolidated Delivery trip). While routing is off, it stays on the Orders page as Ready for Planning, with
+ * a "CDS" label, and the distributor plans it like a 3PL order. Kept in `db.ext`, not in buyer_config, because the
+ * Delivery settings page saves buyer_config as one whole object.
+ */
+export interface CdsRoutingConfig {
+  enabled: boolean;
+  serviceCenterId: string;
+}
+export function cdsRoutingConfig(db: MockDatabase): CdsRoutingConfig {
+  const c = db.ext.cdsRouting as Partial<CdsRoutingConfig> | undefined;
+  return { enabled: c?.enabled ?? true, serviceCenterId: c?.serviceCenterId || CDS_SERVICE_CENTERS[0].id };
+}
+export function setCdsRoutingConfig(db: MockDatabase, config: CdsRoutingConfig) {
+  db.ext.cdsRouting = { ...config };
+}
+/** A CDS order LBNP already sent to the CDS service admin: not shown on the Orders page or in Delivery Planning. */
+export const isSentToCds = (o: DbOrder) => o.deliveryMode === 'cds' && !!o.cdsSentAt;
+
+/** Sends every CDS order still waiting in LBNP (Ready for Planning, on no trip) to the configured service center.
+ *  Used when routing is switched on. Returns how many orders were sent. */
+export function sendWaitingCdsOrders(db: MockDatabase): number {
+  const { serviceCenterId } = cdsRoutingConfig(db);
+  const now = new Date().toISOString();
+  let sent = 0;
+  db.orders.forEach((o) => {
+    if (o.deliveryMode !== 'cds' || o.cdsSentAt || o.orderStatusId !== 1 || o.tripId) return;
+    o.cdsSentAt = now;
+    o.cdsServiceCenterId = serviceCenterId;
+    sent += 1;
+  });
+  return sent;
+}
+
+/** Mock only: the seller confirms one more order as CDS in Seller Store (Mock controls panel). The order lands in
+ *  LBNP and follows the routing rule. */
+export function addSellerCdsOrder(db: MockDatabase): DbOrder {
+  const rng = cdsRng(Date.now() % 2147483647);
+  const c = db.customers[rng.int(0, db.customers.length - 1)];
+  const order = buildCdsOrder(db, rng, c, new Date(), 1, null);
+  const { enabled, serviceCenterId } = cdsRoutingConfig(db);
+  if (enabled) {
+    order.cdsSentAt = new Date().toISOString();
+    order.cdsServiceCenterId = serviceCenterId;
+  }
+  db.orders.unshift(order);
+  return order;
+}
+
+/** A new order the seller confirmed as CDS (2–3 products), as the connector would deliver it to LBNP. */
+function buildCdsOrder(db: MockDatabase, rng: ReturnType<typeof cdsRng>, c: MockDatabase['customers'][number], created: Date, statusId: number, tripId: string | null): DbOrder {
+  const chosen = new Set<number>();
+  while (chosen.size < Math.min(rng.int(2, 3), db.products.length)) chosen.add(rng.int(0, db.products.length - 1));
+  const items: DbOrderItem[] = Array.from(chosen).map((pi) => {
+    const p = db.products[pi];
+    const qty = p.weightKg >= 10 ? rng.int(2, 4) : rng.int(8, 30);
+    return {
+      itemId: rng.uuid(), productId: p.id, itemName: p.name, quantity: qty, mrp: p.mrp, sellingPrice: p.sellingPrice,
+      totalAmount: round2(qty * p.sellingPrice), weightKg: p.weightKg, upc: p.upc, gstPercentage: p.gstPercentage, hsnCode: p.hsnCode,
+      imageUrl: p.imageUrl, uom: p.uom, packageType: p.packageType, deliveredQuantity: 0, returnedQuantity: 0,
+    };
+  });
+  const weight = round2(items.reduce((s, it) => s + it.weightKg * it.quantity, 0));
+  const beat = db.beats.find((b) => b.id === c.beatId) || null;
+  const createdIso = created.toISOString();
+  const deliveryDay = new Date(created);
+  deliveryDay.setDate(deliveryDay.getDate() + 1);
+  deliveryDay.setHours(0, 0, 0, 0);
+  return {
+    orderId: rng.uuid(),
+    refOrderId: `QWI-ONDC-${pad(created.getDate())}${pad(created.getMonth() + 1)}${String(created.getFullYear()).slice(2)}-C${rng.digits(1)}${rng.letters(3)}${rng.digits(1)}`,
+    buyerId: db.buyer.id, customerId: c.id, customerName: c.customer_name, customerBusinessName: c.business_name, customerMobileNumber: c.mobile_number,
+    address: { line: c.address.split(', ').slice(1, -1).join(', ') || c.address, locality: c.locality, city: 'Hyderabad', state: 'Telangana', country: 'INDIA', pincode: c.pincode },
+    lat: Number(c.latitude), lng: Number(c.longitude), amount: round2(items.reduce((s, it) => s + it.totalAmount, 0)), orderWeight: weight,
+    volumetricWeight: round2(weight * 1.08), orderType: 'Digital', salesPersonName: null, salesBeatName: beat?.name ?? null, beatId: beat?.id ?? null,
+    createdAt: createdIso, orderDate: localYmdHms(createdIso), deliveryDate: deliveryDay.toISOString(), orderStatusId: statusId, validationErrors: [],
+    isDeliveryAddressUpdated: false, tripId, tripHistory: tripId ? [tripId] : [], items, rtoReasonId: null, returnReason: null,
+    routePlanComboId: null, statusBeforeOffline: null, source: 'connector', deliveryMode: 'cds', cdsSentAt: null, cdsServiceCenterId: null,
+  };
+}
 
 /** A CDS drop point: the CDS service center drops each retailer's goods at the CDS point for the retailer's area.
  *  Sample data only (names and addresses are illustrative). */
@@ -80,7 +172,7 @@ const FULL_RETURN_REASON = 'Customer refused – shop closed';
 const PARTIAL_RETURN_REASON = 'Damaged product';
 
 /** Bumped when the CDS demo data changes shape; an older version is replaced on the next request. */
-const CDS_SEED_VERSION = 3;
+const CDS_SEED_VERSION = 4;
 
 type StopPlan = 'assigned' | 'pending' | 'out' | 'at' | 'delivered';
 
@@ -161,12 +253,11 @@ const HISTORY_RETURN_PLANS: ReturnPlan[] = [
 export function ensureCdsTrips(db: MockDatabase): boolean {
   if (db.ext.cdsSeeded === CDS_SEED_VERSION) return false;
   if (!db.customers.length || !db.products.length || !db.drivers.length) return false;
-  // Remove the CDS trips and orders of an earlier version of this demo (every CDS order belongs to a CDS trip).
+  // Remove the CDS trips and orders of an earlier version of this demo (orders on a CDS trip, and CDS orders that
+  // wait for one).
   const oldTrips = new Set(db.trips.filter((t) => t.channel).map((t) => t.logisticsOrderId));
-  if (oldTrips.size) {
-    db.trips = db.trips.filter((t) => !oldTrips.has(t.logisticsOrderId));
-    db.orders = db.orders.filter((o) => !(o.tripId && oldTrips.has(o.tripId)));
-  }
+  if (oldTrips.size) db.trips = db.trips.filter((t) => !oldTrips.has(t.logisticsOrderId));
+  db.orders = db.orders.filter((o) => !(o.tripId && oldTrips.has(o.tripId)) && o.deliveryMode !== 'cds');
   // The recent trips keep their own sequence, so their trip numbers do not change when the history is added.
   let rng = cdsRng(20261114);
   const today = new Date();
@@ -239,6 +330,8 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
         isDeliveryAddressUpdated: false, tripId: logisticsOrderId, tripHistory: [logisticsOrderId], items,
         rtoReasonId: null, returnReason: null,
         routePlanComboId: null, statusBeforeOffline: null, source: 'connector',
+        // Confirmed as CDS in Seller Store; LBNP sent it to the service center 40 minutes after it arrived.
+        deliveryMode: 'cds', cdsSentAt: isoAt(today, plan.dayOffset - 2, 10, 45 + si * 6), cdsServiceCenterId: `cds-center-${plan.center + 1}`,
       };
       orders.push(order);
       const ts =
@@ -352,6 +445,20 @@ export function ensureCdsTrips(db: MockDatabase): boolean {
   rng = cdsRng(20261115);
   HISTORY_PLANS.forEach((plan, k) => addDeliveryTrip(plan, PLANS.length + k));
   HISTORY_RETURN_PLANS.forEach((plan, k) => addReturnTrip(plan, RETURN_PLANS.length + k));
+
+  // CDS orders confirmed today that the service center has not put on a trip yet. With routing on (the default)
+  // LBNP has already sent them, so they show only in Settings → Delivery → CDS Order Routing, as "Sent".
+  rng = cdsRng(20261116);
+  const routing = cdsRoutingConfig(db);
+  [1, 11, 17, 33].forEach((ci, k) => {
+    const created = new Date(Date.now() - (k + 1) * 47 * 60000);
+    const order = buildCdsOrder(db, rng, db.customers[ci % db.customers.length], created, 1, null);
+    if (routing.enabled) {
+      order.cdsSentAt = new Date(created.getTime() + 5 * 60000).toISOString();
+      order.cdsServiceCenterId = routing.serviceCenterId;
+    }
+    db.orders.push(order);
+  });
 
   db.orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   db.trips.sort((a, b) => b.createdAt.localeCompare(a.createdAt));

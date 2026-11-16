@@ -218,6 +218,13 @@ export interface DbOrder {
   /** Previous status before "Mark as Offline" (used by Revert). */
   statusBeforeOffline: number | null;
   source: 'connector' | 'import' | 'quick';
+  /** "cds" when the seller confirmed the order for CDS delivery in Seller Store; absent for 3PL orders. */
+  deliveryMode?: 'cds';
+  /** When LBNP sent this CDS order to the CDS service admin (Settings → Delivery → CDS Order Routing). A sent order
+   *  is not shown on the Orders page; the service center plans it into a Consolidated Delivery trip. */
+  cdsSentAt?: string | null;
+  /** The CDS service center the order was sent to (cds-center-1 | cds-center-2). */
+  cdsServiceCenterId?: string | null;
 }
 
 export interface DbStop {

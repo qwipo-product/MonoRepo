@@ -361,6 +361,16 @@ export default function OrdersPage() {
                 <i className="fas fa-map-marker-alt me-1" style={{ fontSize: 8 }} />Updated
               </span>
             )}
+            {/* Confirmed as CDS in Seller Store and kept here because CDS Order Routing is off (Settings → Delivery). */}
+            {row.deliveryMode === 'cds' && (
+              <span
+                className="badge bg-info bg-opacity-10 text-info ms-1 border border-info border-opacity-25"
+                style={{ fontSize: 9, padding: '2px 5px', cursor: 'default', verticalAlign: 'middle' }}
+                title="CDS order — CDS Order Routing is off, so this order stays in LBNP for planning"
+              >
+                <i className="fas fa-warehouse me-1" style={{ fontSize: 8 }} />CDS
+              </span>
+            )}
           </td>
         );
       case 'customerBusinessName':

@@ -33,6 +33,8 @@ export interface OrderRow {
   beat: string;
   validationErrorCount: number | string;
   isDeliveryAddressUpdated: boolean;
+  /** "cds" when the seller confirmed the order as CDS (listed only while CDS Order Routing is off); null for 3PL. */
+  deliveryMode: 'cds' | null;
 }
 
 export interface ReadyForPlanningStats {
@@ -147,6 +149,7 @@ function mapOrder(o: any): OrderRow {
     beat: o.salesBeatName || 'N/A',
     validationErrorCount: o.validationErrorCount || 0,
     isDeliveryAddressUpdated: o.isDeliveryAddressUpdated || false,
+    deliveryMode: o.deliveryMode === 'cds' ? 'cds' : null,
   };
 }
 

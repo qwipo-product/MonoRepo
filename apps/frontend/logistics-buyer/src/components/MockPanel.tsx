@@ -4,6 +4,7 @@ import { getControls, setControls, subscribeControls, type MockControls } from '
 import { resetDb } from '../mock/db';
 import { expireAccessToken, revokeSession } from '../mock/routes/core';
 import { isDarkStoreDemo, setDarkStoreDemo } from '../mock/routes/trips';
+import { simulateSellerCdsOrder } from '../mock/routes/cdsRouting';
 
 /**
  * Floating developer panel (not part of the original UI). Lets you tune latency, force API failures
@@ -64,6 +65,22 @@ export default function MockPanel() {
               <button className="btn btn-outline-secondary btn-sm flex-fill" title="Next API call gets 401 → token refresh → retry" onClick={() => { expireAccessToken(); Swal.fire({ icon: 'info', title: 'Access token expired', text: 'The next API call will refresh the token and retry.', timer: 1800, showConfirmButton: false }); }}>Expire token</button>
               <button className="btn btn-outline-secondary btn-sm flex-fill" title="Refresh also fails → logout" onClick={() => { revokeSession(); Swal.fire({ icon: 'info', title: 'Session revoked', text: 'The next API call will fail to refresh and log you out.', timer: 1800, showConfirmButton: false }); }}>Revoke session</button>
             </div>
+            <button
+              className="btn btn-outline-primary btn-sm w-100 mt-2"
+              title="The seller confirms one more order as CDS in Seller Store; it follows Settings → Delivery → CDS Order Routing"
+              onClick={() => {
+                const r = simulateSellerCdsOrder();
+                Swal.fire({
+                  icon: 'info',
+                  title: `CDS order ${r.refOrderId}`,
+                  text: r.sent
+                    ? `${r.retailer}: sent to the CDS service admin (CDS Order Routing is on). It is listed in Settings → Delivery, not on the Orders page.`
+                    : `${r.retailer}: kept on the Orders page with a CDS label (CDS Order Routing is off).`,
+                });
+              }}
+            >
+              <i className="fas fa-warehouse me-1" />Seller confirms a CDS order
+            </button>
             <button className="btn btn-outline-danger btn-sm w-100 mt-2" onClick={reset}><i className="fas fa-rotate me-1" />Reset synthetic data</button>
           </div>
         </div>

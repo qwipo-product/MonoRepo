@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { authService } from '../../api/services/auth.service';
 import { buyerSettingsService } from '../../api/services/buyerSettings.service';
 import { OndcCategory, RouteEngines } from '../../types/enums';
+import CdsRoutingSection from './CdsRoutingSection';
 import './DeliverySettingsPage.css';
 
 type FieldName = 'UID' | 'DsType';
@@ -717,6 +718,9 @@ export default function DeliverySettingsPage() {
           ))}
         </div>
       </section>
+
+      {/* ---------------------------------------------------------------- D2. CDS Order Routing (saves on its own) */}
+      <CdsRoutingSection buyerId={c.buyerId} />
 
       {/* ---------------------------------------------------------------- E. Exclusions */}
       <section className="settings-section">
