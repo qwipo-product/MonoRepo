@@ -51,6 +51,8 @@ const COLUMNS: { key: string; header: string; icon: string; align: 'center' | 'l
   { key: 'refOrderId', header: 'Invoice Number', icon: 'fas fa-file-invoice', align: 'left' },
   { key: 'customerBusinessName', header: 'Retailer Name', icon: 'fas fa-store', align: 'left' },
   { key: 'orderType', header: 'Order Type', icon: 'fas fa-cart-shopping', align: 'center' },
+  // Yes when the seller confirmed the order as CDS in Seller Store.
+  { key: 'consolidatedDelivery', header: 'Consolidated Delivery', icon: 'fas fa-warehouse', align: 'center' },
   { key: 'salesPerson', header: 'Sales Person', icon: 'fas fa-user', align: 'center' },
   { key: 'beat', header: 'Beat Name', icon: 'fas fa-route', align: 'center' },
   { key: 'customerMobileNumber', header: 'Mobile Number', icon: 'fas fa-phone', align: 'left' },
@@ -361,16 +363,6 @@ export default function OrdersPage() {
                 <i className="fas fa-map-marker-alt me-1" style={{ fontSize: 8 }} />Updated
               </span>
             )}
-            {/* Confirmed as CDS in Seller Store and kept here because CDS Order Routing is off (Settings → Delivery). */}
-            {row.deliveryMode === 'cds' && (
-              <span
-                className="badge bg-info bg-opacity-10 text-info ms-1 border border-info border-opacity-25"
-                style={{ fontSize: 9, padding: '2px 5px', cursor: 'default', verticalAlign: 'middle' }}
-                title="CDS order — CDS Order Routing is off, so this order stays in LBNP for planning"
-              >
-                <i className="fas fa-warehouse me-1" style={{ fontSize: 8 }} />CDS
-              </span>
-            )}
           </td>
         );
       case 'customerBusinessName':
@@ -379,6 +371,16 @@ export default function OrdersPage() {
         return (
           <td key={key} className="text-center py-2 px-3 small">
             <span className={`status-badge ${String(row.orderType).toLowerCase()}`}>{row.orderType}</span>
+          </td>
+        );
+      case 'consolidatedDelivery':
+        return (
+          <td key={key} className="text-center py-2 px-2 small">
+            {row.deliveryMode === 'cds' ? (
+              <span className="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle">Yes</span>
+            ) : (
+              <span className="text-muted">No</span>
+            )}
           </td>
         );
       case 'salesPerson':

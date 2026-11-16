@@ -46,6 +46,8 @@ export interface PlannableOrder {
   amount: number;
   salesPerson: string;
   beat: string;
+  /** "cds" = Consolidated Delivery, "3pl" = 3PL Delivery, "self" = Direct (the distributor's own vehicles). */
+  deliveryType: 'cds' | '3pl' | 'self';
   selected: boolean;
 }
 
@@ -209,6 +211,7 @@ export const routeOrdersService = {
         amount: +o.amount,
         salesPerson: o.salesPersonName || 'N/A',
         beat: o.salesBeatName || 'N/A',
+        deliveryType: o.deliveryMode === 'cds' || o.deliveryMode === 'self' ? o.deliveryMode : '3pl',
         selected: false,
       }));
       return rows.sort((a, b) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime());

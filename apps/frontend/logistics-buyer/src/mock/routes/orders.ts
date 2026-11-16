@@ -14,7 +14,7 @@
 //   GET    /orders/is_return_order/:orderId
 import { route, MockError, RawResponse } from '../server';
 import { db, persist } from '../db';
-import { ensureCdsTrips, isSentToCds } from '../extensions/cds';
+import { ensureCdsTrips, orderDeliveryMode } from '../extensions/cds';
 import type { DbOrder, DbTrip, DbValidationError } from '../types';
 
 const BUYER = 'logistics-buyer-svc';
@@ -63,8 +63,8 @@ function toSearchRow(o: DbOrder) {
     volumetricWeight: money(o.volumetricWeight),
     validationErrorCount: String(o.orderStatusId === 9 ? (o.validationErrors || []).length : 0),
     isDeliveryAddressUpdated: !!o.isDeliveryAddressUpdated,
-    // "cds" = the seller confirmed it as CDS; it is listed only while CDS Order Routing is off (see below).
-    deliveryMode: o.deliveryMode ?? null,
+    // "cds" | "3pl" | "self": the Orders page shows Consolidated Delivery = Yes for "cds".
+    deliveryMode: orderDeliveryMode(o),
     logisticOrderId: trip ? trip.orderId : null,
     logisticOrderRowId: trip ? trip.logisticsOrderId : null,
     tripId: trip ? trip.logisticsOrderId : null,
@@ -95,10 +95,9 @@ route('POST', BUYER, '/orders/search', (req) => {
   // The backend trims the search text (a whitespace-only search behaves like no search).
   const q = String(b.searchText ?? '').trim().toLowerCase();
 
+  // A browser with older demo data gets the CDS orders and trips here too (see extensions/cds.ts).
   if (ensureCdsTrips(d)) persist();
-  // CDS orders already sent to the CDS service center are not LBNP's to plan, so the Orders page (and its KPIs) skip
-  // them (Settings → Delivery → CDS Order Routing).
-  const all = d.orders.filter((o) => (!buyerIds.length || buyerIds.includes(o.buyerId)) && !isSentToCds(o));
+  const all = d.orders.filter((o) => !buyerIds.length || buyerIds.includes(o.buyerId));
 
   let rows = all.filter((o) => {
     if (statusIds.length && !statusIds.includes(o.orderStatusId)) return false;
@@ -314,7 +313,7 @@ route('POST', BUYER, '/orders/search-by-invoice', (req) => {
   const d = db();
   // Only Ready-for-Planning orders can have their delivery customer changed; exact (case-sensitive) match.
   return d.orders
-    .filter((o) => (!buyerId || o.buyerId === buyerId) && o.orderStatusId === 1 && !isSentToCds(o) && invoices.includes(o.refOrderId))
+    .filter((o) => (!buyerId || o.buyerId === buyerId) && o.orderStatusId === 1 && invoices.includes(o.refOrderId))
     .map((o) => ({
       order_id: o.orderId,
       ref_order_id: o.refOrderId,
@@ -380,7 +379,7 @@ function addressLine(o: DbOrder) {
 route('POST', BUYER, '/orders/map-locations', (req) => {
   const buyerId = req.body?.buyerId;
   const d = db();
-  const relevant = d.orders.filter((o) => (!buyerId || o.buyerId === buyerId) && (o.orderStatusId === 1 || o.orderStatusId === 12) && !isSentToCds(o));
+  const relevant = d.orders.filter((o) => (!buyerId || o.buyerId === buyerId) && (o.orderStatusId === 1 || o.orderStatusId === 12));
   // One location per customer + coordinates + delivery mode. A customer with both online and offline orders
   // therefore yields two locations that share a mobile number (the UI's first-match lookup collides — as built).
   const groups = new Map<string, DbOrder[]>();

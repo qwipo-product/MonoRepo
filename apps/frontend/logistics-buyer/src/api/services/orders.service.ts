@@ -33,7 +33,7 @@ export interface OrderRow {
   beat: string;
   validationErrorCount: number | string;
   isDeliveryAddressUpdated: boolean;
-  /** "cds" when the seller confirmed the order as CDS (listed only while CDS Order Routing is off); null for 3PL. */
+  /** "cds" when the seller confirmed the order as CDS in Seller Store (Consolidated Delivery = Yes); null otherwise. */
   deliveryMode: 'cds' | null;
 }
 

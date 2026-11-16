@@ -10,6 +10,7 @@
 //   POST /route_planning/expire_route     → combo removed, orders back to 1
 //   Expired combos stay visible for 15 min after expiry (so "Expired"/"Failed" can be seen) and are then released.
 import { db, persist, uuid } from '../db';
+import { ensureCdsTrips, orderDeliveryMode } from '../extensions/cds';
 import { MockError, route } from '../server';
 import { publishSse } from '../sseHub';
 import type { MockDatabase } from '../seed';
@@ -570,6 +571,7 @@ route('POST', BUYER, '/orders/get_by_filters', (req) => {
   const b = req.body || {};
   const d = db();
   const statuses: number[] = (Array.isArray(b.orderStatus) ? b.orderStatus : b.orderStatus != null ? [b.orderStatus] : []).map(Number);
+  if (ensureCdsTrips(d)) persist();
   return d.orders
     .filter((o) => (!b.buyerId || o.buyerId === b.buyerId) && (!statuses.length || statuses.includes(o.orderStatusId)))
     .map((o) => ({
@@ -590,6 +592,8 @@ route('POST', BUYER, '/orders/get_by_filters', (req) => {
       latitude: o.lat,
       longitude: o.lng,
       createdAt: o.createdAt,
+      // "cds" = Consolidated Delivery, "3pl" = 3PL Delivery, "self" = Direct (Create Delivery Route filter).
+      deliveryMode: orderDeliveryMode(o),
     }));
 });
 

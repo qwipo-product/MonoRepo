@@ -112,11 +112,3 @@
 .delivery-settings-page .save-btn { background: #1a1a2e; color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; }
 .delivery-settings-page .save-btn:hover:not(:disabled) { background: #2d2d44; }
 .delivery-settings-page .save-btn:disabled { background: #ccc; cursor: not-allowed; }
-
-/* CDS Order Routing (CdsRoutingSection): one card, the label on the left and the switch on the right */
-.delivery-settings-page .cds-routing-card { max-width: 640px; }
-.delivery-settings-page .cds-routing-toggle { margin-left: auto; flex-shrink: 0; }
-.delivery-settings-page .cds-routing-note { max-width: 640px; margin: 14px 0 0; padding: 10px 14px; border-radius: 8px; background: #fff8e6; color: #8a6100; font-size: 13px; }
-.delivery-settings-page .cds-routing-note i { margin-right: 6px; }
-.delivery-settings-page .cds-routing-muted { font-size: 13px; color: #888; margin: 0; }
-.delivery-settings-page .cds-routing-error { font-size: 13px; color: #c0392b; margin: 0; }
