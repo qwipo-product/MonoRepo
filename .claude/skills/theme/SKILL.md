@@ -1,47 +1,51 @@
 ---
 name: theme
-description: Scoped skill — change how a mockup looks at the token level: brand colours, status colours, fonts, radii, spacing, dark mode. Invoked by build-screen; use directly for "change the primary colour", "make it look like Paytm", "the cards feel too round", "dark mode is wrong".
+description: Change colors, typography, spacing, or other design tokens. Examine every affected application and theme.
 ---
 
-# Theme and tokens
+# Change design tokens
 
-Components never carry a colour; tokens do. Where a token lives depends on
-the kit, and putting it in the wrong place is the most common way to change
-one app and accidentally change five.
+Use the [repository instructions](../../../CLAUDE.md).
 
-| Want to change | Mobile app | Web app |
-| --- | --- | --- |
-| This one mockup's palette | not per app — every mobile app shares `design-tokens` | not per app — every web app shares `web-tokens` |
-| A shell imitating another brand (the Paytm frame) | one named block in the app's `index.css`, used by name — `design-language` has the shape | same |
-| Every mockup's brand colour | `packages/design-tokens/src/tokens.ts` + `theme.css` | the same file — `web-tokens` re-exports brand from `design-tokens` |
-| Density: radius, control height | `design-tokens` | `web-tokens` — they differ on purpose (44px vs 36px, 12px vs 8px) |
-| Status colours (success / warning / danger quads) | `design-tokens` | inherited |
-| Font | `design-tokens` `--font-sans` | `web-tokens/theme.css` (Inter, loaded in `index.html`) |
+## Find the token owner
 
-Rules:
+| Change | Files to examine |
+| --- | --- |
+| Mobile values | `packages/design-tokens/src/tokens.ts` and `packages/design-tokens/theme.css` |
+| Desktop values | `packages/web-tokens/src/tokens.ts` and `packages/web-tokens/theme.css` |
+| External brand shell | Named Paytm variables in `apps/frontend/qwipo-buyer-paytm-app/src/index.css` |
 
-1. **Never a hex in a component or a screen.** The one exception is a
-   brand-external colour the mockup imitates (Paytm's `#00BAF2`), kept as a
-   literal with a comment naming the brand.
-2. **One token layer per app.** `design-tokens` and `web-tokens` both
-   define `--primary`, `--background`, `--radius`. Import both and the later
-   import wins silently. Check the app's `index.css` has exactly one.
-3. **Never move tokens into `packages/ui` or `packages/web-ui`.**
-   Components reference `bg-primary`; what that resolves to is decided
-   outside them.
-4. **`tokens.ts` and `theme.css` are hand-maintained mirrors.** Change both
-   in the same commit, or the Storybook colour page and the running app
-   disagree.
-5. **Dark mode is a `.dark` class on `<html>`**, owned by the app's theme
-   provider. Every token has a dark value beside its light one; add both or
-   the dark screen shows the light colour.
-6. A shared-package token change rebuilds and redeploys every mockup on the
-   deploy path (`packages/**` is in every pipeline's path filter). That's
-   correct — say it in the summary.
+The application CSS entry points are `apps/frontend/qwipo-buyer-paytm-app/src/index.css` and `apps/frontend/seller-store/src/index.css`.
+Mobile theme state comes from `packages/ui/src/theme.tsx`.
+Seller configures `next-themes` in `apps/frontend/seller-store/src/main.tsx` with `attribute="class"`.
+Both CSS themes use the `.dark` class on the document root.
 
-Drift — a colour that escaped into an app, a hex in a chart, a raw palette
-class — is `design-language`'s job; invoke it after any token change.
+For typography, trace `--font-sans` and any font-loading references in the application's `index.html`.
+For desktop colors, trace variables such as `--primary` through `@theme inline` to utilities such as `bg-primary`.
+Update the applicable example in `apps/frontend/seller-store/src/app/pages/design-system.tsx` after a desktop design change.
 
-Verify: toggle dark, check one screen in each affected app, and open the
-relevant Storybook foundations page (`Colors`, `Typography`) to confirm the
-catalog moved too.
+The desktop TypeScript module re-exports some mobile values.
+The desktop CSS contains separate literal values.
+A TypeScript change does not automatically update that CSS.
+Keep documented differences between mobile and desktop values.
+Some density and surface values differ by design.
+
+## Change the token
+
+1. Find the actual TypeScript and CSS consumers.
+2. Make sure that the light and dark values agree with the request.
+3. Update each applicable representation in the same change.
+4. Keep deliberate differences between the design kits.
+5. Update the affected examples and reference tables.
+6. Use [design-language](../design-language/SKILL.md).
+7. Examine each affected application in both themes.
+8. Use [verify](../verify/SKILL.md).
+
+Use semantic names in components.
+Keep shared token definitions out of component packages.
+Import one CSS token layer in each application.
+Keep external brand values in one named block. Do not replace shared tokens with those values.
+
+Synchronize the token files manually.
+Compare corresponding values explicitly. There is no automatic guarantee that they agree.
+After a color change, examine contrast and focus visibility.

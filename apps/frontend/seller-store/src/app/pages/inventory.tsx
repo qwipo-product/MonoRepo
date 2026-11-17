@@ -12,30 +12,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@mockups/web-ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@mockups/web-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@mockups/web-ui";
 import {
   Package,
   AlertTriangle,
   XCircle,
   CheckCircle,
-  Search,
   Upload,
   Download,
   Filter,
   Settings,
-  TrendingUp,
-  TrendingDown,
   Edit,
   FileSpreadsheet,
 } from "lucide-react";
-import { PageHeader } from "@mockups/web-ui";
 import { InventoryFilterDrawer } from "../components/filter-drawers/inventory-filter-drawer";
 import { toast } from "sonner";
 

@@ -27,8 +27,8 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
       </header>
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-4">
-        <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-7 dark:hidden" />
-        <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-7 dark:block" />
+        <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="h-7 dark:hidden" />
+        <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-7 dark:block" />
 
         {TERMS.map((t) => (
           <section key={t.title} className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -46,7 +46,7 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
           {SUPPORT_PHONE}
         </a>
 
-        <div className="pt-1 text-center text-[11px] text-foreground-tertiary">© Qwipo · B2B Commerce</div>
+        <div className="pt-1 text-center text-xs text-foreground-tertiary">© Qwipo · B2B Commerce</div>
       </div>
     </div>
   );

@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@mockups/web-ui";
-import { toast } from "sonner";
 
 interface PriceListFilterDrawerProps {
   isOpen: boolean;

@@ -1,88 +1,86 @@
 ---
 name: build-screen
-description: Develop pathway — add or change a screen, flow, sheet, dialog or state inside an existing mockup. The default pathway when nothing else fits. Use for "add a screen", "change the cart", "fix the header", "show an empty state", "make the button do X".
+description: Add or change a screen or flow in an existing application. Keep its design kit and behavior.
 ---
 
-# Building a screen
+# Change a screen
 
-The deliverable is working pixels: a screen that looks right, clicks
-through, and can be shown. Don't build abstractions for a second use that
-may never come.
+Use the [repository instructions](../../../CLAUDE.md).
 
-## First response
+## Prepare
 
-One sentence naming the change. If the ask is a flow or several screens,
-invoke `brief` for one round of questions; if it's a tweak, just do it. If
-you are on `dev`, `testing`, `staging` or `main`, invoke `start-work` before
-the first edit.
+1. Read the application README and applicable design reference.
+2. Find the current screen, navigation, fixtures, and shared components.
+3. Resolve important missing requirements with [brief](../brief/SKILL.md).
+4. Use an applicable task branch.
 
-## Before the first edit
+Buyer screens use the mobile kit.
+Seller Store screens use the desktop kit.
+Do not mix their CSS token layers.
 
-1. **Read the app's README** (`apps/frontend/<app>/README.md`). It carries
-   the demo logins, the personas, and the things that look wrong on purpose.
-   `seller-store` has five personas (OTP `1234`) including two *Empty* ones
-   that wipe the data so every screen's empty state is visible; the buyer
-   app has `BUILD-NOTES.md` with its screenshot-matching rules and two
-   shells (Buyer, Paytm).
-2. **Know the kit.** Mobile apps import from `@mockups/ui` and declare
-   tokens in their `index.css`; web apps import from `@mockups/web-ui` and
-   get tokens from `web-tokens/theme.css`. Never mix. The two catalogs
-   (`storybook` :6006, `storybook-web` :6007) show what each kit already
-   has — look before building a control.
-3. **Find where screens live in this app.** `src/screens/` in the mobile
-   apps; `src/app/pages/` + `routes.tsx` in seller-store; `nav.ts` for the
-   buyer app's navigator. Follow the app's shape, not a preferred one.
+### Find the actual screen files
 
-## Building
+Use paths relative to the selected application folder.
 
-- **Compose from the kit.** Button, Card, Sheet, Tabs, Chip, QtyStepper,
-  EmptyState (mobile); tables, dialogs, sheets, combobox, charts, AppShell,
-  StatusBadge (web). A one-off variant of a primitive is a smell — extend
-  the primitive in the package (`share-component`) rather than restyling it
-  in the screen.
-- **Tokens, never hex.** `bg-primary`, `text-foreground`, `bg-muted`,
-  `border-border`, the status set. Chart and map colours in JS come from
-  `colorLight` in the token package. A brand-external colour (Paytm) is
-  named once in the app's `index.css`. A new colour is a `theme` job;
-  `design-language` is the audit.
-- **Data from `@mockups/mock-data`.** Products, sellers, orders, banners,
-  addresses, notifications already exist. Missing something → `mock-data`,
-  never an inline array of made-up rows that drifts from every other
-  screen.
-- **Strings through `useI18n()`** in the mobile apps that already use it
-  (`t('cart.title')`); add the key to `packages/i18n` in all four
-  languages, English as the fallback.
-- **Every list screen gets an empty state**, and any screen that pretends
-  to load gets a loading one. Check them under the Empty personas where the
-  app has them.
-- **Mobile: 44px targets, one thing per screen, bottom sheets** inside the
-  phone frame. Web: 36px controls, dense tables, dialogs.
-- **Dark mode is free if you used tokens.** Toggle it once before calling
-  the screen done.
-- **Copy is product copy.** No lorem ipsum, no "Do the thing"; Indian
-  names, ₹, real-looking SKUs from the fixtures.
+| Application | Files to read before a screen change |
+| --- | --- |
+| Buyer/Paytm | `README.md`, `BUILD-NOTES.md`, `src/screens/`, `src/review/screenIndex.ts`, `src/App.tsx`, and `src/nav.ts` |
+| Seller Store | `README.md`, `src/app/pages/`, `src/app/routes.tsx`, and `src/app/components/root-layout.tsx` |
 
-## Traps that pass every check and still break the page
+Buyer uses `@mockups/ui` and `@mockups/components`.
+Seller Store uses `@mockups/web-ui`.
+Read their `src/index.ts` exports before introducing a new component.
+Use the [desktop component map](../../../packages/web-ui/DESIGN-SYSTEM.md#component-source-map) to find an existing implementation.
 
-- Tailwind never scans `node_modules`. A class from a shared package
-  renders unstyled unless the app's `index.css` has `@source` pointing at
-  that package's `src`. Nothing errors.
-- A class built by interpolation (`` `shadow-${name}` ``) is never
-  generated. Write the full class strings out.
-- `verbatimModuleSyntax`: `import type { Foo }` for types, or the build
-  fails with `TS1484`.
-- The phone frame's `relative` is load-bearing — bottom sheets position
-  against it. Remove it and every sheet covers the browser window.
-- `strict` is off on purpose. A type error usually means the mock data is
-  wrong, not the config. Don't tighten `tsconfig`.
+For Buyer, update the screen definition, rendering branch, and `BUILT` set together.
+Keep navigation parameters from `src/nav.ts` and the history behavior in `src/App.tsx`.
+For Seller, update the route and its navigation entry together.
+Keep role guards and the persona-specific layout.
 
-## New dependency, shared code, data, colours
+## Implement
 
-Route rather than improvise: `add-dependency`, `share-component`,
-`mock-data`, `theme`.
+1. If the existing component supplies the required behavior, use it.
+2. If the new behavior belongs in an existing primitive, extend its public interface.
+3. Keep application-specific components in the application.
+4. Use semantic tokens for new styling.
+5. Add the screen to the application's actual navigation structure.
+6. Use existing fixtures and stores for simulated data.
 
-## Definition of done
+Use [share-component](../share-component/SKILL.md) for a shared component change.
+Use [theme](../theme/SKILL.md) for a token change.
+Use [mock-data](../mock-data/SKILL.md) for new fixtures.
+Use [add-dependency](../add-dependency/SKILL.md) for a necessary package.
 
-Invoke `verify`. Then say what changed in product terms, which states you
-checked (empty, loading, dark, phone), and what you didn't. Offer
-`land-work` to put it on `dev`.
+A second application is not necessary for a new primitive variant.
+Examine its effect on existing consumers.
+Do not remove a useful type or lint check to make the screen compile.
+
+### Keep the styling and state connections
+
+Use `bg-primary`, `text-foreground`, `bg-muted`, and `border-border` where their meanings fit.
+For TypeScript color values, use the selected token package's exports.
+Keep Buyer brand exceptions in the named block in `src/index.css`.
+Use existing names such as `text-paytm-navy` and `bg-paytm-surface`.
+
+Buyer fixtures belong in `src/data/`.
+Seller fixtures and stores belong in `src/app/lib/`.
+For a new list, implement its empty state.
+For simulated asynchronous behavior, include its applicable loading and error states.
+Keep Indian currency formatting and the existing product terminology.
+
+Examine `@source` entries in `src/index.css` after adding a shared package.
+Use complete class strings instead of constructed fragments such as `shadow-${name}`.
+For Buyer sheets, keep the phone frame's `relative` positioning in `src/App.tsx`.
+Use the applicable `import type` declarations with `verbatimModuleSyntax`.
+
+## Examine the result
+
+Use [verify](../verify/SKILL.md).
+Examine changed navigation, calculations, validation, and state transitions.
+Examine the two themes and the applicable device sizes.
+Keep accessible labels, keyboard operation, focus, and readable error messages.
+If a screenshot conflicts with accessibility, tell the user the necessary adjustment.
+
+Record the user-visible result and any simulated behavior.
+Until the user tells you to commit, keep the changes uncommitted.
+Until the user tells you to push, keep the changes unpushed.

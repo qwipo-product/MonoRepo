@@ -76,9 +76,9 @@ export function StorefrontScreen({
                 key={i}
                 className="flex-1 border-l border-primary-foreground/20 px-3 py-2.5 text-center first:border-l-0"
               >
-                <div className="text-[11px] text-primary-foreground/70">Delivery by</div>
+                <div className="text-xs text-primary-foreground/70">Delivery by</div>
                 <div className="mt-0.5 text-sm font-bold">{dayLabel(o)}</div>
-                <div className="mt-1 text-[11px] font-medium text-primary-foreground/80 tabular-nums">
+                <div className="mt-1 text-xs font-medium text-primary-foreground/80 tabular-nums">
                   {o.mov != null ? `Min. order ${formatInr(o.mov)}` : 'No minimum'}
                 </div>
               </div>
@@ -96,7 +96,7 @@ export function StorefrontScreen({
           {/* shop by category — only this distributor's categories */}
           {myCategories.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Shop by category</h2>
+            <h2 className="text-sm font-medium text-foreground">Shop by category</h2>
             <div className="no-scrollbar flex gap-3 overflow-x-auto">
               {myCategories.map((c) => (
                 <button
@@ -117,7 +117,7 @@ export function StorefrontScreen({
           {/* top brands — only this distributor's brands */}
           {myBrands.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Top brands</h2>
+            <h2 className="text-sm font-medium text-foreground">Top brands</h2>
             <div className="grid grid-cols-4 gap-3">
               {myBrands.map((b) => (
                 <BrandTile

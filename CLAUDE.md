@@ -1,183 +1,200 @@
-# CLAUDE.md
+# Repository instructions
 
-Guidance for Claude Code working in this repo.
+## Scope and authority
 
-## What this repo is
+Use these instructions for work in this repository.
+The repository contains frontend prototypes for product review.
+Keep the demonstrated behavior correct.
+Record simulated behavior in the result.
 
-A lab for **frontend mockups** — mobile apps, web apps, websites — built to be
-shown to people, not shipped. The product and design team drive it; they
-direct you rather than write code. Two things follow:
+If these files disagree with the user's instructions, obey the user's instructions.
+Without the user's explicit commit command, do not commit changes.
+Without the user's explicit push command, do not push changes.
+Permission to edit files does not give permission to commit or push them.
 
-1. **Bias to working pixels.** A screen that looks right and clicks through is
-   the deliverable. Don't build abstractions for a second use case that may
-   never exist.
-2. **Explain in product terms.** Name screens and behaviour ("the cart now
-   shows the MOV warning when the subtotal is under ₹5,000"), not modules and
-   hooks. Assume the reader will not open the diff.
+Do not merge branches, delete remote branches, or deploy applications without the user's authorization.
+Do not send messages to other people without the user's authorization.
+Existing permission applies to the agreed task. Do not ask for the same permission again.
 
-## Routing
+## Start the work
 
-Every request enters exactly one pathway. Classify it, invoke the skill,
-follow the skill. When nothing fits, it is `build-screen` work on the app
-being discussed.
+1. Read the user's request and the applicable application README.
+2. Examine the current branch and local changes.
+3. Keep changes that belong to other work.
+4. State the intended result in plain language.
+5. Select the applicable procedure from the table below.
 
-Skills compose: a pathway invokes the scoped skills it needs by name —
-`brief`, `verify`, `review`, `design-language`, `mock-data`, `theme`,
-`add-dependency`, `share-component` — instead of restating them. An invoked skill is additive and never
-contradicts its invoker; depth stays at two: router → pathway → scoped.
+If an existing task branch is applicable, use it.
+For new work on a shared branch, use [start-work](.claude/skills/start-work/SKILL.md).
+If the user supplies a branch name, use that exact name.
+If Git rejects that name, stop.
+If the user does not supply a branch name, use `feature/<app>-<change>`.
+Do not use `dev/<name>` while the `dev` branch exists.
 
-| Request looks like | Skill |
+## Procedures
+
+Use only the procedures necessary for the request.
+A reference to another procedure does not authorize its external actions.
+For an unmatched request, use the specified scope. Do not add a screen change without a related requirement.
+
+| Request | Procedure |
 | --- | --- |
-| "I have an idea", "I want to mock up X", anything vague or expensive | `brief` |
-| "start a new mockup", "new app for X" | `new-mockup` |
-| "bring in the app from <other repo>", "port X into here", "migrate" | `import-mockup` |
-| add / change / fix a screen, flow, sheet, dialog or state in an existing mockup | `build-screen` |
-| "I need more products / sellers / orders", "fake data for X" | `mock-data` |
-| "change the colours", "make it look like Paytm", fonts, radii, dark mode | `theme` |
-| "use this in the other app too", "make it shared", "add it to Storybook" | `share-component` |
-| "I need library X", an import that won't resolve | `add-dependency` |
-| "check my work", "does it build", "is it done" | `verify` |
-| "review this", "tidy before merging", "is this branch clean" | `review` |
-| "check the tokens", duplicated colours, hex in a screen, "why does this look different from that" | `design-language` |
-| "I'm starting on X", "make me a branch", "save my work", "pull the latest" | `start-work` |
-| "merge", "put it on dev", "promote to testing / staging / prod", conflicts | `land-work` |
-| "git is broken", detached HEAD, "my changes vanished", "I committed on dev" | `git-doctor` |
-| "show it to my boss", "open it on my phone", "send a link" | `share-mockup` |
-| "deploy", "I need a URL that lasts", "set up CI/CD" | `deploy-mockup` |
-| a demo URL 404s / is blank / didn't change, a pipeline fails | `deploy-doctor` |
-| "delete this mockup", "we're done with X", stale folders | `retire-mockup` |
-| "it's approved, hand it to engineering", "write the spec" | `handoff` |
-| toolchain versions, `flake.nix`, `turbo.json`, `bunfig.toml`, catalog *upgrades*, `packages/tsconfig`, `packages/eslint-config`, `azure-cicd/templates/`, `scripts/`, `.dockerignore` | platform-only: say so, describe what you would change, and stop — the development team owns the foundation. (Turning off a lint rule that nags is not platform work; the README invites it.) |
+| Clarify an incomplete product request | [brief](.claude/skills/brief/SKILL.md) |
+| Create an application | [new-mockup](.claude/skills/new-mockup/SKILL.md) |
+| Import an application | [import-mockup](.claude/skills/import-mockup/SKILL.md) |
+| Change a screen or flow | [build-screen](.claude/skills/build-screen/SKILL.md) |
+| Change demonstration data | [mock-data](.claude/skills/mock-data/SKILL.md) |
+| Change design tokens | [theme](.claude/skills/theme/SKILL.md) |
+| Extend a component package | [share-component](.claude/skills/share-component/SKILL.md) |
+| Add or update a dependency | [add-dependency](.claude/skills/add-dependency/SKILL.md) |
+| Examine an implementation | [verify](.claude/skills/verify/SKILL.md) |
+| Code review | [review](.claude/skills/review/SKILL.md) |
+| Examine design consistency | [design-language](.claude/skills/design-language/SKILL.md) |
+| Create or update a task branch | [start-work](.claude/skills/start-work/SKILL.md) |
+| Prepare or do an approved merge | [land-work](.claude/skills/land-work/SKILL.md) |
+| Recover from a Git problem | [git-doctor](.claude/skills/git-doctor/SKILL.md) |
+| Prepare a demonstration link | [share-mockup](.claude/skills/share-mockup/SKILL.md) |
+| Prepare or do an approved deployment | [deploy-mockup](.claude/skills/deploy-mockup/SKILL.md) |
+| Diagnose a deployment problem | [deploy-doctor](.claude/skills/deploy-doctor/SKILL.md) |
+| Remove an application | [retire-mockup](.claude/skills/retire-mockup/SKILL.md) |
+| Prepare an engineering specification | [handoff](.claude/skills/handoff/SKILL.md) |
 
-## First response contract
+## Applications and packages
 
-- One sentence naming what you will do, then either the questions the
-  pathway calls for — batched, one round — or the first concrete action.
-  Never recite rules, never list the pathways, never summarise this file.
-- Rules surface when a check fails, attached to the specific failure — not
-  preemptively.
-- Work happens on a branch. On `dev`, `testing`, `staging` or `main` and
-  about to edit? Invoke `start-work` first.
-- Nothing is done until `verify` has run. Say what was verified and what
-  wasn't; a skipped check is reported as skipped, not passed.
-- Nothing lands on `dev`, `testing`, `staging` or `main` without `review`
-  — a shallow tidy, not a critique.
-- Every app has a `README.md`; read it before touching the app.
-
-## Facts every pathway leans on
-
-### Toolchain
-
-Bun + Turborepo + Vite + React 19 + Tailwind v4. Nix flake pins the toolchain;
-direnv activates it. Never suggest `npm` or `yarn` — `bun` only.
-
-```bash
-bun run ls                        # every app, its port, what it is
-bun dev --filter=@mockups/<app>   # run one app
-bun run new <name> [--web]        # scaffold a mockup (new-mockup)
-bun run deploy:add <app>          # generate the deploy fileset (deploy-mockup)
-bunx turbo run lint typecheck build --filter=@mockups/<app>   # the gate (verify)
-```
-
-### Layout
-
-```
-apps/frontend/<mockup>/     one app per mockup
-apps/backend/<service>/     Bun services (currently just mock-api; not deployed)
-packages/<shared>/          shared code, raw TypeScript, no build step
-native/qwipo-buyer-app/     React Native / Expo — NOT in the Bun workspace
-docs/briefs/                one brief per new or imported mockup (brief)
-docs/handoffs/              specs handed to engineering (handoff)
-```
-
-| App | Port | Kit | What it is |
+| Application | Development port | Preview port | Design kit |
 | --- | --- | --- | --- |
-| `qwipo-buyer-paytm-app` | 5175 | mobile | Buyer app in Qwipo and Paytm shells; being rebuilt screen by screen (`BUILD-NOTES.md`) |
-| `seller-store` | 5174 | web | Distributor + super-admin console, 51 pages; five personas, OTP `1234` (its README) |
-| `rirn` | 5173 | web | Retailer identity network — company discovery console |
-| `rirn-retailer` | 5176 | **mobile** | Retailer-facing RIRN pages for a buyer-app WebView |
-| `qwipo-analytics` | 5177 | mobile kit, desktop layout | DigiDukaan analytics console + Reports framework; predates the web kit (its README) |
-| `seller-mobile` | 5178 | mobile | Seller portal on a phone for distributors — orders (single + bulk), seller logins only; same design system as the buyer app |
-| `storybook` | 6006 | mobile | Catalog for `@mockups/ui` |
-| `storybook-web` | 6007 | web | Catalog for `@mockups/web-ui` |
+| `qwipo-buyer-paytm-app` | 5175 | 6175 | Mobile |
+| `seller-store` | 5174 | 6174 | Desktop |
+| `field-agent` | 5179 | 6179 | NativeScript and Angular browser renderer |
+| `logistics-buyer` | 5180 | 6180 | Bootstrap and Material UI desktop replica |
+| `sales-admin` | 5181 | 6181 | Angular Material and Egret desktop replica |
+| `rirn` | 5173 | 6173 | Desktop |
+| `rirn-retailer` | 5176 | 6176 | Mobile |
+| `qwipo-analytics` | 5177 | 6177 | Mobile kit in a desktop layout |
+| `seller-mobile` | 5178 | 6178 | Mobile |
+| `storybook` | 6006 | — | Mobile component catalog |
+| `storybook-web` | 6007 | — | Desktop component catalog |
+| `mock-api` | 8787 | — | Bun HTTP service |
 
-`apps/frontend/qwipo-app`, `qwipo-app-v2` and `qwipo-buyer-app` are stale
-leftovers with no `package.json`. Turbo and Bun ignore them. Not apps;
-`retire-mockup` once someone confirms nothing is being salvaged.
+The frontend applications use local demonstration data.
+Mock API is optional. It serves shared fixtures over HTTP.
+Buyer and Seller Store do not require it.
+Use each application's README for its routes and demonstration inputs.
 
-### Two design systems
-
-Mobile and desktop-admin are different design languages, not two skins, so
-they have separate kits. **Check which kit the app uses before importing
-anything.** Never mix them in one app.
-
-| | Mobile | Web / admin |
-| --- | --- | --- |
-| Primitives | `@mockups/ui` | `@mockups/web-ui` (shadcn + Radix) |
-| Tokens | `@mockups/design-tokens` — `theme.css`, imported whole | `@mockups/web-tokens` — `theme.css`, imported whole |
-| Controls / radii | 44px targets, 12px cards | 36px controls, 8px cards, 2px table pills |
-| Scaffold | `bun run new <name>` | `bun run new <name> --web` |
-
-Brand colour has one definition: `web-tokens` re-exports it from
-`design-tokens`. Density values (radius, control height) differ on purpose.
-`web-tokens/theme.css` also carries `tw-animate-css` (Radix overlays need
-it) and a `.dark` rebinding layer for raw utilities like `bg-white`, which
-is why seller-store's 40k ported lines go dark without a rewrite.
-
-### Reach for these before writing your own
-
-| Need | Import from |
+| Purpose | Location |
 | --- | --- |
-| Button, Card, Badge, Chip, Sheet, Tabs, QtyStepper, EmptyState, `cn()`, `ThemeProvider` (mobile) | `@mockups/ui` |
-| ProductCard, PriceLabel, StatusBadge (mobile, product-level) | `@mockups/components` |
-| Tables, dialogs, sheets, combobox, charts, AppShell, StatusBadge, EmptyState, `cn()` (web) | `@mockups/web-ui` |
-| Token values in TS | `@mockups/design-tokens` (mobile), `@mockups/web-tokens` (web) |
-| Translated strings — `useI18n()` → `t('cart.title')`, en / hi / te / ta | `@mockups/i18n` |
-| Product, Order, Seller, Cart types | `@mockups/types` |
-| Products, sellers, orders, banners — extend, never invent | `@mockups/mock-data` |
-| Deployed-version pill — mounted once in `main.tsx` | `@mockups/version-badge` |
-| TS / ESLint presets — apps just `extends` | `@mockups/tsconfig`, `@mockups/eslint-config` |
+| Mobile tokens | `packages/design-tokens` |
+| Mobile primitives | `packages/ui` |
+| Buyer product and analytics chart components | `packages/components` |
+| Desktop tokens | `packages/web-tokens` |
+| Desktop primitives and handbook | `packages/web-ui` |
+| Shared domain types | `packages/types` |
+| Shared demonstration fixtures | `packages/mock-data` |
+| Translation provider and dictionaries | `packages/i18n` |
+| Version display | `packages/version-badge` |
+| Buyer fixtures | `apps/frontend/qwipo-buyer-paytm-app/src/data` |
+| Seller fixtures and stores | `apps/frontend/seller-store/src/app/lib` |
+| Analytics fixtures | `apps/frontend/qwipo-analytics/src/data` |
+| RIRN company session and fixtures | `apps/frontend/rirn/src/lib` |
+| RIRN retailer session and fixtures | `apps/frontend/rirn-retailer/src/lib` |
+| Mock API routes and collection map | `apps/backend/mock-api/src` |
 
-Deep imports work where declared: `import { IMG } from '@mockups/mock-data/imageBank'`.
+### Read the implementation references
 
-### Rules that bite if skipped
+Before a Buyer screen change, read [BUILD-NOTES.md](apps/frontend/qwipo-buyer-paytm-app/BUILD-NOTES.md).
+Use the [Buyer source map](apps/frontend/qwipo-buyer-paytm-app/README.md#source-map) for screen registration, navigation, and shells.
+Use the [Seller source map](apps/frontend/seller-store/README.md#source-layout) for routes, role guards, layouts, and stores.
+Before a desktop component change, read the [design reference](packages/web-ui/DESIGN-SYSTEM.md).
 
-- **Tailwind never scans `node_modules`.** An app using classes from a
-  shared package needs an `@source` line in `src/index.css` pointing at that
-  package's `src`. Without it the component renders unstyled and nothing
-  errors. Same for interpolated class names — write full strings.
-- **Tokens live in the token packages, never in an app or a `ui` package.**
-  One design language, shared like the fixtures and the primitives. No
-  per-app `@theme` block; chart and map colours in JS come from the
-  package's TS export (`colorLight.brand.primary`), not a hex; a
-  brand-external colour (the Paytm shell) is named once in the app and used
-  by name. `design-language` audits this.
-- **One token layer per app.** Import both and the later import silently
-  wins every shared custom property.
-- **Versions go in the root `catalog`.** Packages write `"react": "catalog:"`.
-- **Dev ports must be unique.** `bun run new` handles it.
-- **`verbatimModuleSyntax` is on.** `import type { Foo }`, or `TS1484`.
-- **Don't copy a component into an app when the package has it.**
-- **Both lockfiles are committed.** Never delete or regenerate `bun.lock` or
-  `flake.lock` to get past an install problem — fix the cause.
-- **Shared packages have no build step.** Adding one breaks hot reload for
-  everyone. Promote code only when a second app needs it (`share-component`).
-- **Known pre-existing failure:** `@mockups/qwipo-buyer-paytm-app#lint`
-  fails on a stale `eslint-disable` for `jsx-a11y/no-autofocus`. Not yours;
-  don't chase it; verify with `--filter` or `--continue`.
+| Need | Package and public entry point |
+| --- | --- |
+| Mobile buttons, inputs, cards, sheets, quantity controls, and theme provider | `@mockups/ui`: `packages/ui/src/index.ts` |
+| Buyer product cards, prices, images, quantity pills, and order status | `@mockups/components`: `packages/components/src/index.ts` |
+| Desktop forms, tables, overlays, charts, and application shell | `@mockups/web-ui`: `packages/web-ui/src/index.ts` |
+| Mobile TypeScript token values | `@mockups/design-tokens`: `packages/design-tokens/src/tokens.ts` |
+| Desktop TypeScript token values and chart palette | `@mockups/web-tokens`: `packages/web-tokens/src/tokens.ts` |
+| Shared `OrderStatus` type | `@mockups/types`: `packages/types/src/index.ts` |
+| Shared product, order, address, and seller fixtures | `@mockups/mock-data`: `packages/mock-data/src/index.ts` |
+| Translation provider and hooks | `@mockups/i18n`: `packages/i18n/src/index.tsx` |
+| `VersionBadge`, `APP_VERSION`, and `APP_COMMIT` | `@mockups/version-badge`: `packages/version-badge/src/index.ts` |
 
-### Deliberately loose
+Import components through their public package exports.
+For available component names and source files, use the applicable package README.
+Mount `VersionBadge` once in the application's `src/main.tsx`.
 
-`strict` is off and the lint rules are minimal. This is a decision. Don't
-tighten `tsconfig` or add rules. A blocking type error usually means the mock
-data is wrong, not the config. `any` and `console.log` are fine.
+### Find shared configuration
 
-### Deployment, in one paragraph
+These paths are relative to the repository root.
+Before a shared configuration change, examine its consumers and the authorized scope.
 
-Azure DevOps, auto-triggered: a push to `dev` / `testing` / `staging` /
-`main` rebuilds every touched mockup and deploys it to that environment
-(`main` cuts a semver tag and waits for an approval). The fileset is
-generated by `bun run deploy:add`, never hand-written; two prerequisites
-live in the `Qwipo B2B/k8s` repo and Azure and are handed off, not worked
-around. Everything else — naming, verification, silent-failure traps,
-rollback — is in `deploy-mockup` and `deploy-doctor`.
+| File or directory | Responsibility |
+| --- | --- |
+| `package.json` | Bun version, workspace globs, dependency catalog, and root commands |
+| `bun.lock`, `bunfig.toml` | Resolved dependencies and Bun installation settings |
+| `flake.nix`, `flake.lock`, `.envrc` | Optional Nix and direnv environment |
+| `turbo.json` | Task dependencies, cache outputs, and build environment variables |
+| `packages/tsconfig/base.json` | Shared TypeScript options |
+| `packages/tsconfig/react-app.json`, `packages/tsconfig/react-library.json` | Application and package TypeScript presets |
+| `packages/tsconfig/bun-app.json` | Bun service TypeScript preset |
+| `packages/eslint-config/base.js`, `packages/eslint-config/react.js` | Shared lint presets |
+| `.claude/launch.json` | Local application launch commands and ports |
+| `scripts/new-mockup.ts`, `scripts/list-apps.ts` | Application generation and workspace listing |
+| `scripts/add-deploy.ts` | Deployment file generation |
+| `azure-cicd/templates/mockup-docker-template.yaml` | Image builds, version tags, and static previews |
+| `azure-cicd/templates/mockup-release-template.yaml` | Release artifacts, GitOps updates, and ArgoCD synchronization |
+| `.dockerignore` | Files excluded from the container build context |
+
+For new product briefs, use `docs/briefs/<app>.md`.
+For engineering handoffs, use `docs/handoffs/<app>-<flow>.md`.
+If the task needs these documents, create them at those locations.
+
+## Implementation rules
+
+- Use the Bun version in the root `package.json`.
+- Use the root catalog for new dependency versions.
+- Use `import type` for TypeScript types.
+- Import one CSS token layer for each application.
+- Keep the applicable Tailwind `@source` entries for shared components.
+- Use complete Tailwind class names. Do not construct class names from fragments.
+- If existing components and fixtures satisfy the request, use them.
+- Keep changes to shared configuration in the approved scope.
+- Tell the user the effect of a shared change on the affected applications.
+
+Use Bun for workspace commands. Do not introduce an npm or Yarn lockfile.
+The dependency catalog is `workspaces.catalog` in the root `package.json`.
+In a consuming workspace, use a declaration such as `"react": "catalog:"`.
+
+Tailwind does not scan workspace dependencies through `node_modules` automatically.
+In the application's `src/index.css`, point `@source` at each shared component package's actual `src` directory.
+The [Buyer README](apps/frontend/qwipo-buyer-paytm-app/README.md#shared-packages) and [Seller README](apps/frontend/seller-store/README.md#design-and-themes) contain the exact CSS entries.
+Missing entries can produce unstyled components without a compiler error.
+
+`packages/tsconfig/base.json` enables `verbatimModuleSyntax`.
+For a type-only import, use `import type { Foo }` or `import { value, type Foo }`.
+If TypeScript reports `TS1484`, correct the import instead of disabling that option.
+
+Shared packages currently export TypeScript source without a separate build step.
+Unless a change is necessary for the task, keep this arrangement.
+For a separate build step, use a working development watch process. Examine the cache configuration.
+
+The current TypeScript configuration is permissive.
+Do not disable a shared rule merely to remove an error.
+Correct the cause. If an exception is necessary, record its scope and reason.
+Where necessary for the changed behavior, add stronger checks.
+Avoid unrelated changes to the entire toolchain.
+
+## Verification and completion
+
+Use [verify](.claude/skills/verify/SKILL.md) before completion.
+For a documentation change, examine the instructions, links, paths, and command examples.
+For an implementation change, run the applicable code checks and behavior tests.
+Record failed or omitted checks explicitly.
+
+Record each server process that you start.
+Unless the user tells you to keep that process active, stop it after verification.
+Do not stop unrelated processes to get a port.
+
+Give the user the changed behavior, verification results, and remaining limitations.
+Until the user tells you to commit, keep the changes uncommitted.
+Deployment preparation does not prove that a remote service or approval check exists.
+Use [deploy-mockup](.claude/skills/deploy-mockup/SKILL.md) to examine those conditions.

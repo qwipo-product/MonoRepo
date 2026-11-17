@@ -6,20 +6,19 @@ import { useAutoAdvance } from './useAutoAdvance';
 
 /* The Home product rail — two compact cards to a page, the pages walking
    sideways on their own. Used by Previously Ordered and Trending Products,
-   which differ only in what they rank and where they lead. A teaser, not the
-   product list: no pack pills and no Add, because the quantity always gets
-   chosen on a product card or in the selling-units sheet, never from a Home
-   rail. */
+   which differ only in what they rank. A teaser, not the product list: no
+   pack pills and no Add on the card itself, because the quantity is always
+   chosen in the selling-units sheet — which is what tapping a card opens. */
 
 /** Two rows to a page; the callers cap the list at four pages' worth. */
 const PER_PAGE = 2;
 const ADVANCE_MS = 5000;
 
-function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: () => void }) {
+function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: (id: string) => void }) {
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={() => onOpen(p.id)}
       aria-label={p.name}
       className="block w-full text-left active:scale-[0.99]"
     >
@@ -49,14 +48,18 @@ function TeaserCard({ item: p, onOpen }: { item: ProductTeaser; onOpen: () => vo
 export function ProductTeaserRail({
   items,
   onOpen,
+  paused = false,
 }: {
   items: ProductTeaser[];
-  onOpen: () => void;
+  /** Tapping a card hands back its product id — the rails open its sheet. */
+  onOpen: (id: string) => void;
+  /** True while the add-to-cart sheet one of these cards opened is up. */
+  paused?: boolean;
 }) {
   const pages = Array.from({ length: Math.ceil(items.length / PER_PAGE) }, (_, i) =>
     items.slice(i * PER_PAGE, i * PER_PAGE + PER_PAGE)
   );
-  const { index, autoplay, fillRef, railProps } = useAutoAdvance(pages.length, ADVANCE_MS);
+  const { index, autoplay, fillRef, railProps } = useAutoAdvance(pages.length, ADVANCE_MS, paused);
 
   return (
     <div>

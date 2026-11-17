@@ -1,0 +1,17 @@
+{
+  "name": "@mockups/field-agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Field Agent delivery, trip, returns and payment demo for drivers and operations.",
+  "scripts": {
+    "setup": "cd app && bun install --frozen-lockfile && node web/build-css.mjs",
+    "dev": "cd app && node web/serve.mjs --watch --port 5179",
+    "build": "cd app && bun run build:browser",
+    "typecheck": "cd app && bun run tsc --project web/tsconfig.json --noEmit",
+    "preview": "vite preview --port 6179 --strictPort",
+    "android": "cd app && bun install --frozen-lockfile && bun run android"
+  },
+  "devDependencies": {
+    "vite": "catalog:"
+  }
+}

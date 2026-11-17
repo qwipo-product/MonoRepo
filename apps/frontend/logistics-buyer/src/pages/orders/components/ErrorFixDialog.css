@@ -1,0 +1,73 @@
+/* <app-error-fix-dialog> (spec 01 §1.7) — scoped under .error-fix-dialog; panel overrides live in global.css (.error-fix-dialog-panel) */
+.error-fix-dialog {
+  position: relative; width: 650px; max-width: calc(100vw - 48px); min-height: 300px; max-height: calc(90vh - 48px);
+  padding: 24px; background: #fff; border-radius: 12px; display: flex; flex-direction: column; box-sizing: border-box;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+.error-fix-dialog .close-icon-btn {
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: .7; color: #49454f;
+}
+.error-fix-dialog .close-icon-btn:hover { opacity: 1; background: #0000000a; }
+.error-fix-dialog .dialog-header { margin-bottom: 16px; padding-right: 40px; }
+.error-fix-dialog .dialog-title { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; color: #1f2937; margin: 0 0 6px; }
+.error-fix-dialog .title-icon { color: #dc3545; font-size: 20px; }
+.error-fix-dialog .dialog-subtitle { font-size: 14px; color: #6b7280; margin: 0; }
+.error-fix-dialog .required-asterisk { color: #dc3545; font-weight: 700; margin-left: 2px; }
+
+.error-fix-dialog .tabs-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.error-fix-dialog .tab-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  background: #f3f4f6; color: #6b7280; border: none; cursor: pointer; transition: background .2s ease, color .2s ease;
+}
+.error-fix-dialog .tab-btn .material-icons { font-size: 18px; }
+.error-fix-dialog .tab-btn.active { background: #3f51b5; color: #fff; }
+.error-fix-dialog .tab-btn:disabled { opacity: .5; cursor: not-allowed; }
+.error-fix-dialog .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #e5e7eb; color: #374151; font-size: 12px; font-weight: 600; }
+
+.error-fix-dialog .mat-dialog-content { max-height: calc(80vh - 240px); min-height: 200px; overflow-y: auto; padding: 0 2px; }
+.error-fix-dialog .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px 0; color: #6b7280; font-size: 14px; }
+.error-fix-dialog .loading-state p { margin: 0; }
+.error-fix-dialog .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px 0; }
+.error-fix-dialog .empty-state .success-icon { font-size: 64px; width: 64px; height: 64px; color: #22c55e; margin-bottom: 12px; }
+.error-fix-dialog .empty-state h3 { font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 6px; }
+.error-fix-dialog .empty-state p { font-size: 14px; color: #6b7280; margin: 0; }
+
+.error-fix-dialog .form-section { margin-bottom: 20px; }
+.error-fix-dialog .section-header {
+  display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #374151; margin: 0 0 12px; padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.error-fix-dialog .section-header .material-icons { font-size: 18px; color: #6b7280; }
+.error-fix-dialog .section-header .row-number { color: #6b7280; font-weight: 500; }
+.error-fix-dialog .section-header .field-count { margin-left: auto; font-size: 12px; font-weight: 500; color: #6b7280; }
+.error-fix-dialog .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 768px) { .error-fix-dialog .form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .error-fix-dialog .form-grid { grid-template-columns: 1fr; } }
+.error-fix-dialog .form-field { display: flex; flex-direction: column; min-width: 0; }
+.error-fix-dialog .field-label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+.error-fix-dialog .field-input, .error-fix-dialog .field-select {
+  height: 40px; padding: 0 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; color: #1f2937; background: #fff; width: 100%; box-sizing: border-box;
+}
+.error-fix-dialog .field-input:focus, .error-fix-dialog .field-select:focus { outline: none; border-color: #3f51b5; box-shadow: 0 0 0 2px #3f51b533; }
+.error-fix-dialog .field-input.warning-border, .error-fix-dialog .field-select.warning-border { border-color: #f59e0b; }
+.error-fix-dialog .field-input.warning-border:focus, .error-fix-dialog .field-select.warning-border:focus { box-shadow: 0 0 0 2px #f59e0b33; }
+.error-fix-dialog .date-input-wrapper { display: flex; align-items: center; gap: 6px; }
+.error-fix-dialog .date-input-wrapper .date-icon { font-size: 18px; color: #6b7280; }
+.error-fix-dialog .date-input-wrapper .MuiOutlinedInput-root { height: 40px; border-radius: 6px; font-size: 14px; }
+.error-fix-dialog .date-input-wrapper .MuiOutlinedInput-notchedOutline { border-color: #e5e7eb; }
+.error-fix-dialog .date-input-wrapper.warning-border .MuiOutlinedInput-notchedOutline { border-color: #f59e0b; }
+.error-fix-dialog .error-message { font-size: 12px; color: #dc3545; margin: 4px 0 0; }
+
+.error-fix-dialog .dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 16px; margin-top: 8px; border-top: 1px solid #e5e7eb; }
+.error-fix-dialog .mat-stroked-btn, .error-fix-dialog .mat-raised-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 36px; padding: 0 16px; border-radius: 6px;
+  font-size: 14px; font-weight: 500; cursor: pointer; letter-spacing: .1px;
+}
+.error-fix-dialog .mat-stroked-btn { background: transparent; border: 1px solid #74777f; color: #005cbb; }
+.error-fix-dialog .mat-stroked-btn:hover:not(:disabled) { background: #005cbb0a; }
+.error-fix-dialog .mat-stroked-btn:disabled { color: #1b1b1f61; border-color: #1b1b1f1f; cursor: default; }
+.error-fix-dialog .mat-stroked-btn .material-icons, .error-fix-dialog .mat-raised-btn .material-icons { font-size: 18px; }
+.error-fix-dialog .cancel-btn { min-width: 80px; }
+.error-fix-dialog .mat-raised-btn { border: none; background: #005cbb; color: #fff; min-width: 100px; box-shadow: 0 1px 3px #0000004d; }
+.error-fix-dialog .mat-raised-btn:disabled { opacity: .7; cursor: default; }

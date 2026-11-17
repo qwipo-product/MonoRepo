@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Card, CardContent } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Badge } from "@mockups/web-ui";
@@ -40,9 +40,10 @@ import {
   AlertCircle,
   Plus,
   X,
-  ArrowRight,
   MapPin,
   Truck,
+  Receipt,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -55,19 +56,39 @@ import {
   updateSellerActive,
   getQwipoCompanies,
   emptyOndcConfig,
+  deriveSellerType,
   type Seller,
   type SellerPermissions,
   type OndcConfig,
   type ConnectorType,
   type CompanyBrandSelection,
+  type OperationMode,
+  type PurchaseEligibility,
 } from "../../lib/mock-store";
+import {
+  SellerTypeBadge,
+  SELLER_TYPE_LABELS,
+} from "../../components/seller-type-badge";
+import { WholesalerServiceability } from "../../components/wholesaler-serviceability";
+import { BeatVisibilitySetting } from "../../components/beat-visibility-setting";
+import { SellerChargesTab } from "./seller-charges-tab";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@mockups/web-ui";
 import {
   getCompanies as getAdminCatalogCompanies,
   subscribeToCompanies as subscribeToAdminCatalog,
   revokeImage,
+  emptyCommercialFee,
   type Company as AdminCatalogCompany,
+  type CommercialFeeConfig,
 } from "../../lib/admin-catalog";
-import { Camera, Upload as UploadIcon } from "lucide-react";
+import { CommercialFeeTab } from "./company-commercial-fee";
+import { Camera, Upload as UploadIcon, Coins } from "lucide-react";
 
 const emptyPermissions: SellerPermissions = {
   view: false,
@@ -81,8 +102,13 @@ const DATA_SYNC_TYPES = ["SKU", "Orders", "Customers", "Inventory", "Pricing"];
 export function AdminSellerDetail() {
   const { sellerId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [seller, setSeller] = useState<Seller | null>(null);
-  const [activeTab, setActiveTab] = useState("profile");
+  // Initial tab honours a ?tab= query param so returning from the charges
+  // wizard lands back on the Charges & Fees tab.
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get("tab") ?? "profile",
+  );
 
   // Profile is read-only post-creation (no edit affordance in Phase 1).
 
@@ -300,6 +326,14 @@ export function AdminSellerDetail() {
     seller.managedCompanies.includes(c.id),
   );
 
+  // Calculated seller type + the wholesaler-mode company ids. Drives
+  // the Profile display, the header badge and which serviceability
+  // sections render (Beats / Wholesaler polygon / both for hybrid).
+  const sellerType = deriveSellerType(seller);
+  const wholesalerCompanyIds = (seller.companyBrandSelections ?? [])
+    .filter((s) => s.operationMode === "wholesaler")
+    .map((s) => s.companyId);
+
   const ondcConnected = seller.connectors.ondc.status === "connected";
 
   return (
@@ -334,6 +368,7 @@ export function AdminSellerDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <SellerTypeBadge type={sellerType} />
             {(seller.isActive ?? true) ? (
               <Badge className="bg-green-50 text-green-700 border-green-200 gap-1">
                 <CheckCircle2 className="h-3 w-3" />
@@ -349,11 +384,16 @@ export function AdminSellerDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <Card>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="border-b border-gray-200 p-3">
+      {/* Tabs — the seller header (above) and this tab bar stay fixed; only
+          the active tab's content scrolls, inside the card's borders. */}
+      <div className="flex-1 min-h-0 p-6">
+        <Card className="h-full flex flex-col overflow-hidden gap-0 p-0">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full h-full flex flex-col min-h-0"
+          >
+            <div className="border-b border-gray-200 p-3 flex-shrink-0">
               <TabsList className="bg-gray-100 p-1 rounded-lg inline-flex gap-1 h-auto flex-wrap">
                 <TabsTrigger
                   value="profile"
@@ -383,6 +423,13 @@ export function AdminSellerDetail() {
                   <MapPin className="h-4 w-4 mr-2" />
                   Serviceability
                 </TabsTrigger>
+                <TabsTrigger
+                  value="charges"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2"
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Charges &amp; Fees
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -391,7 +438,7 @@ export function AdminSellerDetail() {
                 aren't half-empty: short fields (Mobile, Seller Type, PIN,
                 City, State, Lat, Lng, Created On) pack tightly, and the
                 long Full Address field spans the row. */}
-            <TabsContent value="profile" className="p-6 mt-0">
+            <TabsContent value="profile" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               <div className="space-y-6">
                 {/* Status — pinned at the top so the admin can flip
                     Active / Inactive without scrolling. Opens a confirmation
@@ -435,14 +482,17 @@ export function AdminSellerDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
                     <Field label="Full Name" value={seller.name} />
                     <Field label="Mobile Number" value={seller.phone} />
-                    <Field
-                      label="Seller Type"
-                      value={
-                        seller.sellerType === "wholesaler"
-                          ? "Wholesaler"
-                          : "Distributor"
-                      }
-                    />
+                    <div>
+                      <Label className="text-xs text-gray-500 font-normal">
+                        Seller Type
+                      </Label>
+                      <div className="mt-1">
+                        <SellerTypeBadge type={sellerType} />
+                      </div>
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        Auto-calculated from linked companies' operation modes.
+                      </p>
+                    </div>
                     <Field label="Business Name" value={seller.businessName} />
                     <Field
                       label="Created On"
@@ -492,7 +542,7 @@ export function AdminSellerDetail() {
             </TabsContent>
 
             {/* Companies & Brands attached to this seller */}
-            <TabsContent value="catalog" className="p-6 mt-0">
+            <TabsContent value="catalog" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               <SellerCatalogTab
                 seller={seller}
                 onChange={(s) => setSeller(s)}
@@ -500,7 +550,7 @@ export function AdminSellerDetail() {
             </TabsContent>
 
             {/* KYC — hidden */}
-            <TabsContent value="kyc" className="p-6 mt-0">
+            <TabsContent value="kyc" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               {seller.kyc.status === "not_started" ? (
                 <div className="text-center py-10">
                   <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
@@ -544,7 +594,7 @@ export function AdminSellerDetail() {
                 (marketplace + logistics). Connected cards render side by
                 side in the same grid; the Add Connector dialog hosts every
                 available type so there's no separate Add Logistics CTA. */}
-            <TabsContent value="connectors" className="p-6 mt-0">
+            <TabsContent value="connectors" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">
@@ -617,7 +667,7 @@ export function AdminSellerDetail() {
             </TabsContent>
 
             {/* Permissions */}
-            <TabsContent value="permissions" className="p-6 mt-0">
+            <TabsContent value="permissions" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               <div className="max-w-2xl space-y-3">
                 <p className="text-sm text-gray-600 mb-4">
                   Grant per-seller access levels. Changes take effect
@@ -663,7 +713,7 @@ export function AdminSellerDetail() {
             </TabsContent>
 
             {/* Managed Companies */}
-            <TabsContent value="companies" className="p-6 mt-0">
+            <TabsContent value="companies" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">
@@ -743,8 +793,76 @@ export function AdminSellerDetail() {
                 polygon upload, list + configure views) inside the
                 Manage Seller view, so admins can configure delivery
                 zones for any seller from a single place. */}
-            <TabsContent value="serviceability" className="p-6 mt-0">
-              <ServiceabilityManager />
+            <TabsContent value="serviceability" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
+              {/* Sections render DYNAMICALLY from the seller type so
+                  irrelevant models never show:
+                    • Wholesale seller   → Wholesale section only
+                    • Distribution seller → Distribution section only
+                    • Hybrid seller      → both, wholesale on top
+                  An empty section on a hybrid seller is the signal that
+                  that operation's setup is still pending. */}
+              <div className="flex flex-col gap-8">
+                {/* Beat-Day Visibility Window — seller-wide, so it sits
+                    above the wholesale / distribution beat sections. */}
+                <BeatVisibilitySetting sellerId={seller.id} />
+
+                {/* Delivery Beats – Wholesale — day-wise zones shared by
+                    all wholesale-mode companies. */}
+                {(sellerType === "wholesaler" || sellerType === "hybrid") && (
+                  <section>
+                    <WholesalerServiceability
+                      seller={seller}
+                      onChange={setSeller}
+                    />
+                  </section>
+                )}
+
+                {/* Distribution Delivery Beats — unchanged behaviour;
+                    wholesale-mode companies are excluded from the
+                    Add-beat picker. */}
+                {(sellerType === "distributor" || sellerType === "hybrid") && (
+                  <section
+                    className={
+                      sellerType === "hybrid"
+                        ? "border-t border-gray-200 pt-6"
+                        : undefined
+                    }
+                  >
+                    <ServiceabilityManager
+                      title="Delivery Beats – Distribution"
+                      seller={{ id: seller.id, name: seller.name }}
+                      excludeCompanyIds={wholesalerCompanyIds}
+                      warehouse={
+                        seller.latitude != null && seller.longitude != null
+                          ? {
+                              lat: seller.latitude,
+                              lng: seller.longitude,
+                              name: seller.name,
+                              businessName: seller.businessName,
+                              address:
+                                [
+                                  seller.fullAddress,
+                                  seller.city,
+                                  seller.state,
+                                  seller.pinCode,
+                                ]
+                                  .filter(Boolean)
+                                  .join(", ") || undefined,
+                            }
+                          : undefined
+                      }
+                    />
+                  </section>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Charges & Fees — commerce / logistics / beat charges for every
+                company and brand linked to this seller. Distributor companies
+                are configured individually; all wholesaler companies share a
+                single common structure. */}
+            <TabsContent value="charges" className="flex-1 min-h-0 overflow-y-auto p-6 mt-0">
+              <SellerChargesTab seller={seller} />
             </TabsContent>
           </Tabs>
         </Card>
@@ -1193,6 +1311,13 @@ export function SellerCatalogTab({
   const [addCompanyId, setAddCompanyId] = useState<string>("");
   const [addAllBrands, setAddAllBrands] = useState(true);
   const [addBrandIds, setAddBrandIds] = useState<string[]>([]);
+  const [addOperationMode, setAddOperationMode] =
+    useState<OperationMode>("distributor");
+  // Mandatory for distributor links; defaults open — all customers
+  // can order until the admin narrows it to registered-only.
+  const [addPurchaseEligibility, setAddPurchaseEligibility] =
+    useState<PurchaseEligibility>("all-customers");
+  const [addSyncSkus, setAddSyncSkus] = useState(true);
 
   // ---- Add Brands dialog (per-card "+ Add Brands" CTA) ----
   // Behaves as "extend only" — existing brand access is preserved and
@@ -1215,6 +1340,74 @@ export function SellerCatalogTab({
   const editingSelection = editTarget
     ? selections.find((s) => s.companyId === editTarget)
     : null;
+
+  // ---- Modify Fee dialog (per-card "Modify Fee" CTA) ----
+  // Seller-level override of the company's commercial fee, for THIS company
+  // only. Opens pre-filled with the seller's existing override, else a copy of
+  // the company-level setup. Saving never touches the company-level config.
+  const [feeTarget, setFeeTarget] = useState<string | null>(null);
+  const [feeDraft, setFeeDraft] = useState<CommercialFeeConfig>(() =>
+    emptyCommercialFee(),
+  );
+  const feeCompany = feeTarget
+    ? companies.find((c) => c.id === feeTarget)
+    : null;
+  const feeSelection = feeTarget
+    ? selections.find((s) => s.companyId === feeTarget)
+    : null;
+  const feeIsOverridden = !!feeSelection?.commercialFeeOverride;
+
+  const openModifyFee = (companyId: string) => {
+    const sel = selections.find((s) => s.companyId === companyId);
+    const company = companies.find((c) => c.id === companyId);
+    if (!sel) return;
+    // Pre-fill: seller override first, else the company-level setup, else blank.
+    const base =
+      sel.commercialFeeOverride ?? company?.commercialFee ?? emptyCommercialFee();
+    setFeeDraft({
+      ...base,
+      slabs: base.slabs.map((s) => ({ ...s })),
+    });
+    setFeeTarget(companyId);
+  };
+
+  const closeModifyFee = () => setFeeTarget(null);
+
+  const handleSaveFee = () => {
+    if (!feeTarget) return;
+    const next: CompanyBrandSelection[] = selections.map((s) =>
+      s.companyId === feeTarget
+        ? {
+            ...s,
+            commercialFeeOverride: {
+              ...feeDraft,
+              slabs: feeDraft.slabs.map((sl) => ({ ...sl })),
+            },
+          }
+        : s,
+    );
+    persistSelections(next);
+    toast.success(
+      `Commercial fee override saved for ${feeCompany?.name ?? "company"} (this seller only).`,
+    );
+    closeModifyFee();
+  };
+
+  const handleResetFee = () => {
+    if (!feeTarget) return;
+    const next: CompanyBrandSelection[] = selections.map((s) =>
+      s.companyId === feeTarget
+        ? { ...s, commercialFeeOverride: undefined }
+        : s,
+    );
+    persistSelections(next);
+    toast.success(
+      `Reverted to the company-level commercial fee for ${
+        feeCompany?.name ?? "company"
+      }.`,
+    );
+    closeModifyFee();
+  };
 
   const openEdit = (companyId: string) => {
     const sel = selections.find((s) => s.companyId === companyId);
@@ -1257,6 +1450,7 @@ export function SellerCatalogTab({
         ? {
             companyId: editTarget,
             brandIds: editAllBrands ? [] : editBrandIds,
+            syncSkusToMySku: s.syncSkusToMySku,
           }
         : s,
     );
@@ -1284,6 +1478,9 @@ export function SellerCatalogTab({
     setAddCompanyId("");
     setAddAllBrands(true);
     setAddBrandIds([]);
+    setAddOperationMode("distributor");
+    setAddPurchaseEligibility("all-customers");
+    setAddSyncSkus(true);
     setAddOpen(true);
   };
 
@@ -1294,8 +1491,19 @@ export function SellerCatalogTab({
   };
 
   const persistSelections = (next: CompanyBrandSelection[]) => {
+    const before = deriveSellerType(seller);
     const updated = updateCompanyBrandSelections(seller.id, next);
-    if (updated) onChange(updated);
+    if (updated) {
+      onChange(updated);
+      // Surface the automatic recalculation whenever a mapping change
+      // flips the seller type (e.g. first wholesaler company → Hybrid).
+      const after = deriveSellerType(updated);
+      if (after !== before) {
+        toast.info(
+          `Seller type recalculated: ${SELLER_TYPE_LABELS[before]} → ${SELLER_TYPE_LABELS[after]}`,
+        );
+      }
+    }
   };
 
   const handleAddSubmit = () => {
@@ -1317,10 +1525,22 @@ export function SellerCatalogTab({
       {
         companyId: addCompanyId,
         brandIds: addAllBrands ? [] : addBrandIds,
+        operationMode: addOperationMode,
+        // Purchase gate only applies to distributor links — the
+        // wholesaler path normalises to the open default.
+        purchaseEligibility:
+          addOperationMode === "distributor"
+            ? addPurchaseEligibility
+            : "all-customers",
+        syncSkusToMySku: addSyncSkus,
       },
     ];
     persistSelections(next);
-    toast.success(`Linked "${company?.name ?? "company"}" to seller`);
+    toast.success(
+      `Linked "${company?.name ?? "company"}" as ${
+        addOperationMode === "wholesaler" ? "Wholesaler" : "Distributor"
+      }`,
+    );
     setAddOpen(false);
   };
 
@@ -1333,8 +1553,9 @@ export function SellerCatalogTab({
             Companies &amp; Brands
           </h3>
           <p className="text-sm text-gray-500">
-            Companies and brands this distributor sells. Add more to grant
-            access to additional catalog products.
+            Companies and brands this seller works with, each mapped as
+            Distributor or Wholesaler. The seller type is calculated from
+            these operation modes.
           </p>
         </div>
         <Button
@@ -1403,6 +1624,7 @@ export function SellerCatalogTab({
             // covers the catalog company status.
             const isCompanyInactive = company.isActive === false;
             const isInactiveSeller = isInactive;
+            const mode: OperationMode = sel.operationMode ?? "distributor";
             return (
               <div
                 key={sel.companyId}
@@ -1425,6 +1647,30 @@ export function SellerCatalogTab({
                       <p className="text-sm font-semibold text-gray-900">
                         {company.name}
                       </p>
+                      <Badge
+                        className={
+                          mode === "wholesaler"
+                            ? "bg-amber-50 text-amber-700 border-amber-200 text-[10px]"
+                            : "bg-blue-50 text-blue-700 border-blue-200 text-[10px]"
+                        }
+                      >
+                        {mode === "wholesaler" ? "Wholesaler" : "Distributor"}
+                      </Badge>
+                      {mode === "distributor" && (
+                        <Badge
+                          className={
+                            (sel.purchaseEligibility ?? "all-customers") ===
+                            "registered-only"
+                              ? "bg-purple-50 text-purple-700 border-purple-200 text-[10px]"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
+                          }
+                        >
+                          {(sel.purchaseEligibility ?? "all-customers") ===
+                          "registered-only"
+                            ? "Registered customers only"
+                            : "All customers can purchase"}
+                        </Badge>
+                      )}
                       {isCompanyInactive && (
                         <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px]">
                           Inactive in catalog
@@ -1466,20 +1712,49 @@ export function SellerCatalogTab({
                       pruning and the Use-all-brands toggle, so power
                       users keep their full kit; we just don't expose
                       a second button for it. */}
-                  <Button
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                    onClick={() => openEdit(sel.companyId)}
-                    disabled={isInactiveSeller}
-                    title={
-                      isInactiveSeller
-                        ? "Activate this seller before adding brands"
-                        : `Add more brands for ${company.name}`
-                    }
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Brands
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* "Modify Fee" overrides the company's commercial fee for
+                        this seller. Only for DISTRIBUTOR companies, and only
+                        when the company's commercial fee is enabled at the
+                        company level — otherwise there is nothing to override. */}
+                    {mode === "distributor" &&
+                      company.commercialFee?.enabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => openModifyFee(sel.companyId)}
+                          disabled={isInactiveSeller}
+                          title={
+                            isInactiveSeller
+                              ? "Activate this seller before editing fees"
+                              : `Override the commercial fee for ${company.name} (this seller only)`
+                          }
+                        >
+                          <Coins className="h-3.5 w-3.5" />
+                          Modify Fee
+                          {sel.commercialFeeOverride && (
+                            <Badge className="ml-1 bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1">
+                              Overridden
+                            </Badge>
+                          )}
+                        </Button>
+                      )}
+                    <Button
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => openEdit(sel.companyId)}
+                      disabled={isInactiveSeller}
+                      title={
+                        isInactiveSeller
+                          ? "Activate this seller before adding brands"
+                          : `Add more brands for ${company.name}`
+                      }
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Brands
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -1533,6 +1808,69 @@ export function SellerCatalogTab({
               )}
             </div>
 
+            {/* Operation Mode — per-company Distributor/Wholesaler
+                choice made at link time. Drives the calculated seller
+                type and which serviceability model the company uses. */}
+            <div className="space-y-1">
+              <Label className="text-xs">
+                Operation Mode <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={addOperationMode}
+                onValueChange={(v) => setAddOperationMode(v as OperationMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="distributor">Distributor</SelectItem>
+                  <SelectItem value="wholesaler">Wholesaler</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-gray-500">
+                {addOperationMode === "wholesaler"
+                  ? "Wholesaler companies share the seller's single wholesaler polygon for serviceability — it's inherited automatically."
+                  : "Distributor companies use Delivery Beats for serviceability."}
+              </p>
+            </div>
+
+            {/* Customer Purchase — distributor-only gate chosen at tag
+                time: may any customer order from this company, or only
+                customers registered in the company's DMS (holding its
+                customer ID)? Mandatory, defaults to the open option.
+                Hidden for wholesaler links — wholesale never
+                restricts. */}
+            {addOperationMode === "distributor" && (
+              <div className="space-y-1">
+                <Label className="text-xs">
+                  Customer Purchase <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={addPurchaseEligibility}
+                  onValueChange={(v) =>
+                    setAddPurchaseEligibility(v as PurchaseEligibility)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-customers">
+                      All customers can purchase
+                    </SelectItem>
+                    <SelectItem value="registered-only">
+                      Registered customers only
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-gray-500">
+                  {addPurchaseEligibility === "registered-only"
+                    ? "Buyers must be registered in this company's DMS (hold its customer ID) before the catalogue unlocks."
+                    : "Any buyer can order from this company — no DMS registration required."}
+                </p>
+              </div>
+            )}
+
             {selectedAddCompany && (
               <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
                 <div className="flex items-center justify-between">
@@ -1584,6 +1922,25 @@ export function SellerCatalogTab({
               </div>
             )}
           </div>
+
+          <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <Checkbox
+              id="add-sync-skus"
+              checked={addSyncSkus}
+              onCheckedChange={(v) => setAddSyncSkus(!!v)}
+              className="mt-0.5"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                Sync all SKUs to seller's MySKU
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                All SKUs for this company and its brands will be automatically
+                added to this seller's MySKU list.
+              </p>
+            </div>
+          </label>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>
               Cancel
@@ -1727,6 +2084,16 @@ export function SellerCatalogTab({
             </div>
           )}
 
+          {editingSelection?.syncSkusToMySku && (
+            <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              <RefreshCw className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+              <span>
+                <b>Sync to MySKU is on</b> — newly added brands will be synced to
+                this seller's MySKU automatically.
+              </span>
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={closeEdit}>
               Cancel
@@ -1750,6 +2117,75 @@ export function SellerCatalogTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modify Fee — seller-level commercial fee OVERRIDE for one company.
+          Pre-filled from the seller's existing override, else the company-level
+          setup. Saving writes the override on this seller only; the company's
+          own commercial fee is never changed. */}
+      <Dialog
+        open={feeTarget !== null}
+        onOpenChange={(o) => (o ? null : closeModifyFee())}
+      >
+        <DialogContent className="!max-w-[min(95vw,760px)] w-[min(95vw,760px)] max-h-[92vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-blue-600" />
+              Modify Commercial Fee — {feeCompany?.name ?? "Company"}
+            </DialogTitle>
+            <DialogDescription>
+              Override the commercial fee for <b>{seller.name}</b> and{" "}
+              {feeCompany?.name ?? "this company"} only. Pre-filled from the
+              {feeIsOverridden
+                ? " seller's existing override"
+                : " company-level setup"}
+              . Saving here does not change the company-level commercial fee.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-1">
+            {feeIsOverridden ? (
+              <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+                <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  A seller-level override is active for this company. It takes
+                  precedence over the company-level commercial fee for this
+                  seller.
+                </span>
+              </div>
+            ) : (
+              <div className="mb-3 flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] text-blue-900">
+                <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  Showing the company-level commercial fee. Change any value and
+                  save to create a seller-specific override.
+                </span>
+              </div>
+            )}
+            <CommercialFeeTab value={feeDraft} onChange={setFeeDraft} />
+          </div>
+
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            {feeIsOverridden ? (
+              <Button
+                variant="ghost"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleResetFee}
+              >
+                Reset to company fee
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={closeModifyFee}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveFee}>Save Override</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </>
   );
 }

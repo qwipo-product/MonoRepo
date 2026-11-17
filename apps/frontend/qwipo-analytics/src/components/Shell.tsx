@@ -1,23 +1,67 @@
 import { useState } from 'react';
-import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Truck, UsersRound } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Bell, FileText, LineChart, PanelLeftClose, PanelLeftOpen, Settings, Smartphone, Truck, UsersRound } from 'lucide-react';
 import { Badge, cn } from '@mockups/ui';
 import { buyerPages, digiPages, opsPages, reportSections, titles, type Page } from '../nav';
 import { reportDefs } from '../data/reports';
+import { BOARDS } from '../buyerapp/boards';
 
 interface Props {
   page: Page;
-  /** second hash segment — picks the Reports section */
+  /** second hash segment — picks the Reports section or the analytics board */
   drill?: string;
   onNavigate: (p: string) => void;
   children: React.ReactNode;
 }
 
+/** Buyer app analytics group: Overview, App screens (ten boards, collapsible), Funnels, Session recordings. */
+function AnalyticsMenu({ active, drill, onNavigate }: { active: boolean; drill?: string; onNavigate: (p: string) => void }) {
+  const board = active ? (drill || 'overview').split(':')[0] : '';
+  const onScreen = BOARDS.some((b) => b.path === `/${board}`);
+  const [screensOpen, setScreensOpen] = useState(onScreen);
+  const go = (b: string) => onNavigate(`buyer-analytics/${b}`);
+  const leaf = (key: string, label: string, indent = false) => (
+    <button
+      key={key}
+      type="button"
+      onClick={() => go(key)}
+      className={cn(
+        'type-caption rounded-md py-1 pr-2.5 text-left hover:bg-primary-soft',
+        indent ? 'pl-5' : 'pl-2.5',
+        board === key ? 'bg-primary-soft font-medium text-primary-soft-foreground' : 'text-foreground-secondary',
+      )}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <>
+      {leaf('overview', 'Overview')}
+      <button
+        type="button"
+        onClick={() => setScreensOpen((v) => !v)}
+        aria-expanded={screensOpen}
+        className={cn(
+          'type-caption flex items-center justify-between rounded-md px-2.5 py-1 text-left hover:bg-primary-soft',
+          onScreen ? 'font-medium text-primary-soft-foreground' : 'text-foreground-secondary',
+        )}
+      >
+        App screens
+        {screensOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+      </button>
+      {screensOpen && BOARDS.map((b) => leaf(b.path.slice(1), b.title, true))}
+      {leaf('funnels', 'Funnels')}
+      {leaf('recordings', 'Session recordings')}
+    </>
+  );
+}
+
 function NavGroup({
-  icon, label, active, items, isActive, onNavigate,
+  icon, label, active, items, isActive, onNavigate, extra,
 }: {
   icon: React.ReactNode; label: string; active: boolean;
   items: { key: string; label: string; disabled?: string }[];
-  isActive: (key: string) => boolean; onNavigate: (p: string) => void;
+  isActive: (key: string) => boolean; onNavigate: (p: string) => void; extra?: React.ReactNode;
 }) {
   return (
     <div>
@@ -53,6 +97,7 @@ function NavGroup({
             </button>
           )
         )}
+        {extra}
       </div>
     </div>
   );
@@ -67,11 +112,13 @@ export function Shell({ page, drill, onNavigate, children }: Props) {
   const section = drill?.startsWith('run:')
     ? reportDefs.find((d) => d.key === drill.slice(4).split(':')[0])?.domain ?? 'seller'
     : reportSections.some((s) => s.key === drill) ? drill : 'seller';
+  const inAnalytics = page === 'buyer-analytics';
   const [collapsed, setCollapsed] = useState(false);
   const rail = [
     { icon: <LineChart size={18} />, label: 'DigiDukaan · Seller', active: inDigi },
     { icon: <Truck size={18} />, label: 'Ops (Logistics)', active: inOps },
     { icon: <UsersRound size={18} />, label: 'DigiDukaan · Buyer', active: inBuyer },
+    { icon: <Smartphone size={18} />, label: 'Buyer app analytics', active: inAnalytics },
     { icon: <FileText size={18} />, label: 'Reports', active: page === 'reports' },
     { icon: <Settings size={18} />, label: 'Settings', active: false },
   ];
@@ -79,7 +126,7 @@ export function Shell({ page, drill, onNavigate, children }: Props) {
     <div className="flex h-dvh bg-background-subtle text-foreground">
       <aside className={cn('flex shrink-0 flex-col border-r border-border bg-card transition-all', collapsed ? 'w-14' : 'w-56')}>
         <div className={cn('flex h-14 items-center border-b border-border', collapsed ? 'justify-center' : 'justify-between px-4')}>
-          {!collapsed && <img src="/qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />}
+          {!collapsed && <img src="./qwipo-logo.png" alt="Qwipo" className="h-6 object-contain" />}
           <button
             type="button"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -111,6 +158,13 @@ export function Shell({ page, drill, onNavigate, children }: Props) {
             <NavGroup icon={<LineChart size={18} />} label="DigiDukaan · Seller" active={inDigi} items={digiPages} isActive={isPage} onNavigate={onNavigate} />
             <NavGroup icon={<Truck size={18} />} label="Ops (Logistics)" active={inOps} items={opsPages} isActive={isPage} onNavigate={onNavigate} />
             <NavGroup icon={<UsersRound size={18} />} label="DigiDukaan · Buyer" active={inBuyer} items={buyerPages} isActive={isPage} onNavigate={onNavigate} />
+            <NavGroup
+              icon={<Smartphone size={18} />} label="Buyer app analytics" active={inAnalytics}
+              items={[]}
+              extra={<AnalyticsMenu active={inAnalytics} drill={drill} onNavigate={onNavigate} />}
+              isActive={() => false}
+              onNavigate={onNavigate}
+            />
             <NavGroup
               icon={<FileText size={18} />} label="Reports" active={page === 'reports'}
               items={reportSections.map((s) => ({ key: `reports/${s.key}`, label: s.label }))}

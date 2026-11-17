@@ -50,8 +50,9 @@
 #     triggering build's branch. That works only because the build and release
 #     YAMLs live in the same repo as the app.
 #
-# production carries an Azure DevOps approval check, so a merge to main queues
-# a deploy and waits for a human. dev, testing and staging do not.
+# Before a production release, make sure that Azure has the required approval check.
+# This file does not prove that the live approval check exists.
+# Examine the target environment controls before each approved release.
 
 trigger: none
 

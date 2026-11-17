@@ -1,56 +1,67 @@
 ---
 name: share-mockup
-description: Show pathway — get a mockup in front of someone right now: on a phone, across the office, in a meeting, as a link. Use for "show it to my boss", "open it on my phone", "send a link", "how do I demo this", "can they see it".
+description: Prepare a local or hosted demonstration link. Open the link. Give its access and retention limits.
 ---
 
-# Sharing a mockup
+# Share a prototype
 
-Three ways, from quickest to most durable. Pick by how long the link has to
-live.
+Use the [repository instructions](../../../CLAUDE.md).
+Prepare the link in this conversation.
+Do not send it to another person without the user's authorization.
+Do not commit or push merely to get a link.
 
-| Need | Use | Lives for |
-| --- | --- | --- |
-| Look at it on my phone / show the person next to me | the **Network** URL | while `bun dev` runs |
-| A link for a meeting today, same Wi-Fi | the Network URL | while `bun dev` runs |
-| A link that works next week, from anywhere, for a client or a test round | a deployed URL → `deploy-mockup` | until it's retired |
-| A screenshot or recording for a doc | the browser, on the deployed URL if there is one | forever |
+## Select the demonstration method
 
-## The Network URL
+| Need | Method |
+| --- | --- |
+| Demonstration on this computer | Use the application development URL. |
+| Demonstration on another local device | Use the verified Network URL. |
+| Demonstration of an existing branch build | Use its verified preview URL. |
+| Keep a stable hosted demonstration | Use [deploy-mockup](../deploy-mockup/SKILL.md). |
+
+## Use a local server
+
+Start only the necessary application:
 
 ```bash
 bun dev --filter=@mockups/<app>
 ```
 
-Vite prints two lines; the **Network:** one (`http://192.168.x.x:<port>`)
-works from any device on the same Wi-Fi. For a mobile mockup, opening that
-on a phone is the only review that counts — the 390px frame in a desktop
-browser lies about tap targets and keyboards.
+Record the process and actual URL.
+If Vite selects another port, use the displayed port.
+Do not use the application configuration alone as proof that a port is available.
 
-It stops when the terminal closes and changes as you edit, which is right
-for "look at this now" and wrong for anything else.
+For another device, make sure that the device can reach the computer on the permitted network.
+The current development configuration listens on network interfaces.
+Do not expose the server through a public tunnel without authorization.
 
-## Demo logins
+If the server is necessary for the user's demonstration, keep it active.
+Otherwise, stop the server after verification.
 
-Say them with the link, every time. `seller-store`: five personas, OTP
-`1234` (its README has the table). `rirn-retailer`: pre-filled shop, OTP
-`1234`. `rirn`: sign in as ITC, HUL or Britannia. Don't make the person
-guess.
+## Use a preview
 
-## A link that lasts
+The current pipelines create previews for `feature/*` when the path filters match.
+A custom branch such as `dev-cleanup` does not receive an automatic preview.
+Examine the pipeline output for the exact URL. Do not invent a successful run.
 
-`deploy-mockup`. Set expectations honestly: the first deploy of a new app
-needs two things outside this repo (a k8s manifest, pipeline registration)
-and isn't same-hour. Once an app is on the path, every push to `dev`
-updates its URL in a few minutes with nobody opening a pipeline.
+The URL structure is:
 
-If the mockup is already deployed, the dev URL is
-`https://mockups-<service>.dev.bms.qwipo.com` — the README's deploy table
-lists them. Check the badge in the corner says the build you expect
-(`dev-<sha>`), not `local` or last week's.
+```text
+https://<service>.dev.bms.qwipo.com/builds/<branch-slug>/<sha>/
+https://<service>.dev.bms.qwipo.com/builds/<branch-slug>/latest/
+```
 
-## Report
+Use the commit URL for a specific build.
+For a review of the most recent upload, use `latest/`.
+The current retention policy removes older builds beyond five per branch.
+A commit URL is therefore not a permanent archive.
 
-Give the URL, the login, and how long it lives. "Open
-http://192.168.1.24:5176 on your phone — same Wi-Fi, OTP 1234 — it works
-while my dev server is up. For something that lasts, say the word and I'll
-put it on the deploy path."
+Keep the hash or query parameters that find the requested screen.
+Before you give the link as a working URL, open the complete link.
+
+## Supply review details
+
+For Seller Store, include the selected persona and demonstration OTP `1234`.
+For Buyer/Paytm, include the starting screen and selected shell.
+State if the link is local, a preview, or a stable deployment.
+Record each access problem or unverified condition.

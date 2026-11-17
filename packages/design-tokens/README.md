@@ -1,68 +1,61 @@
-# @mockups/design-tokens
+# Mobile design tokens
 
-The **single, platform-neutral source of truth** for the Qwipo design system.
-Every mockup — the Paytm-mini web app, the React Native app, and both
-Storybooks — reads its colors, type, spacing, radius, elevation, and motion
-from here. No component defines a raw hex or an arbitrary size; it references a
-token.
+This package supplies mobile token values and the Buyer/Paytm CSS theme.
+The desktop token module re-exports some of its TypeScript values.
 
-Derived from the running Qwipo app's actual UI, with the drift corrected
-(one brand blue, status colors as `{solid, fg, bg, border}` quads, one radius
-scale, etc.). See `docs/DESIGN-SYSTEM-ANALYSIS.md` for the reasoning.
+| File | Purpose |
+| --- | --- |
+| `src/tokens.ts` | Typed token values |
+| `src/index.ts` | Public exports |
+| `theme.css` | Tailwind utilities and light/dark CSS values |
 
-## What's here
+## Use the theme
 
-```
-src/tokens.ts   canonical values — primitives + semantic light/dark. Framework-neutral.
-src/theme.ts    React Native binding — resolved lightTheme / darkTheme objects.
-src/index.ts    public entry (re-exports the above).
-theme.css       Web / Paytm-WebView binding — Tailwind v4 @theme, light + `.dark`.
-```
-
-## Consuming it
-
-**Web / Paytm WebView** (`@mockups/ui`, `apps/frontend/qwipo-buyer-paytm-app`):
+Import the theme in the application's CSS:
 
 ```css
-/* app index.css */
 @import "tailwindcss";
 @import "@mockups/design-tokens/theme.css";
 ```
 
-Then use token-bound utilities: `bg-card`, `text-foreground`,
-`text-foreground-secondary`, `border-border`, `bg-primary`,
-`text-primary-foreground`, `bg-success-subtle text-success-foreground
-border-success-border`, `rounded-lg`, and the `.type-*` role classes
-(`.type-h2`, `.type-price`, …).
+Keep the applicable Tailwind source entries for shared component packages.
+Use semantic utilities such as `bg-card`, `text-foreground`, and `border-border`.
+Use the defined typography roles for screen text.
 
-**React Native** (`@mockups/ui-native`, `apps/native/qwipo-native`):
+Buyer imports this theme from `apps/frontend/qwipo-buyer-paytm-app/src/index.css`, relative to the repository root.
+That file also scans `packages/ui/src` and `packages/components/src` with explicit `@source` entries.
+The mobile primitives in `@mockups/ui` consume these utilities.
 
-```tsx
-import { themes, type Theme } from '@mockups/design-tokens';
+| Use | Existing examples |
+| --- | --- |
+| Main and secondary text | `text-foreground`, `text-foreground-secondary` |
+| Primary action | `bg-primary`, `text-primary-foreground` |
+| Subtle action surface | `bg-primary-soft`, `text-primary-soft-foreground` |
+| Success state | `bg-success-subtle`, `text-success-foreground`, `border-success-border` |
+| Typography | `type-h1`, `type-h2`, `type-body`, `type-price`, `type-price-sm` |
 
-const t: Theme = themes[isDark ? 'dark' : 'light'];
-<View style={{ backgroundColor: t.color.surface.card, padding: t.space[4],
-               borderRadius: t.radius.lg }}>
-  <Text style={t.typography.h2}>…</Text>
-</View>
-```
-
-## Dark mode — the contract (this is the fix)
-
-Dark mode is a **`.dark` class** on `<html>` (web) / a theme name (native).
-The old app set a `data-theme` *attribute* that the CSS never read, so its
-toggle did nothing. The provider now owns the class:
+For a chart or map in TypeScript, import values from the package:
 
 ```ts
-document.documentElement.classList.toggle('dark', isDark);
+import { colorLight, colorDark } from '@mockups/design-tokens';
 ```
 
-Every semantic token has a validated dark value in the same file — light and
-dark ship together, never one without the other.
+Select the value for the active theme.
+For example, the light theme's brand color is `colorLight.brand.primary`.
+The mobile theme provider is `packages/ui/src/theme.tsx`, relative to the repository root.
 
-## Changing a token
+The theme provider controls the `.dark` class on the document root.
+After a token change, examine the two themes.
+A defined dark value does not prove sufficient contrast.
 
-`tokens.ts` and `theme.css` are edited **together** (small set, low churn — the
-repo has no build step by design, so both are hand-maintained mirrors). Change
-the value in `tokens.ts`, mirror it in `theme.css`, done. `theme.ts` derives
-from `tokens.ts` automatically.
+## Change a token
+
+1. Find its TypeScript and CSS consumers.
+2. Update the corresponding values in `src/tokens.ts` and `theme.css`.
+3. Examine the desktop CSS for separate values that must also change.
+4. Keep deliberate differences between the design kits.
+5. Examine contrast and focus visibility.
+6. Use [theme](../../.claude/skills/theme/SKILL.md) for verification.
+
+Synchronize the token representations manually.
+A TypeScript export does not update CSS automatically.

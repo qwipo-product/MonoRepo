@@ -1,85 +1,72 @@
-# @mockups/web-tokens
+# Desktop design tokens
 
-The token layer for **desktop / admin** surfaces — dense list pages, data
-tables, dialogs, sidebars. The web counterpart to `@mockups/design-tokens`,
-which stays mobile-first.
+This package supplies the desktop theme for Seller Store.
+It defines desktop density, typography, component values, and chart colors.
 
-## Why there are two token layers
+| File | Purpose |
+| --- | --- |
+| `src/tokens.ts` | Desktop values and shared TypeScript exports |
+| `src/index.ts` | Public exports |
+| `theme.css` | Tailwind bindings, dark theme, and compatibility styles |
 
-Because a phone screen and an admin console aren't the same product wearing
-different colours. The differences are real and deliberate:
-
-| | `design-tokens` (mobile) | `web-tokens` (web) |
-|---|---|---|
-| Controls | 44px tap targets | 36px (`h-9`) |
-| Cards | 12px radius | 8px radius |
-| Table pills | — | 2px radius |
-| Body text | 16px | 14px |
-| Charts | none | 8-colour `chartPalette` |
-
-**Pick one per app.** Both define `--primary`, `--background`, `--radius` and
-friends, so importing both leaves whichever CSS import lands last winning
-every shared property — silently.
-
-## Brand colour is not duplicated
-
-`src/tokens.ts` re-exports `colorLight`, `colorDark`, `space` and `zIndex`
-straight from `@mockups/design-tokens`. There is one definition of the Qwipo
-blue and of the status quads, not two that happen to agree today. Change a
-brand value in `design-tokens` and both layers move.
-
-Only the things that genuinely differ are declared here: radius, density,
-control sizing, the admin type scale, and the chart palette.
-
-## What's here
-
-```
-src/tokens.ts   web/admin values + re-exports of the shared colour scheme
-src/index.ts    public entry
-theme.css       Tailwind v4 binding — @theme, light + `.dark`, animations
-```
-
-## Consuming it
+## Use the theme
 
 ```css
-/* app src/index.css */
 @import "tailwindcss";
 @source "../../../../packages/web-ui/src";
 @import "../../../../packages/web-tokens/theme.css";
 ```
 
-That single import also pulls in `tw-animate-css`, which the Radix overlays in
-`@mockups/web-ui` need — without it, dialogs and sheets appear with no
-animation and nothing errors.
+This example applies to an application under `apps/frontend/`.
+The theme imports `tw-animate-css` for overlay animations.
+Do not import the mobile CSS token layer into the same application.
+Both layers define some of the same custom properties.
 
-For token *values* in TypeScript (Recharts series colours, canvas drawing):
+For TypeScript values, import the required exports:
 
 ```ts
 import { chartPalette, component, radius } from '@mockups/web-tokens';
 ```
 
-## The dark-mode rebinding layer
+The main consumer stylesheet is `apps/frontend/seller-store/src/index.css`, relative to the repository root.
+Shared desktop components live in `packages/web-ui/src/components/`.
+Their classes resolve through this package's `theme.css`.
 
-`theme.css` ends with a long block that re-binds raw Tailwind utilities under
-`.dark`:
+| Need | Definition to examine |
+| --- | --- |
+| `bg-primary`, `bg-card`, and `text-foreground` | `theme.css`: CSS variables and `@theme inline` mappings |
+| Desktop control sizing and component values | `src/tokens.ts`: `component` |
+| Typography, radius, motion, and chart colors | `src/tokens.ts`: `typography`, `radius`, `motion`, and `chartPalette` |
+| Dark-mode colors and imported legacy utility support | `theme.css`: `.dark` rules and compatibility selectors |
 
-```css
-.dark .bg-white   { background-color: oklch(0.205 0 0); }
-.dark .text-gray-900 { color: oklch(0.97 0 0); }
-.dark .bg-blue-50 { background-color: oklch(0.4 0.14 264 / 0.18); }
-```
+Desktop buttons commonly use `h-9`.
+Read the component source and CSS mapping before translating a TypeScript dimension into a class.
+Use the [desktop design reference](../web-ui/DESIGN-SYSTEM.md) for component and page examples.
 
-This exists because the ported Seller Store pages — ~40,000 lines — are
-written with `bg-white` / `text-gray-900`, not semantic tokens. The rebinding
-is what makes them dark-aware without a rewrite. It is load-bearing: don't
-delete it, and keep it in mind when a page looks right in light and wrong in
-dark.
+## Shared values and separate CSS
 
-New screens should still prefer semantic classes (`bg-card`, `text-foreground`).
+The TypeScript module re-exports `colorLight`, `colorDark`, `space`, and `zIndex` from `@mockups/design-tokens`.
+The desktop CSS contains separate literal values.
+These values do not update automatically when the TypeScript source changes.
+Some desktop and mobile surface values differ intentionally.
 
-## Changing a token
+If a rendered dimension or color differs from a TypeScript value, read the actual CSS binding.
+Resolve unintended differences in the approved task.
+Record any differences between token representations.
 
-`src/tokens.ts` and `theme.css` are hand-maintained mirrors — this repo has no
-build step by design. **Edit both in the same commit**, then update the
-matching section of `packages/web-ui/DESIGN-SYSTEM.md` and the Storybook
-story in `apps/frontend/storybook-web`.
+## Existing Seller styles
+
+The dark theme contains compatibility rules for raw palette utilities such as `bg-white` and `text-gray-900`.
+Existing Seller Store pages depend on these rules.
+Until the affected consumers use another verified style, keep these rules.
+Use semantic classes for new screen code.
+
+## Change a token
+
+1. Find the affected TypeScript and CSS representations.
+2. Update corresponding values in the same change.
+3. Keep intentional differences between the kits.
+4. If the design guidance changes, update the [design reference](../web-ui/DESIGN-SYSTEM.md).
+5. Update the applicable Seller handbook example.
+6. Examine light and dark themes.
+7. Use [verify](../../.claude/skills/verify/SKILL.md).

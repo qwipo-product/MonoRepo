@@ -54,7 +54,7 @@ export function VendorPicker({
               <div className="max-w-40 truncate text-xs font-medium">{vn.name}</div>
               <div
                 className={cn(
-                  'mt-0.5 text-[11px]',
+                  'mt-0.5 text-xs',
                   on ? 'text-primary-foreground/80' : 'text-foreground-secondary'
                 )}
               >

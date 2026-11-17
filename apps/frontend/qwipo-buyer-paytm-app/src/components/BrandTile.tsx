@@ -38,7 +38,7 @@ export function BrandTile({
         className="aspect-square w-full rounded"
         imgClassName="p-0 scale-110"
       />
-      <span className="mt-1 block truncate text-center text-[11px] text-foreground">{name}</span>
+      <span className="mt-1 block truncate text-center text-xs text-foreground">{name}</span>
     </button>
   );
 }

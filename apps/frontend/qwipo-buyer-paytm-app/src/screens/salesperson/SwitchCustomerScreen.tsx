@@ -64,7 +64,7 @@ export function SwitchCustomerScreen({ onBack, onSwitch }: { onBack: () => void;
         {/* nearby results */}
         {nearby.length > 0 && !selected && (
           <div className="space-y-2">
-            <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+            <div className="px-1 text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
               Nearby retailers
             </div>
             {nearby.map((c) => (
@@ -106,7 +106,7 @@ function CustomerResult({ c, selected, onPick }: { c: SwitchCustomer; selected: 
     >
       <div className="flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-sm font-semibold text-foreground">{c.businessName}</span>
-        <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">{c.distanceM} m</span>
+        <span className="shrink-0 text-xs font-medium text-foreground-secondary">{c.distanceM} m</span>
       </div>
       <div className="mt-0.5 text-xs text-foreground-secondary">{c.ownerName} · {c.mobile}</div>
       <div className="mt-1 flex items-start gap-1.5 text-xs text-foreground-secondary">

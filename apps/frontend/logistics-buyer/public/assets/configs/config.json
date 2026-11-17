@@ -1,0 +1,8 @@
+{
+  "env": "mock",
+  "buyerUrl": "mock://logistics-buyer-svc/api/v1",
+  "authUrl": "mock://logistics-auth-svc/api/v1",
+  "googleMapsKey": "",
+  "fileServicesUrl": "mock://files/api",
+  "sse": "mock://ws/api/sse"
+}

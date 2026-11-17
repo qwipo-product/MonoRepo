@@ -15,14 +15,14 @@ function Introduction() {
     <div className="mx-auto max-w-2xl bg-background p-8 text-foreground">
       <h1 className="text-2xl font-bold">Qwipo Design System</h1>
       <p className="mt-2 text-sm text-foreground-secondary">
-        One source of truth for the buyer app, the seller app and everything after. Components here are token-driven —
+        The mobile kit for Buyer, RIRN Retailer, and Analytics. Components here are token-driven —
         the shape is shared, the tokens define the look, and dark mode is a token swap (toggle it in the toolbar).
-        This catalog is also the reference to port the React Native app from.
+        Use Desktop Storybook for Seller Store and RIRN Console components.
       </p>
 
       <h2 className="mt-6 text-base font-semibold">The layers</h2>
       <div className="mt-3 flex flex-col gap-2">
-        <Layer n="1" pkg="@mockups/design-tokens" what="Colour, spacing, type and radius as semantic tokens (light + dark). Web binding: theme.css; native binding: theme.ts." />
+        <Layer n="1" pkg="@mockups/design-tokens" what="Colour, spacing, type and radius as semantic tokens (light + dark). Web binding: theme.css." />
         <Layer n="2" pkg="@mockups/ui" what="Primitives — Button, Card, Input, Chip, Sheet, Badge, Switch, SegmentedControl, QtyStepper, SelectableCard, EmptyState, Tabs." />
         <Layer n="3" pkg="@mockups/components" what="Composed, product-aware components — ProductCard, PriceLabel, StatusBadge." />
         <Layer n="4" pkg="apps/*" what="Screens compose tokens + primitives. No per-screen CSS, no raw hex, no inline styles." />

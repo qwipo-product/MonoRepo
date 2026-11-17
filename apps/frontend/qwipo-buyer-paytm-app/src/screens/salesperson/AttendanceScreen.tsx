@@ -119,7 +119,7 @@ export function AttendanceScreen({ onBack }: { onBack: () => void }) {
 
         {/* month summary */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+          <div className="text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
             {ATTENDANCE.month}
           </div>
           <div className="mt-3 grid grid-cols-4 gap-2 text-center">
@@ -174,7 +174,7 @@ export function AttendanceScreen({ onBack }: { onBack: () => void }) {
               </div>
               <span
                 className={cn(
-                  'shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium',
+                  'shrink-0 rounded-md px-2 py-0.5 text-2xs font-medium',
                   l.status === 'accepted'
                     ? 'bg-success-subtle text-success-foreground'
                     : l.status === 'rejected'
@@ -195,7 +195,7 @@ export function AttendanceScreen({ onBack }: { onBack: () => void }) {
 function Stamp({ label, time }: { label: string; time: string | null }) {
   return (
     <div className="rounded-md bg-background-subtle p-2.5">
-      <div className="text-[11px] text-foreground-secondary">{label}</div>
+      <div className="text-xs text-foreground-secondary">{label}</div>
       <div className="mt-0.5 text-sm font-semibold text-foreground">{time ?? '—'}</div>
     </div>
   );
@@ -213,7 +213,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'su
   return (
     <div>
       <div className={cn('text-lg font-bold tabular-nums', color)}>{value}</div>
-      <div className="text-[11px] text-foreground-secondary">{label}</div>
+      <div className="text-xs text-foreground-secondary">{label}</div>
     </div>
   );
 }

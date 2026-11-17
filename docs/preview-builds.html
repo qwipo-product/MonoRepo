@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview links for mockups</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5f6368; --line: #e3e3e3;
+    --card: #f6f7f9; --accent: #0a58ca; --ok: #0f7b3b; --warn: #a15c00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111214; --fg: #ececec; --muted: #a0a4ab; --line: #2c2f35; --card: #1b1d21; --accent: #7ab0ff; --ok: #5ed38f; --warn: #ffbf5c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 20px; margin: 40px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+  h3 { font-size: 16px; margin: 20px 0 6px; }
+  p, li { max-width: 68ch; }
+  .lead { color: var(--muted); font-size: 17px; margin: 0 0 24px; }
+  code, pre { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--card); padding: 2px 6px; border-radius: 4px; }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+  a { color: var(--accent); }
+  .box { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 16px 0; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .steps li { margin: 8px 0; }
+  .small { color: var(--muted); font-size: 14px; }
+  @media print { body { font-size: 12pt; } h2 { break-after: avoid; } pre, .box { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Preview links for mockups</h1>
+<p class="lead">Every time you push your own branch, your mockup gets a link of its own. Nobody has to deploy anything. This page tells you how to name your branch, how to work on it, and where to find the link.</p>
+
+<h2>What you get</h2>
+<ul>
+  <li><strong>A link for every push.</strong> A few minutes after you push, your work is live at a link only your branch has.</li>
+  <li><strong>A “latest” link that follows you.</strong> Send it once; every push you make updates it.</li>
+  <li><strong>A fixed link for every commit.</strong> Good for “look at this exact version”. The last five commits of each branch are kept; older ones are removed.</li>
+  <li><strong>The dev link stays clean.</strong> Nothing changes on the normal dev link until your work is approved and landed.</li>
+</ul>
+
+<h2>One rule: your branch name starts with <code>dev/</code></h2>
+<p>The link only appears for branches whose name begins with <code>dev/</code>. After the slash, say which mockup and what changes. Short, lowercase, words joined with dashes.</p>
+<table>
+  <tr><th>Good</th><th>Not good</th></tr>
+  <tr><td><code>dev/buyer-app-cod-checkout</code></td><td><code>rahul</code> — nobody can tell what is in it</td></tr>
+  <tr><td><code>dev/seller-store-kyc-empty-state</code></td><td><code>dev-cart</code> — no slash, so no link</td></tr>
+  <tr><td><code>dev/analytics-reports-filters</code></td><td><code>test2</code>, <code>new-branch</code>, <code>wip</code></td></tr>
+</table>
+<div class="box">
+  <p class="warn" style="margin:0 0 6px">Never push straight to <code>dev</code>, <code>testing</code>, <code>staging</code> or <code>main</code>.</p>
+  <p style="margin:0">Those branches are the shared environments. <code>dev</code> is the shared dev demo. <code>testing</code>, <code>staging</code> and <code>main</code> go to other environments that the engineering team owns.</p>
+</div>
+
+<h2>Where the link is</h2>
+<p>These URLs come from the repository deployment configuration. Check that the service and preview exist before sharing a link. Open the branch list, select a branch, then select <strong>latest</strong> or a commit.</p>
+<table>
+  <tr><th>Mockup</th><th>Branch list</th></tr>
+  <tr><td>Buyer app (Qwipo and Paytm shells)</td><td><a href="https://mockups-buyer-app.dev.bms.qwipo.com/builds/">mockups-buyer-app.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>Seller store</td><td><a href="https://mockups-seller-store.dev.bms.qwipo.com/builds/">mockups-seller-store.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>RIRN Console</td><td><a href="https://mockups-rirn-company.dev.bms.qwipo.com/builds/">mockups-rirn-company.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>RIRN Retailer</td><td><a href="https://mockups-rirn-retailer.dev.bms.qwipo.com/builds/">mockups-rirn-retailer.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>Qwipo Analytics</td><td><a href="https://mockups-analytics.dev.bms.qwipo.com/builds/">mockups-analytics.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>Mobile Storybook</td><td><a href="https://mockups-storybook.dev.bms.qwipo.com/builds/">mockups-storybook.dev.bms.qwipo.com/builds/</a></td></tr>
+  <tr><td>Desktop Storybook</td><td><a href="https://mockups-storybook-web.dev.bms.qwipo.com/builds/">mockups-storybook-web.dev.bms.qwipo.com/builds/</a></td></tr>
+</table>
+<p>The links always look like this. The branch name has its slash turned into a dash:</p>
+<pre><code>https://mockups-seller-store.dev.bms.qwipo.com/builds/dev-seller-store-kyc-empty-state/latest/
+https://mockups-seller-store.dev.bms.qwipo.com/builds/dev-seller-store-kyc-empty-state/3f9c2a1/</code></pre>
+<p class="small">The small badge in the corner of every screen names the build you are looking at, for example <code>dev-seller-store-kyc-empty-state-3f9c2a1</code>. If it says something else, you are on a different build.</p>
+
+<h2>Day to day</h2>
+
+<h3>If you work with Claude Code</h3>
+<p>You do not need to type git commands. Say what you mean and it does the rest, on the right kind of branch:</p>
+<ul>
+  <li>“I’m starting on the KYC empty state in the seller store” — makes a fresh <code>dev/…</code> branch from today’s dev.</li>
+  <li>“Save my work” — commits and pushes. Your link updates a few minutes later.</li>
+  <li>“Pull the latest” — brings in what others have landed on dev.</li>
+  <li>“Send me a link” — gives you the preview link to share.</li>
+  <li>“It’s approved, put it on dev” — lands it on the shared dev demo.</li>
+</ul>
+
+<h3>If you use git yourself</h3>
+<ol class="steps">
+  <li><strong>Start from fresh dev, on a new branch.</strong>
+<pre><code>git switch dev
+git pull
+git switch -c dev/seller-store-kyc-empty-state
+git push -u origin HEAD</code></pre></li>
+  <li><strong>Work, then save and push.</strong> Small saves, each with a plain message that says what changed.
+<pre><code>git add -A
+git commit -m "Seller store: empty state for the KYC list"
+git push</code></pre>
+  A few minutes later your link is updated.</li>
+  <li><strong>Share.</strong> Open the branch list above, click your branch, copy the <strong>latest</strong> link. If the screen you want to show has a <code>#</code> in its address, copy the whole address including that part — it says which screen opens.</li>
+  <li><strong>Stay up to date.</strong> When others land work on dev, bring it into your branch:
+<pre><code>git fetch origin
+git merge origin/dev
+git push</code></pre></li>
+  <li><strong>When it is approved,</strong> ask for it to be landed on dev. The normal dev link then updates for everyone.</li>
+</ol>
+
+<h2>Good to know</h2>
+<table>
+  <tr><th>You see</th><th>What it means</th></tr>
+  <tr><td>Your branch is not in the list yet</td><td>The build takes a few minutes after the push. Refresh. If it is still missing after ten minutes, check the branch name starts with <code>dev/</code>.</td></tr>
+  <tr><td>“No such build”</td><td>That commit was never built, or it is older than the last five on that branch. Use <strong>latest</strong> or a newer commit.</td></tr>
+  <tr><td>A picture is missing on your screen</td><td>Image paths in the app must start with <code>./</code>, not <code>/</code>. Tell Claude Code “the picture on X is broken” and it will fix the path.</td></tr>
+  <tr><td>Addresses have a <code>#</code> in them, like <code>/#/orders</code></td><td>Normal. That is how the mockups keep track of which screen is open. Share the whole address.</td></tr>
+  <tr><td>The badge in the corner shows a different build</td><td>You opened a different link. Go back to the branch list and pick yours.</td></tr>
+  <tr><td>Something on the shared dev link broke</td><td>Nothing you push to a <code>dev/…</code> branch can change the shared dev link. Someone landed a change; tell the team.</td></tr>
+</table>
+
+<h2>In one line</h2>
+<p class="ok">Branch from dev, name it <code>dev/&lt;mockup&gt;-&lt;what&gt;</code>, push often, share the <strong>latest</strong> link, ask to land it when it is approved.</p>
+
+</main>
+</body>
+</html>

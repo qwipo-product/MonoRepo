@@ -1,8 +1,9 @@
 import { Banknote, ChevronLeft, MapPin } from 'lucide-react';
-import { Button, InlineMessage } from '@mockups/ui';
+import { Button } from '@mockups/ui';
 import { formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
+import { BEAT_WINDOW_NOTE, isBeatDay } from '../data/delivery';
 
 /* Order Summary — read-only review before Place Order. One bill card per
    seller (brand · item summary + chosen delivery window), then the overall
@@ -16,20 +17,14 @@ export function OrderSummaryScreen({
   onBack,
   onPlaceOrder,
   onViewItems,
-  kycPending = false,
-  kycUnderReview = false,
-  onCompleteKyc,
 }: {
   /** The live cart App.tsx built from the buyer's actual picked quantities. */
   cart: ReturnType<typeof buildCart>;
   onBack: () => void;
   onPlaceOrder: () => void;
-  onViewItems: (sellerId: string) => void;
-  /** First order waits on account verification. */
-  kycPending?: boolean;
-  /** KYC is submitted and with our team (manual review) — nothing to do but wait. */
-  kycUnderReview?: boolean;
-  onCompleteKyc?: () => void;
+  /** Opens the items sheet. With a second argument, scoped to one cross-dock
+   *  distributor inside that card rather than the whole card. */
+  onViewItems: (sellerId: string, cdsSeller?: string) => void;
 }) {
   const { sellers, grandTotal } = cart;
   const deliveryFee = sellers.reduce((n, s) => n + s.deliveryFee, 0);
@@ -53,7 +48,12 @@ export function OrderSummaryScreen({
 
       <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
         {sellers.map((s) => (
-          <SellerBill key={s.id} seller={s} onViewItems={() => onViewItems(s.id)} />
+          <SellerBill
+            key={s.id}
+            seller={s}
+            onViewItems={() => onViewItems(s.id)}
+            onViewSellerItems={(name) => onViewItems(s.id, name)}
+          />
         ))}
 
         {/* Bill details */}
@@ -107,37 +107,14 @@ export function OrderSummaryScreen({
         </div>
       </div>
 
-      <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
-        {kycPending && kycUnderReview && (
-          <InlineMessage
-            className="mb-3"
-            variant="warning"
-            title="KYC Pending"
-            description="Your KYC is under review. You can place orders once it is approved."
-          />
-        )}
-        {kycPending && !kycUnderReview && (
-          <InlineMessage
-            className="mb-3"
-            variant="warning"
-            title="Complete KYC to place this order"
-            description="Your account needs to be verified before your first order."
-            action={
-              onCompleteKyc ? (
-                <Button size="sm" variant="soft" onClick={onCompleteKyc}>
-                  Complete KYC
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
+      <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
         <div className="flex items-center justify-between gap-3">
           <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">To pay</div>
+            <div className="text-2xs uppercase tracking-wide text-foreground-secondary">To pay</div>
             <div className="text-lg font-bold tabular-nums text-foreground">{formatInr(toPay)}</div>
-            <div className="text-[11px] font-medium text-primary">Cash on Delivery</div>
+            <div className="text-xs font-medium text-primary">Cash on Delivery</div>
           </div>
-          <Button className="px-8" disabled={kycPending} onClick={onPlaceOrder}>
+          <Button className="px-8" onClick={onPlaceOrder}>
             Place order
           </Button>
         </div>
@@ -146,7 +123,16 @@ export function OrderSummaryScreen({
   );
 }
 
-function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: () => void }) {
+function SellerBill({
+  seller,
+  onViewItems,
+  onViewSellerItems,
+}: {
+  seller: CartSeller;
+  onViewItems: () => void;
+  /** Open one cross-dock distributor's lines, rather than the whole card's. */
+  onViewSellerItems?: (sellerName: string) => void;
+}) {
   // One fixed-height summary line — brands capped so the card never grows.
   const brands = [...new Set(seller.items.map((i) => brandOf(i.product.shortName)))];
   const CAP = 3;
@@ -174,21 +160,59 @@ function SellerBill({ seller, onViewItems }: { seller: CartSeller; onViewItems: 
         </div>
       </div>
 
-      {/* brand summary — single line, capped */}
-      <div className="mt-2.5 flex items-center justify-between gap-3 rounded-md bg-background-subtle p-2.5">
-        <span className="min-w-0 truncate text-xs text-foreground">{summary}</span>
-        <button
-          onClick={onViewItems}
-          className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
-        >
-          View items
-        </button>
-      </div>
+      {/* What is in the order. For one seller that is a capped list of brands;
+          for the cross-dock store it is the distributors themselves, one line
+          each with its own way in. Naming the brands there would bury the
+          thing the buyer is checking before they pay — that every distributor
+          they shopped is actually in this delivery. */}
+      {seller.cds && seller.groups ? (
+        <div className="mt-2.5 overflow-hidden rounded-md bg-background-subtle">
+          {seller.groups.map((g, i) => (
+            <div
+              key={g.seller}
+              className={`flex items-center justify-between gap-3 p-2.5 ${i > 0 ? 'border-t border-border' : ''}`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium text-foreground">{g.seller}</span>
+                <span className="block text-2xs text-foreground-secondary">
+                  {g.items.length} {g.items.length === 1 ? 'product' : 'products'} · {formatInr(g.subtotal)}
+                </span>
+              </span>
+              <button
+                onClick={() => onViewSellerItems?.(g.seller)}
+                className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
+              >
+                View items
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-md bg-background-subtle p-2.5">
+          <span className="min-w-0 truncate text-xs text-foreground">{summary}</span>
+          <button
+            onClick={onViewItems}
+            className="shrink-0 text-sm font-semibold text-primary active:scale-[0.98]"
+          >
+            View items
+          </button>
+        </div>
+      )}
 
-      {/* delivery window */}
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 text-sm">
-        <span className="text-foreground-secondary">Delivery by</span>
-        <span className="font-semibold text-foreground">{seller.windows[0]}</span>
+      {/* delivery window — a beat day is the day the van is in the area, not
+          the hour the goods arrive, so it carries the window the seller works
+          to, counted from that day. Same words as the cart said, so nothing
+          changes at checkout. */}
+      <div className="mt-3 border-t border-border pt-2.5 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-foreground-secondary">Delivery by</span>
+          <span className="font-semibold text-foreground">{seller.windows[0]}</span>
+        </div>
+        {!seller.cds && isBeatDay(seller.windows[0]) && (
+          <div className="mt-0.5 text-right text-xs font-medium text-foreground-secondary">
+            {BEAT_WINDOW_NOTE}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -319,7 +319,7 @@ export function GlobalSearchScreen({
                       <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                         <Highlight text={s.label} q={query.trim()} />
                       </span>
-                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-foreground-secondary">
+                      <span className="shrink-0 text-2xs uppercase tracking-wide text-foreground-secondary">
                         {/* The four kinds name themselves: recent, trending,
                             category, brand. */}
                         {s.kind === 'term' ? 'trending' : s.kind}
@@ -427,7 +427,6 @@ export function GlobalSearchScreen({
       <DiscountsSheet
         open={!!discountsProductId}
         productId={discountsProductId}
-        qty={{ ...qty, ...wholesaleQty }}
         onClose={() => setDiscountsProductId(null)}
       />
     </div>

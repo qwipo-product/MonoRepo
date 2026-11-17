@@ -38,7 +38,7 @@ export function ShellChrome({
             </button>
           </div>
           {/* Paytm brand accent line */}
-          <div className="h-0.5 flex-shrink-0 bg-[#00BAF2]" />
+          <div className="h-0.5 flex-shrink-0 bg-paytm-cyan" />
         </>
       )}
 

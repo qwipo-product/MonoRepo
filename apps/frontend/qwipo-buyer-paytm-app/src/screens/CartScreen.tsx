@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Tag, Truck, ShoppingCart } from 'lucide-react';
-import { Button, SegmentedControl, EmptyState, cn } from '@mockups/ui';
+import { ChevronLeft, Plus, Truck, ShoppingCart } from 'lucide-react';
+import { Button, SegmentedControl, EmptyState } from '@mockups/ui';
 import { ProductImage, formatInr } from '@mockups/components';
 import type { buildCart, CartSeller } from '../data/cart';
 import { useEmptyable } from '../review/demoState';
-import { isBeatDay } from '../data/delivery';
+import { BEAT_WINDOW_NOTE, isBeatDay } from '../data/delivery';
 
 /* Cart Summary — one card per seller (no distributor/wholesaler grouping).
    Each card leads with a plain-language status (free / paid / below minimum) so
@@ -17,7 +17,6 @@ export function CartScreen({
   onCheckout,
   onViewItems,
   onAddMore,
-  onOpenCoupons,
   onItemTap,
 }: {
   /** The live cart, built from the same qty the buyer picked on the Product
@@ -27,8 +26,8 @@ export function CartScreen({
   onBack: () => void;
   onCheckout: () => void;
   onViewItems: (sellerId: string) => void;
-  onAddMore: (sellerId: string) => void;
-  onOpenCoupons: () => void;
+  /** The card's seller, so a cross-dock card can ask which one. */
+  onAddMore: (seller: CartSeller | null) => void;
   /** Opens one SKU's selling-units sheet from a seller card's strip. */
   onItemTap?: (productId: string) => void;
 }) {
@@ -65,36 +64,18 @@ export function CartScreen({
             icon={<ShoppingCart strokeWidth={1.75} />}
             title="Your cart is empty"
             description="Add products from a distributor or wholesaler to see them here."
-            action={<Button onClick={() => onAddMore('')}>Browse products</Button>}
+            action={<Button onClick={() => onAddMore(null)}>Browse products</Button>}
           />
         </div>
       ) : (
         <>
           <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto bg-background-subtle p-3">
-            {/* Apply coupon — first card in the list, so the offers are seen
-                before the buyer starts reading totals. */}
-            <button
-              onClick={onOpenCoupons}
-              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 text-left shadow-sm active:scale-[0.99]"
-            >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-                <Tag className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-foreground">Apply coupon</span>
-                <span className="block text-xs text-foreground-secondary">
-                  Offers available — tap to view &amp; apply
-                </span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-foreground-secondary" />
-            </button>
-
             {sellers.map((s) => (
               <SellerCard
                 key={s.id}
                 seller={s}
                 onViewItems={() => onViewItems(s.id)}
-                onAddMore={() => onAddMore(s.id)}
+                onAddMore={() => onAddMore(s)}
                 onItemTap={onItemTap}
               />
             ))}
@@ -102,10 +83,10 @@ export function CartScreen({
 
           {/* No blanket warning here: each seller's card now says exactly what
               it is short of, which is the thing the buyer can act on. */}
-          <div className="border-t border-border bg-card px-4 py-3 shadow-[var(--shadow-bar-top)]">
+          <div className="border-t border-border bg-card px-4 py-3 shadow-bar-top">
             <div className="flex items-center justify-between gap-3">
               <div className="leading-tight">
-                <div className="text-[10px] uppercase tracking-wide text-foreground-secondary">
+                <div className="text-2xs uppercase tracking-wide text-foreground-secondary">
                   Total Cart Value
                 </div>
                 <div className="text-lg font-bold tabular-nums">{formatInr(grandTotal)}</div>
@@ -126,6 +107,12 @@ export function CartScreen({
 
 /** Weight the way a seller quotes it: "25 kg", "12.5 kg". */
 const kg = (n: number) => `${Number(n.toFixed(2))} kg`;
+
+/* Whole rupees for the minimum bars only. A minimum is a round target, not an
+   invoice line — "Add ₹1,520 of ₹2,000" is read at a glance, where
+   "₹1,520.00 of ₹2,000.00" is four numbers to wade through. Everything else
+   on this screen still shows paise. */
+const rupees = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 /* A minimum this seller has not met yet — value or weight, same shape either
    way. It leads with what is still missing, because that is the number the
@@ -148,9 +135,9 @@ function MinimumBar({
   return (
     <div className="mt-2.5">
       <div className="flex items-center justify-between gap-2 text-xs">
-        {/* The label is the brand blue so the condition is legible at a
-            glance; the amber is saved for the number still outstanding. */}
-        <span className="font-medium text-primary">{label}</span>
+        {/* Plain black, like the seller name above it: the label only names
+            the condition, and the amber beside it is what needs reading. */}
+        <span className="font-medium text-foreground">{label}</span>
         <span className="tabular-nums">
           <span className="font-semibold text-warning-foreground">Add {format(need - have)}</span>
           <span className="text-foreground-secondary"> of {format(need)}</span>
@@ -204,20 +191,10 @@ function SellerCard({
             minimum is unmet — once it's cleared there is no progress left to
             report. Weight only appears for sellers who set one. */}
         {seller.mov > 0 && seller.subtotal < seller.mov && (
-          <MinimumBar
-            label="Minimum order value"
-            have={seller.subtotal}
-            need={seller.mov}
-            format={formatInr}
-          />
+          <MinimumBar label="MOV" have={seller.subtotal} need={seller.mov} format={rupees} />
         )}
         {seller.mow > 0 && seller.belowWeight && (
-          <MinimumBar
-            label="Minimum order weight"
-            have={seller.weight}
-            need={seller.mow}
-            format={kg}
-          />
+          <MinimumBar label="MOW" have={seller.weight} need={seller.mow} format={kg} />
         )}
 
         {/* delivery pill — driven by the fee, not the status, so a seller
@@ -238,65 +215,54 @@ function SellerCard({
 
         {/* item thumbnail rail */}
         <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto">
-          {seller.items.map((item, i) => {
-            /* A free line was put there by an offer, so there is nothing to
-               edit — it stays a picture. Everything else opens its own
-               selling-units sheet, which is where quantity is changed. */
-            const Tile = item.free ? 'div' : 'button';
-            return (
-              <Tile
-                key={`${item.product.id}-${i}`}
-                {...(item.free
-                  ? {}
-                  : {
-                      onClick: () => onItemTap?.(item.product.id),
-                      'aria-label': `Edit ${item.product.shortName}`,
-                    })}
-                className={cn(
-                  'flex w-16 shrink-0 flex-col items-center',
-                  !item.free && 'active:scale-[0.98]'
-                )}
-              >
-                <div className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
-                  <ProductImage image={item.product.image} alt={item.product.name} />
-                  {/* Across the top inside the tile, not hanging off it: the
-                      rail scrolls sideways and clipped whatever poked out, so
-                      the tag was being sliced. A full-width strip also stops
-                      it sitting on top of the product. */}
-                  {item.free && (
-                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
-                      Free
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 text-[11px] text-foreground-secondary">×{item.quantity}</div>
-                <div className="text-[11px] font-medium tabular-nums text-foreground">
-                  {formatInr(item.lineTotal)}
-                </div>
-              </Tile>
-            );
-          })}
+          {seller.items.map((item) => (
+            <button
+              key={item.product.id}
+              onClick={() => onItemTap?.(item.product.id)}
+              aria-label={`Edit ${item.product.shortName}`}
+              className="flex w-16 shrink-0 flex-col items-center active:scale-[0.98]"
+            >
+              <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
+                <ProductImage image={item.product.image} alt={item.product.name} />
+              </div>
+              <div className="mt-1 text-2xs text-foreground-secondary">×{item.quantity}</div>
+              <div className="text-2xs font-medium tabular-nums text-foreground">
+                {formatInr(item.lineTotal)}
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* delivery window — beat day + tomorrow options */}
         <div className="mt-3">
           {/* A beat day is the day the van is in the area, not a promise the
               goods arrive that morning — so it carries the window the seller
-              actually works to. A "Tomorrow" slot means tomorrow and needs
-              nothing said. */}
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <span className="text-xs text-foreground-secondary">Delivery by</span>
-            {isBeatDay(win) && (
-              <span className="shrink-0 text-[11px] font-medium text-foreground-secondary">
-                Delivered within 24–48 hrs
+              actually works to, counted from that day. A "Tomorrow" slot
+              means tomorrow and needs nothing said.
+
+              The cross-dock store has no choice to offer: the 3PL collects
+              daily and the store packs the same night, so it is tomorrow or
+              nothing. A control with one option in it reads as a decision the
+              buyer has to make, so the day is simply stated. */}
+          <div className="mb-1.5 flex items-baseline justify-between gap-2">
+            <span className="shrink-0 text-xs text-foreground-secondary">Delivery by</span>
+            {!seller.cds && isBeatDay(win) && (
+              <span className="min-w-0 text-right text-xs font-medium text-foreground-secondary">
+                {BEAT_WINDOW_NOTE}
               </span>
             )}
           </div>
-          <SegmentedControl
-            options={seller.windows.map((w) => ({ value: w, label: w }))}
-            value={win}
-            onChange={setWin}
-          />
+          {seller.cds ? (
+            <div className="rounded-md bg-muted px-3 py-2 text-sm font-medium text-foreground">
+              {seller.windows[0]}
+            </div>
+          ) : (
+            <SegmentedControl
+              options={seller.windows.map((w) => ({ value: w, label: w }))}
+              value={win}
+              onChange={setWin}
+            />
+          )}
         </div>
 
         {/* actions — same two slots on every card (View items · Add more) */}

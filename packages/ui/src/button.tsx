@@ -2,8 +2,7 @@
 // Mobile-first: default height is a 44px touch target; variants read from
 // semantic tokens (bg-primary, bg-success, bg-error, bg-primary-soft).
 //
-// Old variant/size names (default, outline) are kept as aliases so the
-// retiring qwipo-app keeps rendering while qwipo-buyer-paytm-app is built.
+// Compatibility names (default, outline) remain for existing buyer screens.
 
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';

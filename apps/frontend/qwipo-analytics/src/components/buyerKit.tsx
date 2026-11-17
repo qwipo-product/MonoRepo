@@ -1,70 +1,245 @@
-// Pieces shared by the DigiDukaan · Buyer pages: the scope bar (date range in
-// dd-mm-yyyy + State / City / Distributor), table chrome (search, filter
-// selects, pager, export header), a right-side drawer and CSV export.
+// Pieces shared by the DigiDukaan · Buyer pages: the scope bar (same chip
+// grammar as the seller ScopeBar — Date, State, City, Seller type, Seller, Team — plus
+// one universal search that opens the drill-down dashboard of whatever it
+// finds), its filter panel, the Attention card, a right-side drawer and a toast.
 import { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Download, RotateCcw, Search, X } from 'lucide-react';
-import { Button, Card, Input, cn } from '@mockups/ui';
+import { CalendarDays, ChevronLeft, Search, SlidersHorizontal, Store, Truck, UserRound, X } from 'lucide-react';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, cn } from '@mockups/ui';
 import { Calendar } from './Calendar';
-import { dmy, geoText, num, rangeText } from './buyerFormat';
+import { Chip } from './Chip';
+import { Section, Option } from './filterControls';
+import { dmy, geoText, rangeText } from './buyerFormat';
+import { useBuyerDrill } from './buyerDrillContext';
 import {
-  DEFAULT_SCOPE, FIRST_DAY, TODAY, citiesOf, distributorsIn, presetRange, states,
+  DEFAULT_SCOPE, FIRST_DAY, TODAY, buyerDistributors, citiesOf, distributorsIn, leads, presetRange, states,
   type BuyerScope, type Preset,
 } from '../data/buyer';
+import { previousScope, searchBuyer, type SearchHit } from '../data/buyerMetrics';
 import { useBuyerScope } from '../scope';
 
-export function BuyerScopeBar({ note }: { note?: string }) {
+const PRESETS: Exclude<Preset, 'Custom'>[] = ['Today', 'Last 7 Days', 'Month to date', 'Last 30 Days', 'All Time'];
+
+export function BuyerScopeBar() {
   const { s, setS } = useBuyerScope();
-  const set = (p: Partial<BuyerScope>) => setS({ ...s, ...p });
-  const applyPreset = (p: Preset) => { const [from, to] = presetRange(p); set({ preset: p, from, to }); };
-  const dists = distributorsIn(s);
-  const changed = s.preset !== DEFAULT_SCOPE.preset || s.state !== 'All' || s.city !== 'All' || s.distributor !== 'All';
+  const [open, setOpen] = useState(false);
+  const openPanel = () => setOpen(true);
+  const prev = previousScope(s);
+  const changed = s.preset !== DEFAULT_SCOPE.preset || s.state !== 'All' || s.city !== 'All' || s.distributor !== 'All' || s.sellerType !== 'All' || s.team !== 'All';
+
+  // A filter with a selection shows its value as a removable chip; otherwise "All (n)".
+  const groups: { label: string; value: string; total: number; clear: Partial<BuyerScope> }[] = [
+    { label: 'State', value: s.state, total: states.length, clear: { state: 'All', city: 'All', distributor: 'All' } },
+    { label: 'City', value: s.city, total: citiesOf(s.state).length, clear: { city: 'All', distributor: 'All' } },
+    { label: 'Seller type', value: s.sellerType === 'All' ? 'All' : `${s.sellerType}s`, total: 2, clear: { sellerType: 'All', distributor: 'All' } },
+    { label: 'Seller', value: s.distributor, total: distributorsIn(s).length, clear: { distributor: 'All' } },
+    { label: 'Team', value: s.team, total: leads.length, clear: { team: 'All' } },
+  ];
 
   return (
     <Card className="px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <DateInput label="From" date={s.from} max={s.to} onPick={(d) => set({ preset: 'Custom', from: d })} />
-        <span className="text-foreground-tertiary">–</span>
-        <DateInput label="To" date={s.to} min={s.from} onPick={(d) => set({ preset: 'Custom', to: d })} />
-        <div className="flex gap-1">
-          {(['Today', 'Last 7 Days', 'Last 30 Days', 'All Time'] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => applyPreset(p)}
-              className={cn(
-                'type-caption h-8 whitespace-nowrap rounded-full border px-3 font-medium',
-                s.preset === p ? 'border-primary bg-primary-soft text-primary-soft-foreground' : 'border-border text-foreground-secondary hover:bg-muted',
-              )}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-        <span className="mx-1 h-6 w-px bg-border" />
-        <FilterSelect label="State" value={s.state} options={states}
-          onChange={(v) => set({ state: v, city: 'All', distributor: 'All' })} />
-        <FilterSelect label="City" value={s.city} options={citiesOf(s.state)}
-          onChange={(v) => set({ city: v, distributor: 'All' })} />
-        <FilterSelect label="Distributor" value={s.distributor} options={dists.map((d) => d.name)}
-          onChange={(v) => set({ distributor: v })} />
-        {changed && (
-          <button type="button" onClick={() => setS(DEFAULT_SCOPE)} className="type-caption flex items-center gap-1 px-1.5 font-medium text-link hover:underline">
-            <RotateCcw size={12} /> Reset
-          </button>
-        )}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Chip label="Date" value={`${dmy(s.from)} – ${dmy(s.to)}${s.preset !== 'Custom' ? ` · ${s.preset}` : ''}`} active={s.preset !== DEFAULT_SCOPE.preset} onClick={openPanel} />
+        {groups.map((g) => g.value === 'All'
+          ? <Chip key={g.label} label={g.label} value={`All (${g.total})`} onClick={openPanel} />
+          : <Chip key={g.label} label={g.label} value={g.value} active onClick={openPanel} onRemove={() => setS({ ...s, ...g.clear })} />)}
+        <span className="ml-auto flex items-center gap-1.5">
+          <UniversalSearch />
+          {changed && <Button variant="ghost" size="sm" className="text-link" onClick={() => setS(DEFAULT_SCOPE)}>Reset</Button>}
+          <Button variant="secondary" size="sm" onClick={openPanel}><SlidersHorizontal size={14} /> Filters</Button>
+        </span>
       </div>
       <div className="type-caption mt-2.5 flex flex-wrap justify-between gap-2 text-foreground-secondary">
         <span>
-          Showing <b className="font-semibold tabular-nums text-foreground">{rangeText(s)}</b>
-          {s.preset !== 'Custom' && <span className="text-foreground-tertiary"> · {s.preset}</span>}
-          {' · '}<b className="font-semibold text-foreground">{geoText(s)}</b>
-          {note && <span className="text-foreground-tertiary"> · {note}</span>}
+          {prev ? <>Compared with <b className="font-medium text-foreground">{rangeText(prev)}</b></> : 'No earlier period in the ledger to compare'}
+          {' · '}{geoText(s)} · same filters on every Buyer page
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-success" />
-          Buyer app data · refreshed 22-08-2026 18:30 IST
+          Buyer app data · refreshed {dmy(TODAY)} 18:30 IST
         </span>
       </div>
+      {open && <BuyerFilterPanel value={s} onClose={() => setOpen(false)} onApply={setS} />}
+    </Card>
+  );
+}
+
+/* ----------------------------- universal search ---------------------------- */
+
+const hitIcon = { distributor: Truck, ba: UserRound, customer: Store } as const;
+const hitGroup = { distributor: 'Sellers · distributors & wholesalers', ba: 'Salespersons (BA)', customer: 'Shops' } as const;
+
+/** One search for every buyer page: pick a result to open its drill-down dashboard. */
+function UniversalSearch() {
+  const { s } = useBuyerScope();
+  const drill = useBuyerDrill();
+  const [q, setQ] = useState('');
+  const [focus, setFocus] = useState(false);
+  const hits = searchBuyer(q, s);
+  const pick = (h: SearchHit) => {
+    setQ(''); setFocus(false);
+    drill.open(h.kind === 'customer' ? { kind: 'customer', id: h.key } : h.kind === 'ba' ? { kind: 'ba', name: h.key } : { kind: 'distributor', name: h.key });
+  };
+  return (
+    <div className="relative">
+      <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onFocus={() => setFocus(true)}
+        onBlur={() => window.setTimeout(() => setFocus(false), 150)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && hits[0]) pick(hits[0]); if (e.key === 'Escape') setQ(''); }}
+        placeholder="Search seller, salesperson or shop"
+        aria-label="Search seller, salesperson or shop"
+        className="h-9 w-72 pl-8"
+      />
+      {focus && q.trim().length >= 2 && (
+        <div className="absolute right-0 top-11 z-40 w-[380px] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+          {hits.length === 0 ? (
+            <p className="type-caption px-4 py-3 text-foreground-secondary">Nothing matches “{q}” in {geoText(s)}.</p>
+          ) : (['distributor', 'ba', 'customer'] as const).map((k) => {
+            const group = hits.filter((h) => h.kind === k);
+            if (!group.length) return null;
+            const Icon = hitIcon[k];
+            return (
+              <div key={k} className="border-b border-border-subtle py-1.5 last:border-b-0">
+                <div className="type-micro px-4 py-1 text-foreground-tertiary">{hitGroup[k]}</div>
+                {group.map((h) => (
+                  <button
+                    key={h.key}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pick(h)}
+                    className="flex w-full items-center gap-2.5 px-4 py-1.5 text-left hover:bg-muted"
+                  >
+                    <Icon size={15} className="shrink-0 text-foreground-tertiary" />
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="type-label block truncate">{h.title}</span>
+                      <span className="type-caption block truncate text-foreground-secondary">{h.sub}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
+          <div className="type-caption border-t border-border-subtle bg-background-subtle px-4 py-2 text-foreground-tertiary">Opens the drill-down dashboard · within the current filters</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------- filter panel ------------------------------ */
+
+function BuyerFilterPanel({ value, onClose, onApply }: { value: BuyerScope; onClose: () => void; onApply: (s: BuyerScope) => void }) {
+  const [d, setD] = useState(value);
+  const [distQ, setDistQ] = useState('');
+  const set = (p: Partial<BuyerScope>) => setD({ ...d, ...p });
+  const dists = distributorsIn(d).filter((x) => !distQ || x.name.toLowerCase().includes(distQ.toLowerCase()));
+  const presetText = (p: Preset) => {
+    const [from, to] = presetRange(p);
+    return p === 'Today' ? `Today · ${dmy(TODAY)}` : `${p} · ${dmy(from)} – ${dmy(to)}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
+      <aside
+        className="animate-slide-in-right fixed right-0 top-0 flex h-dvh w-[360px] flex-col border-l border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-label="Filters"
+      >
+        <header className="flex items-center gap-3 border-b border-border px-5 py-4">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary-soft text-primary-soft-foreground"><SlidersHorizontal size={17} /></span>
+          <span className="flex-1 leading-tight">
+            <span className="type-h3 block">Filters</span>
+            <span className="type-caption block text-foreground-secondary">Scope every card on the Buyer pages</span>
+          </span>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-md text-foreground-secondary hover:bg-muted"><X size={17} /></button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto">
+          <Section label="Date range">
+            {PRESETS.map((p) => (
+              <Option key={p} selected={d.preset === p} onClick={() => { const [from, to] = presetRange(p); set({ preset: p, from, to }); }}>{presetText(p)}</Option>
+            ))}
+            <Option selected={d.preset === 'Custom'} onClick={() => set({ preset: 'Custom' })}>Custom…</Option>
+            {d.preset === 'Custom' && (
+              <div className="mt-1.5 flex flex-col gap-2">
+                <DateInput label="From" date={d.from} max={d.to} onPick={(x) => set({ from: x })} />
+                <DateInput label="To" date={d.to} min={d.from} onPick={(x) => set({ to: x })} />
+              </div>
+            )}
+          </Section>
+          <Section label="State" hint="Telangana, Maharashtra, Rajasthan · changing state resets City and Distributor">
+            {['All', ...states].map((x) => (
+              <Option key={x} selected={d.state === x} muted={x === 'All'} onClick={() => set({ state: x, city: 'All', distributor: 'All' })}>{x === 'All' ? `All states (${states.length})` : x}</Option>
+            ))}
+          </Section>
+          <Section label="City">
+            {['All', ...citiesOf(d.state)].map((x) => (
+              <Option key={x} selected={d.city === x} muted={x === 'All'} onClick={() => set({ city: x, distributor: 'All' })}>{x === 'All' ? `All cities (${citiesOf(d.state).length})` : x}</Option>
+            ))}
+          </Section>
+          <Section label="Seller type" hint="Qwipo lists brand distributors and wholesalers">
+            {(['All', 'Distributor', 'Wholesaler'] as const).map((x) => (
+              <Option key={x} selected={d.sellerType === x} muted={x === 'All'}
+                onClick={() => set({ sellerType: x, distributor: x === 'All' || buyerDistributors.find((b) => b.name === d.distributor)?.type === x ? d.distributor : 'All' })}>
+                {x === 'All' ? 'Distributors and wholesalers' : `${x}s only`}
+              </Option>
+            ))}
+          </Section>
+          <Section label="Seller" hint="Narrowed by state, city and seller type">
+            <div className="relative mb-1.5">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
+              <Input value={distQ} onChange={(e) => setDistQ(e.target.value)} placeholder="Search sellers" className="h-9 pl-8" />
+            </div>
+            {!distQ && <Option selected={d.distributor === 'All'} muted onClick={() => set({ distributor: 'All' })}>All sellers ({distributorsIn(d).length})</Option>}
+            {dists.map((x) => (
+              <Option key={x.name} selected={d.distributor === x.name} onClick={() => set({ distributor: x.name })}>
+                {x.name}<span className="type-caption ml-1.5 text-foreground-tertiary">{x.city} · {x.type}</span>
+              </Option>
+            ))}
+          </Section>
+          <Section label="Team" hint="A team is one team lead's BAs">
+            {['All', ...leads].map((x) => (
+              <Option key={x} selected={d.team === x} muted={x === 'All'} onClick={() => set({ team: x })}>{x === 'All' ? `All teams (${leads.length})` : `Team ${x}`}</Option>
+            ))}
+          </Section>
+        </div>
+
+        <footer className="flex gap-2 border-t border-border p-4">
+          <Button fullWidth onClick={() => { onApply(d); onClose(); }}>Apply filters</Button>
+          <Button variant="ghost" onClick={() => setD(DEFAULT_SCOPE)}>Reset</Button>
+        </footer>
+      </aside>
+    </div>
+  );
+}
+
+/* --------------------------------- attention -------------------------------- */
+
+export type AttentionItem = { count: number | string; title: string; detail: string; tone: 'error' | 'warning' | 'info'; onClick?: () => void };
+const toneText = { error: 'text-error', warning: 'text-warning', info: 'text-info' } as const;
+
+/** The seller Overview's Attention card: the few numbers someone should act on, each a drill. */
+export function AttentionCard({ items, className }: { items: AttentionItem[]; className?: string }) {
+  const shown = items.filter((a) => a.count !== 0);
+  return (
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <CardTitle className="type-label">Attention</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2.5">
+        {shown.length === 0 && <p className="type-caption text-foreground-secondary">Nothing needs attention in this scope.</p>}
+        {shown.map((a) => (
+          <Card key={a.title} variant={a.onClick ? 'interactive' : 'default'} onClick={a.onClick} className="grid grid-cols-[44px_1fr] gap-2.5 p-2.5">
+            <span className={cn('type-h1 text-right tabular-nums', toneText[a.tone])}>{a.count}</span>
+            <span>
+              <b className="type-label block leading-snug">{a.title}</b>
+              <span className="type-caption block text-foreground-secondary">{a.detail}</span>
+            </span>
+          </Card>
+        ))}
+      </CardContent>
     </Card>
   );
 }
@@ -84,32 +259,9 @@ export function useFlash() {
   return [node, flash] as const;
 }
 
-/* ---------------------------------- table ---------------------------------- */
+/* --------------------------------- controls -------------------------------- */
 
-export function SectionHead({ title, sub, onExport, right }: { title: string; sub: string; onExport?: () => void; right?: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-3.5">
-      <div>
-        <div className="type-h3">{title}</div>
-        <div className="type-caption text-foreground-secondary">{sub}</div>
-      </div>
-      <span className="flex items-center gap-2">
-        {right}
-        {onExport && <Button variant="secondary" size="sm" onClick={onExport}><Download size={14} /> Export</Button>}
-      </span>
-    </div>
-  );
-}
-
-export function SearchBox({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
-  return (
-    <div className="relative w-64">
-      <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-9 pl-8" />
-    </div>
-  );
-}
-
+/** Compact labelled select — used by the Buyer app analytics boards. */
 export function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <label
@@ -131,67 +283,10 @@ export function FilterSelect({ label, value, onChange, options }: { label: strin
   );
 }
 
-export function ClearBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="type-caption flex items-center gap-1 px-1.5 font-medium text-link hover:underline">
-      <X size={13} /> Clear filters
-    </button>
-  );
-}
-
-export function EmptyRow({ cols, text }: { cols: number; text: string }) {
-  return (
-    <tr>
-      <td colSpan={cols} className="py-10 text-center text-foreground-secondary">
-        {text} — try a wider date range, another state or city, or clear filters.
-      </td>
-    </tr>
-  );
-}
-
-export function Pager({ page, per, total, unit, onPage }: { page: number; per: number; total: number; unit: string; onPage: (p: number) => void }) {
-  const pages = Math.max(1, Math.ceil(total / per));
-  if (total <= per) return null;
-  return (
-    <div className="flex items-center justify-between border-t border-border-subtle px-5 py-3">
-      <span className="type-caption tabular-nums text-foreground-secondary">
-        {page * per + 1}–{Math.min(total, page * per + per)} of {num(total)} {unit}
-      </span>
-      <span className="flex gap-1.5">
-        <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => onPage(page - 1)}><ChevronLeft size={14} /> Prev</Button>
-        <Button variant="secondary" size="sm" disabled={page + 1 >= pages} onClick={() => onPage(page + 1)}>Next <ChevronRight size={14} /></Button>
-      </span>
-    </div>
-  );
-}
-
-/** Stat tile used on the buyer pages; clickable when it filters something below. */
-export function Stat({ label, value, note, tone, active, onClick }: {
-  label: string; value: string; note?: React.ReactNode; tone?: 'warning' | 'error' | 'success'; active?: boolean; onClick?: () => void;
-}) {
-  return (
-    <Card
-      variant={onClick ? 'interactive' : 'default'}
-      onClick={onClick}
-      className={cn(
-        'px-4 py-3',
-        tone === 'warning' && 'border-l-[3px] border-l-warning',
-        tone === 'error' && 'border-l-[3px] border-l-error',
-        tone === 'success' && 'border-l-[3px] border-l-success',
-        active && 'ring-2 ring-primary',
-      )}
-    >
-      <div className="type-caption text-foreground-secondary">{label}</div>
-      <div className="type-h1 my-0.5 tabular-nums tracking-tight">{value}</div>
-      {note && <div className="type-caption text-foreground-secondary">{note}</div>}
-    </Card>
-  );
-}
-
 /* ---------------------------------- drawer --------------------------------- */
 
-export function Drawer({ title, sub, onClose, width = 'w-[560px]', children, footer }: {
-  title: React.ReactNode; sub?: React.ReactNode; onClose: () => void; width?: string; children: React.ReactNode; footer?: React.ReactNode;
+export function Drawer({ title, sub, onClose, onBack, width = 'w-[560px]', children, footer }: {
+  title: React.ReactNode; sub?: React.ReactNode; onClose: () => void; onBack?: () => void; width?: string; children: React.ReactNode; footer?: React.ReactNode;
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-overlay animate-overlay" onClick={onClose} role="presentation">
@@ -201,6 +296,11 @@ export function Drawer({ title, sub, onClose, width = 'w-[560px]', children, foo
         role="dialog" aria-modal="true"
       >
         <header className="flex items-start gap-3 border-b border-border px-5 py-4">
+          {onBack && (
+            <button type="button" onClick={onBack} aria-label="Back" className="-ml-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-foreground-secondary hover:bg-muted">
+              <ChevronLeft size={18} />
+            </button>
+          )}
           <span className="flex-1 leading-tight">
             <span className="type-h3 block">{title}</span>
             {sub && <span className="type-caption mt-0.5 block text-foreground-secondary">{sub}</span>}
@@ -219,7 +319,7 @@ export function Drawer({ title, sub, onClose, width = 'w-[560px]', children, foo
 export function DrawerSection({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="border-b border-border-subtle px-5 py-4">
-      <div className="mb-2 flex items-baseline justify-between">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
         <span className="type-micro text-foreground-tertiary">{title}</span>
         {right}
       </div>
@@ -238,7 +338,7 @@ export function DateInput({ label, date, min, max, onPick }: { label: string; da
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={cn('flex h-9 items-center gap-2 rounded-md border bg-card px-2.5 hover:bg-muted', open ? 'border-ring ring-2 ring-ring/30' : 'border-border')}
+        className={cn('flex h-9 w-full items-center gap-2 rounded-md border bg-card px-2.5 hover:bg-muted', open ? 'border-ring ring-2 ring-ring/30' : 'border-border')}
       >
         <CalendarDays size={14} className="text-foreground-tertiary" />
         <span className="type-caption text-foreground-secondary">{label}</span>

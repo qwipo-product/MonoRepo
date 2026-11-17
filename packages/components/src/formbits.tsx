@@ -46,7 +46,7 @@ export function AuthShell({
       </div>
 
       {/* bottom half — elevated sheet */}
-      <div className="flex flex-1 flex-col rounded-t-2xl border-t border-border bg-background p-6 pb-8 shadow-[var(--shadow-bar-top)]">
+      <div className="flex flex-1 flex-col rounded-t-2xl border-t border-border bg-background p-6 pb-8 shadow-bar-top">
         <h1 className="text-xl font-semibold">{title}</h1>
         <p className="mt-1 text-sm text-foreground-secondary">{subtitle}</p>
         {children}
@@ -62,11 +62,11 @@ export function AuthBrand() {
   return (
     <div className="flex flex-col items-center gap-3">
       <img
-        src={isDark ? '/brand/qwipo-primary-white.svg' : '/brand/qwipo-primary.svg'}
+        src={isDark ? './brand/qwipo-primary-white.svg' : './brand/qwipo-primary.svg'}
         alt="Qwipo"
         className="h-[130px] w-auto"
       />
-      <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-9 w-auto" />
+      <img src="./brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="h-9 w-auto" />
     </div>
   );
 }

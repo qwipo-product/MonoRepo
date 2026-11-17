@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronLeft, MapPin, Copy, Check, BadgePercent, Gift } from 'lucide-react';
+import { ChevronLeft, MapPin, Copy, Check } from 'lucide-react';
 import { ProductImage, StatusBadge, PriceLabel, formatInrExact } from '@mockups/components';
-import type { Order } from '../data/orders';
+import { deliveryDateLabel, type Order } from '../data/orders';
 import { ADDRESSES, DEFAULT_ADDRESS_ID } from '../data/addresses';
 import { formatDate } from '../date';
 
@@ -9,16 +9,14 @@ import { formatDate } from '../date';
    the delivery address. Read-only.
 
    An order belongs to ONE company, because each company invoices separately —
-   so everything on this screen is that company's: its bill, its items, its
-   schemes. Two companies bought from the same distributor in one cart show up
+   so everything on this screen is that company's: its bill and purchased
+   items. Two companies bought from the same distributor in one cart show up
    here as two orders, not one screen with two halves. */
 export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: () => void }) {
   const discount = order.discount ?? 0;
-  const offers = order.offers ?? [];
   /* `total` is what was payable, so the gross items figure is read back out of
      it — items − discount + delivery = total, and the rows add up on screen. */
   const itemsTotal = order.total - order.deliveryFee + discount;
-  const freeCount = order.items.filter((i) => i.free).reduce((n, i) => n + i.qty, 0);
   const address = ADDRESSES.find((a) => a.id === DEFAULT_ADDRESS_ID) ?? ADDRESSES[0];
   const initials = order.seller
     .replace(/[^a-zA-Z ]/g, '')
@@ -67,7 +65,7 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
           <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
             <SumRow label="Order ID" value={<CopyValue value={order.orderId} />} />
             <SumRow label="Order date" value={formatDate(order.placedAt)} />
-            <SumRow label="Expected delivery" value={formatDate(order.eta)} />
+            <SumRow label={deliveryDateLabel(order.status)} value={formatDate(order.eta)} />
             <SumRow label="Order status" value={order.statusLabel} />
             <SumRow label="Items total" value={formatInrExact(itemsTotal)} />
             {discount > 0 && (
@@ -84,80 +82,23 @@ export function OrderDetailsScreen({ order, onBack }: { order: Order; onBack: ()
           </div>
         </Section>
 
-        {/* offers applied — what the schemes and any coupon actually paid out
-            on this order. Money off and free goods are both shown, because a
-            scheme pays in one or the other and the buyer cares about both. */}
-        {offers.length > 0 && (
-          <Section title={`Offers Applied (${offers.length})`}>
-            <div className="space-y-2">
-              {offers.map((o) => (
-                <div key={o.code} className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                  <div className="flex items-start gap-2.5">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-                      <BadgePercent className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="rounded border border-dashed border-primary bg-primary-soft px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-                          {o.code}
-                        </span>
-                        <span className="text-xs font-medium text-foreground-secondary">{o.label}</span>
-                      </div>
-                      <div className="mt-1 text-sm leading-snug text-foreground">{o.benefit}</div>
-                    </div>
-                    {o.saved > 0 && (
-                      <span className="shrink-0 text-sm font-semibold tabular-nums text-success-foreground">
-                        − {formatInrExact(o.saved)}
-                      </span>
-                    )}
-                  </div>
-                  {o.freeGoods && (
-                    <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs font-medium text-success-foreground">
-                      <Gift className="h-3.5 w-3.5 shrink-0" />
-                      {o.freeGoods}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
         {/* items */}
         {order.items.length > 0 && (
-        <Section
-          title={
-            freeCount > 0
-              ? `Items (${order.items.length}) · ${freeCount} free`
-              : `Items (${order.items.length})`
-          }
-        >
+        <Section title={`Items (${order.items.length})`}>
           <div className="space-y-2">
             {order.items.map((item, i) => (
               <div key={i} className="flex gap-3 rounded-lg border border-border bg-card p-3 shadow-sm">
                 <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card text-2xl">
                   <ProductImage image={item.image} alt={item.name} />
-                  {item.free && (
-                    <span className="absolute inset-x-0 top-0 bg-success py-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white">
-                      Free
-                    </span>
-                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-foreground-secondary">
+                  <div className="text-2xs font-semibold uppercase tracking-wide text-foreground-secondary">
                     {item.brand}
                   </div>
                   <div className="text-sm font-medium text-foreground">{item.name}</div>
                   <div className="text-xs text-foreground-secondary">{item.pack}</div>
                 </div>
-                {item.free ? (
-                  <div className="shrink-0 text-right">
-                    <div className="text-sm font-bold tabular-nums text-success-foreground">₹0.00</div>
-                    <div className="text-[11px] text-foreground-secondary">Free item</div>
-                  </div>
-                ) : (
-                  <PriceLabel price={item.price} mrp={item.mrp} className="shrink-0" />
-                )}
+                <PriceLabel price={item.price} mrp={item.mrp} className="shrink-0" />
               </div>
             ))}
           </div>
@@ -190,11 +131,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function SumRow({ label, value }: { label: string; value: ReactNode }) {
+function SumRow({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
-    <div className="flex items-center justify-between py-1 text-sm">
+    <div className="flex items-start justify-between py-1 text-sm">
       <span className="text-foreground-secondary">{label}</span>
-      <span className="font-medium tabular-nums text-foreground">{value}</span>
+      <span className="text-right">
+        <span className="block font-medium tabular-nums text-foreground">{value}</span>
+        {note && <span className="block text-xs text-foreground-secondary">{note}</span>}
+      </span>
     </div>
   );
 }

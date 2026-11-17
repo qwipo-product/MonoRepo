@@ -1,39 +1,61 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@mockups/web-ui";
 import { Button } from "@mockups/web-ui";
 import { Input } from "@mockups/web-ui";
 import { Label } from "@mockups/web-ui";
-import { Shield, Store, Phone, KeyRound, Palette } from "lucide-react";
+import { Shield, Store, Phone, Mail, AtSign, KeyRound, Palette, Database, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-context";
-import { validateCredentials } from "../../lib/auth-credentials";
+import {
+  detectIdentifier,
+  isCompleteIdentifier,
+  lookupAccount,
+  verifyOtp,
+} from "../../lib/auth-credentials";
 import qwipoLogo from "../../../imports/Qwipo_Secondary_Logo_for_Light_BG@4x-8.png";
 import qwipoIcon from "../../../imports/Qwipo_Icon_Logo_for_Light_BG@4x-8.png";
 
 export function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [mobile, setMobile] = useState("");
+  // Single sign-in field that accepts EITHER a 10-digit mobile number OR the
+  // email ID on the seller's record. `detectIdentifier` decides which one the
+  // user is typing so the icon, hints and OTP-delivery copy can follow along.
+  const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // Inline field-level errors. We keep popup toasts only for "successful
   // outcomes" (OTP sent, welcome) — anything the user can fix on the form
   // itself shows in red text below the relevant field.
+  const [identifierError, setIdentifierError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
 
+  const identifierKind = detectIdentifier(identifier).kind;
+  const isEmailEntry = identifier.includes("@");
+  // Where the OTP went, in the seller's own words. SMS for a mobile number,
+  // inbox for an email ID.
+  const otpChannelLabel =
+    identifierKind === "email"
+      ? `Sent to your email — ${identifier.trim()}`
+      : `OTP sent to ${identifier.trim()}`;
+
   const handleSendOtp = () => {
-    // Belt-and-braces: the input strips non-digits and the button is
-    // disabled until length === 10, so we should never get here with
-    // bad input — but keep the guard so a future caller change can't
-    // sneak through.
-    if (mobile.length !== 10) return;
+    // Resolve the identifier to an account before claiming an OTP went out.
+    // Unknown / inactive accounts surface here rather than as a confusing
+    // "Invalid OTP" one step later.
+    const lookup = lookupAccount(identifier);
+    if (lookup.ok === false) {
+      setIdentifierError(lookup.message);
+      return;
+    }
+    setIdentifierError(null);
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       setOtpSent(true);
-      toast.success("OTP sent to " + mobile);
+      toast.success(`OTP sent to ${identifier.trim()}`);
     }, 600);
   };
 
@@ -46,13 +68,23 @@ export function Login() {
 
     setIsLoading(true);
     setTimeout(() => {
-      const user = validateCredentials(mobile, otp);
+      const result = verifyOtp(identifier, otp);
       setIsLoading(false);
-      if (!user) {
-        setOtpError("Invalid OTP. Please try again.");
-        setOtp("");
+      if (result.ok === false) {
+        // A wrong OTP is fixable in place; anything else means the
+        // identifier itself is the problem, so send the user back a step.
+        if (result.reason === "wrong-otp") {
+          setOtpError(result.message);
+          setOtp("");
+        } else {
+          setOtpSent(false);
+          setOtp("");
+          setOtpError(null);
+          setIdentifierError(result.message);
+        }
         return;
       }
+      const user = result.user;
       setOtpError(null);
       login(user);
       toast.success(`Welcome, ${user.name}!`);
@@ -60,6 +92,8 @@ export function Login() {
         navigate("/admin");
       } else if (user.role === "designer") {
         navigate("/design");
+      } else if (user.role === "catalog-admin" || user.role === "brand-manager") {
+        navigate("/catalog-portal");
       } else {
         navigate("/");
       }
@@ -72,19 +106,27 @@ export function Login() {
       | "admin-empty"
       | "seller"
       | "seller-empty"
-      | "designer",
+      | "designer"
+      | "catalog-admin"
+      | "brand-manager",
   ) => {
     if (role === "admin") {
-      setMobile("9900000001");
+      setIdentifier("9900000001");
     } else if (role === "admin-empty") {
-      setMobile("9999999999");
+      setIdentifier("9999999999");
     } else if (role === "seller-empty") {
-      setMobile("8888888888");
+      setIdentifier("8888888888");
     } else if (role === "designer") {
-      setMobile("7777777777");
+      setIdentifier("7777777777");
+    } else if (role === "catalog-admin") {
+      setIdentifier("5500000001");
+    } else if (role === "brand-manager") {
+      setIdentifier("5500000002");
     } else {
-      setMobile("9900000002");
+      setIdentifier("9900000002");
     }
+    setIdentifierError(null);
+    setOtpError(null);
     setOtp("1234");
     setOtpSent(true);
   };
@@ -163,35 +205,52 @@ export function Login() {
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl">Welcome Back</CardTitle>
               <CardDescription>
-                Sign in with your mobile number
+                Sign in with your mobile number or email ID
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleVerifyOtp} className="space-y-4">
-                {/* Mobile Number — strip non-digits and clamp to 10 chars
-                    as the user types so the value is ALWAYS a length-10
-                    digit string when valid. The Send OTP button below
-                    gates on that exact length. */}
+                {/* Mobile Number OR Email ID — one field, two identifiers.
+                    We can't strip non-digits any more (that would eat an
+                    email), so the value is validated on Send OTP instead:
+                    10 digits for a mobile, a well-formed address for an
+                    email. The leading icon flips as soon as the entry
+                    starts looking like an email. */}
                 <div className="space-y-2">
-                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Label htmlFor="identifier">Mobile Number or Email ID</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    {isEmailEntry ? (
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    )}
                     <Input
-                      id="mobile"
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="Enter 10-digit mobile number"
-                      value={mobile}
-                      onChange={(e) =>
-                        setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
-                      }
+                      id="identifier"
+                      type="text"
+                      inputMode={isEmailEntry ? "email" : "tel"}
+                      autoComplete="username"
+                      placeholder="10-digit mobile number or email ID"
+                      value={identifier}
+                      onChange={(e) => {
+                        setIdentifier(e.target.value);
+                        if (identifierError) setIdentifierError(null);
+                      }}
                       className="pl-10"
-                      maxLength={10}
                       disabled={otpSent}
+                      aria-invalid={!!identifierError}
                       required
                     />
                   </div>
+                  {identifierError ? (
+                    <p className="text-xs text-red-600">{identifierError}</p>
+                  ) : (
+                    !otpSent && (
+                      <p className="flex items-center gap-1 text-xs text-gray-500">
+                        <AtSign className="h-3 w-3" />
+                        We&rsquo;ll send a one-time OTP to whichever you use
+                      </p>
+                    )
+                  )}
                 </div>
 
                 {/* OTP Section */}
@@ -199,7 +258,7 @@ export function Login() {
                   <Button
                     type="button"
                     className="w-full"
-                    disabled={isLoading || mobile.length !== 10}
+                    disabled={isLoading || !isCompleteIdentifier(identifier)}
                     onClick={handleSendOtp}
                   >
                     {isLoading ? "Sending OTP..." : "Send OTP"}
@@ -229,19 +288,22 @@ export function Login() {
                       {otpError && (
                         <p className="text-xs text-red-600">{otpError}</p>
                       )}
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">
-                          OTP sent to {mobile}
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs text-gray-500 truncate">
+                          {otpChannelLabel}
                         </p>
                         <button
                           type="button"
-                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium flex-shrink-0"
                           onClick={() => {
                             setOtpSent(false);
                             setOtp("");
+                            setOtpError(null);
                           }}
                         >
-                          Change Number
+                          {identifierKind === "email"
+                            ? "Change Email ID"
+                            : "Change Number"}
                         </button>
                       </div>
                     </div>
@@ -325,6 +387,38 @@ export function Login() {
                       </p>
                     </div>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => fillDemo("catalog-admin")}
+                    className="flex items-start gap-2 p-2 rounded-md bg-white border border-teal-200 hover:border-teal-400 transition-all text-left"
+                    title="Catalog Admin — manages the Product Store catalog"
+                  >
+                    <Database className="h-4 w-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-900">
+                        Catalog Admin
+                      </p>
+                      <p className="text-[10px] text-gray-500 truncate">
+                        5500000001
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillDemo("brand-manager")}
+                    className="flex items-start gap-2 p-2 rounded-md bg-white border border-teal-200 hover:border-teal-400 transition-all text-left"
+                    title="Brand Manager — manages their brand's catalog entries"
+                  >
+                    <Tag className="h-4 w-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-900">
+                        Brand Manager
+                      </p>
+                      <p className="text-[10px] text-gray-500 truncate">
+                        5500000002
+                      </p>
+                    </div>
+                  </button>
                   {/* Designer persona — single-page handbook of
                       every token + component + pattern. Spans both
                       grid columns so it stands apart from the live
@@ -346,6 +440,13 @@ export function Login() {
                     </div>
                   </button>
                 </div>
+                {/* Both identifiers reach the same account — spelled out here
+                    so a demo can show the email path without guesswork. */}
+                <p className="text-[10px] text-blue-800/80 mt-2">
+                  Each account also signs in with its email ID — e.g.{" "}
+                  <span className="font-medium">admin@qwipo.com</span>. Sellers
+                  you create use the email captured on their record.
+                </p>
               </div>
             </CardContent>
           </Card>

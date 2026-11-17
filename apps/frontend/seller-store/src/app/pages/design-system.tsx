@@ -36,7 +36,6 @@ import {
   Keyboard,
   Layers,
   LayoutTemplate,
-  Lock,
   LogOut,
   Mail,
   MapPin,
@@ -50,7 +49,6 @@ import {
   Phone,
   Plus,
   Search,
-  Send,
   Settings,
   ShieldCheck,
   ShoppingCart,
@@ -154,7 +152,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -973,6 +970,11 @@ export function DesignSystem() {
                       <a
                         key={id}
                         href={`#${id}`}
+                        onClick={(e) => {
+                          // the hash is the route now — scroll instead of navigating
+                          e.preventDefault();
+                          document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
                         className={
                           "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors " +
                           (active

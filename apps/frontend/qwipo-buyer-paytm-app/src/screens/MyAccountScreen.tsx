@@ -35,8 +35,8 @@ type Item = { icon: typeof Briefcase; label: string; to: ScreenId; badge?: numbe
 const ACCOUNT: Item[] = [
   { icon: Briefcase, label: 'My Orders', to: 'my-orders' },
   { icon: MapPin, label: 'Saved Addresses', to: 'sub:addresses' },
-  { icon: CreditCard, label: 'Payments', to: 'sub:payment' },
-  { icon: Users, label: 'Credit Partners', to: 'sub:credit' },
+  { icon: CreditCard, label: 'Payments', to: 'empty:sub:payment' },
+  { icon: Users, label: 'Credit Partners', to: 'empty:sub:credit' },
 ];
 
 const PREFERENCES: Item[] = [
@@ -80,8 +80,8 @@ export function MyAccountScreen({
     <div className="flex h-full flex-col">
       <div className="flex h-14 shrink-0 items-center border-b border-border bg-card px-4">
         <h1 className="sr-only">My Account</h1>
-        <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6 dark:hidden" />
-        <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 dark:block" />
+        <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="h-6 dark:hidden" />
+        <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 dark:block" />
       </div>
 
       <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto bg-background-subtle p-4">
@@ -114,7 +114,7 @@ export function MyAccountScreen({
         <MenuGroup title="Support" items={SUPPORT} onNavigate={onNavigate} />
 
         <section className="space-y-1.5">
-          <h2 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+          <h2 className="px-1 text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
             Appearance
           </h2>
           <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3.5 shadow-sm">
@@ -134,7 +134,7 @@ export function MyAccountScreen({
           <LogOut className="h-4 w-4" /> Logout
         </button>
 
-        <div className="pb-2 text-center text-[11px] text-foreground-tertiary">Qwipo · v2.0.0</div>
+        <div className="pb-2 text-center text-xs text-foreground-tertiary">Qwipo · v2.0.0</div>
       </div>
     </div>
   );
@@ -179,7 +179,7 @@ function Contact({ role, name, mobile }: { role: string; name: string; mobile: s
         <Phone className="h-3.5 w-3.5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-[10px] uppercase tracking-wider text-foreground-secondary">{role}</span>
+        <span className="block text-2xs uppercase tracking-wider text-foreground-secondary">{role}</span>
         <span className="block truncate text-xs font-medium text-foreground">{name}</span>
       </span>
     </a>
@@ -197,7 +197,7 @@ function MenuGroup({
 }) {
   return (
     <section className="space-y-1.5">
-      <h2 className="px-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-secondary">
+      <h2 className="px-1 text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
         {title}
       </h2>
       <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -210,7 +210,7 @@ function MenuGroup({
             <Icon className="h-5 w-5 shrink-0 text-foreground-secondary" />
             <span className="flex-1 text-sm font-medium text-foreground">{label}</span>
             {badge ? (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-error px-1 text-[11px] font-semibold text-white">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-error px-1 text-2xs font-semibold text-white">
                 {badge}
               </span>
             ) : null}

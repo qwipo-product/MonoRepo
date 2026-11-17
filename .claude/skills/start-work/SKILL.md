@@ -1,81 +1,66 @@
 ---
 name: start-work
-description: Branch pathway — begin a piece of work on a fresh branch from up-to-date dev, keep it in sync, and commit as you go. Invoked by every pathway that edits; use directly for "I'm starting on X", "make me a branch", "save my work", "commit this", "pull the latest".
+description: Create or update a task branch. Use this procedure before implementation on a shared branch.
 ---
 
-# Starting work
+# Start work
 
-`dev` is where finished work lands and what the dev demo URLs are built
-from. It is not where work is made. Every change — a scaffold, an import, a
-screen, a colour — happens on a branch, so a half-done cart never rebuilds
-the dev URL for the person demoing it that afternoon.
+Use the [repository instructions](../../../CLAUDE.md).
+Without the user's explicit commit command, do not commit changes.
+Without the user's explicit push command, do not push changes.
 
-## Branch names
+## Examine the checkout
 
-`<app>/<what-changes>`: `buyer-app/cod-checkout`,
-`seller-store/kyc-empty-state`, `rirn-admin/scaffold`. Short, kebab-case,
-saying what will be different when it lands.
+1. Run `git status --short --branch`.
+2. Run `git branch -vv`.
+3. Examine any existing changes.
+4. Find changes that belong to the task.
 
-Not a person's name (`vikas`, `Omkar_prototype`) — a branch outlives the
-session and nobody can tell what's in it. Not a date, not `test`, not
-`new-branch`.
+Keep unrelated changes on their current branch.
+Do not delete, stash, or commit them to make a branch switch succeed.
+If a branch switch would affect unrelated work, use a separate checkout or ask how to keep it.
 
-## Start
+An untracked folder can contain valuable work.
+A folder with a package manifest inside a workspace path can also affect dependency installation.
+Examine such folders before installation. Do not remove them solely because Git does not track them.
+
+## Select the branch
+
+If an applicable task branch exists, use it.
+If the user supplies a branch name, use that name.
+Otherwise, use `feature/<app>-<change>`.
+Do not create `dev/<name>` while `dev` exists.
+These names conflict in Git's branch namespace.
+
+The current pipelines accept `feature/*` for previews.
+A custom branch name can be valid without an automatic preview.
+Do not rename a user-specified branch merely to get a preview.
+
+## Create a branch from dev
+
+Before this procedure, make sure that local changes are safe.
+Run each command independently. If a command fails, stop the sequence.
+Replace `<branch>` with the selected name.
 
 ```bash
-git status --short                                     # 1. uncommitted edits? see below
 git fetch origin
-git switch dev && git pull --ff-only origin dev        # 2. dev is current
-git switch -c <app>/<what> && git push -u origin HEAD  # 3. branch from it, tracked from the start
+git switch -c <branch> origin/dev
 ```
 
-Step 1 matters: switching branches with uncommitted edits either carries
-them along or refuses, and both surprise people. If the edits belong to
-this new work, they come along — say so. If they belong to something else,
-commit them there first. A `??` folder under `apps/` or `packages/` is
-neither: it's an app nobody committed, and `bun install` already treats it
-as a workspace — the next install writes it into `bun.lock` on whatever
-branch you're on, and the folder never follows. It gets its own branch
-through `new-mockup` or `import-mockup`, or it leaves the repo before you
-continue.
+This uses the current remote dev commit. The local dev branch does not change.
+If the remote is unavailable, record that the base cannot be refreshed.
+If the user permits the local dev branch as the base, use it.
 
-`--ff-only` refuses rather than inventing a merge commit on `dev`. If it
-refuses, local `dev` has commits that aren't on origin — that's
-`git-doctor`.
+## Update an existing task branch
 
-## Commit as you go
+1. Fetch the remote references.
+2. Examine the difference between the task branch and `origin/dev`.
+3. Tell the user about each conflict that affects the requested behavior.
+4. If the current request does not authorize a merge, get that authorization.
+5. Use [land-work](../land-work/SKILL.md) for conflict resolution and verification.
 
-Small commits, one thing each, message in product terms:
+## Complete the work
 
-```
-Buyer app: COD payment mode on checkout
-Seller store: empty state for the offers list
-```
-
-Not `.`, not `#`, not `Update HomeScreen.tsx`, not `wip` — those are in
-the history already and nobody can find anything in them. Commit before any
-risky step (a merge, a big refactor, a branch switch). Push after each
-commit; an unpushed branch lives on one laptop.
-
-`bun.lock` goes in a commit only next to the `package.json` that changed
-it (`add-dependency`, a scaffold, a retire). A lockfile diff with no
-manifest diff is the untracked-folder case above — don't commit it; find
-the folder.
-
-## Keep in sync
-
-When `dev` moves while the branch is open, bring it **into the branch**,
-not the other way round:
-
-```bash
-git fetch origin && git merge origin/dev
-```
-
-Conflicts here are resolved on the branch, where only this work is at risk
-— `land-work` has the rules. Never rebase a branch that has been pushed; a
-merge is fine here and nobody reads the graph.
-
-## Report
-
-"On `seller-store/kyc-empty-state`, branched from today's dev, pushed." If
-uncommitted work came along, say what it was.
+Record the branch name and base commit.
+Until the user tells you to commit, keep edits uncommitted.
+A command to commit does not give permission to push.

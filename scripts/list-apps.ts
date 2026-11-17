@@ -19,9 +19,9 @@ type Pkg = {
 
 async function read(rel: string) {
   const pkg = (await Bun.file(join(ROOT, rel)).json()) as Pkg;
-  // Vite apps say `--port 5173`; Bun services say `PORT=8787`.
+  // Vite uses --port, Storybook uses -p, and Bun services use PORT.
   const dev = pkg.scripts?.dev ?? '';
-  const port = dev.match(/--port\s+(\d+)/)?.[1] ?? dev.match(/\bPORT=(\d+)/)?.[1];
+  const port = dev.match(/(?:--port|-p)\s+(\d+)/)?.[1] ?? dev.match(/\bPORT=(\d+)/)?.[1];
   return { dir: rel.replace('/package.json', ''), pkg, port };
 }
 

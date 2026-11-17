@@ -57,7 +57,13 @@ jobs:
       pool:
           name: Xavica-Qwipo
 
-      environment: ${{ parameters.environment }}
+      # Production lands on its own `mockups-production` environment, with its
+      # own approval check (Product Team + the release approvers), instead of
+      # the shared `production` the argocd-* services deploy through. The
+      # scripts below still get DEPLOY_ENVIRONMENT=production, so the manifest
+      # path bms-chart/production/<service>.yaml and the ArgoCD app name are
+      # unchanged.
+      environment: ${{ replace(parameters.environment, 'production', 'mockups-production') }}
 
       strategy:
           runOnce:

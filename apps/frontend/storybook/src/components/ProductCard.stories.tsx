@@ -63,7 +63,7 @@ export const InCart: Story = {
         <ProductCard
           {...(base as ProductCardProps)}
           seller="Sri Sai Krishna Traders"
-         
+
           delivery="Free Delivery"
           selectedVariant={variant}
           onSelectVariant={setVariant}

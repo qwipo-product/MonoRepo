@@ -1,13 +1,13 @@
 import { PRODUCTS, type Product } from './products';
 import { WHOLESALER_PRODUCTS, cheapestVendorId, type WholesalerProduct, type WholesalerVendor } from './wholesaler';
-import { deliveryFor, dayLabel } from './delivery';
+import { deliveryFor, dayLabel, isCdsSeller, CDS_NAME, CDS_MOV } from './delivery';
 import { OFFERS } from './coupons';
 
 /* Cart Summary reads the SAME quantities the buyer picked on the Product List /
    Reorder / Wholesaler List screens — `buildCart()` takes them as arguments
    instead of a fixed seed, so adding something there shows up here too. The
-   cart opens empty (App.tsx's `qty` starts at `{}`) — everything in it is
-   something the buyer actually added.
+   initial quantities come from `INITIAL_QTY`. The cart contains purchased
+   units only. Offers do not add free reward lines.
 
    Each seller resolves to one of three retailer-facing states:
      • free  — at/above the free-delivery threshold  → ELIGIBLE · FREE DELIVERY
@@ -82,6 +82,20 @@ export const INITIAL_QTY: Record<string, number> = {
   p10: 2,
   p39: 20,
   p5: 4,
+  /* Eight lines across all four cross-dock distributors, a couple of cases
+     each. Not one of these four would come close to that distributor's own
+     minimum — the smallest is under ₹250 — and together they are a case or
+     two from the store's ₹2,500. That gap is the whole argument for the
+     model, so the cart opens sitting in it: add one more case from any of the
+     four and it clears. */
+  p100: 2,
+  p104: 6,
+  p112: 8,
+  p116: 10,
+  p124: 6,
+  p130: 2,
+  p136: 3,
+  p140: 1,
 };
 
 export const itemWeight = (item: CartItem): number =>
@@ -131,7 +145,6 @@ export interface CartItem {
   product: Product;
   quantity: number;
   lineTotal: number;
-  free: boolean;
   /** Unit price when the item was added — absent when it hasn't moved. */
   priceWhenAdded?: number;
   /** Per-unit delta: + dearer, − cheaper. 0/undefined when unchanged. */
@@ -150,6 +163,15 @@ export interface CartItem {
    * stack a Slab and a Combo at once). Each `amount` is already folded into
    * `lineTotal`; kept separately so the UI can show it as its own line. */
   offerTags?: { label: string; amount: number }[];
+}
+
+/** One distributor's lines inside a cross-dock card. The cart totals at CDS
+ *  level, but the buyer still shops seller by seller, so View Items and the
+ *  order summary need the breakdown kept rather than flattened away. */
+export interface CdsGroup {
+  seller: string;
+  items: CartItem[];
+  subtotal: number;
 }
 
 export interface CartSeller {
@@ -177,6 +199,11 @@ export interface CartSeller {
   weightRemaining: number;
   /** Checkout is blocked when below MOV or below MOW. */
   blocked: boolean;
+  /** True when this card stands for the cross-dock store rather than one
+   *  seller: its minimum, its delivery day and its packing are shared. */
+  cds?: boolean;
+  /** The distributors behind a CDS card, each with its own lines. */
+  groups?: CdsGroup[];
   /* What this seller charges to carry the order: their per-kilo rate across
      the kilos ordered. 0 for a distributor, and 0 for a wholesaler who
      delivers free. */
@@ -252,7 +279,6 @@ export function buildCart(
       product,
       quantity,
       lineTotal,
-      free: false,
       ...freight,
       priceWhenAdded: was,
       priceDelta,
@@ -262,14 +288,6 @@ export function buildCart(
     arr.push(item);
     bySeller.set(product.seller, arr);
     itemByProductId.set(product.id, item);
-  };
-
-  const addFreeItem = (product: Product, quantity: number) => {
-    if (quantity <= 0) return;
-    const item: CartItem = { product, quantity, lineTotal: 0, free: true };
-    const arr = bySeller.get(product.seller) ?? [];
-    arr.push(item);
-    bySeller.set(product.seller, arr);
   };
 
   for (const [productId, quantity] of Object.entries(qty)) {
@@ -314,26 +332,6 @@ export function buildCart(
     ];
   }
 
-  // Promo free units — one per automatic Offer whose `needs` the cart actually
-  // meets, so "Applied automatically" on the Offers page always matches a real
-  // ₹0 line here, for BOTH the schemes and their free goods.
-  for (const offer of OFFERS) {
-    if (!offer.automatic || !offer.reward) continue;
-    const short = (offer.needs ?? []).some((n) => (allQty[n.productId] ?? 0) < n.qty);
-    if (short) continue;
-    const rewardId = offer.reward.productId;
-    const product = PRODUCTS.find((p) => p.id === rewardId);
-    if (product) {
-      addFreeItem(product, offer.reward.qty);
-      continue;
-    }
-    // wholesale reward — priced at the vendor the buyer picked for that SKU
-    const wp = WHOLESALER_PRODUCTS.find((w) => w.id === rewardId);
-    if (!wp) continue;
-    const v = wp.vendors.find((x) => x.id === (wholesaleVendor[rewardId] ?? cheapestVendorId(wp))) ?? wp.vendors[0];
-    addFreeItem(wholesaleAsProduct(wp, v), offer.reward.qty);
-  }
-
   const sellers: CartSeller[] = [];
   for (const [name, items] of bySeller) {
     const type = items[0].product.source;
@@ -346,7 +344,7 @@ export function buildCart(
     const savings = items.reduce(
       (s, i) =>
         s +
-        (i.free ? 0 : Math.max(0, (i.product.mrp - i.product.price) * i.quantity)) +
+        Math.max(0, (i.product.mrp - i.product.price) * i.quantity) +
         (i.offerTags?.reduce((a, t) => a + t.amount, 0) ?? 0),
       0
     );
@@ -379,6 +377,44 @@ export function buildCart(
       belowWeight,
       weightRemaining: belowWeight ? mow - weight : 0,
       blocked: status === 'below' || belowWeight,
+    });
+  }
+
+  /* Fold the cross-dock distributors into one card. Each is still a seller in
+     the catalogue and still priced on its own; what changes is that the 3PL
+     collects from all of them, the cross-dock store packs the lot for this
+     retailer, and one delivery goes out. So the cart checks one minimum for
+     the group instead of four separate ones — and a much smaller minimum,
+     since the store is already receiving that collection. The seller
+     breakdown rides along in `groups` — nothing is lost, it is just no longer
+     what the buyer is asked to clear. */
+  const cdsCards = sellers.filter((x) => isCdsSeller(x.name));
+  if (cdsCards.length > 0) {
+    for (const c of cdsCards) sellers.splice(sellers.indexOf(c), 1);
+    const items = cdsCards.flatMap((c) => c.items);
+    const subtotal = cdsCards.reduce((n, c) => n + c.subtotal, 0);
+    const status: CartStatus = subtotal < CDS_MOV ? 'below' : 'free';
+    sellers.push({
+      id: 'cds',
+      name: CDS_NAME,
+      type: 'distributor',
+      items,
+      subtotal,
+      savings: cdsCards.reduce((n, c) => n + c.savings, 0),
+      mov: CDS_MOV,
+      freeDeliveryAt: 0,
+      status,
+      deliveryFee: 0,
+      freight: cdsCards.reduce((n, c) => n + c.freight, 0),
+      unlockRemaining: status === 'below' ? CDS_MOV - subtotal : 0,
+      windows: ['Tomorrow'],
+      mow: 0,
+      weight: cdsCards.reduce((n, c) => n + c.weight, 0),
+      belowWeight: false,
+      weightRemaining: 0,
+      blocked: status === 'below',
+      cds: true,
+      groups: cdsCards.map((c) => ({ seller: c.name, items: c.items, subtotal: c.subtotal })),
     });
   }
 

@@ -1,5 +1,4 @@
 import { Bell, User, MapPin, ChevronDown, Search, ClipboardList } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { cn } from '@mockups/ui';
 import type { Navigate } from '../nav';
 import type { ScreenId } from '../review/screenIndex';
@@ -38,11 +37,11 @@ export function HomeScreen({
   tab,
   onTabChange,
   onNavigate,
+  onOpenSheet,
+  onOpenWholesaleSheet,
+  sheetOpen = false,
   salesperson = false,
-  notice,
 }: {
-  /** Account-level message above the banners (e.g. KYC Pending). */
-  notice?: ReactNode;
   deliveryLabel?: string;
   availability?: 'both' | 'distributors' | 'wholesalers';
   /* Which side the buyer is shopping. App.tsx holds it rather than this
@@ -52,6 +51,14 @@ export function HomeScreen({
   tab: 'distributors' | 'wholesalers';
   onTabChange: (tab: 'distributors' | 'wholesalers') => void;
   onNavigate: Navigate;
+  /** A tapped product rail card opens that SKU's add-to-cart sheet — the
+   *  distributor one or the vendor one, depending on the tab it's on. */
+  onOpenSheet: (id: string) => void;
+  onOpenWholesaleSheet: (id: string) => void;
+  /** True while either add-to-cart sheet is up, so the product rails hold
+   *  still behind it — and for five seconds after it closes, so the card the
+   *  buyer came back to is still where they left it. */
+  sheetOpen?: boolean;
   /** Salesperson persona → show the beat-day task shortcut in the header. */
   salesperson?: boolean;
 }) {
@@ -80,9 +87,9 @@ export function HomeScreen({
       {/* sticky header */}
       <div className="sticky top-0 z-10 bg-card shadow-sm">
         <div className="flex items-center gap-3 px-4 pt-3">
-          <img src="/brand/qwipo-logo.svg" alt="Qwipo" className="h-6 shrink-0 dark:hidden" />
-          <img src="/brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
-          <img src="/brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="mx-auto h-5 shrink-0" />
+          <img src="./brand/qwipo-logo.svg" alt="Qwipo" className="h-6 shrink-0 dark:hidden" />
+          <img src="./brand/qwipo-logo-dark.svg" alt="Qwipo" aria-hidden className="hidden h-6 shrink-0 dark:block" />
+          <img src="./brand/digidukaan-logo.svg" alt="Powered by ONDC DigiDukaan" className="mx-auto h-5 shrink-0" />
           <div className="flex items-center gap-2">
             {salesperson && (
               <button
@@ -146,14 +153,14 @@ export function HomeScreen({
           <TabButton
             active={effectiveTab === 'distributors'}
             disabled={!distAvailable}
-            img="/home-category-cards/distributors.png"
+            img="./home-category-cards/distributors.png"
             label="Authorized Distributors"
             onClick={() => onTabChange('distributors')}
           />
           <TabButton
             active={effectiveTab === 'wholesalers'}
             disabled={!wholeAvailable}
-            img="/home-category-cards/wholesalers.png"
+            img="./home-category-cards/wholesalers.png"
             label="Wholesalers"
             onClick={() => onTabChange('wholesalers')}
           />
@@ -161,7 +168,6 @@ export function HomeScreen({
       </div>
 
       <div className="mt-4 space-y-6">
-        {notice && <div className="px-4">{notice}</div>}
         <BannerCarousel banners={HERO_BANNERS} onOpen={() => onNavigate('listing')} />
 
         {/* Keyed by tab, so switching sides animates in rather than
@@ -179,17 +185,17 @@ export function HomeScreen({
                     onClick={() => onNavigate('storefront', { distributor: d })}
                     className="w-24 shrink-0 rounded-lg border border-border bg-card p-1.5 text-center shadow-sm active:scale-[0.98]"
                   >
-                    {/* The plate keeps its own frame inside the card, the way a
-                        brand tile does — the card is what holds the mark and the
-                        two lines together. */}
+                    {/* No frame of its own: the card already draws one around
+                        the mark and the two lines, and a second outline just
+                        inside it read as a box in a box. */}
                     <BrandLogo
                       src={d.logo}
                       alt={d.title}
-                      className="aspect-square w-full rounded border border-border"
+                      className="aspect-square w-full rounded"
                       imgClassName="p-0 scale-110"
                     />
                     <div className="mt-1.5 truncate text-xs font-semibold text-foreground">{d.title}</div>
-                    <div className="truncate text-[11px] text-foreground-secondary">{d.name}</div>
+                    <div className="truncate text-xs text-foreground-secondary">{d.name}</div>
                   </button>
                 ))}
               </div>
@@ -199,12 +205,9 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Previously Ordered"
-                  onSeeAll={() => onNavigate('reorder', { source: 'distributor' })}
+                  onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail
-                  items={prevOrderedDistributor}
-                  onOpen={() => onNavigate('reorder', { source: 'distributor' })}
-                />
+                <ProductTeaserRail items={prevOrderedDistributor} onOpen={onOpenSheet} paused={sheetOpen} />
               </section>
             )}
 
@@ -241,10 +244,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('listing')}
                 />
-                <ProductTeaserRail
-                  items={trendingDistributor}
-                  onOpen={() => onNavigate('listing')}
-                />
+                <ProductTeaserRail items={trendingDistributor} onOpen={onOpenSheet} paused={sheetOpen} />
               </section>
             )}
           </>
@@ -263,7 +263,7 @@ export function HomeScreen({
                     <span className="grid w-full place-items-center overflow-hidden rounded-lg bg-muted">
                       <img src={encodeURI(c.image)} alt={c.name} className="aspect-[400/268] w-full object-cover" />
                     </span>
-                    <div className="text-center text-sm font-medium">{c.name}</div>
+                    <div className="text-center text-xs text-foreground">{c.name}</div>
                   </button>
                 ))}
               </div>
@@ -273,12 +273,9 @@ export function HomeScreen({
               <section className="space-y-3">
                 <SectionHeader
                   title="Previously Ordered"
-                  onSeeAll={() => onNavigate('reorder', { source: 'wholesaler' })}
+                  onSeeAll={() => onNavigate('reorder')}
                 />
-                <ProductTeaserRail
-                  items={prevOrderedWholesaler}
-                  onOpen={() => onNavigate('reorder', { source: 'wholesaler' })}
-                />
+                <ProductTeaserRail items={prevOrderedWholesaler} onOpen={onOpenWholesaleSheet} paused={sheetOpen} />
               </section>
             )}
 
@@ -330,10 +327,7 @@ export function HomeScreen({
                   title="Trending Products"
                   onSeeAll={() => onNavigate('wholesaler-products')}
                 />
-                <ProductTeaserRail
-                  items={trendingWholesaler}
-                  onOpen={() => onNavigate('wholesaler-products')}
-                />
+                <ProductTeaserRail items={trendingWholesaler} onOpen={onOpenWholesaleSheet} paused={sheetOpen} />
               </section>
             )}
           </>
@@ -341,7 +335,7 @@ export function HomeScreen({
         </div>
       </div>
 
-      <img src="/home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />
+      <img src="./home-footer-block.png" alt="Powered by ONDC DigiDukaan" className="mt-6 w-full" />
     </div>
   );
 }
@@ -387,7 +381,7 @@ function TabButton({
         >
           {label}
         </span>
-        {disabled && <span className="mt-0.5 block text-[10px] text-foreground-tertiary">Coming Soon</span>}
+        {disabled && <span className="mt-0.5 block text-2xs text-foreground-tertiary">Coming Soon</span>}
       </span>
     </button>
   );
@@ -444,7 +438,12 @@ function BannerCarousel({ banners, onOpen }: { banners: string[]; onOpen: () => 
       <div {...railProps} className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-lg">
         {banners.map((b, j) => (
           <button key={j} onClick={onOpen} aria-label="Open offers" className="w-full shrink-0 snap-start">
-            <img src={encodeURI(b)} alt="" className="h-40 w-full object-cover" />
+            {/* The artwork is 2:1, so the slot is too. A fixed height held the
+                banner at 160px however wide the rail got, which on a tablet
+                left a letterbox roughly five times wider than it was tall and
+                threw most of the picture away. Height now follows width, the
+                way the category tiles already work. */}
+            <img src={encodeURI(b)} alt="" className="aspect-[2/1] w-full object-cover" />
           </button>
         ))}
       </div>

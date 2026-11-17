@@ -1,0 +1,59 @@
+/* SingleOrderComponent styles (spec 02 §2.2), scoped under .single-order-container. No media queries (as built). */
+.single-order-container { padding: 24px; background: #f8f9fa; min-height: 100%; }
+
+.single-order-container .page-header { background: #fff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 4px #0000000a; margin-bottom: 24px; }
+.single-order-container .header-left { display: flex; align-items: center; gap: 16px; }
+.single-order-container .back-btn { background: transparent; border: none; font-size: 20px; color: #666; padding: 8px; border-radius: 8px; cursor: pointer; transition: all .2s; }
+.single-order-container .back-btn:hover { background: #f8f9fa; color: #333; }
+.single-order-container .page-header h1 { font-size: 24px; font-weight: 600; color: #2c3e50; margin: 0; }
+
+.single-order-container .warning-banner { display: flex; align-items: center; gap: 16px; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+.single-order-container .warning-banner > i { font-size: 24px; color: #d97706; }
+.single-order-container .warning-content { flex: 1; }
+.single-order-container .warning-content strong { display: block; color: #92400e; font-size: 14px; margin-bottom: 2px; }
+.single-order-container .warning-content p { color: #a16207; font-size: 13px; margin: 0; }
+.single-order-container .settings-link { background: #f59e0b; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background .2s; }
+.single-order-container .settings-link:hover { background: #d97706; }
+
+.single-order-container .form-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 4px #0000000a; }
+.single-order-container .form-section { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+.single-order-container .form-section:nth-last-child(2) { border-bottom: none; }
+.single-order-container .form-section h2 { font-size: 16px; font-weight: 600; color: #2c3e50; margin: 0 0 16px; }
+.single-order-container .form-section h3 { font-size: 14px; font-weight: 600; color: #374151; margin: 16px 0 12px; }
+.single-order-container .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+.single-order-container .form-row.full-width { grid-template-columns: 1fr; }
+.single-order-container .form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+.single-order-container .form-group { display: flex; flex-direction: column; min-width: 0; }
+.single-order-container .form-group > label { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+.single-order-container .required { color: #ef4444; }
+.single-order-container .form-group > input,
+.single-order-container .item-row input { padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px; color: #1f2937; outline: none; transition: border-color .15s, box-shadow .15s; width: 100%; box-sizing: border-box; }
+.single-order-container .form-group > input::placeholder,
+.single-order-container .item-row input::placeholder { color: #9ca3af; }
+.single-order-container .form-group > input:focus,
+.single-order-container .item-row input:focus { border-color: #007bff; box-shadow: 0 0 0 3px #007bff1a; }
+
+.single-order-container .items-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.single-order-container .items-header h2 { margin: 0; }
+.single-order-container .optional-label { font-size: 13px; font-weight: 400; color: #9ca3af; }
+.single-order-container .add-item-btn { display: inline-flex; align-items: center; gap: 6px; background: #f8f9fa; border: 1px solid #dee2e6; color: #007bff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .2s; }
+.single-order-container .add-item-btn:hover { background: #e9ecef; }
+.single-order-container .items-hint { font-size: 13px; color: #6b7280; padding: 12px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 6px; margin: 0; }
+
+.single-order-container .items-table { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.single-order-container .items-table-header { display: flex; gap: 8px; padding: 10px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; }
+.single-order-container .item-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+.single-order-container .item-row:last-child { border-bottom: none; }
+.single-order-container .col-name { flex: 3; min-width: 0; }
+.single-order-container .col-num { flex: 1; min-width: 0; }
+.single-order-container .col-action { width: 36px; flex: 0 0 36px; }
+.single-order-container .remove-item-btn { height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #ef4444; border-radius: 6px; cursor: pointer; }
+.single-order-container .remove-item-btn:hover { background: #fef2f2; }
+
+.single-order-container .action-buttons { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e5e7eb; padding-top: 24px; margin-top: 24px; }
+.single-order-container .action-buttons button { padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; }
+.single-order-container .cancel-btn { background: #f8f9fa; border: 1px solid #dee2e6; color: #333; }
+.single-order-container .cancel-btn:hover { background: #e9ecef; }
+.single-order-container .save-btn { display: flex; align-items: center; gap: 8px; background: #007bff; border: 1px solid #007bff; color: #fff; }
+.single-order-container .save-btn:hover:not(:disabled) { background: #0056b3; }
+.single-order-container .save-btn:disabled { background: #ccc; color: #666; border-color: #ccc; cursor: not-allowed; }

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
-  "description": "Framework-agnostic domain types shared by every mockup and by apps/backend/*.",
+  "description": "Shared domain types for application fixtures, components and the mock API.",
   "exports": {
     ".": "./src/index.ts"
   },

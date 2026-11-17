@@ -10,7 +10,8 @@ import {
   Plus,
   Filter,
 } from "lucide-react";
-import { getSellers, type Seller } from "../../lib/mock-store";
+import { getSellers, deriveSellerType, type Seller } from "../../lib/mock-store";
+import { SellerTypeBadge } from "../../components/seller-type-badge";
 import { EmptyState } from "@mockups/web-ui";
 import { ListPagination, paginate } from "@mockups/web-ui";
 import {
@@ -44,12 +45,16 @@ export function AdminActiveSellers() {
       const active = s.isActive !== false;
       if (statusFilter === "active" && !active) return false;
       if (statusFilter === "inactive" && active) return false;
-      // Search — restricted to seller name + business name only.
+      // Search — seller name, business name, or either login identifier
+      // (mobile number / email ID), so support can find an account from
+      // whatever the seller quotes over the phone.
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
           s.name.toLowerCase().includes(q) ||
-          s.businessName.toLowerCase().includes(q)
+          s.businessName.toLowerCase().includes(q) ||
+          (s.email ?? "").toLowerCase().includes(q) ||
+          (s.phone ?? "").includes(q)
         );
       }
       return true;
@@ -76,7 +81,7 @@ export function AdminActiveSellers() {
             <div className="relative w-64 md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by seller name or business name..."
+                placeholder="Search by seller name, business, mobile or email..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -161,7 +166,10 @@ export function AdminActiveSellers() {
                         Business Name
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Mobile Number
+                        Mobile &amp; Email
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        Seller Type
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                         Status
@@ -182,8 +190,24 @@ export function AdminActiveSellers() {
                             {s.businessName}
                           </p>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {s.phone}
+                        {/* Both of the seller's sign-in identifiers, stacked
+                            so the row stays as wide as it was. */}
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700">{s.phone}</p>
+                          {s.email ? (
+                            <p className="text-xs text-gray-500 truncate max-w-[220px]">
+                              {s.email}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic">
+                              No email ID
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {/* Calculated from company operation modes —
+                              never stored/edited manually. */}
+                          <SellerTypeBadge type={deriveSellerType(s)} />
                         </td>
                         <td className="px-4 py-3">
                           {s.isActive !== false ? (
